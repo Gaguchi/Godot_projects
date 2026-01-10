@@ -115,6 +115,48 @@ func is_ranged() -> bool:
 	return range_max > 1
 
 
-## Check if this can only attack at range (like bows)
-func is_ranged_only() -> bool:
-	return range_min > 1
+## Serialize to dictionary
+func to_dict() -> Dictionary:
+	return {
+		"item_name": item_name,
+		"description": description,
+		"item_type": item_type,
+		# icon is not serialized - loaded from resources or path if dynamic
+		"weapon_type": weapon_type,
+		"might": might,
+		"hit": hit,
+		"crit": crit,
+		"weight": weight,
+		"range_min": range_min,
+		"range_max": range_max,
+		"max_uses": max_uses,
+		"current_uses": current_uses,
+		"is_unbreakable": is_unbreakable,
+		"heal_amount": heal_amount,
+		"stat_boost": stat_boost,
+		"boost_amount": boost_amount,
+		"buy_price": buy_price,
+		"sell_price": sell_price
+	}
+
+
+## Deserialize from dictionary
+func from_dict(data: Dictionary) -> void:
+	item_name = data.get("item_name", "Item")
+	description = data.get("description", "")
+	item_type = data.get("item_type", ItemType.WEAPON)
+	weapon_type = data.get("weapon_type", WeaponType.SWORD)
+	might = data.get("might", 5)
+	hit = data.get("hit", 90)
+	crit = data.get("crit", 0)
+	weight = data.get("weight", 5)
+	range_min = data.get("range_min", 1)
+	range_max = data.get("range_max", 1)
+	max_uses = data.get("max_uses", 30)
+	current_uses = data.get("current_uses", 30)
+	is_unbreakable = data.get("is_unbreakable", false)
+	heal_amount = data.get("heal_amount", 0)
+	stat_boost = data.get("stat_boost", "")
+	boost_amount = data.get("boost_amount", 0)
+	buy_price = data.get("buy_price", 100)
+	sell_price = data.get("sell_price", 50)

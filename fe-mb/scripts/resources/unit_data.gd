@@ -169,4 +169,87 @@ func get_class_name() -> String:
 		UnitClass.CLERIC: return "Cleric"
 		UnitClass.THIEF: return "Thief"
 		UnitClass.LORD: return "Lord"
-		_: return "Unknown"
+	return "Unknown"
+## Serialize to dictionary
+func to_dict() -> Dictionary:
+	var weapon_dict = {}
+	if equipped_weapon and equipped_weapon.has_method("to_dict"):
+		weapon_dict = equipped_weapon.to_dict()
+		
+	var inventory_list = []
+	for item in inventory:
+		if item and item.has_method("to_dict"):
+			inventory_list.append(item.to_dict())
+	
+	return {
+		"unit_name": unit_name,
+		"unit_class": unit_class,
+		"level": level,
+		"experience": experience,
+		"is_player_unit": is_player_unit,
+		"current_hp": current_hp,
+		"max_hp": max_hp,
+		"strength": strength,
+		"magic": magic,
+		"skill": skill,
+		"speed": speed,
+		"luck": luck,
+		"defense": defense,
+		"resistance": resistance,
+		"movement": movement,
+		"hp_growth": hp_growth,
+		"str_growth": str_growth,
+		"mag_growth": mag_growth,
+		"skl_growth": skl_growth,
+		"spd_growth": spd_growth,
+		"lck_growth": lck_growth,
+		"def_growth": def_growth,
+		"res_growth": res_growth,
+		"equipped_weapon": weapon_dict,
+		"inventory": inventory_list
+	}
+
+
+## Deserialize from dictionary
+func from_dict(data: Dictionary) -> void:
+	unit_name = data.get("unit_name", "Unit")
+	unit_class = data.get("unit_class", UnitClass.FIGHTER)
+	level = data.get("level", 1)
+	experience = data.get("experience", 0)
+	is_player_unit = data.get("is_player_unit", true)
+	current_hp = data.get("current_hp", 20)
+	max_hp = data.get("max_hp", 20)
+	strength = data.get("strength", 5)
+	magic = data.get("magic", 0)
+	skill = data.get("skill", 5)
+	speed = data.get("speed", 5)
+	luck = data.get("luck", 5)
+	defense = data.get("defense", 5)
+	resistance = data.get("resistance", 2)
+	movement = data.get("movement", 5)
+	
+	hp_growth = data.get("hp_growth", 50)
+	str_growth = data.get("str_growth", 40)
+	mag_growth = data.get("mag_growth", 0)
+	skl_growth = data.get("skl_growth", 35)
+	spd_growth = data.get("spd_growth", 35)
+	lck_growth = data.get("lck_growth", 30)
+	def_growth = data.get("def_growth", 25)
+	res_growth = data.get("res_growth", 20)
+	
+	# Deserialize Weapon
+	var weapon_data = data.get("equipped_weapon", {})
+	if not weapon_data.is_empty():
+		var new_weapon = ItemData.new()
+		new_weapon.from_dict(weapon_data)
+		equipped_weapon = new_weapon
+	else:
+		equipped_weapon = null
+		
+	# Deserialize Inventory
+	inventory.clear()
+	var inventory_data = data.get("inventory", [])
+	for item_dict in inventory_data:
+		var new_item = ItemData.new()
+		new_item.from_dict(item_dict)
+		inventory.append(new_item)

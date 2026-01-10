@@ -32,7 +32,24 @@ var dungeon_difficulty: int = 1
 
 func _ready() -> void:
 	_connect_ui_signals()
-	generate_floor()
+	
+	if GameManager.has_active_dungeon_state():
+		_restore_dungeon_state()
+		
+		# Check if we just returned from a victory
+		if GameManager.last_battle_victory:
+			# Reset flag to avoid re-triggering
+			GameManager.last_battle_victory = false
+			
+			var current_room = _get_room_by_id(current_room_id)
+			if current_room and current_room.room_type == DungeonRoomData.RoomType.BOSS:
+				print("[DungeonMap] Boss defeated!")
+				# Short delay to let the map load
+				await get_tree().create_timer(1.0).timeout
+				_on_floor_completed()
+	else:
+		start_dungeon(1, 3) # Default start if loaded directly
+	
 	_update_floor_display()
 
 
@@ -181,12 +198,18 @@ func _trigger_room_event(room: DungeonRoomData) -> void:
 	match room.room_type:
 		DungeonRoomData.RoomType.COMBAT, DungeonRoomData.RoomType.ELITE:
 			print("[DungeonMap] Starting combat...")
-			# TODO: Load combat scene
+			# Save state before leaving
+			GameManager.save_dungeon_state(rooms, current_room_id, dungeon_difficulty, max_floors)
+			# Change to combat scene
+			SceneLoader.change_scene_to_file("res://scenes/combat/battlefield.tscn")
 			EventBus.combat_started.emit()
 		
 		DungeonRoomData.RoomType.BOSS:
 			print("[DungeonMap] Boss battle!")
-			# TODO: Load boss combat
+			# Save state before leaving
+			GameManager.save_dungeon_state(rooms, current_room_id, dungeon_difficulty, max_floors)
+			# Change to combat scene
+			SceneLoader.change_scene_to_file("res://scenes/combat/battlefield.tscn")
 			EventBus.combat_started.emit()
 		
 		DungeonRoomData.RoomType.TREASURE:
@@ -195,7 +218,8 @@ func _trigger_room_event(room: DungeonRoomData) -> void:
 		
 		DungeonRoomData.RoomType.REST:
 			print("[DungeonMap] Resting...")
-			# TODO: Show rest menu
+			GameManager.rest_party(0.3)
+			# TODO: Show visual feedback (e.g. campfire, toast message)
 		
 		DungeonRoomData.RoomType.SHOP:
 			print("[DungeonMap] Entering shop...")
@@ -206,8 +230,9 @@ func _trigger_room_event(room: DungeonRoomData) -> void:
 			# TODO: Show event dialog
 	
 	# Check if boss defeated -> floor complete
-	if room.room_type == DungeonRoomData.RoomType.BOSS:
-		_on_floor_completed()
+	# DEPRECATED: This check was premature. Now handled in _ready() after returning from combat.
+	# if room.room_type == DungeonRoomData.RoomType.BOSS:
+	# 	_on_floor_completed()
 	
 	ui_panel.visible = false
 
@@ -222,7 +247,7 @@ func _on_floor_completed() -> void:
 		dungeon_completed.emit()
 		GameManager.exit_dungeon(true)  # Completed
 		# Return to world map
-		get_tree().change_scene_to_file("res://scenes/overworld/world_map.tscn")
+		SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
 	else:
 		current_floor += 1
 		generate_floor()
@@ -234,7 +259,7 @@ func _on_exit_pressed() -> void:
 	dungeon_exited.emit()
 	GameManager.exit_dungeon(false)  # Abandoned
 	# Return to world map
-	get_tree().change_scene_to_file("res://scenes/overworld/world_map.tscn")
+	SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
 
 
 func _update_floor_display() -> void:
@@ -251,8 +276,44 @@ func _focus_camera_on_room(room_id: int) -> void:
 
 ## Initialize dungeon with parameters
 func start_dungeon(difficulty: int = 1, floors: int = 3) -> void:
+	print("[DungeonMap] Starting NEW dungeon")
+	GameManager.clear_dungeon_state()
 	dungeon_difficulty = difficulty
 	max_floors = floors
 	current_floor = 1
 	generate_floor()
 	_update_floor_display()
+
+func _restore_dungeon_state() -> void:
+	print("[DungeonMap] Restoring dungeon state")
+	var state = GameManager.load_dungeon_state()
+	rooms = state.rooms
+	current_room_id = state.current_room_id
+	dungeon_difficulty = state.difficulty
+	max_floors = state.max_floors
+	current_floor = state.floor
+	
+	# Clear existing visuals
+	for child in rooms_container.get_children():
+		child.queue_free()
+	for child in connections_layer.get_children():
+		child.queue_free()
+	room_nodes.clear()
+	
+	# Recreate visuals
+	for room in rooms:
+		var node = DungeonRoomNodeScene.instantiate()
+		node.setup(room)
+		node.room_clicked.connect(_on_room_clicked)
+		node.room_hovered.connect(_on_room_hovered)
+		rooms_container.add_child(node)
+		room_nodes[room.id] = node
+		
+		# Update visual state immediately
+		node.set_current(room.id == current_room_id)
+		node.set_completed(room.visited and room.id != current_room_id)
+		
+	_draw_connections()
+	_update_reachable_rooms()
+	_focus_camera_on_room(current_room_id)
+

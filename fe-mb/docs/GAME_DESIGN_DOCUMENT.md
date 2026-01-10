@@ -15,6 +15,7 @@ Last Updated: January 10, 2026
 2. **Permadeath Stakes** - Units that fall in battle are gone forever, making every decision meaningful
 3. **Resource Tension** - Limited supplies, threatening pursuit, and morale create constant pressure
 4. **Procedural Variety** - Each run features different dungeon layouts and encounters
+5. **Unique Characters** - Every recruited unit is a distinct individual with personal quests and non-generic growth
 
 ### 1.3 Target Experience
 The player should feel like a commander leading a desperate band of warriors through hostile territory. Every battle risks permanent loss, every choice matters, and survival requires both tactical excellence and strategic resource management.
@@ -88,7 +89,7 @@ Dungeons consist of **procedurally generated floors** with branching paths from 
 | **Elite** | 💀 | Tough fight with better rewards |
 | **Treasure** | 💰 | Chest with gold/items |
 | **Event** | ❓ | Choice-based random event |
-| **Rest** | 🔥 | Heal party or upgrade units |
+| **Rest** | 🔥 | Choice: Heal party OR Apply temporary combat buff (e.g., "Survive fatal blow once") |
 | **Shop** | 🛒 | Spend gold on items/healing |
 | **Boss** | 👿 | Floor boss (must defeat to complete dungeon) |
 | **Entrance** | 🚪 | Starting room |
@@ -209,7 +210,8 @@ Morale changes:
 | **Mage** | Magical damage | MAG, RES |
 | **Cleric** | Healer | MAG, LCK |
 | **Thief** | Fast utility | SPD, SKL, LCK |
-| **Lord** | Player's main character | Balanced |
+| **Lord** | Player's main character | Balanced (Branching Promotions) |
+| **Others** | Unique characters | Linear progression via Personal Quests |
 
 ### 5.2 Growth Rates
 Each unit has growth rates (0-100%) for each stat. On level-up, each stat has its growth% chance to increase by 1.
@@ -225,9 +227,9 @@ Each unit has growth rates (0-100%) for each stat. On level-up, each stat has it
 
 ### 5.4 Equipment
 - Each unit can equip one weapon
-- Weapons have durability (uses)
-- Weapons break when uses reach 0
-- Some legendary weapons are unbreakable
+- Each unit can equip one weapon
+- Weapons have **Infinite Durability** (they never break)
+- Weapons are balanced by weight, accuracy, and special effects/drawbacks
 
 ### 5.5 Party Management
 - Maximum party size: 6 units
@@ -254,7 +256,7 @@ Each unit has growth rates (0-100%) for each stat. On level-up, each stat has it
 | Crit | Critical hit bonus |
 | Weight | Reduces Attack Speed if > STR |
 | Range | Attack distance (tiles) |
-| Uses | Durability |
+| Special | Unique effects (e.g. "Effective vs Armor") |
 
 ---
 

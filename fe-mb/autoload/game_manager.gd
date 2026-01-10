@@ -11,6 +11,7 @@ signal dungeon_exited(completed: bool)
 
 # Current run state
 var is_run_active: bool = false
+var current_save_slot: int = 1
 var current_floor: int = 1
 var current_node_id: int = -1
 
@@ -33,6 +34,7 @@ var morale: int = 100  # 0-100 scale
 var battles_won: int = 0
 var units_lost: int = 0
 var nodes_visited: int = 0
+var last_battle_victory: bool = false
 
 
 func _ready() -> void:
@@ -55,7 +57,21 @@ func start_new_run() -> void:
 	nodes_visited = 0
 	
 	run_started.emit()
-	print("[GameManager] New run started")
+	
+	# Add starter units
+	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7;
+	var i1 = ItemData.new(); i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; u1.equipped_weapon = i1;
+	add_unit(u1)
+	
+	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.defense = 10;
+	var i2 = ItemData.new(); i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; u2.equipped_weapon = i2;
+	add_unit(u2)
+	
+	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.resistance = 6;
+	var i3 = ItemData.new(); i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 6; i3.hit = 85; i3.range_max = 2; u3.equipped_weapon = i3;
+	add_unit(u3)
+	
+	print("[GameManager] New run started with 3 units")
 
 
 ## End the current run
@@ -136,6 +152,21 @@ func get_morale_modifier() -> int:
 		return -10  # Critical morale penalty
 
 
+## Rest party members, restoring health
+func rest_party(heal_percentage: float = 0.3) -> void:
+	print("[GameManager] Resting party...")
+	for unit_data in party:
+		if unit_data.is_alive():
+			var heal_amount = int(unit_data.max_hp * heal_percentage)
+			var old_hp = unit_data.current_hp
+			unit_data.current_hp = min(unit_data.current_hp + heal_amount, unit_data.max_hp)
+			print("[GameManager] Healed %s for %d HP (%d -> %d)" % [unit_data.unit_name, heal_amount, old_hp, unit_data.current_hp])
+			
+	# Also restore some morale
+	change_morale(10)
+	print("[GameManager] Rest complete.")
+
+
 ## Enter a dungeon
 func enter_dungeon(difficulty: int = 1) -> void:
 	in_dungeon = true
@@ -158,7 +189,58 @@ func exit_dungeon(completed: bool = false) -> void:
 		change_morale(-5)  # Slight morale penalty for fleeing
 
 
+
 ## Update dungeon floor
 func set_dungeon_floor(floor_num: int) -> void:
 	current_dungeon_floor = floor_num
+
+
+# --- Dungeon Persistence ---
+
+var active_dungeon_rooms: Array = [] # Array[DungeonRoomData]
+var active_dungeon_current_room_id: int = 0
+var active_dungeon_difficulty: int = 1
+var active_dungeon_max_floors: int = 3
+
+func save_dungeon_state(rooms: Array, current_room_id: int, difficulty: int, max_floors: int) -> void:
+	active_dungeon_rooms = rooms
+	active_dungeon_current_room_id = current_room_id
+	active_dungeon_difficulty = difficulty
+	active_dungeon_max_floors = max_floors
+	print("[GameManager] Saved dungeon state: %d rooms, current %d" % [rooms.size(), current_room_id])
+
+func has_active_dungeon_state() -> bool:
+	return not active_dungeon_rooms.is_empty()
+
+func load_dungeon_state() -> Dictionary:
+	return {
+		"rooms": active_dungeon_rooms,
+		"current_room_id": active_dungeon_current_room_id,
+		"difficulty": active_dungeon_difficulty,
+		"max_floors": active_dungeon_max_floors,
+		"floor": current_dungeon_floor
+	}
+
+func clear_dungeon_state() -> void:
+	active_dungeon_rooms.clear()
+	active_dungeon_current_room_id = 0
+	print("[GameManager] Cleared dungeon state")
+
+## Helper for debugging: ensures party has units
+func ensure_party() -> void:
+	if not party.is_empty():
+		return
+		
+	print("[GameManager] Party empty, adding debug units...")
+	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7;
+	var i1 = ItemData.new(); i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; u1.equipped_weapon = i1;
+	add_unit(u1)
+	
+	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.defense = 10;
+	var i2 = ItemData.new(); i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; u2.equipped_weapon = i2;
+	add_unit(u2)
+	
+	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.resistance = 6;
+	var i3 = ItemData.new(); i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 6; i3.hit = 85; i3.range_max = 2; u3.equipped_weapon = i3;
+	add_unit(u3)
 

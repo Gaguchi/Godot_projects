@@ -24,15 +24,15 @@ func _ready() -> void:
 func _create_hp_bar() -> void:
 	# Background
 	hp_bar_bg = ColorRect.new()
-	hp_bar_bg.size = Vector2(28, 4)
-	hp_bar_bg.position = Vector2(-14, -20)
+	hp_bar_bg.size = Vector2(24, 4)
+	hp_bar_bg.position = Vector2(-12, -22)
 	hp_bar_bg.color = Color(0.1, 0.1, 0.1, 0.8)
 	add_child(hp_bar_bg)
 	
 	# HP bar
 	hp_bar = ProgressBar.new()
-	hp_bar.size = Vector2(26, 2)
-	hp_bar.position = Vector2(-13, -19)
+	hp_bar.size = Vector2(22, 2)
+	hp_bar.position = Vector2(-11, -21)
 	hp_bar.show_percentage = false
 	hp_bar.add_theme_stylebox_override("fill", _create_hp_fill_style())
 	hp_bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())

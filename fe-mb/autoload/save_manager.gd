@@ -1,141 +1,135 @@
 extends Node
-## SaveManager - Handles saving/loading run state and meta-progression
-## Uses Godot's FileAccess for JSON-based saves
 
-const SAVE_PATH = "user://save_data.json"
-const META_PATH = "user://meta_progression.json"
+## SaveManager
+## Handles serialization and deserialization of game state to disk.
+## Uses JSON for safe, human-readable, and version-friendly saving.
 
-signal save_completed
-signal load_completed
+const SAVE_PATH_TEMPLATE = "user://save_slot_%d.json"
 
+func get_save_path(slot: int) -> String:
+	return SAVE_PATH_TEMPLATE % slot
 
-func _ready() -> void:
-	print("[SaveManager] Initialized")
-
-
-## Save current run state
-func save_run() -> void:
+func save_game(slot: int) -> void:
 	var save_data = {
-		"version": 1,
+		"version": "0.1.0",
 		"timestamp": Time.get_unix_time_from_system(),
-		"run": {
-			"is_active": GameManager.is_run_active,
-			"floor": GameManager.current_floor,
-			"node_id": GameManager.current_node_id,
-			"gold": GameManager.gold,
-			"food": GameManager.food,
-			"morale": GameManager.morale,
-			"battles_won": GameManager.battles_won,
-			"units_lost": GameManager.units_lost,
-			"nodes_visited": GameManager.nodes_visited,
-		},
-		"party": _serialize_party()
+		"date_string": Time.get_datetime_string_from_system(false, true), 
+		"game_manager": _serialize_game_manager(),
+		# Add other systems here (e.g., QuestManager, WorldMap state)
 	}
 	
-	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	var path = get_save_path(slot)
+	var file = FileAccess.open(path, FileAccess.WRITE)
 	if file:
-		file.store_string(JSON.stringify(save_data, "\t"))
-		file.close()
-		save_completed.emit()
-		print("[SaveManager] Run saved")
+		var json_string = JSON.stringify(save_data, "\t")
+		file.store_string(json_string)
+		print("[SaveManager] Game saved to slot %d at %s" % [slot, path])
 	else:
-		push_error("[SaveManager] Failed to save run: " + str(FileAccess.get_open_error()))
+		printerr("[SaveManager] Failed to open save file for writing: %s" % FileAccess.get_open_error())
 
-
-## Load run state
-func load_run() -> bool:
-	if not FileAccess.file_exists(SAVE_PATH):
-		print("[SaveManager] No save file found")
+func load_game(slot: int) -> bool:
+	var path = get_save_path(slot)
+	if not FileAccess.file_exists(path):
+		print("[SaveManager] No save file found for slot %d." % slot)
 		return false
-	
-	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
+		
+	var file = FileAccess.open(path, FileAccess.READ)
 	if not file:
-		push_error("[SaveManager] Failed to open save file")
+		printerr("[SaveManager] Failed to open save file for reading.")
 		return false
-	
+		
+	var json_string = file.get_as_text()
 	var json = JSON.new()
-	var parse_result = json.parse(file.get_as_text())
-	file.close()
+	var parse_result = json.parse(json_string)
 	
 	if parse_result != OK:
-		push_error("[SaveManager] Failed to parse save file")
+		printerr("[SaveManager] JSON Parse Error: %s in %s at line %s" % [json.get_error_message(), json_string, json.get_error_line()])
 		return false
+		
+	var save_data = json.get_data()
 	
-	var save_data = json.data
+	# Restore State
+	_deserialize_game_manager(save_data.get("game_manager", {}))
 	
-	# Restore run state
-	var run = save_data.get("run", {})
-	GameManager.is_run_active = run.get("is_active", false)
-	GameManager.current_floor = run.get("floor", 1)
-	GameManager.current_node_id = run.get("node_id", -1)
-	GameManager.gold = run.get("gold", 0)
-	GameManager.food = run.get("food", 10)
-	GameManager.morale = run.get("morale", 100)
-	GameManager.battles_won = run.get("battles_won", 0)
-	GameManager.units_lost = run.get("units_lost", 0)
-	GameManager.nodes_visited = run.get("nodes_visited", 0)
-	
-	# Restore party
-	_deserialize_party(save_data.get("party", []))
-	
-	load_completed.emit()
-	print("[SaveManager] Run loaded")
+	print("[SaveManager] Game loaded from slot %d." % slot)
 	return true
 
+func has_save_file(slot: int) -> bool:
+	return FileAccess.file_exists(get_save_path(slot))
 
-## Delete save file
-func delete_save() -> void:
-	if FileAccess.file_exists(SAVE_PATH):
-		DirAccess.remove_absolute(SAVE_PATH)
-		print("[SaveManager] Save file deleted")
+## Get metadata for a slot without loading full state
+func get_slot_metadata(slot: int) -> Dictionary:
+	var path = get_save_path(slot)
+	if not FileAccess.file_exists(path):
+		return {}
+		
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return {}
+		
+	var json_string = file.get_as_text()
+	var json = JSON.new()
+	var parse_result = json.parse(json_string)
+	
+	if parse_result != OK:
+		return {"error": "Corrupted"}
+		
+	var data = json.get_data()
+	var gm_data = data.get("game_manager", {})
+	
+	return {
+		"exists": true,
+		"date": data.get("date_string", "Unknown Date"),
+		"floor": gm_data.get("current_floor", 1),
+		"gold": gm_data.get("gold", 0),
+		"party_count": gm_data.get("party", []).size()
+	}
 
+# --- Serialization Helpers ---
 
-## Check if a save exists
-func has_save() -> bool:
-	return FileAccess.file_exists(SAVE_PATH)
-
-
-## Serialize party to save data
-func _serialize_party() -> Array:
+func _serialize_game_manager() -> Dictionary:
 	var party_data = []
 	for unit in GameManager.party:
-		if unit is UnitData:
-			party_data.append({
-				"name": unit.unit_name,
-				"class": unit.unit_class,
-				"level": unit.level,
-				"current_hp": unit.current_hp,
-				"max_hp": unit.max_hp,
-				"strength": unit.strength,
-				"magic": unit.magic,
-				"skill": unit.skill,
-				"speed": unit.speed,
-				"luck": unit.luck,
-				"defense": unit.defense,
-				"resistance": unit.resistance,
-				"movement": unit.movement,
-				"experience": unit.experience,
-			})
-	return party_data
+		if unit.has_method("to_dict"):
+			party_data.append(unit.to_dict())
+	
+	# Serialize Dungeon State logic can be improved later
+	# Since GameManager active_dungeon_rooms is an array of Resources, we need to handle it deep
+	# For now, let's focus on Party and Resources
+	
+	return {
+		"is_run_active": GameManager.is_run_active,
+		"current_floor": GameManager.current_floor,
+		"gold": GameManager.gold,
+		"food": GameManager.food,
+		"morale": GameManager.morale,
+		"party": party_data,
+		"battles_won": GameManager.battles_won,
+		"units_lost": GameManager.units_lost,
+		"last_battle_victory": GameManager.last_battle_victory
+		# "dungeon_state": ... (Complex, needs its own handler)
+	}
 
-
-## Deserialize party from save data
-func _deserialize_party(party_data: Array) -> void:
+func _deserialize_game_manager(data: Dictionary) -> void:
+	if data.is_empty():
+		return
+		
+	GameManager.is_run_active = data.get("is_run_active", false)
+	GameManager.current_floor = data.get("current_floor", 1)
+	GameManager.gold = data.get("gold", 0)
+	GameManager.food = data.get("food", 0)
+	GameManager.morale = data.get("morale", 100)
+	GameManager.battles_won = data.get("battles_won", 0)
+	GameManager.units_lost = data.get("units_lost", 0)
+	GameManager.last_battle_victory = data.get("last_battle_victory", false)
+	
+	# Reconstruct Party
 	GameManager.party.clear()
-	for unit_dict in party_data:
+	var party_raw = data.get("party", [])
+	for unit_dict in party_raw:
 		var unit = UnitData.new()
-		unit.unit_name = unit_dict.get("name", "Unknown")
-		unit.unit_class = unit_dict.get("class", "Fighter")
-		unit.level = unit_dict.get("level", 1)
-		unit.current_hp = unit_dict.get("current_hp", 20)
-		unit.max_hp = unit_dict.get("max_hp", 20)
-		unit.strength = unit_dict.get("strength", 5)
-		unit.magic = unit_dict.get("magic", 0)
-		unit.skill = unit_dict.get("skill", 5)
-		unit.speed = unit_dict.get("speed", 5)
-		unit.luck = unit_dict.get("luck", 5)
-		unit.defense = unit_dict.get("defense", 5)
-		unit.resistance = unit_dict.get("resistance", 2)
-		unit.movement = unit_dict.get("movement", 5)
-		unit.experience = unit_dict.get("experience", 0)
+		unit.from_dict(unit_dict)
 		GameManager.party.append(unit)
+	
+	GameManager.party_changed.emit()
+	GameManager.resources_changed.emit()

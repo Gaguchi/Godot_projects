@@ -4,6 +4,10 @@ extends Node2D
 
 signal battle_finished(victory: bool)
 
+## Debug Flags
+const DEBUG_SPAWN = true
+const DEBUG_COMBAT = true
+
 enum BattleState {
 	PLAYER_TURN,
 	ENEMY_TURN,
@@ -25,6 +29,7 @@ const GRID_HEIGHT: int = 10
 @onready var action_menu: PanelContainer = $UI/ActionMenu
 @onready var combat_forecast: PanelContainer = $UI/CombatForecast
 
+var UnitScene = preload("res://scenes/units/unit.tscn")
 var DamageNumberScene = preload("res://scenes/ui/damage_number.tscn")
 
 var current_state: BattleState = BattleState.PLAYER_TURN
@@ -48,6 +53,14 @@ var last_hover_tile: Vector2i = Vector2i(-1, -1)
 func _ready() -> void:
 	_setup_pathfinding()
 	_connect_ui_signals()
+	_clear_placeholder_units()
+	
+	# Ensure units exist for debugging/first load
+	GameManager.ensure_party()
+	
+	_spawn_party_units()
+	_spawn_enemy_units()
+	
 	# Wait for parent scene to initialize units
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -196,8 +209,27 @@ func _enemy_act(enemy: Node2D) -> void:
 		var direction = (target_pos - enemy_pos).sign()
 		var move_range = enemy.get_unit_data().movement
 		var new_pos = enemy_pos + direction * min(move_range, distance - 1)
+		
+		# Prevent moving into occupied tiles
+		if _get_unit_at(new_pos) != null:
+			# Try horizontal or vertical only if diagonal is blocked
+			var alt_pos = enemy_pos + Vector2i(direction.x, 0)
+			if _get_unit_at(alt_pos) == null and _is_tile_walkable(alt_pos):
+				new_pos = alt_pos
+			else:
+				alt_pos = enemy_pos + Vector2i(0, direction.y)
+				if _get_unit_at(alt_pos) == null and _is_tile_walkable(alt_pos):
+					new_pos = alt_pos
+				else:
+					# Stay put if blocked
+					new_pos = enemy_pos
+		
 		new_pos = new_pos.clamp(Vector2i.ZERO, Vector2i(GRID_WIDTH - 1, GRID_HEIGHT - 1))
-		enemy.position = grid_to_world(new_pos)
+		
+		if new_pos != enemy_pos:
+			await _move_unit_animated(enemy, new_pos)
+		else:
+			print("[Battlefield] Enemy blocked, staying at %s" % enemy_pos)
 
 
 func _find_nearest_unit(from_unit: Node2D, unit_list: Array) -> Node2D:
@@ -247,8 +279,21 @@ func _end_battle(victory: bool) -> void:
 	if victory:
 		GameManager.battles_won += 1
 	
+	GameManager.last_battle_victory = victory
+	
 	EventBus.battle_ended.emit(victory)
 	battle_finished.emit(victory)
+	
+	await get_tree().create_timer(2.0).timeout
+	
+	if victory:
+		# Return to dungeon map
+		SceneLoader.change_scene_to_file("res://scenes/dungeon/dungeon_map.tscn")
+	else:
+		# Game Over or Run Ended
+		print("[Battlefield] Defeat... Run Ended")
+		GameManager.end_run(false)
+		SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
 
 
 func _input(event: InputEvent) -> void:
@@ -258,9 +303,11 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var click_pos = get_global_mouse_position()
 		var grid_pos = world_to_grid(click_pos)
+		print("[Battlefield] INPUT: Click at World %s -> Grid %s" % [click_pos, grid_pos])
 		_handle_click(grid_pos)
 	
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		print("[Battlefield] INPUT: Right Click (Deselect)")
 		_deselect_unit()
 
 
@@ -274,25 +321,55 @@ func _handle_click(grid_pos: Vector2i) -> void:
 	
 	if clicked_unit:
 		var clicked_data = clicked_unit.get_unit_data()
+		print("[Battlefield] Clicked Unit: %s (%s)" % [clicked_data.unit_name, "Player" if clicked_data.is_player_unit else "Enemy"])
+		
 		if clicked_data.is_player_unit:
 			_select_unit(clicked_unit)
 		else:
 			# Clicked on enemy - check if we can attack them
-			if selected_unit and grid_pos in attackable_tiles:
-				# Direct attack without moving!
-				attacking_unit = selected_unit
-				var attacker = selected_unit
-				_deselect_unit()
-				await _execute_combat(attacker, clicked_unit)
-				units_acted.append(attacker)
-				if not _check_battle_end():
-					_check_turn_end()
+			if selected_unit:
+				if grid_pos in attackable_tiles:
+					print("[Battlefield] Enemy is in immediate attack range. Attacking!")
+					# Direct attack without moving!
+					attacking_unit = selected_unit
+					var attacker = selected_unit
+					_deselect_unit()
+					await _execute_combat(attacker, clicked_unit)
+					units_acted.append(attacker)
+					if not _check_battle_end():
+						_check_turn_end()
+				elif grid_pos in attack_range_tiles:
+					print("[Battlefield] Enemy is in COMBINED range (Move+Attack). Executing Move-Then-Attack.")
+					# Find the best tile to move to
+					var move_tile = _find_attack_position(selected_unit, clicked_unit)
+					if move_tile != Vector2i(-1, -1):
+						# Move
+						await _move_unit_animated(selected_unit, move_tile)
+						# Attack
+						attacking_unit = selected_unit
+						var attacker = selected_unit
+						_deselect_unit()
+						await _execute_combat(attacker, clicked_unit)
+						units_acted.append(attacker)
+						if not _check_battle_end():
+							_check_turn_end()
+					else:
+						print("[Battlefield] Could not find valid attack position!")
+						_show_unit_info(clicked_unit)
+				else:
+					print("[Battlefield] Enemy is out of range.")
+					_show_unit_info(clicked_unit)
 			else:
 				# Just show enemy stats
+				print("[Battlefield] No unit selected. Showing enemy info.")
 				_show_unit_info(clicked_unit)
 	elif selected_unit and grid_pos in walkable_tiles:
 		# Move selected unit
+		print("[Battlefield] Clicked valid movement tile.")
 		_move_unit(selected_unit, grid_pos)
+	elif selected_unit:
+		print("[Battlefield] Clicked invalid tile (or outside move range). Deselecting.")
+		_deselect_unit()
 
 
 func _select_unit(unit: Node2D) -> void:
@@ -521,8 +598,9 @@ func _calculate_combined_attack_range(unit: Node2D) -> void:
 
 func _move_unit(unit: Node2D, target: Vector2i) -> void:
 	var old_pos = world_to_grid(unit.position)
-	unit.position = grid_to_world(target)
-	EventBus.unit_moved.emit(unit, old_pos, target)
+	print("[Battlefield] Moving unit '%s' from %s to %s" % [unit.get_unit_data().unit_name, old_pos, target])
+	
+	await _move_unit_animated(unit, target)
 	
 	# Show action menu
 	_show_action_menu(unit)
@@ -568,6 +646,64 @@ func _calculate_attack_range(unit: Node2D) -> void:
 					var target = _get_unit_at(tile)
 					if target and not target.get_unit_data().is_player_unit:
 						attackable_tiles.append(tile)
+
+
+## Find a valid tile to move to that allows attacking the target
+func _find_attack_position(attacker: Node2D, target: Node2D) -> Vector2i:
+	var target_pos = world_to_grid(target.position)
+	var best_pos = Vector2i(-1, -1)
+	var min_cost = INF
+	
+	var weapon = attacker.get_unit_data().equipped_weapon
+	var min_range = 1
+	var max_range = 1
+	if weapon and weapon is ItemData:
+		min_range = weapon.range_min
+		max_range = weapon.range_max
+		
+	# Check all walkable tiles
+	for tile in walkable_tiles:
+		# Calculate distance to target from this tile
+		var dist = abs(tile.x - target_pos.x) + abs(tile.y - target_pos.y)
+		
+		# If tile allows attacking
+		if dist >= min_range and dist <= max_range:
+			# Prioritize tiles closer to current position (less movement)
+			var move_cost = abs(tile.x - world_to_grid(attacker.position).x) + abs(tile.y - world_to_grid(attacker.position).y)
+			if move_cost < min_cost:
+				min_cost = move_cost
+				best_pos = tile
+				
+	return best_pos
+
+
+## Move unit with a path-following animation
+func _move_unit_animated(unit: Node2D, target: Vector2i) -> void:
+	var start_pos = world_to_grid(unit.position)
+	print("[Battlefield] Animating move for '%s' from %s to %s" % [unit.get_unit_data().unit_name, start_pos, target])
+	
+	# Clean up obstacles for pathfinding (temporarily ignore self)
+	_update_astar_obstacles()
+	
+	var path = astar.get_id_path(start_pos, target)
+	if path.is_empty():
+		push_warning("[Battlefield] No path found for animation! Teleporting.")
+		unit.position = grid_to_world(target)
+		EventBus.unit_moved.emit(unit, start_pos, target)
+		return
+		
+	# Animate along path
+	for point in path:
+		# Skip start point (already there)
+		if point == start_pos:
+			continue
+			
+		var world_target = grid_to_world(point)
+		var tween = create_tween()
+		tween.tween_property(unit, "position", world_target, 0.2).set_trans(Tween.TRANS_LINEAR)
+		await tween.finished
+	
+	EventBus.unit_moved.emit(unit, start_pos, target)
 
 
 func _on_attack_pressed() -> void:
@@ -630,7 +766,13 @@ func _execute_combat(attacker: Node2D, defender: Node2D) -> void:
 		defender.get_unit_data()
 	)
 	
+	print("[Battlefield] Combat Forecast:")
+	print("  Attacker: %s (HP: %d)" % [attacker.get_unit_data().unit_name, attacker.get_unit_data().current_hp])
+	print("  Defender: %s (HP: %d)" % [defender.get_unit_data().unit_name, defender.get_unit_data().current_hp])
+	print("  Hit Chance: %d%%, Dmg: %d, Crit: %d%%" % [forecast.attacker_hit, forecast.attacker_damage, forecast.attacker_crit])
+	
 	var result = CombatManager.execute_combat(forecast)
+	print("[Battlefield] Combat Result: AttackerAlive=%s, DefenderAlive=%s" % [result.attacker_alive, result.defender_alive])
 	
 	# Show damage numbers with delays for visual feedback
 	for entry in result.log:
@@ -673,6 +815,9 @@ func _execute_combat(attacker: Node2D, defender: Node2D) -> void:
 
 ## Spawn a floating damage number
 func _spawn_damage_number(world_pos: Vector2, damage: int, is_crit: bool, is_miss: bool) -> void:
+	var type_str = "MISS" if is_miss else ("CRIT" if is_crit else "HIT")
+	print("[Battlefield] Visual Effect: %s for %d at %s" % [type_str, damage, world_pos])
+	
 	var dmg_num = DamageNumberScene.instantiate()
 	dmg_num.damage_value = damage
 	dmg_num.is_critical = is_crit
@@ -719,3 +864,100 @@ func world_to_grid(world_pos: Vector2) -> Vector2i:
 ## Convert grid coordinates to world position (center of tile)
 func grid_to_world(grid_pos: Vector2i) -> Vector2:
 	return Vector2(grid_pos.x * TILE_SIZE + TILE_SIZE / 2, grid_pos.y * TILE_SIZE + TILE_SIZE / 2)
+
+
+# --- Unit Spawning ---
+
+func _clear_placeholder_units() -> void:
+	for child in units_container.get_children():
+		child.queue_free()
+
+func _spawn_party_units() -> void:
+	print("\n[Battlefield] --- Spawning Party Units ---")
+	print("[Battlefield] Party size in GameManager: ", GameManager.party.size())
+	
+	var spawn_points = [
+		Vector2i(1, 4), Vector2i(1, 5), Vector2i(1, 6),
+		Vector2i(0, 4), Vector2i(0, 5), Vector2i(0, 6)
+	]
+	
+	for i in range(GameManager.party.size()):
+		if i >= spawn_points.size():
+			push_warning("[Battlefield] Not enough spawn points for party member %d" % i)
+			break
+			
+		var unit_data = GameManager.party[i]
+		if unit_data == null:
+			push_error("[Battlefield] Party index %d is NULL!" % i)
+			continue
+			
+		if not unit_data.is_alive():
+			print("[Battlefield] Skipping dead unit: %s" % unit_data.unit_name)
+			continue
+			
+		var target_grid_pos = spawn_points[i]
+		
+		# OVERLAP CHECK
+		var existing = _get_unit_at(target_grid_pos)
+		if existing:
+			push_error("[Battlefield] CRITICAL: Overlap detected at %s! Existing: %s, New: %s" % [target_grid_pos, existing.name, unit_data.unit_name])
+			
+		var unit = UnitScene.instantiate()
+		unit.unit_data = unit_data
+		unit.position = grid_to_world(target_grid_pos)
+		
+		units_container.add_child(unit)
+		print("[Battlefield] Spawned Party Unit '%s': Grid=%s World=%s" % [unit_data.unit_name, target_grid_pos, unit.position])
+	print("[Battlefield] --- Party Spawn Complete ---\n")
+
+func _spawn_enemy_units() -> void:
+	print("\n[Battlefield] --- Spawning Enemy Units ---")
+	var difficulty = GameManager.active_dungeon_difficulty if GameManager.has_active_dungeon_state() else 1
+	var num_enemies = 2 + difficulty
+	print("[Battlefield] Difficulty: %d, Spawning %d enemies" % [difficulty, num_enemies])
+	
+	var enemy_spawns = []
+	for x in range(GRID_WIDTH - 3, GRID_WIDTH):
+		for y in range(GRID_HEIGHT):
+			enemy_spawns.append(Vector2i(x, y))
+	enemy_spawns.shuffle()
+	
+	var valid_spawns = 0
+	for i in range(enemy_spawns.size()):
+		if valid_spawns >= num_enemies:
+			break
+			
+		var target_grid_pos = enemy_spawns[i]
+		
+		# OVERLAP CHECK
+		var existing = _get_unit_at(target_grid_pos)
+		if existing:
+			print("[Battlefield] Skipping spawn at %s - Occupied by %s" % [target_grid_pos, existing.name])
+			continue
+			
+		var unit = UnitScene.instantiate()
+		# Create temporary enemy data
+		var enemy_data = UnitData.new()
+		enemy_data.unit_name = "Enemy %d" % (valid_spawns + 1)
+		enemy_data.is_player_unit = false
+		enemy_data.max_hp = 15 + (difficulty * 2)
+		enemy_data.current_hp = enemy_data.max_hp
+		enemy_data.strength = 3 + difficulty
+		enemy_data.defense = 1 + (difficulty / 2)
+		
+		# Give a weapon
+		var weapon = ItemData.new()
+		weapon.weapon_type = randi() % 3 # Sword, Lance, Axe
+		weapon.might = 3
+		weapon.hit = 80
+		weapon.range_max = 1
+		enemy_data.equipped_weapon = weapon
+		
+		unit.unit_data = enemy_data
+		unit.position = grid_to_world(target_grid_pos)
+		
+		units_container.add_child(unit)
+		print("[Battlefield] Spawned Enemy Unit '%s': Grid=%s World=%s" % [enemy_data.unit_name, target_grid_pos, unit.position])
+		valid_spawns += 1
+		
+	print("[Battlefield] --- Enemy Spawn Complete ---\n")

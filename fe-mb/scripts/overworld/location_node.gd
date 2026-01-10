@@ -28,7 +28,8 @@ func _draw() -> void:
 	if is_threatened:
 		base_color = base_color.lerp(Color.DARK_RED, 0.5)
 	elif not is_reachable and not is_current:
-		base_color = base_color.darkened(0.5)
+		# Just slightly darker to indicate not immediately connected, but still visible
+		base_color = base_color.darkened(0.3)
 	
 	# Draw outer ring
 	var ring_color = Color.WHITE if is_current else (Color.YELLOW if is_hovered else Color(0.3, 0.3, 0.3))
@@ -44,7 +45,7 @@ func _draw() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if is_hovered and is_reachable:
+		if is_hovered:
 			location_clicked.emit(location_data)
 
 

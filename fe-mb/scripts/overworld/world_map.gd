@@ -15,6 +15,11 @@ const LocationNodeScene = preload("res://scenes/overworld/location_node.tscn")
 @onready var travel_btn: Button = $UI/InfoPanel/VBox/TravelBtn
 @onready var resources_label: Label = $UI/ResourcesPanel/Resources
 @onready var threat_indicator: Label = $UI/ThreatIndicator
+# save_btn created dynamically in code, no @onready needed here or simple var
+var save_btn: Button = null
+
+var save_load_menu_scene = preload("res://scenes/ui/save_load_menu.tscn")
+var save_load_menu: Control = null
 
 # Map state
 var current_region: int = 0
@@ -22,6 +27,8 @@ var locations: Array[LocationData] = []
 var location_nodes: Dictionary = {}  # id -> LocationNode
 var current_location_id: int = 0
 var selected_location: LocationData = null
+var current_travel_path: Array[LocationData] = []
+var current_path_cost: int = 0
 
 # Threat system
 var threat_position: int = 0  # How many turns before threat catches up
@@ -41,6 +48,23 @@ func _ready() -> void:
 
 func _connect_ui_signals() -> void:
 	travel_btn.pressed.connect(_on_travel_pressed)
+	
+	# Instantiate Save UI if not present
+	if not save_load_menu:
+		save_load_menu = save_load_menu_scene.instantiate()
+		$UI.add_child(save_load_menu)
+		save_load_menu.hide()
+		save_load_menu.close_requested.connect(_on_menu_closed)
+		save_load_menu.slot_selected.connect(_on_slot_selected)
+		
+	# Create Save Button dynamically for now (easier than editing scene file blindly)
+	# Actually, best practice is to add it to the UI panel.
+	# Let's verify if we can add it safely.
+	var vbox = $UI/InfoPanel/VBox
+	save_btn = Button.new()
+	save_btn.text = "Save Game"
+	save_btn.pressed.connect(_on_save_pressed)
+	vbox.add_child(save_btn)
 
 
 ## Current region data
@@ -135,40 +159,93 @@ func _show_location_info(loc: LocationData) -> void:
 	var type_names = ["Town", "Battle", "Event", "Camp", "Dungeon", "Exit"]
 	location_type_label.text = "Type: %s" % type_names[loc.location_type]
 	
-	# Can only travel if connected to current location
-	var current_loc = _get_location_by_id(current_location_id)
-	var can_travel = loc.id in current_loc.connected_locations and supplies > 0
+	# Calculate path to target
+	var path_result = _find_path(current_location_id, loc.id)
+	current_travel_path = path_result.path
+	current_path_cost = path_result.cost
+	
+	var can_travel = not current_travel_path.is_empty() and supplies >= current_path_cost
 	travel_btn.disabled = not can_travel
-	travel_btn.text = "Travel (1 Supply)" if can_travel else "Cannot Travel"
+	
+	if can_travel:
+		travel_btn.text = "Travel (%d Supply)" % current_path_cost
+	elif current_travel_path.is_empty():
+		travel_btn.text = "Unreachable"
+	else:
+		travel_btn.text = "Need %d Supply" % current_path_cost
 
 
 func _on_travel_pressed() -> void:
 	if not selected_location:
 		return
 	
-	# Check supplies
-	if supplies <= 0:
-		print("[WorldMap] No supplies!")
+	if supplies < current_path_cost:
+		print("[WorldMap] Not enough supplies!")
 		return
+		
+	# Start travel sequence
+	ui_panel.visible = false
 	
 	# Consume supply
-	supplies -= 1
+	supplies -= current_path_cost
 	_update_resources_display()
 	
 	# Advance threat
-	threat_position += 1
+	threat_position += current_path_cost
 	_update_threat_display()
 	
-	# Move to new location
-	var old_id = current_location_id
-	current_location_id = selected_location.id
-	selected_location.visited = true
+	# Move step by step
+	for next_loc in current_travel_path:
+		var old_id = current_location_id
+		current_location_id = next_loc.id
+		
+		# Animate movement (visual only, quick tween)
+		# TODO: Add player pawn animation here?
+		
+		# Wait a bit between steps
+		await get_tree().create_timer(0.3).timeout
+		
+		# Update UI state
+		next_loc.visited = true
+		_update_reachable_locations()
+		
+		travel_started.emit(_get_location_by_id(old_id), next_loc)
 	
-	travel_started.emit(_get_location_by_id(old_id), selected_location)
-	_update_reachable_locations()
-	
-	# Trigger location event
+	# Trigger event at final destination
 	_trigger_location_event(selected_location)
+
+
+func _find_path(from_id: int, to_id: int) -> Dictionary:
+	if from_id == to_id:
+		return {"path": [], "cost": 0}
+		
+	# BFS
+	var queue = [[from_id]]
+	var visited = {from_id: true}
+	
+	while not queue.is_empty():
+		var path = queue.pop_front()
+		var current = path.back()
+		
+		if current == to_id:
+			# Convert IDs to LocationData, skipping the start node
+			var loc_path: Array[LocationData] = []
+			for i in range(1, path.size()):
+				loc_path.append(_get_location_by_id(path[i]))
+			return {"path": loc_path, "cost": loc_path.size()}
+			
+		var current_loc = _get_location_by_id(current)
+		if not current_loc:
+			continue
+			
+		for neighbor_id in current_loc.connected_locations:
+			if neighbor_id not in visited:
+				visited[neighbor_id] = true
+				var new_path = path.duplicate()
+				new_path.append(neighbor_id)
+				queue.append(new_path)
+				
+	return {"path": [], "cost": 999}
 
 
 func _trigger_location_event(loc: LocationData) -> void:
@@ -198,7 +275,7 @@ func _trigger_location_event(loc: LocationData) -> void:
 			print("[WorldMap] Entering dungeon...")
 			var difficulty = current_region_data.difficulty if current_region_data else 1
 			GameManager.enter_dungeon(difficulty)
-			get_tree().change_scene_to_file("res://scenes/dungeon/dungeon_map.tscn")
+			SceneLoader.change_scene_to_file("res://scenes/dungeon/dungeon_map.tscn")
 		
 		LocationData.LocationType.EXIT:
 			print("[WorldMap] Advancing to next region!")
@@ -215,6 +292,23 @@ func _trigger_location_event(loc: LocationData) -> void:
 func _update_resources_display() -> void:
 	if resources_label:
 		resources_label.text = "Supplies: %d | Gold: %d" % [supplies, gold]
+
+func _on_save_pressed() -> void:
+	save_load_menu.setup(true, "Save Progress")
+	save_load_menu.show()
+
+func _on_menu_closed() -> void:
+	save_load_menu.hide()
+
+func _on_slot_selected(slot: int) -> void:
+	if save_load_menu.is_save_mode:
+		print("[WorldMap] Saving to slot %d..." % slot)
+		SaveManager.save_game(slot)
+		save_load_menu.hide()
+		# Optional: Toast notification
+	else:
+		# Load in WorldMap? Probably unnecessary unless debugging.
+		pass
 
 
 func _update_threat_display() -> void:
