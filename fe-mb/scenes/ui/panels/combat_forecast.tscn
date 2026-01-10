@@ -1,0 +1,113 @@
+[gd_scene load_steps=5 format=3 uid="uid://combat_forecast_scene"]
+
+[ext_resource type="Script" path="res://scenes/ui/panels/combat_forecast.gd" id="1_script"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_accent.tres" id="2_panel"]
+[ext_resource type="PackedScene" uid="uid://health_bar_scene" path="res://scenes/ui/components/health_bar.tscn" id="3_healthbar"]
+[ext_resource type="PackedScene" uid="uid://stat_row_scene" path="res://scenes/ui/components/stat_row.tscn" id="4_statrow"]
+
+[node name="CombatForecast" type="PanelContainer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("2_panel")
+script = ExtResource("1_script")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "COMBAT FORECAST"
+horizontal_alignment = 1
+
+[node name="ContentHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 15
+
+[node name="AttackerContainer" type="VBoxContainer" parent="VBoxContainer/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameLabel" type="Label" parent="VBoxContainer/ContentHBox/AttackerContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Attacker Name"
+horizontal_alignment = 1
+
+[node name="HealthBar" parent="VBoxContainer/ContentHBox/AttackerContainer" instance=ExtResource("3_healthbar")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DmgStat" parent="VBoxContainer/ContentHBox/AttackerContainer" instance=ExtResource("4_statrow")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HitStat" parent="VBoxContainer/ContentHBox/AttackerContainer" instance=ExtResource("4_statrow")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CritStat" parent="VBoxContainer/ContentHBox/AttackerContainer" instance=ExtResource("4_statrow")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VSeparator" type="VSeparator" parent="VBoxContainer/ContentHBox"]
+layout_mode = 2
+
+[node name="CenterContainer" type="VBoxContainer" parent="VBoxContainer/ContentHBox"]
+layout_mode = 2
+
+[node name="VSeparator2" type="VSeparator" parent="VBoxContainer/ContentHBox"]
+layout_mode = 2
+
+[node name="DefenderContainer" type="VBoxContainer" parent="VBoxContainer/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DefNameLabel" type="Label" parent="VBoxContainer/ContentHBox/DefenderContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Defender Name"
+horizontal_alignment = 1
+
+[node name="DefHealthBar" parent="VBoxContainer/ContentHBox/DefenderContainer" instance=ExtResource("3_healthbar")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DefDmgStat" parent="VBoxContainer/ContentHBox/DefenderContainer" instance=ExtResource("4_statrow")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DefHitStat" parent="VBoxContainer/ContentHBox/DefenderContainer" instance=ExtResource("4_statrow")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DefCritStat" parent="VBoxContainer/ContentHBox/DefenderContainer" instance=ExtResource("4_statrow")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ButtonsHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="AttackButton" type="Button" parent="VBoxContainer/ButtonsHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 30)
+layout_mode = 2
+text = "ATTACK"
+
+[node name="CancelButton" type="Button" parent="VBoxContainer/ButtonsHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 30)
+layout_mode = 2
+text = "CANCEL"

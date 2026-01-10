@@ -1,0 +1,96 @@
+[gd_scene load_steps=2 format=3 uid="uid://world_map_001"]
+
+[ext_resource type="Script" path="res://scripts/overworld/world_map.gd" id="1_worldmap"]
+
+[node name="WorldMap" type="Node2D"]
+script = ExtResource("1_worldmap")
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -10
+offset_right = 800.0
+offset_bottom = 500.0
+color = Color(0.15, 0.12, 0.1, 1)
+
+[node name="Connections" type="Node2D" parent="."]
+z_index = 1
+
+[node name="Locations" type="Node2D" parent="."]
+z_index = 5
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TitleLabel" type="Label" parent="UI"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 300.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 24
+text = "World Map"
+
+[node name="ResourcesPanel" type="PanelContainer" parent="UI"]
+offset_left = 300.0
+offset_top = 5.0
+offset_right = 550.0
+offset_bottom = 40.0
+
+[node name="Resources" type="Label" parent="UI/ResourcesPanel"]
+layout_mode = 2
+text = "Supplies: 10 | Gold: 50"
+horizontal_alignment = 1
+
+[node name="ThreatIndicator" type="Label" parent="UI"]
+offset_left = 600.0
+offset_top = 10.0
+offset_right = 790.0
+offset_bottom = 40.0
+theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 16
+text = "Threat: 12 turns"
+horizontal_alignment = 2
+
+[node name="InfoPanel" type="PanelContainer" parent="UI"]
+visible = false
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -150.0
+offset_right = 220.0
+offset_bottom = -10.0
+grow_vertical = 0
+
+[node name="VBox" type="VBoxContainer" parent="UI/InfoPanel"]
+layout_mode = 2
+
+[node name="LocationName" type="Label" parent="UI/InfoPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Location Name"
+
+[node name="LocationType" type="Label" parent="UI/InfoPanel/VBox"]
+layout_mode = 2
+text = "Type: Battle"
+
+[node name="HSeparator" type="HSeparator" parent="UI/InfoPanel/VBox"]
+layout_mode = 2
+
+[node name="TravelBtn" type="Button" parent="UI/InfoPanel/VBox"]
+layout_mode = 2
+text = "Travel (1 Supply)"
+
+[node name="Instructions" type="Label" parent="UI"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -30.0
+offset_right = 150.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 12
+text = "Click a connected location to see info, then Travel"
+horizontal_alignment = 1

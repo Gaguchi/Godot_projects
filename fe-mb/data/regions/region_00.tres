@@ -1,0 +1,87 @@
+[gd_resource type="Resource" script_class="RegionData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/region_data.gd" id="1_region"]
+[ext_resource type="Script" path="res://scripts/resources/location_data.gd" id="2_location"]
+
+[sub_resource type="Resource" id="loc_0"]
+script = ExtResource("2_location")
+id = 0
+location_name = "Starting Camp"
+location_type = 3
+position = Vector2(60, 250)
+connected_locations = [1, 2]
+visited = true
+revealed = true
+
+[sub_resource type="Resource" id="loc_1"]
+script = ExtResource("2_location")
+id = 1
+location_name = "Northern Ridge"
+location_type = 1
+position = Vector2(200, 120)
+connected_locations = [0, 3]
+revealed = true
+
+[sub_resource type="Resource" id="loc_2"]
+script = ExtResource("2_location")
+id = 2
+location_name = "Southern Path"
+location_type = 2
+position = Vector2(200, 380)
+connected_locations = [0, 4]
+revealed = true
+
+[sub_resource type="Resource" id="loc_3"]
+script = ExtResource("2_location")
+id = 3
+location_name = "Trading Post"
+location_type = 0
+position = Vector2(400, 180)
+connected_locations = [1, 5, 6]
+revealed = true
+
+[sub_resource type="Resource" id="loc_4"]
+script = ExtResource("2_location")
+id = 4
+location_name = "Dark Cavern"
+location_type = 4
+position = Vector2(400, 320)
+connected_locations = [2, 5, 6]
+revealed = true
+
+[sub_resource type="Resource" id="loc_5"]
+script = ExtResource("2_location")
+id = 5
+location_name = "Abandoned Shrine"
+location_type = 2
+position = Vector2(570, 250)
+connected_locations = [3, 4, 7]
+revealed = true
+
+[sub_resource type="Resource" id="loc_6"]
+script = ExtResource("2_location")
+id = 6
+location_name = "Rest Stop"
+location_type = 3
+position = Vector2(570, 400)
+connected_locations = [3, 4, 7]
+revealed = true
+
+[sub_resource type="Resource" id="loc_7"]
+script = ExtResource("2_location")
+id = 7
+location_name = "Region Exit"
+location_type = 5
+position = Vector2(740, 310)
+connected_locations = [5, 6]
+revealed = true
+
+[resource]
+script = ExtResource("1_region")
+region_id = 0
+region_name = "The Darklands"
+region_description = "A desolate region on the border of the kingdom."
+background_color = Color(0.15, 0.12, 0.1, 1)
+locations = [SubResource("loc_0"), SubResource("loc_1"), SubResource("loc_2"), SubResource("loc_3"), SubResource("loc_4"), SubResource("loc_5"), SubResource("loc_6"), SubResource("loc_7")]
+threat_turns = 12
+difficulty = 1

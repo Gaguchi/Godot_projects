@@ -1,0 +1,35 @@
+[gd_scene load_steps=6 format=3 uid="uid://health_bar_scene"]
+
+[ext_resource type="Script" path="res://scenes/ui/components/health_bar.gd" id="1_script"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/healthbar_bg.tres" id="2_bg"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/healthbar_white.tres" id="3_fill_white"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/healthbar_fill.tres" id="4_fill_red"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1"]
+
+[node name="HealthBar" type="ProgressBar"]
+custom_minimum_size = Vector2(50, 8)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -590.0
+offset_bottom = -472.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/background = ExtResource("2_bg")
+theme_override_styles/fill = ExtResource("3_fill_white")
+value = 100.0
+show_percentage = false
+script = ExtResource("1_script")
+
+[node name="ActualBar" type="ProgressBar" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/background = SubResource("StyleBoxEmpty_1")
+theme_override_styles/fill = ExtResource("4_fill_red")
+value = 75.0
+show_percentage = false

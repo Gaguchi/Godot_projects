@@ -1,0 +1,185 @@
+[gd_scene load_steps=3 format=3 uid="uid://battlefield001"]
+
+[ext_resource type="Script" path="res://scripts/combat/battlefield.gd" id="1_battlefield"]
+[ext_resource type="Script" path="res://scripts/combat/grid_overlay.gd" id="2_grid_overlay"]
+
+[node name="Battlefield" type="Node2D"]
+script = ExtResource("1_battlefield")
+
+[node name="TileMapLayer" type="TileMapLayer" parent="."]
+position = Vector2(0, 0)
+
+[node name="GridOverlay" type="Node2D" parent="."]
+script = ExtResource("2_grid_overlay")
+
+[node name="Units" type="Node2D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TurnBanner" type="Label" parent="UI"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 50.0
+offset_right = 150.0
+offset_bottom = 100.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 32
+text = "Player Phase"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="UnitInfo" type="PanelContainer" parent="UI"]
+visible = false
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -120.0
+offset_right = 200.0
+offset_bottom = -10.0
+grow_vertical = 0
+
+[node name="VBox" type="VBoxContainer" parent="UI/UnitInfo"]
+layout_mode = 2
+
+[node name="UnitName" type="Label" parent="UI/UnitInfo/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Unit Name"
+
+[node name="UnitClass" type="Label" parent="UI/UnitInfo/VBox"]
+layout_mode = 2
+text = "Class: Fighter"
+
+[node name="HPBar" type="ProgressBar" parent="UI/UnitInfo/VBox"]
+layout_mode = 2
+max_value = 20.0
+value = 20.0
+show_percentage = false
+
+[node name="HPLabel" type="Label" parent="UI/UnitInfo/VBox"]
+layout_mode = 2
+text = "HP: 20/20"
+
+[node name="ActionMenu" type="PanelContainer" parent="UI"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -60.0
+offset_top = -50.0
+offset_right = 60.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/ActionMenu"]
+layout_mode = 2
+
+[node name="AttackBtn" type="Button" parent="UI/ActionMenu/VBox"]
+layout_mode = 2
+text = "Attack"
+
+[node name="WaitBtn" type="Button" parent="UI/ActionMenu/VBox"]
+layout_mode = 2
+text = "Wait"
+
+[node name="ItemBtn" type="Button" parent="UI/ActionMenu/VBox"]
+layout_mode = 2
+text = "Item"
+
+[node name="CombatForecast" type="PanelContainer" parent="UI"]
+visible = false
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 180.0
+grow_horizontal = 0
+
+[node name="VBox" type="VBoxContainer" parent="UI/CombatForecast"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="UI/CombatForecast/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Combat Forecast"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="UI/CombatForecast/VBox"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="UI/CombatForecast/VBox"]
+layout_mode = 2
+
+[node name="AttackerPanel" type="VBoxContainer" parent="UI/CombatForecast/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AttackerName" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.7, 1, 1)
+text = "Attacker"
+horizontal_alignment = 1
+
+[node name="AttackerHP" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
+layout_mode = 2
+text = "HP: 20"
+horizontal_alignment = 1
+
+[node name="AttackerDmg" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
+layout_mode = 2
+text = "Dmg: 5"
+horizontal_alignment = 1
+
+[node name="AttackerHit" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
+layout_mode = 2
+text = "Hit: 90%"
+horizontal_alignment = 1
+
+[node name="AttackerCrit" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
+layout_mode = 2
+text = "Crit: 5%"
+horizontal_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="UI/CombatForecast/VBox/HBox"]
+layout_mode = 2
+
+[node name="DefenderPanel" type="VBoxContainer" parent="UI/CombatForecast/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DefenderName" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+text = "Defender"
+horizontal_alignment = 1
+
+[node name="DefenderHP" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
+layout_mode = 2
+text = "HP: 18"
+horizontal_alignment = 1
+
+[node name="DefenderDmg" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
+layout_mode = 2
+text = "Dmg: 4"
+horizontal_alignment = 1
+
+[node name="DefenderHit" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
+layout_mode = 2
+text = "Hit: 75%"
+horizontal_alignment = 1
+
+[node name="DefenderCrit" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
+layout_mode = 2
+text = "Crit: 0%"
+horizontal_alignment = 1
+

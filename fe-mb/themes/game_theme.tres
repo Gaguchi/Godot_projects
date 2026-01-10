@@ -1,0 +1,20 @@
+[gd_resource type="Theme" load_steps=9 format=3]
+
+[ext_resource type="StyleBox" path="res://themes/styleboxes/button_normal.tres" id="1_btn_norm"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/button_hover.tres" id="2_btn_hov"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/button_pressed.tres" id="3_btn_press"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/button_disabled.tres" id="4_btn_dis"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_dark.tres" id="5_pan_dark"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_accent.tres" id="6_pan_accent"]
+
+[resource]
+Button/colors/font_color = Color(0.909804, 0.909804, 0.909804, 1)
+Button/colors/font_hover_color = Color(1, 1, 1, 1)
+Button/colors/font_pressed_color = Color(0.831373, 0.686275, 0.215686, 1)
+Button/styles/disabled = ExtResource("4_btn_dis")
+Button/styles/hover = ExtResource("2_btn_hov")
+Button/styles/normal = ExtResource("1_btn_norm")
+Button/styles/pressed = ExtResource("3_btn_press")
+Panel/styles/panel = ExtResource("5_pan_dark")
+PanelContainer/styles/panel = ExtResource("5_pan_dark")
+TooltipPanel/styles/panel = ExtResource("6_pan_accent")

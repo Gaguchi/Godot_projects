@@ -1,0 +1,258 @@
+extends Node2D
+## DungeonMap - Controller for Slay the Spire-style dungeon navigation
+
+signal room_entered(room_data: DungeonRoomData)
+signal floor_completed(floor_number: int)
+signal dungeon_completed()
+signal dungeon_exited()
+
+const DungeonRoomNodeScene = preload("res://scenes/dungeon/dungeon_room_node.tscn")
+
+@onready var rooms_container: Node2D = $Rooms
+@onready var connections_layer: Node2D = $Connections
+@onready var camera: Camera2D = $Camera2D
+@onready var ui_panel: PanelContainer = $UI/InfoPanel
+@onready var room_type_label: Label = $UI/InfoPanel/VBox/RoomType
+@onready var room_info_label: Label = $UI/InfoPanel/VBox/RoomInfo
+@onready var enter_btn: Button = $UI/InfoPanel/VBox/EnterBtn
+@onready var floor_label: Label = $UI/FloorLabel
+@onready var exit_btn: Button = $UI/ExitBtn
+
+# Dungeon state
+var current_floor: int = 1
+var max_floors: int = 3
+var rooms: Array[DungeonRoomData] = []
+var room_nodes: Dictionary = {}  # id -> DungeonRoomNode
+var current_room_id: int = 0
+var selected_room: DungeonRoomData = null
+
+# Dungeon parameters
+var dungeon_difficulty: int = 1
+
+
+func _ready() -> void:
+	_connect_ui_signals()
+	generate_floor()
+	_update_floor_display()
+
+
+func _connect_ui_signals() -> void:
+	enter_btn.pressed.connect(_on_enter_pressed)
+	exit_btn.pressed.connect(_on_exit_pressed)
+
+
+## Generate a new dungeon floor
+func generate_floor() -> void:
+	# Clear existing
+	for child in rooms_container.get_children():
+		child.queue_free()
+	for child in connections_layer.get_children():
+		child.queue_free()
+	room_nodes.clear()
+	
+	# Generate new rooms
+	rooms = DungeonGenerator.generate_floor(current_floor, dungeon_difficulty)
+	
+	# Create visual nodes
+	for room in rooms:
+		var node = DungeonRoomNodeScene.instantiate()
+		node.setup(room)
+		node.room_clicked.connect(_on_room_clicked)
+		node.room_hovered.connect(_on_room_hovered)
+		rooms_container.add_child(node)
+		room_nodes[room.id] = node
+	
+	# Draw connections
+	_draw_connections()
+	
+	# Set starting position (entrance room, id 0)
+	current_room_id = 0
+	_update_reachable_rooms()
+	
+	# Position camera at entrance
+	_focus_camera_on_room(0)
+	
+	print("[DungeonMap] Generated floor %d with %d rooms" % [current_floor, rooms.size()])
+
+
+func _draw_connections() -> void:
+	for room in rooms:
+		for connected_id in room.connected_rooms:
+			var other = _get_room_by_id(connected_id)
+			if other:
+				var line = Line2D.new()
+				line.add_point(room.position)
+				line.add_point(other.position)
+				line.width = 2.0
+				line.default_color = Color(0.5, 0.5, 0.5, 0.6)
+				connections_layer.add_child(line)
+
+
+func _get_room_by_id(id: int) -> DungeonRoomData:
+	for room in rooms:
+		if room.id == id:
+			return room
+	return null
+
+
+func _update_reachable_rooms() -> void:
+	var current_room = _get_room_by_id(current_room_id)
+	if not current_room:
+		return
+	
+	for id in room_nodes:
+		var node = room_nodes[id]
+		var is_connected = id in current_room.connected_rooms
+		node.set_reachable(is_connected)
+		node.set_current(id == current_room_id)
+		
+		var room = _get_room_by_id(id)
+		if room:
+			node.set_completed(room.visited and id != current_room_id)
+
+
+func _on_room_clicked(room_data: DungeonRoomData) -> void:
+	selected_room = room_data
+	_show_room_info(room_data)
+
+
+func _on_room_hovered(room_data: DungeonRoomData) -> void:
+	# Could show tooltip here
+	pass
+
+
+func _show_room_info(room: DungeonRoomData) -> void:
+	ui_panel.visible = true
+	
+	var type_names = ["Combat", "Elite", "Treasure", "Event", "Rest", "Boss", "Entrance", "Shop"]
+	room_type_label.text = "%s %s" % [room.get_icon(), type_names[room.room_type]]
+	
+	# Build info string
+	var info = ""
+	match room.room_type:
+		DungeonRoomData.RoomType.COMBAT:
+			info = "Enemies: %d\nReward: ~%d gold" % [room.enemy_count, room.gold_reward]
+		DungeonRoomData.RoomType.ELITE:
+			info = "Elite enemy!\nReward: ~%d gold" % room.gold_reward
+		DungeonRoomData.RoomType.BOSS:
+			info = "Floor Boss\nReward: ~%d gold" % room.gold_reward
+		DungeonRoomData.RoomType.TREASURE:
+			info = "Contains treasure!\nReward: ~%d gold" % room.gold_reward
+		DungeonRoomData.RoomType.REST:
+			info = "Rest and recover"
+		DungeonRoomData.RoomType.SHOP:
+			info = "Buy items and heal"
+		DungeonRoomData.RoomType.EVENT:
+			info = "Unknown encounter"
+		_:
+			info = ""
+	
+	room_info_label.text = info
+	
+	# Can only enter if connected
+	var current_room = _get_room_by_id(current_room_id)
+	var can_enter = room.id in current_room.connected_rooms
+	enter_btn.disabled = not can_enter
+	enter_btn.text = "Enter" if can_enter else "Not Reachable"
+
+
+func _on_enter_pressed() -> void:
+	if not selected_room:
+		return
+	
+	# Move to selected room
+	var old_room = _get_room_by_id(current_room_id)
+	if old_room:
+		old_room.visited = true
+	
+	current_room_id = selected_room.id
+	selected_room.visited = true
+	_update_reachable_rooms()
+	_focus_camera_on_room(current_room_id)
+	
+	# Emit signal and trigger room event
+	room_entered.emit(selected_room)
+	_trigger_room_event(selected_room)
+
+
+func _trigger_room_event(room: DungeonRoomData) -> void:
+	print("[DungeonMap] Entered room: %s" % DungeonRoomData.RoomType.keys()[room.room_type])
+	
+	match room.room_type:
+		DungeonRoomData.RoomType.COMBAT, DungeonRoomData.RoomType.ELITE:
+			print("[DungeonMap] Starting combat...")
+			# TODO: Load combat scene
+			EventBus.combat_started.emit()
+		
+		DungeonRoomData.RoomType.BOSS:
+			print("[DungeonMap] Boss battle!")
+			# TODO: Load boss combat
+			EventBus.combat_started.emit()
+		
+		DungeonRoomData.RoomType.TREASURE:
+			print("[DungeonMap] Found treasure!")
+			GameManager.add_gold(room.gold_reward)
+		
+		DungeonRoomData.RoomType.REST:
+			print("[DungeonMap] Resting...")
+			# TODO: Show rest menu
+		
+		DungeonRoomData.RoomType.SHOP:
+			print("[DungeonMap] Entering shop...")
+			# TODO: Show shop menu
+		
+		DungeonRoomData.RoomType.EVENT:
+			print("[DungeonMap] Random event!")
+			# TODO: Show event dialog
+	
+	# Check if boss defeated -> floor complete
+	if room.room_type == DungeonRoomData.RoomType.BOSS:
+		_on_floor_completed()
+	
+	ui_panel.visible = false
+
+
+func _on_floor_completed() -> void:
+	print("[DungeonMap] Floor %d completed!" % current_floor)
+	floor_completed.emit(current_floor)
+	GameManager.set_dungeon_floor(current_floor)
+	
+	if current_floor >= max_floors:
+		print("[DungeonMap] Dungeon completed!")
+		dungeon_completed.emit()
+		GameManager.exit_dungeon(true)  # Completed
+		# Return to world map
+		get_tree().change_scene_to_file("res://scenes/overworld/world_map.tscn")
+	else:
+		current_floor += 1
+		generate_floor()
+		_update_floor_display()
+
+
+func _on_exit_pressed() -> void:
+	print("[DungeonMap] Exiting dungeon...")
+	dungeon_exited.emit()
+	GameManager.exit_dungeon(false)  # Abandoned
+	# Return to world map
+	get_tree().change_scene_to_file("res://scenes/overworld/world_map.tscn")
+
+
+func _update_floor_display() -> void:
+	if floor_label:
+		floor_label.text = "Floor %d / %d" % [current_floor, max_floors]
+
+
+func _focus_camera_on_room(room_id: int) -> void:
+	var room = _get_room_by_id(room_id)
+	if room and camera:
+		var tween = create_tween()
+		tween.tween_property(camera, "position", room.position, 0.3).set_ease(Tween.EASE_OUT)
+
+
+## Initialize dungeon with parameters
+func start_dungeon(difficulty: int = 1, floors: int = 3) -> void:
+	dungeon_difficulty = difficulty
+	max_floors = floors
+	current_floor = 1
+	generate_floor()
+	_update_floor_display()

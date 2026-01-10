@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3 uid="uid://unit_scene001"]
+
+[ext_resource type="Script" path="res://scripts/units/unit.gd" id="1_unit"]
+
+[node name="Unit" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_unit")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+
+[node name="CollisionShape" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_placeholder")
+
+[node name="SelectionHighlight" type="Sprite2D" parent="."]
+visible = false
+modulate = Color(1, 1, 0, 0.5)
+z_index = -1
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_placeholder"]
+size = Vector2(28, 28)

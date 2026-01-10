@@ -1,0 +1,79 @@
+[gd_scene load_steps=6 format=3 uid="uid://world_map_ui_scene"]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/world_map_ui.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://resource_display_scene" path="res://scenes/ui/components/resource_display.tscn" id="2_resource"]
+[ext_resource type="PackedScene" uid="uid://location_info_panel_scene" path="res://scenes/ui/panels/location_info_panel.tscn" id="3_info"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_dark.tres" id="4_panel"]
+
+[node name="WorldMapUI" type="CanvasLayer"]
+script = ExtResource("1_script")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="TopBar" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_styles/panel = ExtResource("4_panel")
+
+[node name="Margin" type="MarginContainer" parent="MarginContainer/VBoxContainer/TopBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+
+[node name="ResourcesHBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer/TopBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="GoldDisplay" parent="MarginContainer/VBoxContainer/TopBar/Margin/ResourcesHBox" instance=ExtResource("2_resource")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SuppliesDisplay" parent="MarginContainer/VBoxContainer/TopBar/Margin/ResourcesHBox" instance=ExtResource("2_resource")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MoraleDisplay" parent="MarginContainer/VBoxContainer/TopBar/Margin/ResourcesHBox" instance=ExtResource("2_resource")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="BottomHBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="ThreatContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/BottomHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="ThreatLabel" type="Label" parent="MarginContainer/VBoxContainer/BottomHBox/ThreatContainer"]
+layout_mode = 2
+text = "THREAT LEVEL"
+
+[node name="ThreatBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/BottomHBox/ThreatContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+max_value = 12.0
+value = 3.0
+show_percentage = false
+
+[node name="LocationInfoPanel" parent="MarginContainer/VBoxContainer/BottomHBox" instance=ExtResource("3_info")]
+unique_name_in_owner = true
+layout_mode = 2
+visible = false

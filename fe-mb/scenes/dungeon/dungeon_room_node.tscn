@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dungeon_room_node_001"]
+
+[ext_resource type="Script" path="res://scripts/dungeon/dungeon_room_node.gd" id="1_roomnode"]
+
+[node name="DungeonRoomNode" type="Node2D"]
+script = ExtResource("1_roomnode")
