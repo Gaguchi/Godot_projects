@@ -57,6 +57,17 @@ func load_game(slot: int) -> bool:
 func has_save_file(slot: int) -> bool:
 	return FileAccess.file_exists(get_save_path(slot))
 
+func delete_save(slot: int) -> void:
+	var path = get_save_path(slot)
+	if FileAccess.file_exists(path):
+		var err = DirAccess.remove_absolute(path) # Use remove_absolute to be safe with user:// paths mapped to OS
+		if err == OK:
+			print("[SaveManager] Deleted save slot %d" % slot)
+		else:
+			printerr("[SaveManager] Failed to delete save slot %d. Error: %d" % [slot, err])
+	else:
+		print("[SaveManager] No file to delete at slot %d" % slot)
+
 ## Get metadata for a slot without loading full state
 func get_slot_metadata(slot: int) -> Dictionary:
 	var path = get_save_path(slot)
@@ -106,7 +117,9 @@ func _serialize_game_manager() -> Dictionary:
 		"party": party_data,
 		"battles_won": GameManager.battles_won,
 		"units_lost": GameManager.units_lost,
-		"last_battle_victory": GameManager.last_battle_victory
+
+		"last_battle_victory": GameManager.last_battle_victory,
+		"current_state": GameManager.current_state # Save enum as int
 		# "dungeon_state": ... (Complex, needs its own handler)
 	}
 
@@ -121,7 +134,13 @@ func _deserialize_game_manager(data: Dictionary) -> void:
 	GameManager.morale = data.get("morale", 100)
 	GameManager.battles_won = data.get("battles_won", 0)
 	GameManager.units_lost = data.get("units_lost", 0)
+
 	GameManager.last_battle_victory = data.get("last_battle_victory", false)
+	
+	# Restore State (handling potential missing key for old saves)
+	var state_val = data.get("current_state", GameManager.GameState.MAIN_MENU)
+	GameManager.current_state = state_val
+	print("[SaveManager] Restored GameState: %s" % GameManager.GameState.keys()[state_val])
 	
 	# Reconstruct Party
 	GameManager.party.clear()

@@ -1,9 +1,14 @@
-[gd_scene load_steps=3 format=3 uid="uid://unit_scene001"]
+[gd_scene load_steps=3 format=3 uid="uid://d0i3iomt6e1jj"]
 
-[ext_resource type="Script" path="res://scripts/units/unit.gd" id="1_unit"]
+[ext_resource type="Script" uid="uid://ddjkyptayw6c4" path="res://scripts/units/unit.gd" id="1_unit"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_placeholder"]
-size = Vector2(28, 28)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qgilm"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.1, 0.1, 0.1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
+bg_color = Color(0.2, 0.8, 0.2, 1)
 
 [node name="Unit" type="CharacterBody2D"]
 collision_layer = 2
@@ -13,9 +18,20 @@ script = ExtResource("1_unit")
 [node name="Sprite" type="Sprite2D" parent="."]
 
 [node name="CollisionShape" type="CollisionShape2D" parent="."]
-shape = SubResource("RectangleShape2D_placeholder")
+shape = SubResource("RectangleShape2D_qgilm")
 
 [node name="SelectionHighlight" type="Sprite2D" parent="."]
 visible = false
-z_index = -1
 modulate = Color(1, 1, 0, 0.5)
+z_index = -1
+
+[node name="OverheadHPBar" type="ProgressBar" parent="."]
+offset_left = -16.0
+offset_top = -24.0
+offset_right = 16.0
+offset_bottom = -20.0
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
+max_value = 20.0
+value = 20.0
+show_percentage = false

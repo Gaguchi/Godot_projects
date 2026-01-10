@@ -12,7 +12,7 @@ static var _regions_cache: Dictionary = {}
 static func load_region(region_index: int) -> RegionData:
 	# Check cache first
 	if region_index in _regions_cache:
-		return _regions_cache[region_index]
+		return _regions_cache[region_index].duplicate(true)
 	
 	# Try to load from file
 	var region_file = REGIONS_PATH + "region_%02d.tres" % region_index
@@ -22,7 +22,8 @@ static func load_region(region_index: int) -> RegionData:
 		if region:
 			_regions_cache[region_index] = region
 			print("[RegionLoader] Loaded region %d: %s" % [region_index, region.region_name])
-			return region
+			# Return a valid deep copy so runtime changes don't affect the cache/file
+			return region.duplicate(true)
 	
 	# Fallback to default region if file doesn't exist
 	push_warning("[RegionLoader] Region %d not found, generating fallback" % region_index)

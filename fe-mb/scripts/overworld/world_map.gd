@@ -16,10 +16,10 @@ const LocationNodeScene = preload("res://scenes/overworld/location_node.tscn")
 @onready var resources_label: Label = $UI/ResourcesPanel/Resources
 @onready var threat_indicator: Label = $UI/ThreatIndicator
 # save_btn created dynamically in code, no @onready needed here or simple var
-var save_btn: Button = null
+@onready var save_btn: Button = null # Deprecated
 
-var save_load_menu_scene = preload("res://scenes/ui/save_load_menu.tscn")
-var save_load_menu: Control = null
+var pause_menu_scene = preload("res://scenes/ui/pause_menu.tscn")
+var pause_menu: Control = null
 
 # Map state
 var current_region: int = 0
@@ -40,6 +40,9 @@ var gold: int = 50
 
 
 func _ready() -> void:
+	if GameManager.current_state != GameManager.GameState.OVERWORLD:
+		GameManager.change_state(GameManager.GameState.OVERWORLD)
+		
 	_connect_ui_signals()
 	load_current_region()
 	_update_resources_display()
@@ -49,22 +52,11 @@ func _ready() -> void:
 func _connect_ui_signals() -> void:
 	travel_btn.pressed.connect(_on_travel_pressed)
 	
-	# Instantiate Save UI if not present
-	if not save_load_menu:
-		save_load_menu = save_load_menu_scene.instantiate()
-		$UI.add_child(save_load_menu)
-		save_load_menu.hide()
-		save_load_menu.close_requested.connect(_on_menu_closed)
-		save_load_menu.slot_selected.connect(_on_slot_selected)
-		
-	# Create Save Button dynamically for now (easier than editing scene file blindly)
-	# Actually, best practice is to add it to the UI panel.
-	# Let's verify if we can add it safely.
-	var vbox = $UI/InfoPanel/VBox
-	save_btn = Button.new()
-	save_btn.text = "Save Game"
-	save_btn.pressed.connect(_on_save_pressed)
-	vbox.add_child(save_btn)
+	# Instantiate Pause Menu if not present
+	if not pause_menu:
+		pause_menu = pause_menu_scene.instantiate()
+		$UI.add_child(pause_menu)
+		pause_menu.hide()
 
 
 ## Current region data
@@ -216,8 +208,10 @@ func _on_travel_pressed() -> void:
 
 
 func _find_path(from_id: int, to_id: int) -> Dictionary:
+	var empty_path: Array[LocationData] = []
+	
 	if from_id == to_id:
-		return {"path": [], "cost": 0}
+		return {"path": empty_path, "cost": 0}
 		
 	# BFS
 	var queue = [[from_id]]
@@ -245,7 +239,7 @@ func _find_path(from_id: int, to_id: int) -> Dictionary:
 				new_path.append(neighbor_id)
 				queue.append(new_path)
 				
-	return {"path": [], "cost": 999}
+	return {"path": empty_path, "cost": 999}
 
 
 func _trigger_location_event(loc: LocationData) -> void:
@@ -274,7 +268,9 @@ func _trigger_location_event(loc: LocationData) -> void:
 		LocationData.LocationType.DUNGEON:
 			print("[WorldMap] Entering dungeon...")
 			var difficulty = current_region_data.difficulty if current_region_data else 1
+
 			GameManager.enter_dungeon(difficulty)
+			# GameManager.enter_dungeon already sets state to DUNGEON
 			SceneLoader.change_scene_to_file("res://scenes/dungeon/dungeon_map.tscn")
 		
 		LocationData.LocationType.EXIT:
@@ -293,22 +289,11 @@ func _update_resources_display() -> void:
 	if resources_label:
 		resources_label.text = "Supplies: %d | Gold: %d" % [supplies, gold]
 
-func _on_save_pressed() -> void:
-	save_load_menu.setup(true, "Save Progress")
-	save_load_menu.show()
-
-func _on_menu_closed() -> void:
-	save_load_menu.hide()
-
-func _on_slot_selected(slot: int) -> void:
-	if save_load_menu.is_save_mode:
-		print("[WorldMap] Saving to slot %d..." % slot)
-		SaveManager.save_game(slot)
-		save_load_menu.hide()
-		# Optional: Toast notification
-	else:
-		# Load in WorldMap? Probably unnecessary unless debugging.
-		pass
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		if pause_menu and not pause_menu.visible:
+			pause_menu.open()
+			get_viewport().set_input_as_handled()
 
 
 func _update_threat_display() -> void:

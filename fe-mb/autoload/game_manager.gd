@@ -8,15 +8,25 @@ signal run_started
 signal run_ended(victory: bool)
 signal dungeon_entered(difficulty: int)
 signal dungeon_exited(completed: bool)
+signal state_changed(new_state: GameState, old_state: GameState)
+
+enum GameState {
+	MAIN_MENU,
+	OVERWORLD,
+	DUNGEON,
+	COMBAT,
+	EVENT
+}
 
 # Current run state
 var is_run_active: bool = false
 var current_save_slot: int = 1
+var current_state: GameState = GameState.MAIN_MENU
 var current_floor: int = 1
 var current_node_id: int = -1
 
 # Dungeon state
-var in_dungeon: bool = false
+# var in_dungeon: bool = false # Removed in favor of current_state == DUNGEON
 var current_dungeon_floor: int = 1
 var dungeon_completed: bool = false
 
@@ -39,6 +49,16 @@ var last_battle_victory: bool = false
 
 func _ready() -> void:
 	print("[GameManager] Initialized")
+
+## Change game state
+func change_state(new_state: GameState) -> void:
+	if current_state == new_state:
+		return
+		
+	var old_state = current_state
+	current_state = new_state
+	print("[GameManager] State changed: %s -> %s" % [GameState.keys()[old_state], GameState.keys()[new_state]])
+	state_changed.emit(new_state, old_state)
 
 
 ## Start a new run with fresh state
@@ -169,7 +189,7 @@ func rest_party(heal_percentage: float = 0.3) -> void:
 
 ## Enter a dungeon
 func enter_dungeon(difficulty: int = 1) -> void:
-	in_dungeon = true
+	change_state(GameState.DUNGEON)
 	current_dungeon_floor = 1
 	dungeon_completed = false
 	dungeon_entered.emit(difficulty)
@@ -178,7 +198,7 @@ func enter_dungeon(difficulty: int = 1) -> void:
 
 ## Exit dungeon (completed or abandoned)
 func exit_dungeon(completed: bool = false) -> void:
-	in_dungeon = false
+	change_state(GameState.OVERWORLD)
 	dungeon_completed = completed
 	dungeon_exited.emit(completed)
 	if completed:

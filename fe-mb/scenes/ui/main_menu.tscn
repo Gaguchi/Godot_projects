@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3 uid="uid://bh2aljt4uy2vp"]
 
-[ext_resource type="Script" path="res://scenes/ui/main_menu.gd" id="1_script"]
-[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_dark.tres" id="2_panel"]
-[ext_resource type="PackedScene" path="res://scenes/ui/save_load_menu.tscn" id="3_saveload"]
+[ext_resource type="Script" uid="uid://bdn8xxkd0oahc" path="res://scenes/ui/main_menu.gd" id="1_script"]
+[ext_resource type="StyleBox" uid="uid://lu8s6nq7q2y2" path="res://themes/styleboxes/panel_dark.tres" id="2_panel"]
+[ext_resource type="PackedScene" uid="uid://b3evqlnvbs12b" path="res://scenes/ui/save_load_menu.tscn" id="3_saveload"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_menu.tscn" id="4_settings"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -28,12 +29,12 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -200.0
-offset_top = 80.0
+offset_top = 50.0
 offset_right = 200.0
-offset_bottom = 140.0
+offset_bottom = 117.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 48
-text = "IRON OATH PROTO"
+text = "IRON OATH"
 horizontal_alignment = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
@@ -64,7 +65,6 @@ text = "New Game"
 [node name="SettingsBtn" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-disabled = true
 text = "Settings"
 
 [node name="ExitBtn" type="Button" parent="VBoxContainer"]
@@ -90,5 +90,9 @@ text = "v0.1.0"
 horizontal_alignment = 2
 
 [node name="SaveLoadMenu" parent="." instance=ExtResource("3_saveload")]
+visible = false
+layout_mode = 1
+
+[node name="SettingsMenu" parent="." instance=ExtResource("4_settings")]
 visible = false
 layout_mode = 1

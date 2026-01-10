@@ -1,0 +1,163 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/settings_menu.gd" id="1_script"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_dark.tres" id="2_panel"]
+
+[node name="SettingsMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="Panel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(500, 400)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -200.0
+offset_right = 250.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("2_panel")
+
+[node name="TabContainer" type="TabContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="Audio" type="TabBar" parent="Panel/TabContainer"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Panel/TabContainer/Audio"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="MasterRow" type="HBoxContainer" parent="Panel/TabContainer/Audio/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Audio/VBox/MasterRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Master Volume"
+
+[node name="HSlider" type="HSlider" parent="Panel/TabContainer/Audio/VBox/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="MusicRow" type="HBoxContainer" parent="Panel/TabContainer/Audio/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Audio/VBox/MusicRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Music Volume"
+
+[node name="HSlider" type="HSlider" parent="Panel/TabContainer/Audio/VBox/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="SFXRow" type="HBoxContainer" parent="Panel/TabContainer/Audio/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Audio/VBox/SFXRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "SFX Volume"
+
+[node name="HSlider" type="HSlider" parent="Panel/TabContainer/Audio/VBox/SFXRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="Video" type="TabBar" parent="Panel/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Panel/TabContainer/Video"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="WindowModeRow" type="HBoxContainer" parent="Panel/TabContainer/Video/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Video/VBox/WindowModeRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Window Mode"
+
+[node name="OptionButton" type="OptionButton" parent="Panel/TabContainer/Video/VBox/WindowModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VSyncRow" type="HBoxContainer" parent="Panel/TabContainer/Video/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/TabContainer/Video/VBox/VSyncRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "VSync"
+
+[node name="CheckBox" type="CheckBox" parent="Panel/TabContainer/Video/VBox/VSyncRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Enabled"
+
+[node name="CloseBtn" type="Button" parent="Panel"]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -50.0
+offset_top = 20.0
+offset_right = 50.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Close"

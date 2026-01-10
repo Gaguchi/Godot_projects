@@ -7,24 +7,24 @@
 ## 📅 Phase 1: Technical Foundation (Immediate Priority)
 *Goal: Ensure the game state is robust, persistent, and manageable.*
 
-- [ ] **Save/Load System** (Critical)
+- [x] **Save/Load System** (Critical)
     - [x] Create `SaveManager` singleton (Backend).
-    - [x] Implement serialization for `UnitData`, `ItemData`.
-    - [ ] **Multi-Slot Support**: Update `SaveManager` to handle 3 distinct save slots.
-    - [ ] **Save/Load UI**: Create `SaveLoadMenu.tscn` (Visual slots with metadata).
-    - [ ] **Metadata**: Save specific data (Location, Date, Playtime) for UI preview.
-    - [ ] **Integration**: Connect Main Menu "Load" and Pause Menu "Save" to new UI.
-- [ ] **Scene & State Management**
-    - [ ] Create `SceneLoader` singleton (Transition effects, Loading screen support).
-    - [ ] Refactor raw `change_scene` calls to use `SceneLoader`.
-    - [ ] Implement `GameState` machine (Menu, Overworld, Dungeon, Combat).
-- [ ] **Input & Settings Architecture**
-    - [ ] Create `InputManager` or standardize `InputMap` usage.
-    - [ ] Create `SettingsManager` (Volume, Resolution, Keybindings).
-    - [ ] Implement persistent `user_settings.cfg`.
+    - [x] Implement serialization for `UnitData`, `ItemData`. *(Living System: Needs updates when adding new data types)*
+    - [x] **Multi-Slot Support**: Update `SaveManager` to handle 3 distinct save slots.
+    - [x] **Save/Load UI**: Create `SaveLoadMenu.tscn` (Visual slots with metadata).
+    - [x] **Metadata**: Save specific data (Location, Date, Playtime) for UI preview.
+    - [x] **Integration**: Connect Main Menu "Load" and Pause Menu "Save" to new UI.
+- [x] **Scene & State Management**
+    - [x] Create `SceneLoader` singleton (Transition effects, Loading screen support).
+    - [x] Refactor raw `change_scene` calls to use `SceneLoader`.
+    - [x] **GameState Architecture**: Implement State Machine (MENU, OVERWORLD, DUNGEON, COMBAT) in `GameManager`.
+- [x] **Input & Settings Architecture**
+    - [x] Create `InputManager` or standardize `InputMap` usage.
+    - [x] Create `SettingsManager` (Volume, Resolution, Keybindings).
+    - [x] Implement persistent `user_settings.cfg`.
 - [ ] **Party Management UI**
-    - [ ] Create a non-combat "Party Screen" scene.
-    - [ ] View full Unit Status (Stats, EXP, Equipment).
+    - [x] Create a non-combat "Party Screen" scene.
+    - [x] View full Unit Status (Stats, EXP, Equipment).
     - [ ] Equip/Unequip items.
     - [ ] Trade items between units.
 - [ ] **Audio Architecture**

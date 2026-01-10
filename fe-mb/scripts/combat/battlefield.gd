@@ -28,6 +28,13 @@ const GRID_HEIGHT: int = 10
 @onready var unit_info: PanelContainer = $UI/UnitInfo
 @onready var action_menu: PanelContainer = $UI/ActionMenu
 @onready var combat_forecast: PanelContainer = $UI/CombatForecast
+@onready var camera: Camera2D = $Camera2D
+
+var camera_speed: float = 400.0
+var min_zoom: Vector2 = Vector2(0.5, 0.5)
+var max_zoom: Vector2 = Vector2(2.0, 2.0)
+var target_zoom: Vector2 = Vector2(1.0, 1.0)
+
 
 var UnitScene = preload("res://scenes/units/unit.tscn")
 var DamageNumberScene = preload("res://scenes/ui/damage_number.tscn")
@@ -51,6 +58,7 @@ var last_hover_tile: Vector2i = Vector2i(-1, -1)
 
 
 func _ready() -> void:
+	GameManager.change_state(GameManager.GameState.COMBAT)
 	_setup_pathfinding()
 	_connect_ui_signals()
 	_clear_placeholder_units()
@@ -75,7 +83,9 @@ func _setup_pathfinding() -> void:
 	astar.update()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_handle_camera_input(delta)
+	
 	# Handle path preview during player turn
 	if current_state == BattleState.PLAYER_TURN and selected_unit:
 		if grid_overlay:
@@ -83,6 +93,16 @@ func _process(_delta: float) -> void:
 			if hover != last_hover_tile:
 				last_hover_tile = hover
 				_update_path_preview(hover)
+	
+	# DEBUG: UI Size
+	if Input.is_action_just_pressed("ui_accept"): # Press Space/Enter to log
+		var hp_bar = $UI/UnitInfo/VBox/HPBar
+		print("\n[UI Debug]")
+		print("HPBar Size: ", hp_bar.size)
+		print("HPBar MinSize: ", hp_bar.custom_minimum_size)
+		print("HPBar CombinedMin: ", hp_bar.get_combined_minimum_size())
+		print("HPBar StyleBoxBG ContentMargin: ", hp_bar.get_theme_stylebox("background").get_margin(SIDE_TOP))
+		print("Parent VBox Size: ", $UI/UnitInfo/VBox.size)
 	
 	# Handle combat forecast during target selection
 	elif current_state == BattleState.SELECTING_TARGET and attacking_unit:
@@ -288,11 +308,13 @@ func _end_battle(victory: bool) -> void:
 	
 	if victory:
 		# Return to dungeon map
+		GameManager.change_state(GameManager.GameState.DUNGEON)
 		SceneLoader.change_scene_to_file("res://scenes/dungeon/dungeon_map.tscn")
 	else:
 		# Game Over or Run Ended
 		print("[Battlefield] Defeat... Run Ended")
 		GameManager.end_run(false)
+		GameManager.change_state(GameManager.GameState.OVERWORLD) # Or MAIN_MENU? end_run sets is_run_active=false
 		SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
 
 
@@ -309,6 +331,16 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		print("[Battlefield] INPUT: Right Click (Deselect)")
 		_deselect_unit()
+	
+	if current_state == BattleState.PLAYER_TURN:
+		if event.is_action_pressed("next_unit"):
+			_cycle_unit(1)
+		elif event.is_action_pressed("prev_unit"):
+			_cycle_unit(-1)
+		elif event.is_action_pressed("camera_zoom_in"):
+			target_zoom = (target_zoom + Vector2(0.1, 0.1)).clamp(min_zoom, max_zoom)
+		elif event.is_action_pressed("camera_zoom_out"):
+			target_zoom = (target_zoom - Vector2(0.1, 0.1)).clamp(min_zoom, max_zoom)
 
 
 func _handle_click(grid_pos: Vector2i) -> void:
@@ -795,6 +827,8 @@ func _execute_combat(attacker: Node2D, defender: Node2D) -> void:
 		
 		# Wait between attacks for visual clarity
 		await get_tree().create_timer(0.4).timeout
+
+
 	
 	# Handle deaths
 	if not result.defender_alive:
@@ -961,3 +995,47 @@ func _spawn_enemy_units() -> void:
 		valid_spawns += 1
 		
 	print("[Battlefield] --- Enemy Spawn Complete ---\n")
+
+func _handle_camera_input(delta: float) -> void:
+	if not camera: return
+	
+	# Pan
+	var direction = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	camera.position += direction * camera_speed * delta
+	
+	# Bounds check (simplified, could rely on Camera limits)
+	camera.position = camera.position.clamp(Vector2.ZERO, Vector2(GRID_WIDTH * TILE_SIZE, GRID_HEIGHT * TILE_SIZE))
+	
+	# Smooth Zoom
+	camera.zoom = camera.zoom.lerp(target_zoom, 5.0 * delta)
+
+func _cycle_unit(direction: int) -> void:
+	var available_units = player_units.filter(func(u): return u not in units_acted and is_instance_valid(u))
+	if available_units.is_empty():
+		return
+		
+	# Sort by grid position (top-left to bottom-right)
+	available_units.sort_custom(func(a, b):
+		var pos_a = world_to_grid(a.position)
+		var pos_b = world_to_grid(b.position)
+		if pos_a.y != pos_b.y:
+			return pos_a.y < pos_b.y
+		return pos_a.x < pos_b.x
+	)
+	
+	var current_index = -1
+	if selected_unit in available_units:
+		current_index = available_units.find(selected_unit)
+	
+	var next_index = (current_index + direction) % available_units.size()
+	if next_index < 0:
+		next_index = available_units.size() - 1
+		
+	var next_unit = available_units[next_index]
+	_select_unit(next_unit)
+	
+	# Center camera on unit
+	if camera:
+		target_zoom = Vector2(1.5, 1.5) # Zoom in slightly
+		var tween = create_tween()
+		tween.tween_property(camera, "position", next_unit.position, 0.3)

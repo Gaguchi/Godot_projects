@@ -1,0 +1,166 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/party_screen.gd" id="1_script"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_dark.tres" id="2_panel"]
+
+[node name="PartyScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.1, 0.9)
+
+[node name="HBox" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 50.0
+offset_top = 50.0
+offset_right = -50.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="ListPanel" type="PanelContainer" parent="HBox"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+theme_override_styles/panel = ExtResource("2_panel")
+
+[node name="Scroll" type="ScrollContainer" parent="HBox/ListPanel"]
+layout_mode = 2
+
+[node name="UnitList" type="VBoxContainer" parent="HBox/ListPanel/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="DetailsPanel" type="PanelContainer" parent="HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = ExtResource("2_panel")
+
+[node name="Header" type="HBoxContainer" parent="HBox/DetailsPanel"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 20
+
+[node name="Portrait" type="ColorRect" parent="HBox/DetailsPanel/Header"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+color = Color(0.3, 0.3, 0.3, 1)
+
+[node name="Info" type="VBoxContainer" parent="HBox/DetailsPanel/Header"]
+layout_mode = 2
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="HBox/DetailsPanel/Header/Info"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Unit Name"
+
+[node name="ClassLabel" type="Label" parent="HBox/DetailsPanel/Header/Info"]
+layout_mode = 2
+text = "Class Name"
+
+[node name="LevelLabel" type="Label" parent="HBox/DetailsPanel/Header/Info"]
+layout_mode = 2
+text = "Lv. 1"
+
+[node name="Stats" type="VBoxContainer" parent="HBox/DetailsPanel"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 15
+
+[node name="HPLabel" type="Label" parent="HBox/DetailsPanel/Stats"]
+layout_mode = 2
+text = "HP: 20 / 20"
+
+[node name="HPBar" type="ProgressBar" parent="HBox/DetailsPanel/Stats"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+value = 50.0
+show_percentage = false
+
+[node name="XPBar" type="ProgressBar" parent="HBox/DetailsPanel/Stats"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+value = 50.0
+show_percentage = false
+
+[node name="Grid" type="GridContainer" parent="HBox/DetailsPanel/Stats"]
+layout_mode = 2
+theme_override_constants/h_separation = 30
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="Str" type="Label" parent="HBox/DetailsPanel/Stats/Grid"]
+layout_mode = 2
+text = "Str: 10"
+
+[node name="Mag" type="Label" parent="HBox/DetailsPanel/Stats/Grid"]
+layout_mode = 2
+text = "Mag: 10"
+
+[node name="Skl" type="Label" parent="HBox/DetailsPanel/Stats/Grid"]
+layout_mode = 2
+text = "Skl: 10"
+
+[node name="Spd" type="Label" parent="HBox/DetailsPanel/Stats/Grid"]
+layout_mode = 2
+text = "Spd: 10"
+
+[node name="Lck" type="Label" parent="HBox/DetailsPanel/Stats/Grid"]
+layout_mode = 2
+text = "Lck: 10"
+
+[node name="Def" type="Label" parent="HBox/DetailsPanel/Stats/Grid"]
+layout_mode = 2
+text = "Def: 10"
+
+[node name="Res" type="Label" parent="HBox/DetailsPanel/Stats/Grid"]
+layout_mode = 2
+text = "Res: 10"
+
+[node name="Mov" type="Label" parent="HBox/DetailsPanel/Stats/Grid"]
+layout_mode = 2
+text = "Mov: 5"
+
+[node name="Equipment" type="VBoxContainer" parent="HBox/DetailsPanel"]
+layout_mode = 2
+size_flags_vertical = 8
+
+[node name="Title" type="Label" parent="HBox/DetailsPanel/Equipment"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "EQUIPMENT"
+
+[node name="WeaponLabel" type="Label" parent="HBox/DetailsPanel/Equipment"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Iron Sword"
+
+[node name="CloseBtn" type="Button" parent="."]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+text = "Close"

@@ -31,6 +31,10 @@ var dungeon_difficulty: int = 1
 
 
 func _ready() -> void:
+	# Keep logic, but ensure we are in DUNGEON state if we just loaded directly or restored
+	if GameManager.current_state != GameManager.GameState.DUNGEON:
+		GameManager.change_state(GameManager.GameState.DUNGEON)
+		
 	_connect_ui_signals()
 	
 	if GameManager.has_active_dungeon_state():
@@ -201,8 +205,11 @@ func _trigger_room_event(room: DungeonRoomData) -> void:
 			# Save state before leaving
 			GameManager.save_dungeon_state(rooms, current_room_id, dungeon_difficulty, max_floors)
 			# Change to combat scene
+			GameManager.save_dungeon_state(rooms, current_room_id, dungeon_difficulty, max_floors)
+			# Change to combat scene
 			SceneLoader.change_scene_to_file("res://scenes/combat/battlefield.tscn")
 			EventBus.combat_started.emit()
+			# Combat scene will handle state change to COMBAT
 		
 		DungeonRoomData.RoomType.BOSS:
 			print("[DungeonMap] Boss battle!")
@@ -245,7 +252,8 @@ func _on_floor_completed() -> void:
 	if current_floor >= max_floors:
 		print("[DungeonMap] Dungeon completed!")
 		dungeon_completed.emit()
-		GameManager.exit_dungeon(true)  # Completed
+		dungeon_completed.emit()
+		GameManager.exit_dungeon(true)  # Completed (sets state OVERWORLD)
 		# Return to world map
 		SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
 	else:
@@ -257,7 +265,8 @@ func _on_floor_completed() -> void:
 func _on_exit_pressed() -> void:
 	print("[DungeonMap] Exiting dungeon...")
 	dungeon_exited.emit()
-	GameManager.exit_dungeon(false)  # Abandoned
+	dungeon_exited.emit()
+	GameManager.exit_dungeon(false)  # Abandoned (sets state OVERWORLD)
 	# Return to world map
 	SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
 
