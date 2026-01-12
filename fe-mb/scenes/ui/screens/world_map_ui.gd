@@ -12,7 +12,18 @@ func _ready():
 		GameManager.resources_changed.connect(_update_resources)
 	
 	_update_resources()
+	_update_resources()
 	location_panel.hide()
+	
+	var inv_btn = find_child("InventoryBtn", true, false)
+	if inv_btn:
+		inv_btn.pressed.connect(_on_inventory_pressed)
+
+func _on_inventory_pressed():
+	if has_node("/root/SceneLoader"):
+		get_node("/root/SceneLoader").change_scene_to_file("res://scenes/ui/inventory_screen.tscn", false)
+	else:
+		get_tree().change_scene_to_file("res://scenes/ui/inventory_screen.tscn")
 
 func _update_resources():
 	# Assuming GameManager has these properties

@@ -24,44 +24,23 @@ The player should feel like a commander leading a desperate band of warriors thr
 
 ## 2. Game Structure
 
-### 2.1 Run Structure
-```
-┌─────────────────────────────────────────────────────┐
-│                    FULL RUN                          │
-├─────────────────────────────────────────────────────┤
-│ Region 1 → Region 2 → Region 3 → ... → Final Region │
-│   (FTL)      (FTL)      (FTL)            (FTL)      │
-│     ↓          ↓          ↓                ↓        │
-│ [Dungeons] [Dungeons] [Dungeons]     [Final Boss]   │
-│   (StS)      (StS)      (StS)                       │
-└─────────────────────────────────────────────────────┘
-```
+### 2.1 World Structure: The "Living Continent"
+Instead of separate "Levels" or "Regions", the game takes place on **One Massive Contiguous Map**.
+- **Nodes**: Hundreds of interconnected locations (Towns, Dungeons, Ruins).
+- **No Hard Transitions**: You don't "Exit Region 1". You physically travel South to the Desert biome.
+- **Backtracking**: You can return to previous towns to trade or heal.
 
-### 2.2 World Map (FTL-Style)
-The overworld uses a **fixed, hand-crafted layout** for each region. Players navigate between locations, consuming supplies and advancing a threat tracker.
-
-#### Location Types
-| Type | Icon | Description |
-|------|------|-------------|
-| **Town** | 🏘️ | Shop, recruitment, rest |
-| **Battle** | ⚔️ | Combat encounter (Fire Emblem style) |
-| **Event** | ❓ | Random event with choices |
-| **Camp** | ⛺ | Heal and recover |
-| **Dungeon** | 🏰 | Enter procedural dungeon (Slay the Spire style) |
-| **Exit** | 🚪 | Advance to next region |
-
-#### Threat System
-- Each travel action advances the **threat counter**
-- When threat catches up, bad things happen (forced battles, ambushes, morale loss)
-- Creates urgency to move forward rather than explore everything
-- Each region has a configurable number of threat turns (default: 12)
-
-#### Resources
-| Resource | Usage |
-|----------|-------|
-| **Supplies** | Consumed when traveling (1 per move) |
-| **Gold** | Purchasing items, recruiting units |
-| **Morale** | Affects combat bonuses/penalties |
+### 2.2 Navigation (Pokemon-Style Travel)
+The world is a **Single Massive TileMap**.
+- **Movement**: Click-to-move along paths. The party sprite (Player) is the *only* visible entity on the overworld.
+- **Encounter System**:
+    - **Random Encounters**: Every step on a "Wild" tile has a % chance to trigger a battle.
+    - **Biomes**: The table of possible enemies changes based on the tile type (Forest, Desert, Road).
+    - **Safe Zones**: Roads have 0% encounter rate (unless ambushed by event).
+- **Time Passage**:
+    - 1 Step = 1 Minute.
+    - Day/Night cycle cycles every ~200 steps.
+    - "Camping" (Resting) advances time by 8 hours.
 
 ---
 
@@ -279,163 +258,50 @@ Each unit has growth rates (0-100%) for each stat. On level-up, each stat has it
 
 ## 8. UI/UX Design
 
-### 8.1 Design Philosophy
-- **Clarity First**: All combat information should be immediately readable
-- **Tactical Aesthetic**: Dark, medieval fantasy with gold/bronze accents
-- **Information Density**: Show relevant data without overwhelming
-- **Consistent Theming**: Single Theme resource applied globally
+## 8. UI/UX Design
 
-### 8.2 Color Palette
-| Element | Color | Hex |
-|---------|-------|-----|
-| **Background (Dark)** | Deep Slate | `#1a1a2e` |
-| **Background (Panel)** | Navy | `#16213e` |
-| **Accent Primary** | Gold | `#d4af37` |
-| **Accent Secondary** | Bronze | `#cd7f32` |
-| **Text Primary** | Off-White | `#e8e8e8` |
-| **Text Secondary** | Light Gray | `#a0a0a0` |
-| **Health** | Red | `#dc3545` |
-| **Health Background** | Dark Red | `#5a1a1a` |
-| **Positive** | Green | `#28a745` |
-| **Negative** | Orange-Red | `#e74c3c` |
-| **Mana/Magic** | Blue | `#3498db` |
+### 8.1 Design Philosophy: "Clean & Dense"
+- **Function over Form**: Use standard, opaque panels. No "Diegetic" hidden menus.
+- **Information Density**: Show HP/MP/XP numbers directly on bars. Don't hide them.
+- **HUD Layout**:
+    - **Top Bar**: Resources (Gold, Food, Time). Always visible.
+    - **Bottom Bar**: Party Status (HP/MP) + Current Location Name.
+    - **Log**: Scrollable text log in bottom-left for combat details.
 
-### 8.3 Theme System
-```
-res://themes/
-├── game_theme.tres           # Master theme for entire game
-├── fonts/
-│   ├── title_font.tres       # Headers (16-24px pixel font)
-│   ├── body_font.tres        # General text (12-14px)
-│   └── stat_font.tres        # Numbers/stats (monospace, 12px)
-└── styleboxes/
-    ├── panel_dark.tres       # Dark background panels
-    ├── panel_accent.tres     # Gold-bordered panels
-    ├── button_normal.tres    # Default button state
-    ├── button_hover.tres     # Hovered button
-    ├── button_pressed.tres   # Pressed button
-    ├── button_disabled.tres  # Disabled button
-    ├── healthbar_fill.tres   # Health bar foreground
-    └── healthbar_bg.tres     # Health bar background
-```
+### 8.2 Scene-Specific UX
 
-### 8.4 UI Components
+#### 8.2.1 The World Map
+- **HUD**: Semi-transparent black overlays (`Color(0,0,0,0.5)`) at Top/Bottom to frame the view.
+- **Minimap**: Bottom-Right circular minimap.
+- **Nodes**: Icons (Town, Dungeon) drawn *on top* of the TileMap.
 
-#### Reusable Components
-| Component | Description |
-|-----------|-------------|
-| `HealthBar` | Two-layer progress bar with damage preview |
-| `StatRow` | Icon + Label + Value layout for stats |
-| `UnitCard` | Compact unit display with portrait/stats |
-| `ResourceDisplay` | Icon + value for gold/supplies/morale |
-| `WeaponIcon` | Weapon type icon with triangle indicator |
-| `TooltipPanel` | Hover information display |
+#### 8.2.2 Tactical Combat Grid
+- **The "Field" View**:
+    - **Unit Markers**: 3D Stylized Pawns or High-Res Sprites on the grid.
+    - **HP Bars**: Floating curved bars above heads (World Space).
+    - **Damage Text**: Physics-based numbers that bounce off units.
+    - **Grid Overlay**: Only visible during movement selection.
 
-#### Combat UI Components
-| Component | Description |
-|-----------|-------------|
-| `CombatForecast` | Pre-attack prediction panel showing both sides |
-| `UnitInfoPanel` | Detailed view of selected unit |
-| `TerrainInfoPanel` | Tile information and bonuses |
-| `CombatLog` | Scrollable attack result history |
-| `TurnIndicator` | Whose turn it is |
+#### 8.2.3 Combat Exchange (The "Mini-Scene")
+When an attack connects, the camera changes context:
+1.  **Transition**: Screen cross-dissolves or zooms into a `SubViewport`.
+2.  **The Scene**: High-detail side view (Fighting Game style).
+3.  **The Action**:
+    - Attacker lunges -> Defender blocks (Sparks fly).
+    - HP Bar drains with a "shatter" effect.
+    - "CRITICAL" text slams onto the screen.
+4.  **Return**: Snap back to Tactical View.
 
-#### Map UI Components  
-| Component | Description |
-|-----------|-------------|
-| `LocationInfoPanel` | Details about map locations |
-| `ResourceBar` | Top HUD showing supplies/gold/morale |
-| `ThreatBar` | Visual threat progress indicator |
-| `MiniPartyList` | Small party overview |
+#### 8.2.4 Inventory & Party
+- **Visuals**: A campsite scene.
+- **Management**: Drag items from a "Loot Sack" (bottom right) onto the Unit's "Paper Doll" (center).
+- **Consumables**: Potions hanging on the unit's belt.
 
-### 8.5 Screen Layouts
-
-#### World Map Screen
-```
-┌──────────────────────────────────────────────┐
-│ [Supplies: 10] [Gold: 50] [Morale: 80%]      │ ← ResourceBar (top)
-├──────────────────────────────────────────────┤
-│                                              │
-│              MAP NODES                       │
-│         (with connections)                   │
-│                                              │
-│                    ┌──────────────────┐      │
-│                    │ Location Info    │      │ ← InfoPanel (right)
-│                    │ Type: Dungeon    │      │
-│                    │ [Travel Button]  │      │
-│                    └──────────────────┘      │
-├──────────────────────────────────────────────┤
-│ █████████░░░░░░░░░░ Threat: 8 turns          │ ← ThreatBar (bottom)
-└──────────────────────────────────────────────┘
-```
-
-#### Combat Forecast Screen
-```
-┌──────────────────────────────────────────────┐
-│    ATTACKER          vs         DEFENDER     │
-├──────────┬───────────────────────┬───────────┤
-│ [Portrait]                       │ [Portrait]│
-│ Name: Lyn                        │ Name: Brig│
-│ HP: 24/28                        │ HP: 30/30 │
-│ ─────────────────────────────────│───────────│
-│ Damage: 12        ◄─────►        │ Damage: 8 │
-│ Hit: 95%                         │ Hit: 65%  │
-│ Crit: 15%                        │ Crit: 0%  │
-│ Doubles: Yes                     │ Doubles:No│
-├──────────┴───────────────────────┴───────────┤
-│   ⚔️ SWORD vs AXE → Advantage!               │
-├──────────────────────────────────────────────┤
-│        [ATTACK]         [CANCEL]             │
-└──────────────────────────────────────────────┘
-```
-
-#### Unit Info Panel
-```
-┌────────────────────────────┐
-│ [Portrait]  NAME    Lv.5   │
-│             Fighter        │
-├────────────────────────────┤
-│ HP  ████████░░  24/28      │
-├────────────────────────────┤
-│ STR  12  │  DEF  8         │
-│ MAG   2  │  RES  4         │
-│ SKL  10  │  SPD  9         │
-│ LCK   7  │  MOV  5         │
-├────────────────────────────┤
-│ ⚔️ Iron Sword  (20/30)     │
-│ Might: 5  Hit: 90  Crit: 0 │
-└────────────────────────────┘
-```
-
-### 8.6 Container Structure Guidelines
-
-Use Godot's container system for all UI:
-- `MarginContainer` → Outer padding
-- `PanelContainer` → Visual background with StyleBox
-- `VBoxContainer` → Vertical layouts (menus, stat lists)
-- `HBoxContainer` → Horizontal layouts (resource bars, buttons)
-- `GridContainer` → Stat grids (2-column stat display)
-- `CenterContainer` → Centering elements
-
-**Example structure:**
-```
-MarginContainer          # Outer margins
-└── PanelContainer       # Dark panel background
-    └── MarginContainer  # Inner padding
-        └── VBoxContainer
-            ├── Label    # Title
-            ├── HSeparator
-            └── GridContainer  # Stats
-```
-
-### 8.7 Animation Guidelines
-
-Use `Tween` for UI animations:
-- Panel slide-in: 0.2s ease-out
-- Fade in/out: 0.15s
-- Health bar changes: 0.3s with damage preview delay
-- Button hover: 0.1s scale/color shift
-- Damage numbers: Float up + fade over 0.8s
+### 8.3 Color Palette (Diegetic)
+- **Paper/Parchment**: `#f5edd6` (Backgrounds)
+- **Ink Black**: `#2c2c2c` (Text, Outlines)
+- **Dried Blood**: `#8a0303` (Enemy Health, Threat)
+- **Royal Gold**: `#d4af37` (Rare Items, Elite borders)
 
 ---
 
@@ -551,11 +417,16 @@ The combination of permadeath, random events, and player choices should create m
 - **Challenge Modes:** Harder difficulty modifiers
 - **Daily Runs:** Seeded runs for community competition
 
-### 12.2 Art Direction
-- Pixel art aesthetic (target resolution: 640×480)
-- Clear silhouettes for unit classes
-- Readable icons on world/dungeon maps
-- Satisfying hit effects and animations
+### 12.2 Art Direction (Confirmed)
+- **Resolution**: 32x32 pixels per tile.
+- **Perspective**: Top-Down (Zelda/Stardew style), NOT Isometric.
+- **Assets**: 
+    - **World**: Kenney RPG Urban/Wild packs.
+    - **UI**: Kenney Pixel UI Pack (Clean, 9-slice panels).
+    - **Font**: Pixel-art monospace font (Silver or m5x7).
+- **Visual Effects**:
+    - **Fog of War**: "Paper Map" texture overlaid on unexplored areas. Burns away when explored.
+    - **Lighting**: Day/Night tint `CanvasModulate`.
 
 ### 12.3 Audio Design
 - Orchestral/chiptune hybrid soundtrack

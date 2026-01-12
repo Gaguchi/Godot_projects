@@ -10,7 +10,14 @@ var _loading_screen_instance: Node = null
 var _progress: Array = []
 var _is_loading: bool = false
 
-func change_scene_to_file(path: String) -> void:
+func change_scene_to_file(path: String, use_loading_screen: bool = true) -> void:
+	if not use_loading_screen:
+		# Direct load (blocking)
+		var result = get_tree().change_scene_to_file(path)
+		if result != OK:
+			printerr("[SceneLoader] Failed to change scene directly to file: %s" % path)
+		return
+
 	if _is_loading:
 		printerr("[SceneLoader] Already loading a scene!")
 		return

@@ -9,6 +9,7 @@ const LocationNodeScene = preload("res://scenes/overworld/location_node.tscn")
 
 @onready var locations_container: Node2D = $Locations
 @onready var connections_layer: Node2D = $Connections
+@onready var input_manager: Node2D = $WorldInputManager # New Input Manager
 @onready var ui_panel: PanelContainer = $UI/InfoPanel
 @onready var location_name_label: Label = $UI/InfoPanel/VBox/LocationName
 @onready var location_type_label: Label = $UI/InfoPanel/VBox/LocationType
@@ -19,7 +20,9 @@ const LocationNodeScene = preload("res://scenes/overworld/location_node.tscn")
 @onready var save_btn: Button = null # Deprecated
 
 var pause_menu_scene = preload("res://scenes/ui/pause_menu.tscn")
+var map_pawn_scene = preload("res://scenes/overworld/map_pawn.tscn")
 var pause_menu: Control = null
+var player_pawn: Node2D = null
 
 # Map state
 var current_region: int = 0
@@ -43,6 +46,9 @@ func _ready() -> void:
 	if GameManager.current_state != GameManager.GameState.OVERWORLD:
 		GameManager.change_state(GameManager.GameState.OVERWORLD)
 		
+	# Connect Input Manager
+	input_manager.node_clicked.connect(_on_map_node_clicked)
+	
 	_connect_ui_signals()
 	load_current_region()
 	_update_resources_display()
@@ -80,7 +86,7 @@ func load_current_region() -> void:
 	for loc in locations:
 		var node = LocationNodeScene.instantiate()
 		node.setup(loc)
-		node.location_clicked.connect(_on_location_clicked)
+		# node.location_clicked.connect(_on_location_clicked) # Handled by WorldInputManager now
 		node.location_hovered.connect(_on_location_hovered)
 		locations_container.add_child(node)
 		location_nodes[loc.id] = node
@@ -91,6 +97,16 @@ func load_current_region() -> void:
 	# Set starting position
 	current_location_id = 0
 	_update_reachable_locations()
+
+	# Spawn Pawn
+	if not player_pawn:
+		player_pawn = map_pawn_scene.instantiate()
+		add_child(player_pawn)
+		# Ensure it's above lines but below UI
+		player_pawn.z_index = 10 
+	
+	if current_location_id in location_nodes:
+		player_pawn.position = location_nodes[current_location_id].position
 	
 	print("[WorldMap] Loaded region %d: %s with %d locations" % [current_region, current_region_data.region_name, locations.size()])
 
@@ -134,10 +150,88 @@ func _update_reachable_locations() -> void:
 			node.set_threatened(true)
 
 
-func _on_location_clicked(loc_data: LocationData) -> void:
-	selected_location = loc_data
-	_show_location_info(loc_data)
+# --- New Input Handler ---
+func _on_map_node_clicked(hit_node: Node) -> void:
+	# Expecting Area2D child of LocationNode
+	var loc_node = hit_node.get_parent()
+	if loc_node.has_method("setup") and loc_node.location_data:
+		_on_location_choice(loc_node.location_data)
 
+func _on_location_choice(loc: LocationData) -> void:
+	# Replaces old _on_location_clicked
+	if current_location_id == loc.id:
+		return
+
+	# Calculate path
+	var path_result = _find_path(current_location_id, loc.id)
+	
+	# Check validity
+	if path_result.path.is_empty():
+		return # Unreachable or same node
+		
+	var cost = path_result.cost
+	if supplies < cost:
+		print("[WorldMap] Not enough supplies!")
+		# TODO: Shake UI or Visual Feedack
+		return
+		
+	# Travel! (Instant / Fluid)
+	_execute_travel(path_result.path, cost)
+
+func _execute_travel(path: Array[LocationData], cost: int) -> void:
+	# Deduct
+	supplies -= cost
+	_update_resources_display()
+	threat_position += cost
+	_update_threat_display()
+	
+	# Move step by step with Bezier Juice
+	for next_loc in path:
+		var current_node = location_nodes[current_location_id]
+		var next_node = location_nodes[next_loc.id]
+		
+		# Animate
+		await _animate_travel_step(current_node.position, next_node.position)
+		
+		# Logic Update
+		var old_id = current_location_id
+		current_location_id = next_loc.id
+		next_loc.visited = true
+		_update_reachable_locations()
+		travel_started.emit(_get_location_by_id(old_id), next_loc)
+	
+	# Arrived
+	_trigger_location_event(path.back())
+
+func _animate_travel_step(start: Vector2, end: Vector2) -> void:
+	# Bezier Curve Juice
+	# Control point is midpoint offset by perpendicular vector
+	var mid = (start + end) / 2.0
+	var diff = end - start
+	var dist = diff.length()
+	var perp = Vector2(-diff.y, diff.x).normalized() * (dist * 0.1) # 10% arc (Flatter)
+	# Randomize side?
+	if randf() > 0.5: perp = -perp
+	var control = mid + perp
+	
+	# Calculate duration based on distance for consistent speed (pixels per second)
+	# e.g., 400 pixels/sec. Min 0.4s to feel significant.
+	var duration = max(0.4, dist / 400.0)
+	
+	# Create a temporary Tween
+	var t = create_tween()
+	var tween_step = func(val: float): 
+		if player_pawn:
+			player_pawn.position = _calculate_bezier_point(val, start, control, end)
+			
+	t.tween_method(tween_step, 0.0, 1.0, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	
+	await t.finished
+
+func _calculate_bezier_point(t: float, p0: Vector2, p1: Vector2, p2: Vector2) -> Vector2:
+	var q0 = p0.lerp(p1, t)
+	var q1 = p1.lerp(p2, t)
+	return q0.lerp(q1, t)
 
 func _on_location_hovered(loc_data: LocationData) -> void:
 	# Could show tooltip here

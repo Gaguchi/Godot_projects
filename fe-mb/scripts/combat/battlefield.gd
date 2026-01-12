@@ -897,7 +897,7 @@ func world_to_grid(world_pos: Vector2) -> Vector2i:
 
 ## Convert grid coordinates to world position (center of tile)
 func grid_to_world(grid_pos: Vector2i) -> Vector2:
-	return Vector2(grid_pos.x * TILE_SIZE + TILE_SIZE / 2, grid_pos.y * TILE_SIZE + TILE_SIZE / 2)
+	return Vector2(grid_pos.x * TILE_SIZE + TILE_SIZE / 2.0, grid_pos.y * TILE_SIZE + TILE_SIZE / 2.0)
 
 
 # --- Unit Spawning ---
@@ -977,7 +977,7 @@ func _spawn_enemy_units() -> void:
 		enemy_data.max_hp = 15 + (difficulty * 2)
 		enemy_data.current_hp = enemy_data.max_hp
 		enemy_data.strength = 3 + difficulty
-		enemy_data.defense = 1 + (difficulty / 2)
+		enemy_data.defense = 1 + int(difficulty / 2.0)
 		
 		# Give a weapon
 		var weapon = ItemData.new()

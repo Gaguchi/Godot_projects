@@ -17,6 +17,7 @@ const DungeonRoomNodeScene = preload("res://scenes/dungeon/dungeon_room_node.tsc
 @onready var enter_btn: Button = $UI/InfoPanel/VBox/EnterBtn
 @onready var floor_label: Label = $UI/FloorLabel
 @onready var exit_btn: Button = $UI/ExitBtn
+@onready var inventory_btn: Button = $UI/InventoryBtn
 
 # Dungeon state
 var current_floor: int = 1
@@ -59,7 +60,9 @@ func _ready() -> void:
 
 func _connect_ui_signals() -> void:
 	enter_btn.pressed.connect(_on_enter_pressed)
+	enter_btn.pressed.connect(_on_enter_pressed)
 	exit_btn.pressed.connect(_on_exit_pressed)
+	inventory_btn.pressed.connect(_on_inventory_pressed)
 
 
 ## Generate a new dungeon floor
@@ -269,6 +272,15 @@ func _on_exit_pressed() -> void:
 	GameManager.exit_dungeon(false)  # Abandoned (sets state OVERWORLD)
 	# Return to world map
 	SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
+
+func _on_inventory_pressed() -> void:
+	# Save state before leaving, just in case (though we rely on _restore_dungeon_state)
+	GameManager.save_dungeon_state(rooms, current_room_id, dungeon_difficulty, max_floors)
+	
+	if has_node("/root/SceneLoader"):
+		get_node("/root/SceneLoader").change_scene_to_file("res://scenes/ui/inventory_screen.tscn", false)
+	else:
+		get_tree().change_scene_to_file("res://scenes/ui/inventory_screen.tscn")
 
 
 func _update_floor_display() -> void:

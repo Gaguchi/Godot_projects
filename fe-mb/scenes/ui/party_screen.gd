@@ -21,6 +21,16 @@ var selected_unit: UnitData = null
 
 func _ready() -> void:
 	$CloseBtn.pressed.connect(_on_close_pressed)
+	if has_node("InventoryBtn"):
+		$InventoryBtn.pressed.connect(_on_inventory_pressed)
+
+func _on_inventory_pressed() -> void:
+	# Assume SceneLoader is an autoload/singleton
+	if has_node("/root/SceneLoader"):
+		get_node("/root/SceneLoader").change_scene_to_file("res://scenes/ui/inventory_screen.tscn", false)
+	else:
+		# Fallback if SceneLoader isn't ready or named differently
+		get_tree().change_scene_to_file("res://scenes/ui/inventory_screen.tscn")
 
 func setup() -> void:
 	_refresh_unit_list()

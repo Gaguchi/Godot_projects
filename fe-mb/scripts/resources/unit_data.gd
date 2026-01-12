@@ -170,6 +170,56 @@ func get_class_name() -> String:
 		UnitClass.THIEF: return "Thief"
 		UnitClass.LORD: return "Lord"
 	return "Unknown"
+
+
+## Add item to inventory
+func add_item(item: Resource) -> void:
+	if item is ItemData:
+		inventory.append(item)
+
+
+## Remove item from inventory by index
+func remove_item(index: int) -> Resource:
+	if index >= 0 and index < inventory.size():
+		return inventory.pop_at(index)
+	return null
+
+
+## Equip item from inventory (swaps with current weapon if applicable)
+## Returns true if successful
+func equip_item(index: int) -> bool:
+	if index < 0 or index >= inventory.size():
+		return false
+		
+	var item = inventory[index]
+	if not item is ItemData:
+		return false
+		
+	# Only weapons can be equipped
+	if item.item_type != ItemData.ItemType.WEAPON:
+		print("[UnitData] Cannot equip non-weapon item: %s" % item.item_name)
+		return false
+		
+	# Unequip current weapon first (to inventory)
+	if equipped_weapon:
+		inventory.append(equipped_weapon)
+		equipped_weapon = null
+		
+	# Equip new weapon (remove from inventory)
+	# Note: We append old weapon to end, so index might have shifted if we don't watch out.
+	# But actually, we should remove the item from inventory FIRST before adding the old one.
+	inventory.remove_at(index)
+	equipped_weapon = item
+	
+	return true
+
+
+## Unequip current weapon to inventory
+func unequip_weapon() -> void:
+	if equipped_weapon:
+		inventory.append(equipped_weapon)
+		equipped_weapon = null
+
 ## Serialize to dictionary
 func to_dict() -> Dictionary:
 	var weapon_dict = {}

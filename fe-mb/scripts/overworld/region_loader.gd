@@ -59,27 +59,35 @@ static func _create_fallback_region(region_index: int) -> RegionData:
 	# Create basic layout: Start -> Battle -> Battle -> Exit
 	var start = _create_location(0, "Starting Camp", LocationData.LocationType.CAMP, Vector2(60, 250))
 	start.visited = true
-	start.connected_locations = [1, 2]
+	var start_conns: Array[int] = [1, 2]
+	start.connected_locations = start_conns
 	
 	var battle1 = _create_location(1, "Forest Path", LocationData.LocationType.BATTLE, Vector2(200, 150))
-	battle1.connected_locations = [0, 3]
+	var battle1_conns: Array[int] = [0, 3]
+	battle1.connected_locations = battle1_conns
 	
 	var battle2 = _create_location(2, "Mountain Road", LocationData.LocationType.BATTLE, Vector2(200, 350))
-	battle2.connected_locations = [0, 3]
+	var battle2_conns: Array[int] = [0, 3]
+	battle2.connected_locations = battle2_conns
 	
 	var town = _create_location(3, "Trading Post", LocationData.LocationType.TOWN, Vector2(400, 250))
-	town.connected_locations = [1, 2, 4, 5]
+	var town_conns: Array[int] = [1, 2, 4, 5]
+	town.connected_locations = town_conns
 	
 	var dungeon = _create_location(4, "Dark Cavern", LocationData.LocationType.DUNGEON, Vector2(550, 150))
-	dungeon.connected_locations = [3, 6]
+	var dungeon_conns: Array[int] = [3, 6]
+	dungeon.connected_locations = dungeon_conns
 	
 	var event = _create_location(5, "Ancient Shrine", LocationData.LocationType.EVENT, Vector2(550, 350))
-	event.connected_locations = [3, 6]
+	var event_conns: Array[int] = [3, 6]
+	event.connected_locations = event_conns
 	
 	var exit = _create_location(6, "Region Exit", LocationData.LocationType.EXIT, Vector2(740, 250))
-	exit.connected_locations = [4, 5]
+	var exit_conns: Array[int] = [4, 5]
+	exit.connected_locations = exit_conns
 	
-	region.locations = [start, battle1, battle2, town, dungeon, event, exit]
+	var location_list: Array[LocationData] = [start, battle1, battle2, town, dungeon, event, exit]
+	region.locations = location_list
 	
 	return region
 

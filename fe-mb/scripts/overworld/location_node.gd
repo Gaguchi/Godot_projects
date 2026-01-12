@@ -15,6 +15,11 @@ const NODE_RADIUS: float = 16.0
 
 
 func _ready() -> void:
+	# Create collision shape dynamically to avoid resource conflicts
+	var shape = CircleShape2D.new()
+	shape.radius = NODE_RADIUS + 4 # Slightly larger than visual radius
+	$Area2D/CollisionShape2D.shape = shape
+	
 	_update_visuals()
 
 
@@ -43,21 +48,14 @@ func _draw() -> void:
 		draw_circle(Vector2.ZERO, 4, Color.WHITE)
 
 
-func _input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if is_hovered:
-			location_clicked.emit(location_data)
+func _on_area_mouse_entered() -> void:
+	is_hovered = true
+	location_hovered.emit(location_data)
+	queue_redraw()
 
-
-func _process(_delta: float) -> void:
-	var mouse_pos = get_local_mouse_position()
-	var was_hovered = is_hovered
-	is_hovered = mouse_pos.length() <= NODE_RADIUS + 5
-	
-	if is_hovered != was_hovered:
-		if is_hovered:
-			location_hovered.emit(location_data)
-		queue_redraw()
+func _on_area_mouse_exited() -> void:
+	is_hovered = false
+	queue_redraw()
 
 
 ## Initialize with location data
