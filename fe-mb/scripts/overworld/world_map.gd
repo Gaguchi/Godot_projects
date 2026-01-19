@@ -9,7 +9,8 @@ const LocationNodeScene = preload("res://scenes/overworld/location_node.tscn")
 
 @onready var locations_container: Node2D = $Locations
 @onready var connections_layer: Node2D = $Connections
-@onready var input_manager: Node2D = $WorldInputManager # New Input Manager
+@onready var input_manager: Node2D = $WorldInputManager
+@onready var camera: Camera2D = $Camera2D
 @onready var ui_panel: PanelContainer = $UI/InfoPanel
 @onready var location_name_label: Label = $UI/InfoPanel/VBox/LocationName
 @onready var location_type_label: Label = $UI/InfoPanel/VBox/LocationType
@@ -46,7 +47,8 @@ func _ready() -> void:
 	if GameManager.current_state != GameManager.GameState.OVERWORLD:
 		GameManager.change_state(GameManager.GameState.OVERWORLD)
 		
-	# Connect Input Manager
+	# Connect Input Manager and set camera reference
+	input_manager.camera = camera
 	input_manager.node_clicked.connect(_on_map_node_clicked)
 	
 	_connect_ui_signals()

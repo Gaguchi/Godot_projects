@@ -1,0 +1,378 @@
+{
+    "name": "Kingdom Demo Map",
+    "description": "A comprehensive demo of the modular map system featuring a Town, Forest, and Castle.",
+    "width": 16,
+    "height": 12,
+    "tile_size": 64,
+    "spawn_point": {
+        "x": 4,
+        "y": 6
+    },
+    "layers": [
+        {
+            "name": "terrain",
+            "type": "grid",
+            "data": [
+                [
+                    "forest_7_pine",
+                    "forest_7_pine",
+                    "forest_7_pine",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "water_plain_1",
+                    "water_plain_1",
+                    "water_plain_1",
+                    "water_plain_1",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "forest_7_round",
+                    "forest_7_round",
+                    "forest_7_round",
+                    "forest_7_round"
+                ],
+                [
+                    "forest_7_pine",
+                    "forest_3_pine",
+                    "forest_1_pine",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "water_plain_1",
+                    "water_plain_2",
+                    "water_plain_1",
+                    "water_plain_2",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "forest_3_round",
+                    "forest_1_round",
+                    "forest_7_round",
+                    "forest_7_round"
+                ],
+                [
+                    "forest_7_pine",
+                    "forest_1_pine",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "dirt_plain_1",
+                    "dirt_plain_2",
+                    "water_plain_2",
+                    "water_plain_1",
+                    "water_plain_2",
+                    "water_plain_1",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "forest_7_round",
+                    "forest_7_round"
+                ],
+                [
+                    "forest_7_pine",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "road_corner_bottom_right",
+                    "road_straight_horizontal",
+                    "road_straight_horizontal",
+                    "bridge_wood_horizontal",
+                    "bridge_wood_horizontal",
+                    "road_straight_horizontal",
+                    "road_straight_horizontal",
+                    "road_crossroads",
+                    "road_straight_horizontal",
+                    "road_straight_horizontal",
+                    "road_end_left",
+                    "forest_7_round",
+                    "forest_7_round"
+                ],
+                [
+                    "forest_7_pine",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "road_straight_vertical",
+                    "dirt_plain_2",
+                    "dirt_plain_1",
+                    "water_plain_1",
+                    "water_plain_2",
+                    "water_plain_1",
+                    "grass_plain_1",
+                    "road_straight_vertical",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "forest_3_round",
+                    "forest_7_round"
+                ],
+                [
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "road_straight_vertical",
+                    "dirt_plain_1",
+                    "dirt_plain_2",
+                    "water_plain_2",
+                    "water_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "road_straight_vertical",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "forest_7_round"
+                ],
+                [
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "road_straight_vertical",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "road_straight_vertical",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "forest_7_round"
+                ],
+                [
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "road_T_right",
+                    "road_straight_horizontal",
+                    "road_straight_horizontal",
+                    "road_straight_horizontal",
+                    "road_straight_horizontal",
+                    "road_straight_horizontal",
+                    "road_straight_horizontal",
+                    "road_crossroads",
+                    "road_end_left",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "forest_7_round"
+                ],
+                [
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "road_straight_vertical",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "stone_plain_1",
+                    "stone_plain_2",
+                    "stone_plain_1",
+                    "stone_plain_2",
+                    "road_straight_vertical",
+                    "grass_plain_1",
+                    "stone_plain_1",
+                    "stone_plain_2",
+                    "grass_plain_1",
+                    "forest_7_round"
+                ],
+                [
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "road_corner_top_right",
+                    "road_straight_horizontal",
+                    "road_straight_horizontal",
+                    "stone_plain_2",
+                    "stone_plain_1",
+                    "stone_plain_2",
+                    "stone_plain_1",
+                    "road_T_top",
+                    "stone_plain_1",
+                    "stone_plain_2",
+                    "stone_plain_1",
+                    "grass_plain_2",
+                    "forest_7_round"
+                ],
+                [
+                    "forest_7_pine",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "stone_plain_1",
+                    "stone_plain_2",
+                    "stone_plain_1",
+                    "stone_plain_2",
+                    "stone_plain_1",
+                    "stone_plain_2",
+                    "stone_plain_1",
+                    "stone_plain_2",
+                    "grass_plain_1",
+                    "forest_7_round"
+                ],
+                [
+                    "forest_7_pine",
+                    "forest_7_pine",
+                    "forest_7_pine",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "grass_plain_1",
+                    "grass_plain_2",
+                    "forest_7_round",
+                    "forest_7_round"
+                ]
+            ]
+        },
+        {
+            "name": "environment_objects",
+            "type": "objects",
+            "data": [
+                {
+                    "x": 1,
+                    "y": 2,
+                    "asset": "tree_pine"
+                },
+                {
+                    "x": 2,
+                    "y": 1,
+                    "asset": "tree_pine"
+                },
+                {
+                    "x": 1,
+                    "y": 9,
+                    "asset": "tree_pine"
+                },
+                {
+                    "x": 2,
+                    "y": 10,
+                    "asset": "log"
+                },
+                {
+                    "x": 12,
+                    "y": 2,
+                    "asset": "tree_round_top"
+                },
+                {
+                    "x": 13,
+                    "y": 1,
+                    "asset": "tree_round_top"
+                },
+                {
+                    "x": 14,
+                    "y": 4,
+                    "asset": "bush_berry"
+                },
+                {
+                    "x": 6,
+                    "y": 6,
+                    "asset": "stone_mixed"
+                },
+                {
+                    "x": 7,
+                    "y": 7,
+                    "asset": "boulder_large"
+                },
+                {
+                    "x": 2,
+                    "y": 3,
+                    "asset": "signpost_direction"
+                }
+            ]
+        },
+        {
+            "name": "structure_bases",
+            "type": "objects",
+            "data": [
+                {
+                    "x": 4,
+                    "y": 4,
+                    "asset": "windmill_base"
+                },
+                {
+                    "x": 10,
+                    "y": 4,
+                    "asset": "statue_base"
+                },
+                {
+                    "x": 10,
+                    "y": 8,
+                    "asset": "castle_base"
+                },
+                {
+                    "x": 7,
+                    "y": 9,
+                    "asset": "tower_base"
+                },
+                {
+                    "x": 13,
+                    "y": 9,
+                    "asset": "tower_base"
+                }
+            ]
+        },
+        {
+            "name": "structure_tops",
+            "type": "objects",
+            "data": [
+                {
+                    "x": 4,
+                    "y": 4,
+                    "asset": "windmill_top"
+                },
+                {
+                    "x": 4,
+                    "y": 4,
+                    "asset": "windmill_blades_1"
+                },
+                {
+                    "x": 10,
+                    "y": 4,
+                    "asset": "statue_top"
+                },
+                {
+                    "x": 10,
+                    "y": 8,
+                    "asset": "castle_top"
+                },
+                {
+                    "x": 7,
+                    "y": 9,
+                    "asset": "tower_top"
+                },
+                {
+                    "x": 13,
+                    "y": 9,
+                    "asset": "tower_top"
+                }
+            ]
+        }
+    ],
+    "locations": [
+        {
+            "name": "Pine Village",
+            "x": 4,
+            "y": 6,
+            "type": "TOWN"
+        },
+        {
+            "name": "Royal Castle",
+            "x": 10,
+            "y": 9,
+            "type": "DUNGEON"
+        },
+        {
+            "name": "East Woods",
+            "x": 13,
+            "y": 3,
+            "type": "TOWN"
+        }
+    ]
+}

@@ -24,23 +24,29 @@ The player should feel like a commander leading a desperate band of warriors thr
 
 ## 2. Game Structure
 
-### 2.1 World Structure: The "Living Continent"
-Instead of separate "Levels" or "Regions", the game takes place on **One Massive Contiguous Map**.
-- **Nodes**: Hundreds of interconnected locations (Towns, Dungeons, Ruins).
-- **No Hard Transitions**: You don't "Exit Region 1". You physically travel South to the Desert biome.
-- **Backtracking**: You can return to previous towns to trade or heal.
+### 2.1 World Structure: Region-Based Progression
+The game is divided into **Regions**, each with unique locations and escalating difficulty.
+- **Regions**: Self-contained areas with 6-10 interconnected locations
+- **Linear Progression**: Complete a region by reaching the EXIT location
+- **Backtracking**: Within a region, you can revisit previous locations (if connected)
+- **Threat System**: An advancing threat forces forward momentum
 
-### 2.2 Navigation (Pokemon-Style Travel)
-The world is a **Single Massive TileMap**.
-- **Movement**: Click-to-move along paths. The party sprite (Player) is the *only* visible entity on the overworld.
-- **Encounter System**:
-    - **Random Encounters**: Every step on a "Wild" tile has a % chance to trigger a battle.
-    - **Biomes**: The table of possible enemies changes based on the tile type (Forest, Desert, Road).
-    - **Safe Zones**: Roads have 0% encounter rate (unless ambushed by event).
-- **Time Passage**:
-    - 1 Step = 1 Minute.
-    - Day/Night cycle cycles every ~200 steps.
-    - "Camping" (Resting) advances time by 8 hours.
+### 2.2 Navigation (FTL-Style Node Map)
+Each region is a **Node-Based Map** with connected locations.
+- **Movement**: Click connected locations to travel. Each step costs 1 Supply.
+- **Location Types**:
+    - **Town** 🏘️: Shop, recruit units, rest
+    - **Battle** ⚔️: Combat encounter
+    - **Event** ❓: Random narrative event with choices
+    - **Camp** ⛺: Rest and heal the party
+    - **Dungeon** 🏰: Enter a multi-floor dungeon (Slay the Spire-style)
+    - **Exit** 🚪: Advance to the next region
+- **Connections**: Locations are connected by paths; you can only travel along paths
+- **Threat Timer**: An enemy force pursues you. After X turns, threatened locations become dangerous or lost
+
+### 2.3 Resources
+- **Supplies**: Consumed when traveling (1 per step). Running out forces risky encounters.
+- **Gold**: Earned from battles/events, spent at shops and towns.
 
 ---
 
