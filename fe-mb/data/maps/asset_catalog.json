@@ -61,7 +61,12 @@
         "log_pile_large": "Tile/medievalTile_55.png",
         "marble_pile_large": "Tile/medievalTile_56.png",
         "grass_plain_1": "Tile/medievalTile_57.png",
-        "grass_plain_2": "Tile/medievalTile_58.png"
+        "grass_plain_2": "Tile/medievalTile_58.png",
+        "water_plain_1": "Tile/medievalTile_27.png",
+        "water_plain_2": "Tile/medievalTile_28.png",
+        "bridge_wood_horizontal": "Tile/medievalTile_04.png",
+        "road_T_right": "Tile/medievalTile_21.png",
+        "road_corner_top_right": "Tile/medievalTile_17.png"
     },
     "environment": {
         "tree_round_top": "Environment/medievalEnvironment_01.png",
@@ -84,7 +89,8 @@
         "ore_gold": "Environment/medievalEnvironment_18.png",
         "bush_berry": "Environment/medievalEnvironment_19.png",
         "fire": "Environment/medievalEnvironment_20.png",
-        "tree_round_small": "Environment/medievalEnvironment_21.png"
+        "tree_round_small": "Environment/medievalEnvironment_21.png",
+        "signpost_direction": "Environment/medievalEnvironment_04.png"
     },
     "structures": {
         "tower_top": "Structure/medievalStructure_01.png",

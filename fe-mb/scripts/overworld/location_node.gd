@@ -11,13 +11,13 @@ var is_current: bool = false  # Player is here
 var is_reachable: bool = false  # Can player travel here?
 var is_threatened: bool = false  # Threat has reached this location
 
-const NODE_RADIUS: float = 16.0
+const NODE_RADIUS: float = 12.0  # Smaller to fit on roads
 
 
 func _ready() -> void:
 	# Create collision shape dynamically to avoid resource conflicts
 	var shape = CircleShape2D.new()
-	shape.radius = NODE_RADIUS + 4 # Slightly larger than visual radius
+	shape.radius = NODE_RADIUS + 6 # Slightly larger than visual radius for easier clicking
 	$Area2D/CollisionShape2D.shape = shape
 	
 	_update_visuals()

@@ -6,13 +6,13 @@
 z_index = 20
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-modulate = Color(0.2, 0.6, 1, 1)
-scale = Vector2(0.3, 0.3)
+modulate = Color(0.2, 0.8, 1, 1)
+scale = Vector2(0.25, 0.25)
 texture = ExtResource("1_icon")
 
 [node name="Shadow" type="Sprite2D" parent="."]
 modulate = Color(0, 0, 0, 0.3)
 z_index = -1
-position = Vector2(0, 5)
-scale = Vector2(0.3, 0.15)
+position = Vector2(0, 4)
+scale = Vector2(0.25, 0.12)
 texture = ExtResource("1_icon")
