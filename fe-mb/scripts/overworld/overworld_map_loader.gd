@@ -88,23 +88,61 @@ static func get_tile_texture(tile_name: String) -> Texture2D:
 	return texture
 
 
+## Terrain type enum for movement speeds
+enum TerrainType { ROAD, GRASS, DIRT, FOREST, WATER, STONE, SNOW, SAND }
+
+## Get terrain type from tile name
+static func get_terrain_type(tile_name: String) -> TerrainType:
+	if tile_name.begins_with("road_") or tile_name.begins_with("bridge_"):
+		return TerrainType.ROAD
+	elif tile_name.begins_with("water_"):
+		return TerrainType.WATER
+	elif tile_name.begins_with("forest_"):
+		return TerrainType.FOREST
+	elif tile_name.begins_with("dirt_"):
+		return TerrainType.DIRT
+	elif tile_name.begins_with("stone_"):
+		return TerrainType.STONE
+	elif tile_name.begins_with("snow_") or tile_name.begins_with("ice_"):
+		return TerrainType.SNOW
+	elif tile_name.begins_with("sand_"):
+		return TerrainType.SAND
+	else:
+		return TerrainType.GRASS
+
+
+## Get movement speed multiplier for terrain (1.0 = normal road speed)
+static func get_terrain_speed(terrain: TerrainType) -> float:
+	match terrain:
+		TerrainType.ROAD: return 1.0
+		TerrainType.GRASS: return 0.6
+		TerrainType.DIRT: return 0.7
+		TerrainType.FOREST: return 0.3
+		TerrainType.STONE: return 0.5
+		TerrainType.SNOW: return 0.4
+		TerrainType.SAND: return 0.5
+		TerrainType.WATER: return 0.0  # Impassable
+	return 0.5
+
+
+## Check if terrain is passable
+static func is_passable(terrain: TerrainType) -> bool:
+	return terrain != TerrainType.WATER
+
+
 ## Check if a tile name is a road tile
 static func is_road_tile(tile_name: String) -> bool:
 	return tile_name.begins_with("road_") or tile_name.begins_with("bridge_")
 
 
-## Check if a tile is walkable (roads, bridges)
-static func is_walkable_tile(tile_name: String) -> bool:
-	return is_road_tile(tile_name)
-
-
 ## Build terrain sprites from map data and add to parent node
-## Returns a dictionary with road_cells for pathfinding
+## Returns a dictionary with terrain data for pathfinding
 static func build_map_visuals(map_data: Dictionary, parent: Node2D) -> Dictionary:
 	load_catalog()
 	
 	var result = {
 		"road_cells": [],  # Array of Vector2i for A* pathfinding
+		"terrain_map": {},  # Dictionary[Vector2i] -> TerrainType
 		"width": map_data.get("width", 0),
 		"height": map_data.get("height", 0),
 		"tile_size": map_data.get("tile_size", tile_size)
@@ -138,8 +176,12 @@ static func build_map_visuals(map_data: Dictionary, parent: Node2D) -> Dictionar
 						sprite.z_index = -10  # Behind everything
 						layer_node.add_child(sprite)
 						
-						# Track road cells
-						if is_road_tile(tile_name):
+						# Track terrain type for all cells
+						var terrain = get_terrain_type(tile_name)
+						result.terrain_map[Vector2i(x, y)] = terrain
+						
+						# Track road cells separately for quick lookup
+						if terrain == TerrainType.ROAD:
 							result.road_cells.append(Vector2i(x, y))
 		
 		elif layer_type == "objects":
@@ -153,15 +195,16 @@ static func build_map_visuals(map_data: Dictionary, parent: Node2D) -> Dictionar
 				if texture:
 					var sprite = Sprite2D.new()
 					sprite.texture = texture
-					sprite.position = Vector2(obj_x * ts + ts / 2, obj_y * ts + ts / 2)
-					# Objects render above terrain
+					# Structure tops render ABOVE their base (offset upward)
 					if layer_name.contains("top"):
+						sprite.position = Vector2(obj_x * ts + ts / 2, obj_y * ts + ts / 2 - ts * 0.6)
 						sprite.z_index = 5
 					else:
-						sprite.z_index = 0
+						sprite.position = Vector2(obj_x * ts + ts / 2, obj_y * ts + ts / 2)
+						sprite.z_index = 2
 					layer_node.add_child(sprite)
 	
-	print("[OverworldMapLoader] Built map with %d road cells" % result.road_cells.size())
+	print("[OverworldMapLoader] Built map with %d road cells, %d terrain cells" % [result.road_cells.size(), result.terrain_map.size()])
 	return result
 
 

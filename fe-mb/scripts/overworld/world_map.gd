@@ -1,5 +1,5 @@
 extends Node2D
-## WorldMap - Grid-based overworld with road travel (FTL-style node system on a visual map)
+## WorldMap - Grid-based overworld with free movement (faster on roads, slower off-road)
 
 signal travel_started(from: LocationData, to: LocationData)
 signal travel_completed(location: LocationData)
@@ -17,7 +17,6 @@ const LocationNodeScene = preload("res://scenes/overworld/location_node.tscn")
 @onready var location_type_label: Label = $UI/InfoPanel/VBox/LocationType
 @onready var travel_btn: Button = $UI/InfoPanel/VBox/TravelBtn
 @onready var resources_label: Label = $UI/ResourcesPanel/Resources
-@onready var threat_indicator: Label = $UI/ThreatIndicator
 
 var pause_menu_scene = preload("res://scenes/ui/pause_menu.tscn")
 var map_pawn_scene = preload("res://scenes/overworld/map_pawn.tscn")
@@ -27,9 +26,11 @@ var player_pawn: Node2D = null
 # Map state
 var current_map_name: String = "test_overworld"
 var map_data: Dictionary = {}
-var road_cells: Array = []  # Array of Vector2i for pathfinding
+var terrain_map: Dictionary = {}  # Vector2i -> TerrainType
 var road_set: Dictionary = {}  # Quick lookup for road cells
 var tile_size: int = 64
+var map_width: int = 0
+var map_height: int = 0
 
 var locations: Array[LocationData] = []
 var location_nodes: Dictionary = {}  # id -> LocationNode
@@ -37,13 +38,12 @@ var current_location_id: int = 0
 var selected_location: LocationData = null
 var is_traveling: bool = false
 
-# Threat system
-var threat_position: int = 0
-var max_threat_turns: int = 12
-
 # Resources
 var supplies: int = 10
 var gold: int = 50
+
+# Movement speeds (tiles per second)
+const BASE_SPEED: float = 6.0  # Fast on roads
 
 
 func _ready() -> void:
@@ -57,7 +57,6 @@ func _ready() -> void:
 	_connect_ui_signals()
 	load_map(current_map_name)
 	_update_resources_display()
-	_update_threat_display()
 
 
 func _connect_ui_signals() -> void:
@@ -88,18 +87,20 @@ func load_map(map_name: String) -> void:
 		return
 	
 	tile_size = map_data.get("tile_size", 64)
+	map_width = map_data.get("width", 16)
+	map_height = map_data.get("height", 12)
 	
 	# Build visual layers (terrain, roads, objects)
 	var build_result = OverworldMapLoader.build_map_visuals(map_data, map_visuals)
-	road_cells = build_result.road_cells
+	terrain_map = build_result.terrain_map
 	
 	# Build road set for quick lookup
 	road_set.clear()
-	for cell in road_cells:
+	for cell in build_result.road_cells:
 		road_set[cell] = true
 	
 	# Extract locations from map JSON
-	locations = OverworldMapLoader.extract_locations(map_data, road_cells)
+	locations = OverworldMapLoader.extract_locations(map_data, build_result.road_cells)
 	
 	# Create visual nodes for each location
 	for loc in locations:
@@ -120,12 +121,10 @@ func load_map(map_name: String) -> void:
 	_spawn_pawn()
 	
 	# Center camera on map
-	var map_width = map_data.get("width", 16) * tile_size
-	var map_height = map_data.get("height", 12) * tile_size
-	camera.position = Vector2(map_width / 2, map_height / 2)
+	camera.position = Vector2(map_width * tile_size / 2, map_height * tile_size / 2)
 	
-	print("[WorldMap] Loaded map '%s' with %d locations and %d road cells" % [
-		map_data.get("name", map_name), locations.size(), road_cells.size()
+	print("[WorldMap] Loaded map '%s' with %d locations, %d terrain cells" % [
+		map_data.get("name", map_name), locations.size(), terrain_map.size()
 	])
 
 
@@ -145,26 +144,13 @@ func _draw_connections() -> void:
 			if connected_id > loc.id:  # Only draw once per pair
 				var other = _get_location_by_id(connected_id)
 				if other:
-					# Draw a subtle connection line along the road
+					# Draw a subtle connection line
 					var line = Line2D.new()
-					
-					# Get road path between locations for a nicer line
-					var start_grid = OverworldMapLoader.world_to_grid(loc.position, tile_size)
-					var end_grid = OverworldMapLoader.world_to_grid(other.position, tile_size)
-					var road_path = _find_road_path_cells(start_grid, end_grid)
-					
-					if road_path.size() > 1:
-						# Draw along road
-						for cell in road_path:
-							line.add_point(OverworldMapLoader.grid_to_world(cell, tile_size))
-					else:
-						# Fallback to straight line
-						line.add_point(loc.position)
-						line.add_point(other.position)
-					
-					line.width = 3.0
-					line.default_color = Color(1.0, 0.9, 0.3, 0.4)  # Golden path indicator
-					line.z_index = -5  # Above terrain, below objects
+					line.add_point(loc.position)
+					line.add_point(other.position)
+					line.width = 2.0
+					line.default_color = Color(1.0, 0.9, 0.3, 0.3)  # Subtle golden indicator
+					line.z_index = -5
 					connections_layer.add_child(line)
 
 
@@ -180,6 +166,8 @@ func _update_reachable_locations() -> void:
 	if not current_loc:
 		return
 	
+	# With free movement, all locations are technically reachable
+	# But we still highlight connected ones for the FTL-style pathing
 	for id in location_nodes:
 		var node = location_nodes[id]
 		var is_connected = id in current_loc.connected_locations
@@ -202,43 +190,34 @@ func _on_location_choice(loc: LocationData) -> void:
 	if current_location_id == loc.id:
 		return
 	
-	# Check if directly connected
-	var current_loc = _get_location_by_id(current_location_id)
-	if loc.id not in current_loc.connected_locations:
-		print("[WorldMap] Location not directly connected!")
+	# Calculate path using A* with terrain costs
+	var start_grid = OverworldMapLoader.world_to_grid(player_pawn.position, tile_size)
+	var end_grid = OverworldMapLoader.world_to_grid(loc.position, tile_size)
+	
+	var path = _find_terrain_path(start_grid, end_grid)
+	if path.is_empty():
+		print("[WorldMap] No valid path to destination!")
 		return
 	
-	# Cost is 1 supply per hop
+	# Cost is 1 supply per location hop
 	var cost = 1
 	if supplies < cost:
 		print("[WorldMap] Not enough supplies!")
 		return
 	
 	# Travel!
-	await _execute_road_travel(loc, cost)
+	await _execute_terrain_travel(loc, path, cost)
 
 
-func _execute_road_travel(target_loc: LocationData, cost: int) -> void:
+func _execute_terrain_travel(target_loc: LocationData, path: Array[Vector2i], cost: int) -> void:
 	is_traveling = true
 	
 	# Deduct resources
 	supplies -= cost
 	_update_resources_display()
-	threat_position += cost
-	_update_threat_display()
-	queue_redraw()
 	
-	# Get road path
-	var start_grid = OverworldMapLoader.world_to_grid(location_nodes[current_location_id].position, tile_size)
-	var end_grid = OverworldMapLoader.world_to_grid(target_loc.position, tile_size)
-	var road_path = _find_road_path_cells(start_grid, end_grid)
-	
-	if road_path.size() > 1:
-		# Animate along road tiles
-		await _animate_road_travel(road_path)
-	else:
-		# Fallback: direct movement
-		await _animate_direct_travel(target_loc.position)
+	# Animate along the path with variable speed based on terrain
+	await _animate_terrain_travel(path)
 	
 	# Update state
 	var old_id = current_location_id
@@ -254,83 +233,111 @@ func _execute_road_travel(target_loc: LocationData, cost: int) -> void:
 	_trigger_location_event(target_loc)
 
 
-func _animate_road_travel(path: Array[Vector2i]) -> void:
-	# Speed: tiles per second
-	const TILES_PER_SECOND: float = 4.0
-	var step_duration = 1.0 / TILES_PER_SECOND
-	
+func _animate_terrain_travel(path: Array[Vector2i]) -> void:
 	for i in range(1, path.size()):
 		var from_pos = OverworldMapLoader.grid_to_world(path[i - 1], tile_size)
 		var to_pos = OverworldMapLoader.grid_to_world(path[i], tile_size)
+		
+		# Get terrain speed for destination cell
+		var terrain = terrain_map.get(path[i], OverworldMapLoader.TerrainType.GRASS)
+		var speed_mult = OverworldMapLoader.get_terrain_speed(terrain)
+		
+		# Calculate duration based on terrain (faster = shorter duration)
+		var step_duration = 1.0 / (BASE_SPEED * max(speed_mult, 0.1))
 		
 		var tween = create_tween()
 		tween.tween_property(player_pawn, "position", to_pos, step_duration).set_trans(Tween.TRANS_LINEAR)
 		await tween.finished
 
 
-func _animate_direct_travel(target_pos: Vector2) -> void:
-	var dist = player_pawn.position.distance_to(target_pos)
-	var duration = max(0.3, dist / 300.0)
-	
-	var tween = create_tween()
-	tween.tween_property(player_pawn, "position", target_pos, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	await tween.finished
-
-
-## Find road path between two grid cells using BFS
-func _find_road_path_cells(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
+## A* pathfinding with terrain costs (water is impassable)
+func _find_terrain_path(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
 	var empty: Array[Vector2i] = []
 	
-	# Check if endpoints are on/near roads
-	var actual_start = _find_nearest_road(start)
-	var actual_end = _find_nearest_road(end)
-	
-	if actual_start == Vector2i(-1, -1) or actual_end == Vector2i(-1, -1):
+	# Check bounds
+	if not _is_in_bounds(start) or not _is_in_bounds(end):
 		return empty
 	
-	# BFS pathfinding
-	var queue: Array = [[actual_start]]
-	var visited: Dictionary = {actual_start: true}
-	var directions = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+	# Check if destination is passable
+	var end_terrain = terrain_map.get(end, OverworldMapLoader.TerrainType.GRASS)
+	if not OverworldMapLoader.is_passable(end_terrain):
+		return empty
 	
-	while not queue.is_empty():
-		var path: Array = queue.pop_front()
-		var current: Vector2i = path.back()
+	# A* algorithm
+	var open_set: Array = [start]
+	var came_from: Dictionary = {}
+	var g_score: Dictionary = {start: 0.0}
+	var f_score: Dictionary = {start: _heuristic(start, end)}
+	
+	var directions = [
+		Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+		Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)  # Diagonals
+	]
+	
+	while not open_set.is_empty():
+		# Find node with lowest f_score
+		var current = open_set[0]
+		var current_f = f_score.get(current, INF)
+		for node in open_set:
+			var node_f = f_score.get(node, INF)
+			if node_f < current_f:
+				current = node
+				current_f = node_f
 		
-		if current == actual_end:
-			var result: Array[Vector2i] = []
-			for p in path:
-				result.append(p)
-			return result
+		if current == end:
+			# Reconstruct path
+			var path: Array[Vector2i] = [current]
+			while current in came_from:
+				current = came_from[current]
+				path.insert(0, current)
+			return path
+		
+		open_set.erase(current)
 		
 		for dir in directions:
-			var next = current + dir
-			if next not in visited and next in road_set:
-				visited[next] = true
-				var new_path = path.duplicate()
-				new_path.append(next)
-				queue.append(new_path)
+			var neighbor = current + dir
+			
+			if not _is_in_bounds(neighbor):
+				continue
+			
+			var terrain = terrain_map.get(neighbor, OverworldMapLoader.TerrainType.GRASS)
+			if not OverworldMapLoader.is_passable(terrain):
+				continue
+			
+			# Calculate movement cost (inverse of speed)
+			var speed = OverworldMapLoader.get_terrain_speed(terrain)
+			var move_cost = 1.0 / max(speed, 0.1)
+			
+			# Diagonal movement costs more
+			if dir.x != 0 and dir.y != 0:
+				move_cost *= 1.414
+			
+			var tentative_g = g_score.get(current, INF) + move_cost
+			
+			if tentative_g < g_score.get(neighbor, INF):
+				came_from[neighbor] = current
+				g_score[neighbor] = tentative_g
+				f_score[neighbor] = tentative_g + _heuristic(neighbor, end)
+				
+				if neighbor not in open_set:
+					open_set.append(neighbor)
 	
 	return empty
 
 
-func _find_nearest_road(pos: Vector2i) -> Vector2i:
-	if pos in road_set:
-		return pos
-	
-	# Check adjacent cells
-	var directions = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
-					  Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)]
-	for dir in directions:
-		var check = pos + dir
-		if check in road_set:
-			return check
-	
-	return Vector2i(-1, -1)
+func _heuristic(a: Vector2i, b: Vector2i) -> float:
+	# Diagonal distance heuristic
+	var dx = abs(a.x - b.x)
+	var dy = abs(a.y - b.y)
+	return max(dx, dy) + 0.414 * min(dx, dy)
+
+
+func _is_in_bounds(pos: Vector2i) -> bool:
+	return pos.x >= 0 and pos.x < map_width and pos.y >= 0 and pos.y < map_height
 
 
 func _on_location_hovered(loc_data: LocationData) -> void:
-	# Show tooltip or highlight path
+	# Could show path preview here
 	pass
 
 
@@ -338,16 +345,18 @@ func _on_travel_pressed() -> void:
 	if not selected_location or is_traveling:
 		return
 	
-	var current_loc = _get_location_by_id(current_location_id)
-	if selected_location.id not in current_loc.connected_locations:
-		return
-	
 	if supplies < 1:
 		print("[WorldMap] Not enough supplies!")
 		return
 	
 	ui_panel.visible = false
-	await _execute_road_travel(selected_location, 1)
+	
+	var start_grid = OverworldMapLoader.world_to_grid(player_pawn.position, tile_size)
+	var end_grid = OverworldMapLoader.world_to_grid(selected_location.position, tile_size)
+	var path = _find_terrain_path(start_grid, end_grid)
+	
+	if not path.is_empty():
+		await _execute_terrain_travel(selected_location, path, 1)
 
 
 func _trigger_location_event(loc: LocationData) -> void:
@@ -388,16 +397,6 @@ func _update_resources_display() -> void:
 		resources_label.text = "Supplies: %d | Gold: %d" % [supplies, gold]
 
 
-func _update_threat_display() -> void:
-	if threat_indicator:
-		var remaining = max_threat_turns - threat_position
-		threat_indicator.text = "Threat: %d turns" % remaining
-		if remaining <= 3:
-			threat_indicator.add_theme_color_override("font_color", Color.RED)
-		else:
-			threat_indicator.add_theme_color_override("font_color", Color.WHITE)
-
-
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if pause_menu and not pause_menu.visible:
@@ -405,11 +404,4 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-func _draw() -> void:
-	# Draw threat zone (left side of map)
-	var map_width = map_data.get("width", 16) * tile_size
-	var map_height = map_data.get("height", 12) * tile_size
-	var threat_x = threat_position * (map_width / max_threat_turns)
-	if threat_x > 0:
-		var threat_rect = Rect2(0, 0, threat_x, map_height)
-		draw_rect(threat_rect, Color(0.5, 0, 0, 0.2), true)
+

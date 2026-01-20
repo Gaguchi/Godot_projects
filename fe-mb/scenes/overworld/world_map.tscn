@@ -60,16 +60,3 @@ grow_horizontal = 2
 layout_mode = 2
 text = "Supplies: 10 | Gold: 50"
 horizontal_alignment = 1
-
-[node name="ThreatIndicator" type="Label" parent="UI"]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -150.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = 33.0
-grow_horizontal = 0
-text = "Threat: 12 turns"
-horizontal_alignment = 2
-
