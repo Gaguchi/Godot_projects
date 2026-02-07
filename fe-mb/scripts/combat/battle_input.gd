@@ -1,7 +1,7 @@
 class_name BattleInput
 extends Node
-## BattleInput - Handles all player input during combat
-## Selection, movement, attack targeting, action menu, unit cycling
+## BattleInput - Handles player input during combat
+## Supports speed-based turn system: one active unit at a time
 
 signal unit_selected(unit: Node2D)
 signal unit_deselected()
@@ -16,25 +16,23 @@ signal target_selection_cancelled()
 var battle_grid: BattleGrid
 var grid_overlay: Node2D  # GridOverlay
 var units_container: Node2D
-var action_menu: PanelContainer
 var unit_info_panel: PanelContainer
 var combat_forecast_panel: PanelContainer
 
 ## State
 var selected_unit: Node2D = null
 var attacking_unit: Node2D = null
+var active_unit: Node2D = null  # The unit whose turn it is
 var walkable_tiles: Array[Vector2i] = []
 var attackable_tiles: Array[Vector2i] = []
 var attack_range_tiles: Array[Vector2i] = []
-var can_attack_without_moving: bool = false
 var last_hover_tile: Vector2i = Vector2i(-1, -1)
-var pre_move_position: Vector2i = Vector2i(-1, -1)  # For undo
+var pre_move_position: Vector2i = Vector2i(-1, -1)
 
-## Whether input is enabled (disabled during animations, enemy turn, etc.)
+## Whether input is enabled
 var input_enabled: bool = false
 var is_selecting_target: bool = false
-var is_action_menu_open: bool = false
-var units_acted: Array = []
+var _is_post_move_target: bool = false  # Target selection after moving
 
 
 func handle_input(event: InputEvent) -> void:
@@ -47,17 +45,7 @@ func handle_input(event: InputEvent) -> void:
 			var grid_pos: Vector2i = battle_grid.world_to_grid(click_pos)
 			_handle_click(grid_pos)
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			if is_action_menu_open and pre_move_position != Vector2i(-1, -1):
-				# Undo move
-				undo_move_requested.emit()
-			else:
-				_deselect_unit()
-
-	if not is_selecting_target and not is_action_menu_open:
-		if event.is_action_pressed("next_unit"):
-			_cycle_unit(1)
-		elif event.is_action_pressed("prev_unit"):
-			_cycle_unit(-1)
+			_handle_right_click()
 
 
 func update_hover() -> void:
@@ -71,12 +59,11 @@ func update_hover() -> void:
 
 	if is_selecting_target and attacking_unit:
 		_update_target_hover(hover)
-	elif selected_unit and not is_action_menu_open:
+	elif selected_unit and not is_selecting_target:
 		_update_path_preview(hover)
 
 
 func _get_world_mouse_position() -> Vector2:
-	# Get viewport and transform to convert screen -> world
 	var viewport: Viewport = get_viewport()
 	if viewport:
 		return viewport.get_canvas_transform().affine_inverse() * viewport.get_mouse_position()
@@ -88,24 +75,35 @@ func _handle_click(grid_pos: Vector2i) -> void:
 		_handle_target_selection(grid_pos)
 		return
 
-	if is_action_menu_open:
+	if not active_unit or not selected_unit:
 		return
 
 	var clicked_unit: Node2D = battle_grid.get_unit_at(grid_pos)
 
 	if clicked_unit:
 		var clicked_data: UnitData = clicked_unit.get_unit_data()
-
-		if clicked_data.is_player_unit:
-			_select_unit(clicked_unit)
-		else:
+		if not clicked_data.is_player_unit:
 			_handle_enemy_click(clicked_unit, grid_pos)
-	elif selected_unit and grid_pos in walkable_tiles:
+	elif grid_pos in walkable_tiles:
 		# Store pre-move position for undo
 		pre_move_position = battle_grid.world_to_grid(selected_unit.position)
 		move_requested.emit(selected_unit, grid_pos)
-	elif selected_unit:
-		_deselect_unit()
+
+
+func _handle_right_click() -> void:
+	if is_selecting_target and _is_post_move_target and pre_move_position != Vector2i(-1, -1):
+		# Undo move during post-move target selection
+		_is_post_move_target = false
+		is_selecting_target = false
+		attacking_unit = null
+		undo_move_requested.emit()
+	elif is_selecting_target:
+		# Cancel target selection (e.g. direct attack cancelled) - wait instead
+		is_selecting_target = false
+		_is_post_move_target = false
+		attacking_unit = null
+		if active_unit:
+			wait_requested.emit(active_unit)
 
 
 func _handle_enemy_click(enemy: Node2D, grid_pos: Vector2i) -> void:
@@ -117,7 +115,7 @@ func _handle_enemy_click(enemy: Node2D, grid_pos: Vector2i) -> void:
 		# Direct attack without moving
 		var attacker: Node2D = selected_unit
 		attacking_unit = attacker
-		_deselect_unit()
+		_clear_selection_visuals()
 		attack_requested.emit(attacker, enemy)
 	elif grid_pos in attack_range_tiles:
 		# Move + attack
@@ -125,7 +123,7 @@ func _handle_enemy_click(enemy: Node2D, grid_pos: Vector2i) -> void:
 		if move_tile != Vector2i(-1, -1):
 			var attacker: Node2D = selected_unit
 			attacking_unit = attacker
-			_deselect_unit()
+			_clear_selection_visuals()
 			attack_after_move_requested.emit(attacker, enemy, move_tile)
 		else:
 			_show_unit_info(enemy)
@@ -133,17 +131,37 @@ func _handle_enemy_click(enemy: Node2D, grid_pos: Vector2i) -> void:
 		_show_unit_info(enemy)
 
 
-func _select_unit(unit: Node2D) -> void:
-	if unit in units_acted:
-		return
+## Set the active unit for this turn (called by battlefield)
+func set_active_unit(unit: Node2D) -> void:
+	active_unit = unit
+	_select_unit(unit)
 
+
+## Enter target selection after movement (no action menu)
+func enter_target_selection_after_move(unit: Node2D, attack_tiles: Array[Vector2i]) -> void:
+	is_selecting_target = true
+	_is_post_move_target = true
+	attacking_unit = unit
+	selected_unit = unit
+	attackable_tiles = attack_tiles
+
+	if grid_overlay:
+		grid_overlay.set_walkable_tiles([])
+		grid_overlay.set_attackable_tiles(attackable_tiles)
+
+
+## Public deselect (called by battlefield for cleanup)
+func deselect_unit() -> void:
+	_deselect_unit()
+
+
+func _select_unit(unit: Node2D) -> void:
 	selected_unit = unit
 
-	# Calculate ranges using battle_grid
+	# Calculate ranges
 	walkable_tiles = battle_grid.get_reachable_tiles(unit)
 	attackable_tiles = battle_grid.get_attackable_enemies(unit)
 	attack_range_tiles = battle_grid.get_combined_attack_range(unit, walkable_tiles)
-	can_attack_without_moving = not attackable_tiles.is_empty()
 
 	if grid_overlay:
 		grid_overlay.set_walkable_tiles(walkable_tiles)
@@ -159,14 +177,11 @@ func _deselect_unit() -> void:
 	walkable_tiles.clear()
 	attackable_tiles.clear()
 	attack_range_tiles.clear()
-	can_attack_without_moving = false
 	last_hover_tile = Vector2i(-1, -1)
 	pre_move_position = Vector2i(-1, -1)
 	is_selecting_target = false
-	is_action_menu_open = false
+	_is_post_move_target = false
 
-	if action_menu:
-		action_menu.visible = false
 	if unit_info_panel:
 		unit_info_panel.visible = false
 	if combat_forecast_panel:
@@ -175,6 +190,15 @@ func _deselect_unit() -> void:
 		grid_overlay.clear_highlights()
 
 	unit_deselected.emit()
+
+
+func _clear_selection_visuals() -> void:
+	if grid_overlay:
+		grid_overlay.clear_highlights()
+	if unit_info_panel:
+		unit_info_panel.visible = false
+	if combat_forecast_panel:
+		combat_forecast_panel.visible = false
 
 
 func _update_path_preview(hover_tile: Vector2i) -> void:
@@ -202,103 +226,32 @@ func _update_target_hover(hover_tile: Vector2i) -> void:
 
 func _handle_target_selection(grid_pos: Vector2i) -> void:
 	if grid_pos not in attackable_tiles:
-		# Cancel target selection, unit still loses turn
-		target_selection_cancelled.emit()
-		if is_instance_valid(attacking_unit):
-			units_acted.append(attacking_unit)
-		_deselect_unit()
+		if _is_post_move_target:
+			# Clicking outside attack range after move = wait
+			is_selecting_target = false
+			_is_post_move_target = false
+			if is_instance_valid(attacking_unit):
+				wait_requested.emit(attacking_unit)
+			_deselect_unit()
+		else:
+			target_selection_cancelled.emit()
+			_deselect_unit()
 		return
 
 	var target: Node2D = battle_grid.get_unit_at(grid_pos)
 	if target and is_instance_valid(attacking_unit):
 		var attacker: Node2D = attacking_unit
+		is_selecting_target = false
+		_is_post_move_target = false
 		_deselect_unit()
 		attack_requested.emit(attacker, target)
 	else:
 		if is_instance_valid(attacking_unit):
-			units_acted.append(attacking_unit)
+			wait_requested.emit(attacking_unit)
 		_deselect_unit()
-
-
-## Enter target selection mode (called after action menu "Attack" pressed)
-func enter_target_selection(unit: Node2D, attack_tiles: Array[Vector2i]) -> void:
-	is_selecting_target = true
-	is_action_menu_open = false
-	attacking_unit = unit
-	attackable_tiles = attack_tiles
-
-	if action_menu:
-		action_menu.visible = false
-
-
-## Show action menu after moving
-func show_action_menu(unit: Node2D) -> void:
-	is_action_menu_open = true
-	selected_unit = unit
-
-	# Calculate attack range from new position
-	attackable_tiles = battle_grid.get_attackable_enemies(unit)
-
-	if grid_overlay:
-		grid_overlay.set_walkable_tiles([])
-		grid_overlay.set_attackable_tiles(attackable_tiles)
-
-	if action_menu:
-		action_menu.visible = true
-		var attack_btn: Button = action_menu.get_node("VBox/AttackBtn")
-		if attack_btn:
-			attack_btn.disabled = attackable_tiles.is_empty()
-
-
-func on_attack_pressed() -> void:
-	if selected_unit:
-		enter_target_selection(selected_unit, attackable_tiles)
-
-
-func on_wait_pressed() -> void:
-	if selected_unit:
-		var unit: Node2D = selected_unit
-		_deselect_unit()
-		wait_requested.emit(unit)
-
-
-func on_item_pressed() -> void:
-	pass  # TODO: Implement item menu
-
-
-func _cycle_unit(direction: int) -> void:
-	var player_units: Array = []
-	for unit in units_container.get_children():
-		if not is_instance_valid(unit) or not unit.has_method("get_unit_data"):
-			continue
-		var data: UnitData = unit.get_unit_data()
-		if data and data.is_player_unit and unit not in units_acted:
-			player_units.append(unit)
-
-	if player_units.is_empty():
-		return
-
-	player_units.sort_custom(func(a: Node2D, b: Node2D) -> bool:
-		var pos_a: Vector2i = battle_grid.world_to_grid(a.position)
-		var pos_b: Vector2i = battle_grid.world_to_grid(b.position)
-		if pos_a.y != pos_b.y:
-			return pos_a.y < pos_b.y
-		return pos_a.x < pos_b.x
-	)
-
-	var current_index: int = -1
-	if selected_unit in player_units:
-		current_index = player_units.find(selected_unit)
-
-	var next_index: int = (current_index + direction) % player_units.size()
-	if next_index < 0:
-		next_index = player_units.size() - 1
-
-	_select_unit(player_units[next_index])
 
 
 func _show_unit_info(unit: Node2D) -> void:
-	# Battlefield handles the actual UI update via signal
 	unit_selected.emit(unit)
 
 

@@ -172,7 +172,7 @@ static func build_map_visuals(map_data: Dictionary, parent: Node2D) -> Dictionar
 					if texture:
 						var sprite = Sprite2D.new()
 						sprite.texture = texture
-						sprite.position = Vector2(x * ts + ts / 2, y * ts + ts / 2)
+						sprite.position = Vector2(x * ts + ts / 2.0, y * ts + ts / 2.0)
 						sprite.z_index = -10  # Behind everything
 						layer_node.add_child(sprite)
 						
@@ -197,10 +197,10 @@ static func build_map_visuals(map_data: Dictionary, parent: Node2D) -> Dictionar
 					sprite.texture = texture
 					# Structure tops render ABOVE their base (offset upward)
 					if layer_name.contains("top"):
-						sprite.position = Vector2(obj_x * ts + ts / 2, obj_y * ts + ts / 2 - ts * 0.6)
+						sprite.position = Vector2(obj_x * ts + ts / 2.0, obj_y * ts + ts / 2.0 - ts * 0.6)
 						sprite.z_index = 5
 					else:
-						sprite.position = Vector2(obj_x * ts + ts / 2, obj_y * ts + ts / 2)
+						sprite.position = Vector2(obj_x * ts + ts / 2.0, obj_y * ts + ts / 2.0)
 						sprite.z_index = 2
 					layer_node.add_child(sprite)
 	
@@ -210,7 +210,7 @@ static func build_map_visuals(map_data: Dictionary, parent: Node2D) -> Dictionar
 
 ## Convert grid position to world position (center of tile)
 static func grid_to_world(grid_pos: Vector2i, ts: int = tile_size) -> Vector2:
-	return Vector2(grid_pos.x * ts + ts / 2, grid_pos.y * ts + ts / 2)
+	return Vector2(grid_pos.x * ts + ts / 2.0, grid_pos.y * ts + ts / 2.0)
 
 
 ## Convert world position to grid position

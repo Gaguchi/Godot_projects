@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=4 uid="uid://bw0pxndw8kfl3"]
 
-[ext_resource type="Script" uid="uid://dggx3hyqbwv5m" path="res://scripts/overworld/world_map.gd" id="1_map"]
-[ext_resource type="Script" uid="uid://cfm8lpabp1bhi" path="res://scripts/overworld/world_input_manager.gd" id="2_input"]
+[ext_resource type="Script" path="res://scripts/overworld/world_map.gd" id="1_map"]
+[ext_resource type="Script" path="res://scripts/overworld/world_input_manager.gd" id="2_input"]
 
 [node name="WorldMap" type="Node2D"]
 script = ExtResource("1_map")

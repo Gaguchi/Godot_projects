@@ -60,7 +60,6 @@ func _ready() -> void:
 
 func _connect_ui_signals() -> void:
 	enter_btn.pressed.connect(_on_enter_pressed)
-	enter_btn.pressed.connect(_on_enter_pressed)
 	exit_btn.pressed.connect(_on_exit_pressed)
 	inventory_btn.pressed.connect(_on_inventory_pressed)
 
@@ -126,8 +125,8 @@ func _update_reachable_rooms() -> void:
 	
 	for id in room_nodes:
 		var node = room_nodes[id]
-		var is_connected = id in current_room.connected_rooms
-		node.set_reachable(is_connected)
+		var room_connected = id in current_room.connected_rooms
+		node.set_reachable(room_connected)
 		node.set_current(id == current_room_id)
 		
 		var room = _get_room_by_id(id)
@@ -140,7 +139,7 @@ func _on_room_clicked(room_data: DungeonRoomData) -> void:
 	_show_room_info(room_data)
 
 
-func _on_room_hovered(room_data: DungeonRoomData) -> void:
+func _on_room_hovered(_room_data: DungeonRoomData) -> void:
 	# Could show tooltip here
 	pass
 
@@ -337,4 +336,3 @@ func _restore_dungeon_state() -> void:
 	_draw_connections()
 	_update_reachable_rooms()
 	_focus_camera_on_room(current_room_id)
-

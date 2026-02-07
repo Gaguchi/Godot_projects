@@ -72,7 +72,7 @@ func _end_drag(mouse_pos: Vector2) -> void:
 		_handle_click(mouse_pos)
 
 
-func _handle_click(screen_pos: Vector2) -> void:
+func _handle_click(_screen_pos: Vector2) -> void:
 	var final_pos = get_global_mouse_position()
 	
 	var space_state = get_world_2d().direct_space_state

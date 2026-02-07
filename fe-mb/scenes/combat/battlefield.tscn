@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://dwkmnx5d2q0xw"]
+[gd_scene load_steps=12 format=3 uid="uid://dwkmnx5d2q0xw"]
 
 [ext_resource type="Script" uid="uid://dmowc6elghe6o" path="res://scripts/combat/battlefield.gd" id="1_battlefield"]
 [ext_resource type="Script" uid="uid://bgy465riktha8" path="res://scripts/combat/grid_overlay.gd" id="2_grid_overlay"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/combat/battle_input.gd" id="4_battle_input"]
 [ext_resource type="Script" path="res://scripts/combat/enemy_ai.gd" id="5_enemy_ai"]
 [ext_resource type="Script" path="res://scripts/combat/combat_animator.gd" id="6_combat_animator"]
+[ext_resource type="Script" path="res://scripts/combat/turn_order_display.gd" id="7_turn_order"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
 bg_color = Color(0.1, 0.1, 0.1, 1)
@@ -58,12 +59,23 @@ script = ExtResource("2_grid_overlay")
 [node name="Units" type="Node2D" parent="."]
 
 [node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(320, 224)
-zoom = Vector2(1, 1)
+position = Vector2(448, 320)
+zoom = Vector2(0.75, 0.75)
 position_smoothing_enabled = true
 
 [node name="UI" type="CanvasLayer" parent="."]
 layer = 10
+
+[node name="TurnOrderBar" type="HBoxContainer" parent="UI"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 6.0
+offset_right = -10.0
+offset_bottom = 46.0
+grow_horizontal = 2
+theme_override_constants/separation = 4
+script = ExtResource("7_turn_order")
 
 [node name="TurnBanner" type="Label" parent="UI"]
 visible = false
@@ -284,3 +296,40 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "Crit: 0%"
 horizontal_alignment = 1
+
+[node name="TerrainInfo" type="Label" parent="UI"]
+visible = false
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -30.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 11
+text = "Plain  DEF+0  AVO+0"
+horizontal_alignment = 2
+
+[node name="WaitButton" type="Button" parent="UI"]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -40.0
+offset_right = 40.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 13
+text = "Wait"

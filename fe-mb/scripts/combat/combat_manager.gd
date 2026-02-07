@@ -53,38 +53,38 @@ static func calculate_combat(attacker: UnitData, defender: UnitData, terrain_def
 static func execute_combat(forecast: Dictionary) -> Dictionary:
 	var attacker: UnitData = forecast.attacker
 	var defender: UnitData = forecast.defender
-	var log = []
+	var combat_log = []
 	
 	# Attacker's first attack
 	var attack_result = _perform_attack(attacker, defender, forecast.attacker_hit, forecast.attacker_damage, forecast.attacker_crit)
-	log.append(attack_result)
+	combat_log.append(attack_result)
 	
 	if not defender.is_alive():
-		return {"log": log, "attacker_alive": true, "defender_alive": false}
+		return {"log": combat_log, "attacker_alive": true, "defender_alive": false}
 	
 	# Defender's counter attack
 	if forecast.defender_can_counter:
 		var counter_result = _perform_attack(defender, attacker, forecast.defender_hit, forecast.defender_damage, forecast.defender_crit)
-		log.append(counter_result)
+		combat_log.append(counter_result)
 		
 		if not attacker.is_alive():
-			return {"log": log, "attacker_alive": false, "defender_alive": true}
+			return {"log": combat_log, "attacker_alive": false, "defender_alive": true}
 	
 	# Attacker's double attack
 	if forecast.attacker_doubles and defender.is_alive():
 		var double_result = _perform_attack(attacker, defender, forecast.attacker_hit, forecast.attacker_damage, forecast.attacker_crit)
-		log.append(double_result)
+		combat_log.append(double_result)
 		
 		if not defender.is_alive():
-			return {"log": log, "attacker_alive": true, "defender_alive": false}
+			return {"log": combat_log, "attacker_alive": true, "defender_alive": false}
 	
 	# Defender's double counter
 	if forecast.defender_can_counter and forecast.defender_doubles and attacker.is_alive():
 		var double_counter = _perform_attack(defender, attacker, forecast.defender_hit, forecast.defender_damage, forecast.defender_crit)
-		log.append(double_counter)
+		combat_log.append(double_counter)
 	
 	return {
-		"log": log,
+		"log": combat_log,
 		"attacker_alive": attacker.is_alive(),
 		"defender_alive": defender.is_alive()
 	}
@@ -115,7 +115,7 @@ static func _perform_attack(attacker: UnitData, defender: UnitData, hit_rate: in
 
 
 ## Calculate raw damage (armor absorption happens in UnitData.take_damage)
-static func _calculate_damage(attacker: UnitData, defender: UnitData, triangle: int, _terrain_bonus: int) -> int:
+static func _calculate_damage(attacker: UnitData, _defender: UnitData, triangle: int, _terrain_bonus: int) -> int:
 	var attack_power: int = attacker.get_attack_power()
 	var damage: int = attack_power + (triangle * WEAPON_TRIANGLE_DMG_BONUS)
 	return max(0, damage)

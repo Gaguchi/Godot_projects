@@ -1,32 +1,35 @@
 extends Node2D
 ## Battlefield - Main combat scene coordinator
 ## Delegates to: BattleGrid, BattleInput, EnemyAI, CombatAnimator
+## Uses speed-based individual turn system
 
 signal battle_finished(victory: bool)
 
 const DEBUG_COMBAT: bool = true
 
 enum BattleState {
-	PLAYER_TURN,
-	ENEMY_TURN,
-	ANIMATING,
-	SELECTING_TARGET,
-	ACTION_MENU,
+	IDLE,               # Between turns, processing queue
+	PLAYER_UNIT_TURN,   # A player unit is acting
+	ENEMY_UNIT_TURN,    # An enemy unit is acting (AI processing)
+	ANIMATING,          # Movement/combat animation playing
+	SELECTING_TARGET,   # Player choosing attack target after move
 	BATTLE_END
 }
 
 const TILE_SIZE: int = 64
-const GRID_WIDTH: int = 10
-const GRID_HEIGHT: int = 7
+const GRID_WIDTH: int = 14
+const GRID_HEIGHT: int = 10
 
 @onready var tilemap: TileMapLayer = $TileMapLayer
 @onready var grid_overlay: Node2D = $GridOverlay
 @onready var units_container: Node2D = $Units
 @onready var turn_banner: Label = $UI/TurnBanner
 @onready var unit_info: PanelContainer = $UI/UnitInfo
-@onready var action_menu: PanelContainer = $UI/ActionMenu
 @onready var combat_forecast: PanelContainer = $UI/CombatForecast
 @onready var camera: Camera2D = $Camera2D
+@onready var terrain_info: Label = $UI/TerrainInfo
+@onready var wait_button: Button = $UI/WaitButton
+@onready var turn_order_display = $UI/TurnOrderBar
 
 ## Sub-components
 @onready var battle_grid: BattleGrid = $BattleGrid
@@ -37,27 +40,29 @@ const GRID_HEIGHT: int = 7
 var camera_speed: float = 400.0
 var min_zoom: Vector2 = Vector2(0.5, 0.5)
 var max_zoom: Vector2 = Vector2(2.0, 2.0)
-var target_zoom: Vector2 = Vector2(1.0, 1.0)
+var target_zoom: Vector2 = Vector2(0.75, 0.75)
 var is_camera_dragging: bool = false
 var camera_drag_start: Vector2 = Vector2.ZERO
+var _camera_tween: Tween = null
 
 var UnitScene: PackedScene = preload("res://scenes/units/unit.tscn")
 
-var current_state: BattleState = BattleState.PLAYER_TURN
+var current_state: BattleState = BattleState.IDLE
 var player_units: Array = []
 var enemy_units: Array = []
-var units_acted: Array = []
+
+## Speed-based turn system
+var turn_queue: Array = []
+var current_turn_index: int = 0
+var active_unit: Node2D = null
+var _previous_active_unit: Node2D = null
 
 
 func _ready() -> void:
 	print("[Battlefield] _ready() START")
 
-	# Verify all node references
-	print("[Battlefield] battle_grid=%s battle_input=%s enemy_ai=%s combat_animator=%s" % [battle_grid, battle_input, enemy_ai, combat_animator])
-	print("[Battlefield] camera=%s units_container=%s grid_overlay=%s" % [camera, units_container, grid_overlay])
-
 	if not battle_grid or not battle_input or not enemy_ai or not combat_animator:
-		printerr("[Battlefield] FATAL: One or more components are null! Scene will not work.")
+		printerr("[Battlefield] FATAL: One or more components are null!")
 		return
 
 	GameManager.change_state(GameManager.GameState.COMBAT)
@@ -65,13 +70,11 @@ func _ready() -> void:
 	# Configure components
 	battle_grid.configure(GRID_WIDTH, GRID_HEIGHT, TILE_SIZE)
 	grid_overlay.configure(GRID_WIDTH, GRID_HEIGHT, TILE_SIZE)
-	print("[Battlefield] Components configured")
 
 	# Wire up component references
 	battle_input.battle_grid = battle_grid
 	battle_input.grid_overlay = grid_overlay
 	battle_input.units_container = units_container
-	battle_input.action_menu = action_menu
 	battle_input.unit_info_panel = unit_info
 	battle_input.combat_forecast_panel = combat_forecast
 
@@ -79,7 +82,6 @@ func _ready() -> void:
 
 	combat_animator.battlefield = self
 	combat_animator.battle_grid = battle_grid
-	print("[Battlefield] References wired up")
 
 	# Connect input signals
 	battle_input.unit_selected.connect(_on_unit_selected)
@@ -91,21 +93,18 @@ func _ready() -> void:
 	battle_input.undo_move_requested.connect(_on_undo_move_requested)
 	battle_input.target_selection_cancelled.connect(_on_target_selection_cancelled)
 
-	# Connect UI buttons
-	$UI/ActionMenu/VBox/AttackBtn.pressed.connect(battle_input.on_attack_pressed)
-	$UI/ActionMenu/VBox/WaitBtn.pressed.connect(battle_input.on_wait_pressed)
-	$UI/ActionMenu/VBox/ItemBtn.pressed.connect(battle_input.on_item_pressed)
-	print("[Battlefield] Signals connected")
+	# Wait button
+	if wait_button:
+		wait_button.pressed.connect(_on_wait_button_pressed)
+		wait_button.visible = false
 
 	_clear_placeholder_units()
 	GameManager.ensure_party()
-	print("[Battlefield] Party size: %d" % GameManager.party.size())
 	_spawn_party_units()
 	_spawn_enemy_units()
 
-	# Sync grid after spawning
 	battle_grid.sync_units_from_container(units_container)
-	print("[Battlefield] Units in container: %d, Units in grid: %d" % [units_container.get_child_count(), battle_grid.unit_grid.size()])
+	print("[Battlefield] Units in container: %d" % units_container.get_child_count())
 
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -113,17 +112,15 @@ func _ready() -> void:
 	print("[Battlefield] _ready() COMPLETE")
 
 
-var _debug_frame_count: int = 0
-
 func _process(delta: float) -> void:
-	_debug_frame_count += 1
-	if _debug_frame_count == 1:
-		print("[Battlefield] _process() running (first frame). State=%d camera=%s" % [current_state, camera])
-
 	_handle_camera_input(delta)
 
-	if current_state == BattleState.PLAYER_TURN or current_state == BattleState.SELECTING_TARGET:
+	if current_state == BattleState.PLAYER_UNIT_TURN or current_state == BattleState.SELECTING_TARGET:
 		battle_input.update_hover()
+
+	# Terrain info on hover
+	if grid_overlay and current_state != BattleState.BATTLE_END:
+		_update_terrain_info(grid_overlay.get_hover_tile())
 
 	# Zoom input - works in all states except BATTLE_END
 	if current_state != BattleState.BATTLE_END:
@@ -131,13 +128,12 @@ func _process(delta: float) -> void:
 			_zoom_camera(0.15)
 		elif Input.is_action_just_pressed("camera_zoom_out"):
 			_zoom_camera(-0.15)
-		# Reset camera to show full grid
 		if Input.is_action_just_pressed("camera_reset"):
 			_reset_camera_view()
 
 
 func _input(event: InputEvent) -> void:
-	# Middle-mouse drag panning (works in all states except BATTLE_END)
+	# Middle-mouse drag panning
 	if event is InputEventMouseButton and current_state != BattleState.BATTLE_END:
 		if event.button_index == MOUSE_BUTTON_MIDDLE:
 			is_camera_dragging = event.pressed
@@ -149,7 +145,7 @@ func _input(event: InputEvent) -> void:
 		camera.position -= drag_delta
 		_clamp_camera_position()
 
-	if current_state == BattleState.PLAYER_TURN or current_state == BattleState.SELECTING_TARGET or current_state == BattleState.ACTION_MENU:
+	if current_state == BattleState.PLAYER_UNIT_TURN or current_state == BattleState.SELECTING_TARGET:
 		battle_input.handle_input(event)
 
 
@@ -161,8 +157,10 @@ func _on_unit_selected(unit: Node2D) -> void:
 
 
 func _on_unit_deselected() -> void:
-	current_state = BattleState.PLAYER_TURN
-	battle_input.input_enabled = true
+	if current_state == BattleState.PLAYER_UNIT_TURN:
+		# Re-select the active unit since it's still their turn
+		if active_unit and is_instance_valid(active_unit):
+			battle_input.set_active_unit(active_unit)
 
 
 func _on_move_requested(unit: Node2D, target: Vector2i) -> void:
@@ -178,24 +176,28 @@ func _on_move_requested(unit: Node2D, target: Vector2i) -> void:
 	else:
 		await combat_animator.animate_movement(unit, path)
 
-	# Update grid tracking
 	battle_grid.move_unit(start_pos, target)
 	EventBus.unit_moved.emit(unit, start_pos, target)
 
-	# Show action menu
-	current_state = BattleState.ACTION_MENU
-	battle_input.input_enabled = true
-	battle_input.show_action_menu(unit)
+	# After movement: check for enemies in range
+	var enemies_in_range: Array[Vector2i] = battle_grid.get_attackable_enemies(unit)
+
+	if enemies_in_range.is_empty():
+		# No enemies reachable - auto-wait
+		_finish_unit_turn(unit)
+	else:
+		# Enemies in range - enter target selection
+		current_state = BattleState.SELECTING_TARGET
+		battle_input.input_enabled = true
+		battle_input.enter_target_selection_after_move(unit, enemies_in_range)
 
 
 func _on_attack_requested(attacker: Node2D, target: Node2D) -> void:
 	await _execute_combat(attacker, target)
-	units_acted.append(attacker)
-	battle_input.units_acted = units_acted
-	if attacker.has_method("mark_acted"):
+	if is_instance_valid(attacker) and attacker.has_method("mark_acted"):
 		attacker.mark_acted()
 	if not _check_battle_end():
-		_check_turn_end()
+		_advance_turn()
 
 
 func _on_attack_after_move_requested(attacker: Node2D, target: Node2D, move_tile: Vector2i) -> void:
@@ -215,20 +217,28 @@ func _on_attack_after_move_requested(attacker: Node2D, target: Node2D, move_tile
 	EventBus.unit_moved.emit(attacker, start_pos, move_tile)
 
 	await _execute_combat(attacker, target)
-	units_acted.append(attacker)
-	battle_input.units_acted = units_acted
-	if attacker.has_method("mark_acted"):
+	if is_instance_valid(attacker) and attacker.has_method("mark_acted"):
 		attacker.mark_acted()
 	if not _check_battle_end():
-		_check_turn_end()
+		_advance_turn()
 
 
 func _on_wait_requested(unit: Node2D) -> void:
-	units_acted.append(unit)
-	battle_input.units_acted = units_acted
-	if unit.has_method("mark_acted"):
-		unit.mark_acted()
-	_check_turn_end()
+	_finish_unit_turn(unit)
+
+
+func _on_wait_button_pressed() -> void:
+	if active_unit and current_state == BattleState.PLAYER_UNIT_TURN:
+		battle_input.deselect_unit()
+		_finish_unit_turn(active_unit)
+
+
+func _on_target_selection_cancelled() -> void:
+	# Return to the active unit's turn
+	current_state = BattleState.PLAYER_UNIT_TURN
+	if active_unit and is_instance_valid(active_unit):
+		battle_input.input_enabled = true
+		battle_input.set_active_unit(active_unit)
 
 
 func _on_undo_move_requested() -> void:
@@ -237,24 +247,21 @@ func _on_undo_move_requested() -> void:
 	if not unit or pre_pos == Vector2i(-1, -1):
 		return
 
-	# Move unit back
 	var current_pos: Vector2i = battle_grid.world_to_grid(unit.position)
 	unit.position = battle_grid.grid_to_world(pre_pos)
 	battle_grid.move_unit(current_pos, pre_pos)
 
-	# Reopen selection
-	battle_input.is_action_menu_open = false
 	battle_input.pre_move_position = Vector2i(-1, -1)
-	if action_menu:
-		action_menu.visible = false
-	current_state = BattleState.PLAYER_TURN
+	current_state = BattleState.PLAYER_UNIT_TURN
 	battle_input.input_enabled = true
-	# Re-select the unit to show movement range again
-	battle_input._select_unit(unit)
+	battle_input.set_active_unit(unit)
 
 
-func _on_target_selection_cancelled() -> void:
-	_check_turn_end()
+## Finish a unit's turn (mark acted, advance queue)
+func _finish_unit_turn(unit: Node2D) -> void:
+	if is_instance_valid(unit) and unit.has_method("mark_acted"):
+		unit.mark_acted()
+	_advance_turn()
 
 
 # --- Combat ---
@@ -267,7 +274,6 @@ func _execute_combat(attacker: Node2D, defender: Node2D) -> void:
 	var def_data: UnitData = defender.get_unit_data()
 	var def_pos: Vector2i = battle_grid.world_to_grid(defender.position)
 
-	# Calculate with terrain bonuses
 	var forecast: Dictionary = CombatManager.calculate_combat(
 		atk_data, def_data,
 		battle_grid.get_terrain_def_bonus(def_pos),
@@ -282,20 +288,16 @@ func _execute_combat(attacker: Node2D, defender: Node2D) -> void:
 
 	var result: Dictionary = CombatManager.execute_combat(forecast)
 
-	# Frame both combatants in camera
-	_frame_combatants(attacker, defender)
+	var frame_tween: Tween = _frame_combatants(attacker, defender)
+	if frame_tween:
+		await frame_tween.finished
 
-	# Play combat animation
 	await combat_animator.play_combat(result, attacker, defender)
 
-	# Handle deaths
 	if not result.defender_alive:
 		_handle_unit_death(defender, attacker)
 	if not result.attacker_alive:
 		_handle_unit_death(attacker, null)
-
-	current_state = BattleState.PLAYER_TURN
-	battle_input.input_enabled = true
 
 
 func _handle_unit_death(dead_unit: Node2D, killer: Node2D) -> void:
@@ -304,6 +306,13 @@ func _handle_unit_death(dead_unit: Node2D, killer: Node2D) -> void:
 
 	EventBus.unit_died.emit(dead_unit)
 	battle_grid.remove_unit_at(dead_pos)
+
+	# Remove from turn queue so freed instances don't linger
+	var idx: int = turn_queue.find(dead_unit)
+	if idx != -1:
+		turn_queue.remove_at(idx)
+		if idx < current_turn_index:
+			current_turn_index -= 1
 
 	if not dead_data.is_player_unit and killer:
 		killer.get_unit_data().add_experience(30)
@@ -314,7 +323,7 @@ func _handle_unit_death(dead_unit: Node2D, killer: Node2D) -> void:
 	dead_unit.queue_free()
 
 
-# --- Turn Flow ---
+# --- Speed-Based Turn System ---
 
 func _start_battle() -> void:
 	print("[Battlefield] Battle started!")
@@ -322,7 +331,10 @@ func _start_battle() -> void:
 	for unit in units_container.get_children():
 		if unit.has_method("get_unit_data") and unit.get_unit_data():
 			unit.get_unit_data().reset_armor()
-	_start_player_turn()
+	_build_turn_queue()
+	_show_turn_banner("Battle Start")
+	await get_tree().create_timer(0.3).timeout
+	_advance_turn()
 
 
 func _gather_units() -> void:
@@ -343,65 +355,134 @@ func _gather_units() -> void:
 	print("[Battlefield] Found %d player units and %d enemy units" % [player_units.size(), enemy_units.size()])
 
 
-func _start_player_turn() -> void:
-	current_state = BattleState.PLAYER_TURN
-	units_acted.clear()
-	battle_input.units_acted = units_acted
+func _build_turn_queue() -> void:
+	turn_queue.clear()
+	var all_units: Array = []
+
+	for unit in units_container.get_children():
+		if not is_instance_valid(unit) or not unit.has_method("get_unit_data"):
+			continue
+		var data: UnitData = unit.get_unit_data()
+		if data and data.is_alive():
+			all_units.append(unit)
+			if unit.has_method("reset_turn"):
+				unit.reset_turn()
+
+	# Sort by speed descending; player units break ties
+	all_units.sort_custom(func(a: Node2D, b: Node2D) -> bool:
+		var sa: int = a.get_unit_data().speed
+		var sb: int = b.get_unit_data().speed
+		if sa != sb:
+			return sa > sb
+		if a.get_unit_data().is_player_unit != b.get_unit_data().is_player_unit:
+			return a.get_unit_data().is_player_unit
+		return a.position.x < b.position.x
+	)
+
+	turn_queue = all_units
+	current_turn_index = 0
+	enemy_ai.reset_turn()
+
+	if DEBUG_COMBAT:
+		var order_str: String = ""
+		for u in turn_queue:
+			var d: UnitData = u.get_unit_data()
+			order_str += "%s(spd%d) " % [d.unit_name, d.speed]
+		print("[Battlefield] Turn order: %s" % order_str)
+
+
+func _advance_turn() -> void:
+	# Clear previous active unit highlight
+	if is_instance_valid(_previous_active_unit):
+		if _previous_active_unit.has_method("set_active_turn"):
+			_previous_active_unit.set_active_turn(false)
+
+	# Skip dead/invalid units (use untyped var to avoid freed instance assignment error)
+	while current_turn_index < turn_queue.size():
+		var candidate = turn_queue[current_turn_index]
+		if is_instance_valid(candidate) and candidate.get_unit_data() and candidate.get_unit_data().is_alive():
+			break
+		current_turn_index += 1
+
+	# All units acted - new round
+	if current_turn_index >= turn_queue.size():
+		_build_turn_queue()
+		if turn_queue.is_empty():
+			return
+
+	active_unit = turn_queue[current_turn_index]
+	current_turn_index += 1
+	_previous_active_unit = active_unit
+
+	# Highlight active unit
+	if is_instance_valid(active_unit) and active_unit.has_method("set_active_turn"):
+		active_unit.set_active_turn(true)
+
+	# Update turn order display
+	_update_turn_order_display()
+
+	var data: UnitData = active_unit.get_unit_data()
+
+	if data.is_player_unit:
+		_start_player_unit_turn(active_unit)
+	else:
+		_start_enemy_unit_turn(active_unit)
+
+
+func _start_player_unit_turn(unit: Node2D) -> void:
+	current_state = BattleState.PLAYER_UNIT_TURN
 	battle_input.input_enabled = true
 
-	for unit in player_units:
-		if unit.has_method("reset_turn"):
-			unit.reset_turn()
+	# Focus camera on the unit
+	var cam_tween: Tween = _focus_camera_on(unit.position)
+	if cam_tween:
+		await cam_tween.finished
 
-	_show_turn_banner("Player Phase")
-	EventBus.turn_started.emit(true)
+	battle_input.set_active_unit(unit)
+
+	if wait_button:
+		wait_button.visible = true
+
+	if DEBUG_COMBAT:
+		print("[Turn] %s's turn (Player)" % unit.get_unit_data().unit_name)
 
 
-func _start_enemy_turn() -> void:
-	current_state = BattleState.ENEMY_TURN
+func _start_enemy_unit_turn(unit: Node2D) -> void:
+	current_state = BattleState.ENEMY_UNIT_TURN
 	battle_input.input_enabled = false
-	units_acted.clear()
 
-	_show_turn_banner("Enemy Phase")
-	EventBus.turn_started.emit(false)
+	if wait_button:
+		wait_button.visible = false
 
-	await get_tree().create_timer(0.5).timeout
-	_process_enemy_ai()
+	# Focus camera and wait for it to settle
+	var cam_tween: Tween = _focus_camera_on(unit.position)
+	if cam_tween:
+		await cam_tween.finished
+	await get_tree().create_timer(0.4).timeout
+
+	if DEBUG_COMBAT:
+		print("[Turn] %s's turn (Enemy)" % unit.get_unit_data().unit_name)
+
+	_process_single_enemy(unit)
 
 
-func _process_enemy_ai() -> void:
-	enemy_ai.reset_turn()
-	var enemies_to_process: Array = enemy_units.duplicate()
+func _process_single_enemy(enemy: Node2D) -> void:
+	if not is_instance_valid(enemy):
+		_advance_turn()
+		return
 
-	for enemy in enemies_to_process:
-		if not is_instance_valid(enemy):
-			continue
-		var data: UnitData = enemy.get_unit_data()
-		if not data or not data.is_alive():
-			continue
+	var data: UnitData = enemy.get_unit_data()
+	if not data or not data.is_alive():
+		_advance_turn()
+		return
 
-		# Sync grid before each enemy acts
-		battle_grid.sync_units_from_container(units_container)
+	battle_grid.sync_units_from_container(units_container)
+	var decision: Dictionary = enemy_ai.decide_action(enemy, player_units, enemy_units)
+	var enemy_pos: Vector2i = battle_grid.world_to_grid(enemy.position)
 
-		var decision: Dictionary = enemy_ai.decide_action(enemy, player_units, enemy_units)
-		var enemy_pos: Vector2i = battle_grid.world_to_grid(enemy.position)
-
-		# Focus camera on acting enemy
-		_focus_camera_on(enemy.position)
-
-		match decision.action:
-			"attack":
-				if decision.move_to != Vector2i(-1, -1):
-					battle_grid.update_astar_obstacles(enemy_pos)
-					var path: PackedVector2Array = battle_grid.get_grid_path(enemy_pos, decision.move_to)
-					if not path.is_empty():
-						await combat_animator.animate_movement(enemy, path)
-					else:
-						enemy.position = battle_grid.grid_to_world(decision.move_to)
-					battle_grid.move_unit(enemy_pos, decision.move_to)
-					EventBus.unit_moved.emit(enemy, enemy_pos, decision.move_to)
-				await _execute_combat(enemy, decision.target)
-			"approach":
+	match decision.action:
+		"attack":
+			if decision.move_to != Vector2i(-1, -1):
 				battle_grid.update_astar_obstacles(enemy_pos)
 				var path: PackedVector2Array = battle_grid.get_grid_path(enemy_pos, decision.move_to)
 				if not path.is_empty():
@@ -410,36 +491,27 @@ func _process_enemy_ai() -> void:
 					enemy.position = battle_grid.grid_to_world(decision.move_to)
 				battle_grid.move_unit(enemy_pos, decision.move_to)
 				EventBus.unit_moved.emit(enemy, enemy_pos, decision.move_to)
-			"idle":
-				if DEBUG_COMBAT:
-					print("[AI] %s: no action available" % data.unit_name)
+			await _execute_combat(enemy, decision.target)
+		"approach":
+			battle_grid.update_astar_obstacles(enemy_pos)
+			var path: PackedVector2Array = battle_grid.get_grid_path(enemy_pos, decision.move_to)
+			if not path.is_empty():
+				await combat_animator.animate_movement(enemy, path)
+			else:
+				enemy.position = battle_grid.grid_to_world(decision.move_to)
+			battle_grid.move_unit(enemy_pos, decision.move_to)
+			EventBus.unit_moved.emit(enemy, enemy_pos, decision.move_to)
+		"idle":
+			if DEBUG_COMBAT:
+				print("[AI] %s: no action available" % data.unit_name)
 
-		await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.3).timeout
 
-		if _check_battle_end():
-			return
+	if is_instance_valid(enemy) and enemy.has_method("mark_acted"):
+		enemy.mark_acted()
 
-	_end_enemy_turn()
-
-
-func _end_enemy_turn() -> void:
-	if _check_battle_end():
-		return
-	_start_player_turn()
-
-
-func _check_turn_end() -> void:
-	var all_acted: bool = true
-	for unit in player_units:
-		if not is_instance_valid(unit):
-			continue
-		var data: UnitData = unit.get_unit_data()
-		if data and data.is_alive() and unit not in units_acted:
-			all_acted = false
-			break
-
-	if all_acted:
-		_start_enemy_turn()
+	if not _check_battle_end():
+		_advance_turn()
 
 
 func _check_battle_end() -> bool:
@@ -458,7 +530,16 @@ func _check_battle_end() -> bool:
 func _end_battle(victory: bool) -> void:
 	current_state = BattleState.BATTLE_END
 	battle_input.input_enabled = false
+	if wait_button:
+		wait_button.visible = false
+
+	# Clear active unit highlight
+	if active_unit and is_instance_valid(active_unit) and active_unit.has_method("set_active_turn"):
+		active_unit.set_active_turn(false)
+
 	print("[Battlefield] Battle ended - Victory: ", victory)
+
+	_show_turn_banner("Victory!" if victory else "Defeat...")
 
 	if victory:
 		GameManager.battles_won += 1
@@ -482,6 +563,8 @@ func _end_battle(victory: bool) -> void:
 # --- UI ---
 
 func _show_turn_banner(text: String) -> void:
+	if not turn_banner:
+		return
 	turn_banner.text = text
 	turn_banner.modulate = Color(1, 1, 1, 0)
 	turn_banner.visible = true
@@ -532,13 +615,40 @@ func _show_unit_info(unit: Node2D) -> void:
 			weapon_label.text = "Unarmed"
 
 
+func _update_terrain_info(grid_pos: Vector2i) -> void:
+	if not terrain_info or not battle_grid.is_in_bounds(grid_pos):
+		if terrain_info:
+			terrain_info.visible = false
+		return
+
+	var terrain: BattleGrid.TerrainType = battle_grid.get_terrain(grid_pos)
+	var def_bonus: int = battle_grid.get_terrain_def_bonus(grid_pos)
+	var avoid_bonus: int = battle_grid.get_terrain_avoid_bonus(grid_pos)
+
+	var terrain_name: String
+	match terrain:
+		BattleGrid.TerrainType.PLAIN: terrain_name = "Plain"
+		BattleGrid.TerrainType.FOREST: terrain_name = "Forest"
+		BattleGrid.TerrainType.MOUNTAIN: terrain_name = "Mountain"
+		BattleGrid.TerrainType.FORT: terrain_name = "Fort"
+		BattleGrid.TerrainType.WATER: terrain_name = "Water"
+		_: terrain_name = "Unknown"
+
+	terrain_info.text = "%s  DEF+%d  AVO+%d" % [terrain_name, def_bonus, avoid_bonus]
+	terrain_info.visible = true
+
+
+func _update_turn_order_display() -> void:
+	if turn_order_display and turn_order_display.has_method("update_queue"):
+		turn_order_display.update_queue(turn_queue, current_turn_index - 1)
+
+
 # --- Camera ---
 
 func _handle_camera_input(delta: float) -> void:
 	if not camera:
 		return
 
-	# Scale pan speed with zoom (pan faster when zoomed in so it feels consistent)
 	var direction: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var zoom_factor: float = 1.0 / camera.zoom.x
 	camera.position += direction * camera_speed * zoom_factor * delta
@@ -549,7 +659,6 @@ func _handle_camera_input(delta: float) -> void:
 func _clamp_camera_position() -> void:
 	if not camera:
 		return
-	# Allow panning with margin beyond the grid so edges are reachable when zoomed in
 	var margin: float = 64.0
 	camera.position = camera.position.clamp(
 		Vector2(-margin, -margin),
@@ -562,7 +671,6 @@ func _zoom_camera(amount: float) -> void:
 
 
 func _reset_camera_view() -> void:
-	# Zoom to fit the entire grid with some padding
 	var grid_pixel_size: Vector2 = Vector2(GRID_WIDTH * TILE_SIZE, GRID_HEIGHT * TILE_SIZE)
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	var fit_zoom: float = minf(viewport_size.x / grid_pixel_size.x, viewport_size.y / grid_pixel_size.y) * 0.95
@@ -570,19 +678,25 @@ func _reset_camera_view() -> void:
 	camera.position = grid_pixel_size / 2.0
 
 
-func _focus_camera_on(pos: Vector2) -> void:
+func _focus_camera_on(pos: Vector2) -> Tween:
 	if not camera:
-		return
-	var tween: Tween = create_tween()
-	tween.tween_property(camera, "position", pos, 0.3).set_trans(Tween.TRANS_QUAD)
+		return null
+	if _camera_tween and _camera_tween.is_running():
+		_camera_tween.kill()
+	_camera_tween = create_tween()
+	_camera_tween.tween_property(camera, "position", pos, 0.3).set_trans(Tween.TRANS_QUAD)
+	return _camera_tween
 
 
-func _frame_combatants(a: Node2D, b: Node2D) -> void:
+func _frame_combatants(a: Node2D, b: Node2D) -> Tween:
 	if not camera or not is_instance_valid(a) or not is_instance_valid(b):
-		return
+		return null
 	var midpoint: Vector2 = (a.position + b.position) / 2.0
-	var tween: Tween = create_tween()
-	tween.tween_property(camera, "position", midpoint, 0.2).set_trans(Tween.TRANS_QUAD)
+	if _camera_tween and _camera_tween.is_running():
+		_camera_tween.kill()
+	_camera_tween = create_tween()
+	_camera_tween.tween_property(camera, "position", midpoint, 0.2).set_trans(Tween.TRANS_QUAD)
+	return _camera_tween
 
 
 # --- Unit Spawning ---
@@ -595,8 +709,8 @@ func _clear_placeholder_units() -> void:
 func _spawn_party_units() -> void:
 	print("[Battlefield] --- Spawning Party Units ---")
 	var spawn_points: Array = [
-		Vector2i(1, 2), Vector2i(1, 3), Vector2i(1, 4),
-		Vector2i(0, 2), Vector2i(0, 3), Vector2i(0, 4)
+		Vector2i(1, 3), Vector2i(1, 5), Vector2i(1, 7),
+		Vector2i(2, 3), Vector2i(2, 5), Vector2i(2, 7)
 	]
 
 	for i in range(GameManager.party.size()):
@@ -610,10 +724,9 @@ func _spawn_party_units() -> void:
 		var target_grid_pos: Vector2i = spawn_points[i]
 		var unit: Node2D = UnitScene.instantiate()
 		unit.unit_data = unit_data
-		var world_pos: Vector2 = battle_grid.grid_to_world(target_grid_pos)
-		unit.position = world_pos
+		unit.position = battle_grid.grid_to_world(target_grid_pos)
 		units_container.add_child(unit)
-		print("[Battlefield] Spawned '%s' at Grid %s -> World %s" % [unit_data.unit_name, target_grid_pos, world_pos])
+		print("[Battlefield] Spawned '%s' at Grid %s (spd %d)" % [unit_data.unit_name, target_grid_pos, unit_data.speed])
 
 
 func _spawn_enemy_units() -> void:
@@ -633,8 +746,6 @@ func _spawn_enemy_units() -> void:
 			break
 
 		var target_grid_pos: Vector2i = enemy_spawns[i]
-
-		# Check for overlap
 		var existing: Node2D = battle_grid.get_unit_at(target_grid_pos)
 		if existing:
 			continue
@@ -646,11 +757,12 @@ func _spawn_enemy_units() -> void:
 		enemy_data.max_hp = 15 + (difficulty * 2)
 		enemy_data.current_hp = enemy_data.max_hp
 		enemy_data.strength = 3 + difficulty
+		enemy_data.speed = 3 + randi() % (difficulty + 3)
 		enemy_data.defense = 1 + int(difficulty / 2.0)
 		enemy_data.current_armor = enemy_data.defense
 
 		var weapon: ItemData = ItemData.new()
-		weapon.weapon_type = randi() % 3
+		weapon.weapon_type = (randi() % 3) as ItemData.WeaponType
 		weapon.might = 3
 		weapon.hit = 80
 		weapon.range_max = 1
@@ -660,8 +772,6 @@ func _spawn_enemy_units() -> void:
 		unit.position = battle_grid.grid_to_world(target_grid_pos)
 		units_container.add_child(unit)
 
-		# Track in grid immediately for overlap detection
 		battle_grid.place_unit(unit, target_grid_pos)
-
-		print("[Battlefield] Spawned '%s' at Grid %s" % [enemy_data.unit_name, target_grid_pos])
+		print("[Battlefield] Spawned '%s' at Grid %s (spd %d)" % [enemy_data.unit_name, target_grid_pos, enemy_data.speed])
 		valid_spawns += 1

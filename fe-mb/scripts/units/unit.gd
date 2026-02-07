@@ -12,6 +12,7 @@ extends CharacterBody2D
 
 var has_acted: bool = false
 var is_selected: bool = false
+var _active_turn_tween: Tween = null
 
 
 func _ready() -> void:
@@ -64,6 +65,23 @@ func set_selected(selected: bool) -> void:
 	is_selected = selected
 	if selection_highlight:
 		selection_highlight.visible = selected
+
+
+## Highlight this unit as the active turn unit with a pulse effect
+func set_active_turn(active: bool) -> void:
+	if _active_turn_tween and _active_turn_tween.is_running():
+		_active_turn_tween.kill()
+		_active_turn_tween = null
+
+	if active and selection_highlight:
+		selection_highlight.visible = true
+		selection_highlight.modulate = Color(1.0, 0.85, 0.2, 0.8)
+		_active_turn_tween = create_tween().set_loops()
+		_active_turn_tween.tween_property(selection_highlight, "modulate:a", 0.3, 0.6).set_trans(Tween.TRANS_SINE)
+		_active_turn_tween.tween_property(selection_highlight, "modulate:a", 0.8, 0.6).set_trans(Tween.TRANS_SINE)
+	elif selection_highlight:
+		selection_highlight.visible = false
+		selection_highlight.modulate = Color.WHITE
 
 
 ## Map unit names to sprite paths

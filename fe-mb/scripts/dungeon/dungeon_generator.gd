@@ -23,10 +23,11 @@ static func generate_floor(floor_number: int, difficulty: int = 1) -> Array[Dung
 			room_grid[row].append(null)
 	
 	# Create entrance room at bottom
-	var entrance = _create_room(0, DungeonRoomData.RoomType.ENTRANCE, 0, MAX_PATHS / 2)
-	entrance.position = _get_room_position(0, MAX_PATHS / 2)
+	var center_col: int = int(MAX_PATHS / 2.0)
+	var entrance = _create_room(0, DungeonRoomData.RoomType.ENTRANCE, 0, center_col)
+	entrance.position = _get_room_position(0, center_col)
 	rooms.append(entrance)
-	room_grid[0][MAX_PATHS / 2] = entrance
+	room_grid[0][center_col] = entrance
 	
 	# Generate branching paths from entrance
 	var paths = _generate_paths(floor_number, difficulty)
@@ -52,11 +53,11 @@ static func generate_floor(floor_number: int, difficulty: int = 1) -> Array[Dung
 	
 	# Create boss room at top
 	var boss_row = FLOOR_HEIGHT + 1
-	var boss = _create_room(room_id, DungeonRoomData.RoomType.BOSS, boss_row, MAX_PATHS / 2)
-	boss.position = _get_room_position(boss_row, MAX_PATHS / 2)
+	var boss = _create_room(room_id, DungeonRoomData.RoomType.BOSS, boss_row, center_col)
+	boss.position = _get_room_position(boss_row, center_col)
 	boss.difficulty_modifier = 1.5 + (difficulty * 0.2) + (floor_number * 0.3)
 	rooms.append(boss)
-	room_grid[boss_row][MAX_PATHS / 2] = boss
+	room_grid[boss_row][center_col] = boss
 	
 	# Generate connections between rooms
 	_generate_connections(rooms, room_grid, paths)
@@ -65,7 +66,7 @@ static func generate_floor(floor_number: int, difficulty: int = 1) -> Array[Dung
 
 
 ## Generate paths through the dungeon (arrays of column indices per row)
-static func _generate_paths(floor_number: int, difficulty: int) -> Array:
+static func _generate_paths(floor_number: int, _difficulty: int) -> Array:
 	var num_paths = randi_range(MIN_PATHS, MAX_PATHS)
 	var paths: Array = []
 	
@@ -178,7 +179,7 @@ static func _get_room_position(row: int, col: int) -> Vector2:
 
 
 ## Generate connections between rooms based on paths
-static func _generate_connections(rooms: Array[DungeonRoomData], grid: Array, paths: Array) -> void:
+static func _generate_connections(rooms: Array[DungeonRoomData], _grid: Array, paths: Array) -> void:
 	# Find rooms by position
 	var pos_to_room: Dictionary = {}
 	for room in rooms:

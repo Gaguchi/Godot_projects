@@ -19,7 +19,7 @@ func reset_turn() -> void:
 ## {action: "attack", move_to: Vector2i, target: Node2D}
 ## {action: "approach", move_to: Vector2i}
 ## {action: "idle"}
-func decide_action(enemy: Node2D, player_units: Array, enemy_units: Array) -> Dictionary:
+func decide_action(enemy: Node2D, player_units: Array, _enemy_units: Array) -> Dictionary:
 	var enemy_data: UnitData = enemy.get_unit_data()
 	var enemy_pos: Vector2i = battle_grid.world_to_grid(enemy.position)
 	var weapon_range: Vector2i = battle_grid.get_weapon_range(enemy_data)

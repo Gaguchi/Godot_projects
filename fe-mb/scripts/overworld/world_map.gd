@@ -121,7 +121,7 @@ func load_map(map_name: String) -> void:
 	_spawn_pawn()
 	
 	# Center camera on map
-	camera.position = Vector2(map_width * tile_size / 2, map_height * tile_size / 2)
+	camera.position = Vector2(map_width * tile_size / 2.0, map_height * tile_size / 2.0)
 	
 	print("[WorldMap] Loaded map '%s' with %d locations, %d terrain cells" % [
 		map_data.get("name", map_name), locations.size(), terrain_map.size()
@@ -170,8 +170,8 @@ func _update_reachable_locations() -> void:
 	# But we still highlight connected ones for the FTL-style pathing
 	for id in location_nodes:
 		var node = location_nodes[id]
-		var is_connected = id in current_loc.connected_locations
-		node.set_reachable(is_connected)
+		var loc_connected = id in current_loc.connected_locations
+		node.set_reachable(loc_connected)
 		node.set_current(id == current_location_id)
 
 
@@ -235,7 +235,7 @@ func _execute_terrain_travel(target_loc: LocationData, path: Array[Vector2i], co
 
 func _animate_terrain_travel(path: Array[Vector2i]) -> void:
 	for i in range(1, path.size()):
-		var from_pos = OverworldMapLoader.grid_to_world(path[i - 1], tile_size)
+		var _from_pos = OverworldMapLoader.grid_to_world(path[i - 1], tile_size)
 		var to_pos = OverworldMapLoader.grid_to_world(path[i], tile_size)
 		
 		# Get terrain speed for destination cell
@@ -336,7 +336,7 @@ func _is_in_bounds(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < map_width and pos.y >= 0 and pos.y < map_height
 
 
-func _on_location_hovered(loc_data: LocationData) -> void:
+func _on_location_hovered(_loc_data: LocationData) -> void:
 	# Could show path preview here
 	pass
 

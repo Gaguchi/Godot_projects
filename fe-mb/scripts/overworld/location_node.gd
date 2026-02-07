@@ -1,7 +1,9 @@
 extends Node2D
 ## LocationNode - Visual representation of a location on the world map
 
+@warning_ignore("unused_signal")
 signal location_clicked(location_data: LocationData)
+@warning_ignore("unused_signal")
 signal location_hovered(location_data: LocationData)
 
 @export var location_data: LocationData

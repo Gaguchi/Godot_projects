@@ -100,12 +100,12 @@ func _draw_path_preview() -> void:
 	for i in range(path_preview.size() - 1):
 		var from_tile: Vector2i = path_preview[i]
 		var to_tile: Vector2i = path_preview[i + 1]
-		var from_pos = Vector2(from_tile.x * tile_size + tile_size / 2, from_tile.y * tile_size + tile_size / 2)
-		var to_pos = Vector2(to_tile.x * tile_size + tile_size / 2, to_tile.y * tile_size + tile_size / 2)
+		var from_pos = Vector2(from_tile.x * tile_size + tile_size / 2.0, from_tile.y * tile_size + tile_size / 2.0)
+		var to_pos = Vector2(to_tile.x * tile_size + tile_size / 2.0, to_tile.y * tile_size + tile_size / 2.0)
 		draw_line(from_pos, to_pos, path_color, 4.0)
 
 	for tile in path_preview:
-		var center = Vector2(tile.x * tile_size + tile_size / 2, tile.y * tile_size + tile_size / 2)
+		var center = Vector2(tile.x * tile_size + tile_size / 2.0, tile.y * tile_size + tile_size / 2.0)
 		draw_circle(center, 6, path_color)
 
 
