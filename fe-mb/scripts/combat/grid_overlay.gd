@@ -2,9 +2,9 @@ extends Node2D
 ## GridOverlay - Draws grid lines and highlights walkable/attackable tiles
 ## Child of Battlefield, redraws when highlights change
 
-const TILE_SIZE: int = 32
-const GRID_WIDTH: int = 10
-const GRID_HEIGHT: int = 10
+var tile_size: int = 64
+var grid_width: int = 10
+var grid_height: int = 7
 
 var walkable_tiles: Array = []
 var attackable_tiles: Array = []  # Attack-only tiles (beyond movement)
@@ -23,74 +23,72 @@ var path_color: Color = Color(0.3, 0.9, 0.3, 0.6)  # Green
 
 
 func _ready() -> void:
-	# Ensure grid is drawn immediately
+	queue_redraw()
+
+
+## Configure grid dimensions (called by battlefield during setup)
+func configure(width: int, height: int, p_tile_size: int = 64) -> void:
+	grid_width = width
+	grid_height = height
+	tile_size = p_tile_size
 	queue_redraw()
 
 
 func _process(_delta: float) -> void:
-	# Update hover tile based on mouse position
 	var mouse_pos = get_local_mouse_position()
-	var new_hover = Vector2i(int(mouse_pos.x / TILE_SIZE), int(mouse_pos.y / TILE_SIZE))
-	
+	var new_hover = Vector2i(int(mouse_pos.x / tile_size), int(mouse_pos.y / tile_size))
+
 	if new_hover != hover_tile:
 		hover_tile = new_hover
 		queue_redraw()
 
 
 func _draw() -> void:
-	# Always draw grid lines first
 	_draw_grid()
-	
-	# Draw walkable tiles (movement range)
+
 	for tile in walkable_tiles:
 		_draw_tile_highlight(tile, walkable_color)
-	
-	# Draw attackable tiles (attack range beyond movement)
+
 	for tile in attackable_tiles:
 		_draw_tile_highlight(tile, attackable_color)
-	
-	# Draw path preview
+
 	_draw_path_preview()
-	
-	# Draw hover tile
+
 	if _is_valid_tile(hover_tile):
-		_draw_tile_border(hover_tile, hover_color, 3.0)
-	
-	# Draw selected tile
+		_draw_tile_border(hover_tile, hover_color, 4.0)
+
 	if selected_tile.x >= 0:
 		_draw_tile_highlight(selected_tile, selected_color)
 
 
 func _draw_grid() -> void:
-	# Vertical lines
-	for x in range(GRID_WIDTH + 1):
-		var start = Vector2(x * TILE_SIZE, 0)
-		var end = Vector2(x * TILE_SIZE, GRID_HEIGHT * TILE_SIZE)
+	for x in range(grid_width + 1):
+		var start = Vector2(x * tile_size, 0)
+		var end = Vector2(x * tile_size, grid_height * tile_size)
 		draw_line(start, end, grid_color, 1.0)
-	
-	# Horizontal lines
-	for y in range(GRID_HEIGHT + 1):
-		var start = Vector2(0, y * TILE_SIZE)
-		var end = Vector2(GRID_WIDTH * TILE_SIZE, y * TILE_SIZE)
+
+	for y in range(grid_height + 1):
+		var start = Vector2(0, y * tile_size)
+		var end = Vector2(grid_width * tile_size, y * tile_size)
 		draw_line(start, end, grid_color, 1.0)
 
 
 func _draw_tile_highlight(tile: Vector2i, color: Color) -> void:
 	var rect = Rect2(
-		tile.x * TILE_SIZE,
-		tile.y * TILE_SIZE,
-		TILE_SIZE,
-		TILE_SIZE
+		tile.x * tile_size,
+		tile.y * tile_size,
+		tile_size,
+		tile_size
 	)
 	draw_rect(rect, color, true)
 
 
 func _draw_tile_border(tile: Vector2i, color: Color, width: float) -> void:
 	var rect = Rect2(
-		tile.x * TILE_SIZE + 1,
-		tile.y * TILE_SIZE + 1,
-		TILE_SIZE - 2,
-		TILE_SIZE - 2
+		tile.x * tile_size + 1,
+		tile.y * tile_size + 1,
+		tile_size - 2,
+		tile_size - 2
 	)
 	draw_rect(rect, color, false, width)
 
@@ -98,23 +96,21 @@ func _draw_tile_border(tile: Vector2i, color: Color, width: float) -> void:
 func _draw_path_preview() -> void:
 	if path_preview.is_empty():
 		return
-	
-	# Draw path as connected line through tile centers
+
 	for i in range(path_preview.size() - 1):
 		var from_tile: Vector2i = path_preview[i]
 		var to_tile: Vector2i = path_preview[i + 1]
-		var from_pos = Vector2(from_tile.x * TILE_SIZE + TILE_SIZE / 2, from_tile.y * TILE_SIZE + TILE_SIZE / 2)
-		var to_pos = Vector2(to_tile.x * TILE_SIZE + TILE_SIZE / 2, to_tile.y * TILE_SIZE + TILE_SIZE / 2)
-		draw_line(from_pos, to_pos, path_color, 3.0)
-	
-	# Draw dots at each path point
+		var from_pos = Vector2(from_tile.x * tile_size + tile_size / 2, from_tile.y * tile_size + tile_size / 2)
+		var to_pos = Vector2(to_tile.x * tile_size + tile_size / 2, to_tile.y * tile_size + tile_size / 2)
+		draw_line(from_pos, to_pos, path_color, 4.0)
+
 	for tile in path_preview:
-		var center = Vector2(tile.x * TILE_SIZE + TILE_SIZE / 2, tile.y * TILE_SIZE + TILE_SIZE / 2)
-		draw_circle(center, 4, path_color)
+		var center = Vector2(tile.x * tile_size + tile_size / 2, tile.y * tile_size + tile_size / 2)
+		draw_circle(center, 6, path_color)
 
 
 func _is_valid_tile(tile: Vector2i) -> bool:
-	return tile.x >= 0 and tile.x < GRID_WIDTH and tile.y >= 0 and tile.y < GRID_HEIGHT
+	return tile.x >= 0 and tile.x < grid_width and tile.y >= 0 and tile.y < grid_height
 
 
 ## Update walkable tiles and redraw

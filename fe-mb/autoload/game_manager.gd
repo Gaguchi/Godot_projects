@@ -79,18 +79,18 @@ func start_new_run() -> void:
 	run_started.emit()
 	
 	# Add starter units
-	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7;
+	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7; u1.defense = 5; u1.current_armor = u1.defense
 	var i1 = ItemData.new(); i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; u1.equipped_weapon = i1;
 	add_unit(u1)
-	
-	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.defense = 10;
+
+	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.defense = 10; u2.current_armor = u2.defense
 	var i2 = ItemData.new(); i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; u2.equipped_weapon = i2;
 	add_unit(u2)
-	
-	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.resistance = 6;
+
+	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.defense = 3; u3.current_armor = u3.defense
 	var i3 = ItemData.new(); i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 6; i3.hit = 85; i3.range_max = 2; u3.equipped_weapon = i3;
 	add_unit(u3)
-	
+
 	print("[GameManager] New run started with 3 units")
 
 
@@ -252,15 +252,15 @@ func ensure_party() -> void:
 		return
 		
 	print("[GameManager] Party empty, adding debug units...")
-	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7;
+	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7; u1.defense = 5; u1.current_armor = u1.defense
 	var i1 = ItemData.new(); i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; u1.equipped_weapon = i1;
 	add_unit(u1)
-	
-	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.defense = 10;
+
+	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.defense = 10; u2.current_armor = u2.defense
 	var i2 = ItemData.new(); i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; u2.equipped_weapon = i2;
 	add_unit(u2)
-	
-	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.resistance = 6;
+
+	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.defense = 3; u3.current_armor = u3.defense
 	var i3 = ItemData.new(); i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 6; i3.hit = 85; i3.range_max = 2; u3.equipped_weapon = i3;
 	add_unit(u3)
 

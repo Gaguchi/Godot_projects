@@ -402,6 +402,3 @@ func _unhandled_input(event: InputEvent) -> void:
 		if pause_menu and not pause_menu.visible:
 			pause_menu.open()
 			get_viewport().set_input_as_handled()
-
-
-

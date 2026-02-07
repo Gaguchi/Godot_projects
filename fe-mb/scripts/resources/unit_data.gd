@@ -23,6 +23,7 @@ enum UnitClass {
 
 @export_group("Current Stats")
 @export var current_hp: int = 20
+@export var current_armor: int = 5   # Absorbs damage before HP (resets each room)
 
 @export_group("Base Stats")
 @export var max_hp: int = 20
@@ -31,8 +32,8 @@ enum UnitClass {
 @export var skill: int = 5         # Hit rate, crit rate
 @export var speed: int = 5         # Avoid, double attacks
 @export var luck: int = 5          # Crit avoid, various checks
-@export var defense: int = 5       # Physical damage reduction
-@export var resistance: int = 2    # Magic damage reduction
+@export var defense: int = 5       # Max armor (absorbs damage before HP)
+@export var resistance: int = 2    # Legacy stat (unused — armor absorbs all damage)
 @export var movement: int = 5      # Tiles per turn
 
 @export_group("Growth Rates (%)")
@@ -54,6 +55,7 @@ const EXP_TO_LEVEL: int = 100  # EXP needed to level up
 
 func _init() -> void:
 	current_hp = max_hp
+	current_armor = defense
 
 
 ## Check if unit is alive
@@ -61,9 +63,12 @@ func is_alive() -> bool:
 	return current_hp > 0
 
 
-## Take damage, return true if unit dies
+## Take damage — armor absorbs first, overflow goes to HP. Returns true if unit dies.
 func take_damage(amount: int) -> bool:
-	current_hp = max(0, current_hp - amount)
+	var armor_absorbed: int = min(current_armor, amount)
+	current_armor -= armor_absorbed
+	var remaining: int = amount - armor_absorbed
+	current_hp = max(0, current_hp - remaining)
 	return current_hp <= 0
 
 
@@ -72,9 +77,15 @@ func heal(amount: int) -> void:
 	current_hp = min(max_hp, current_hp + amount)
 
 
-## Full heal
+## Full heal (HP and armor)
 func full_heal() -> void:
 	current_hp = max_hp
+	current_armor = defense
+
+
+## Reset armor to max (called at the start of each combat room)
+func reset_armor() -> void:
+	current_armor = defense
 
 
 ## Add experience and check for level up
@@ -107,6 +118,7 @@ func _level_up() -> void:
 		luck += 1
 	if randi() % 100 < def_growth:
 		defense += 1
+		current_armor += 1  # Also gain the armor immediately
 	if randi() % 100 < res_growth:
 		resistance += 1
 	
@@ -147,7 +159,7 @@ func get_avoid() -> int:
 
 ## Get crit rate
 func get_crit_rate() -> int:
-	var base_crit = skill / 2
+	var base_crit: int = int(skill / 2.0)
 	if equipped_weapon and equipped_weapon is ItemData:
 		base_crit += equipped_weapon.crit
 	return base_crit
@@ -238,6 +250,7 @@ func to_dict() -> Dictionary:
 		"experience": experience,
 		"is_player_unit": is_player_unit,
 		"current_hp": current_hp,
+		"current_armor": current_armor,
 		"max_hp": max_hp,
 		"strength": strength,
 		"magic": magic,
@@ -269,6 +282,7 @@ func from_dict(data: Dictionary) -> void:
 	is_player_unit = data.get("is_player_unit", true)
 	current_hp = data.get("current_hp", 20)
 	max_hp = data.get("max_hp", 20)
+	current_armor = data.get("current_armor", defense)
 	strength = data.get("strength", 5)
 	magic = data.get("magic", 0)
 	skill = data.get("skill", 5)

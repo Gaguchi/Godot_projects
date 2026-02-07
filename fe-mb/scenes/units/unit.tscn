@@ -1,14 +1,37 @@
-[gd_scene load_steps=3 format=3 uid="uid://d0i3iomt6e1jj"]
+[gd_scene load_steps=7 format=3 uid="uid://d0i3iomt6e1jj"]
 
 [ext_resource type="Script" uid="uid://ddjkyptayw6c4" path="res://scripts/units/unit.gd" id="1_unit"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_qgilm"]
+size = Vector2(48, 48)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
 bg_color = Color(0.1, 0.1, 0.1, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_fill"]
 bg_color = Color(0.2, 0.8, 0.2, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_armor_bg"]
+bg_color = Color(0.1, 0.1, 0.15, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_armor_fill"]
+bg_color = Color(0.3, 0.5, 0.85, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
 
 [node name="Unit" type="CharacterBody2D"]
 collision_layer = 2
@@ -25,13 +48,40 @@ visible = false
 modulate = Color(1, 1, 0, 0.5)
 z_index = -1
 
+[node name="ClassLabel" type="Label" parent="."]
+offset_left = -24.0
+offset_top = -14.0
+offset_right = 24.0
+offset_bottom = 14.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 20
+text = "?"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="OverheadHPBar" type="ProgressBar" parent="."]
-offset_left = -16.0
-offset_top = -24.0
-offset_right = 16.0
-offset_bottom = -20.0
-theme_override_styles/background = SubResource("StyleBoxFlat_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
+offset_left = -28.0
+offset_top = -36.0
+offset_right = 28.0
+offset_bottom = -31.0
+theme_override_font_sizes/font_size = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_hp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
 max_value = 20.0
 value = 20.0
+show_percentage = false
+
+[node name="OverheadArmorBar" type="ProgressBar" parent="."]
+offset_left = -28.0
+offset_top = -30.0
+offset_right = 28.0
+offset_bottom = -26.0
+theme_override_font_sizes/font_size = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_armor_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_armor_fill")
+max_value = 10.0
+value = 10.0
 show_percentage = false

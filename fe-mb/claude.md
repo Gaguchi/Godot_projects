@@ -5,6 +5,7 @@
 ## Project Overview
 
 **FE_MB** is a tactical roguelite built in **Godot 4.x (GDScript)** combining:
+
 - **Fire Emblem-style** turn-based grid combat
 - **FTL-style** overworld navigation on a node map
 - **Slay the Spire-style** procedural dungeon exploration
@@ -55,6 +56,7 @@ fe-mb/
 - **world_input_manager.gd** - Handles click/hover on map nodes
 
 **Map Data Format** (`data/maps/*.json`):
+
 ```json
 {
   "name": "Map Name",
@@ -89,6 +91,7 @@ Fire Emblem-inspired grid-based tactical combat.
 **Key Stats**: HP, STR, MAG, SKL, SPD, LCK, DEF, RES, MOV
 
 **Combat Formula**:
+
 ```
 Damage = ATK - DEF (or RES for magic)
 Hit Rate = (SKL × 2) + LCK + Weapon Hit - Enemy Avoid
@@ -98,6 +101,7 @@ Critical = 3× damage
 ```
 
 **Weapon Triangle**:
+
 ```
 Sword > Axe > Lance > Sword (+15 Hit, +1 Damage)
 ```
@@ -125,12 +129,14 @@ Slay the Spire-style branching paths.
 ## Asset Organization
 
 **Tile Assets** (`assets/terrain/overworld/`):
+
 - Kenney Medieval RTS pack
 - Individual PNGs in `PNG/Default size/` (Tile, Environment, Structure folders)
 - Tilesheet in `Tilesheet/`
 
 **Asset Catalog** (`data/maps/asset_catalog.json`):
 Maps friendly names to file paths:
+
 ```json
 {
   "terrain": {"grass_plain_1": "Tile/medievalTile_57.png", ...},
@@ -150,15 +156,18 @@ Maps friendly names to file paths:
 ## Common Tasks
 
 ### Adding a new map
+
 1. Create JSON in `data/maps/`
 2. Reference tile names from `asset_catalog.json`
 3. Define locations with grid coordinates
 
 ### Adding new tile types
+
 1. Add entry to `asset_catalog.json` under appropriate category
 2. If new terrain type, update `get_terrain_type()` in `overworld_map_loader.gd`
 
 ### Adding location types
+
 1. Update `LocationType` enum in `scripts/resources/location_data.gd`
 2. Update `_trigger_location_event()` in `world_map.gd`
 3. Update `get_color()` and `get_icon_text()` in `location_data.gd`

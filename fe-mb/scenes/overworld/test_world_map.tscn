@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://test_world_001"]
-
-[ext_resource type="PackedScene" uid="uid://world_map_001" path="res://scenes/overworld/world_map.tscn" id="1_world_map"]
-
-[node name="TestWorldMap" type="Node2D"]
-
-[node name="WorldMap" parent="." instance=ExtResource("1_world_map")]

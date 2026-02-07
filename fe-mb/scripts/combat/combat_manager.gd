@@ -114,17 +114,10 @@ static func _perform_attack(attacker: UnitData, defender: UnitData, hit_rate: in
 	}
 
 
-## Calculate damage
-static func _calculate_damage(attacker: UnitData, defender: UnitData, triangle: int, terrain_bonus: int) -> int:
-	var attack_power = attacker.get_attack_power()
-	var defense = defender.defense + terrain_bonus
-	
-	# Use resistance if attacker has a tome
-	if attacker.equipped_weapon and attacker.equipped_weapon is ItemData:
-		if attacker.equipped_weapon.weapon_type == ItemData.WeaponType.TOME:
-			defense = defender.resistance
-	
-	var damage = attack_power - defense + (triangle * WEAPON_TRIANGLE_DMG_BONUS)
+## Calculate raw damage (armor absorption happens in UnitData.take_damage)
+static func _calculate_damage(attacker: UnitData, defender: UnitData, triangle: int, _terrain_bonus: int) -> int:
+	var attack_power: int = attacker.get_attack_power()
+	var damage: int = attack_power + (triangle * WEAPON_TRIANGLE_DMG_BONUS)
 	return max(0, damage)
 
 
