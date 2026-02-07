@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://scenes/ui/settings_menu.gd" id="1_script"]
-[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_dark.tres" id="2_panel"]
+[ext_resource type="Script" uid="uid://bokog8fi5owgm" path="res://scenes/ui/settings_menu.gd" id="1_script"]
+[ext_resource type="StyleBox" uid="uid://lu8s6nq7q2y2" path="res://themes/styleboxes/panel_dark.tres" id="2_panel"]
 
 [node name="SettingsMenu" type="Control"]
 layout_mode = 3
@@ -19,20 +19,20 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.8)
+color = Color(0, 0, 0, 0.75)
 
 [node name="Panel" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(500, 400)
+custom_minimum_size = Vector2(600, 480)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -250.0
-offset_top = -200.0
-offset_right = 250.0
-offset_bottom = 200.0
+offset_left = -300.0
+offset_top = -240.0
+offset_right = 300.0
+offset_bottom = 240.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("2_panel")
@@ -48,19 +48,19 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -20.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 24
 
 [node name="MasterRow" type="HBoxContainer" parent="Panel/TabContainer/Audio/VBox"]
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Panel/TabContainer/Audio/VBox/MasterRow"]
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Master Volume"
 
@@ -76,7 +76,7 @@ value = 1.0
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Panel/TabContainer/Audio/VBox/MusicRow"]
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Music Volume"
 
@@ -92,7 +92,7 @@ value = 1.0
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Panel/TabContainer/Audio/VBox/SFXRow"]
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "SFX Volume"
 
@@ -113,19 +113,19 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -20.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 24
 
 [node name="WindowModeRow" type="HBoxContainer" parent="Panel/TabContainer/Video/VBox"]
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Panel/TabContainer/Video/VBox/WindowModeRow"]
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "Window Mode"
 
@@ -137,7 +137,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Panel/TabContainer/Video/VBox/VSyncRow"]
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 text = "VSync"
 
@@ -147,17 +147,17 @@ size_flags_horizontal = 3
 text = "Enabled"
 
 [node name="CloseBtn" type="Button" parent="Panel"]
-custom_minimum_size = Vector2(100, 40)
+custom_minimum_size = Vector2(120, 44)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -50.0
-offset_top = 20.0
-offset_right = 50.0
-offset_bottom = 60.0
+offset_left = -60.0
+offset_top = -56.0
+offset_right = 60.0
+offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 0
 text = "Close"

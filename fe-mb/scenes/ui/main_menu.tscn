@@ -1,9 +1,102 @@
-[gd_scene load_steps=5 format=3 uid="uid://bh2aljt4uy2vp"]
+[gd_scene load_steps=12 format=3 uid="uid://bh2aljt4uy2vp"]
 
 [ext_resource type="Script" uid="uid://bdn8xxkd0oahc" path="res://scenes/ui/main_menu.gd" id="1_script"]
 [ext_resource type="StyleBox" uid="uid://lu8s6nq7q2y2" path="res://themes/styleboxes/panel_dark.tres" id="2_panel"]
 [ext_resource type="PackedScene" uid="uid://b3evqlnvbs12b" path="res://scenes/ui/save_load_menu.tscn" id="3_saveload"]
 [ext_resource type="PackedScene" path="res://scenes/ui/settings_menu.tscn" id="4_settings"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_title"]
+font_size = 72
+font_color = Color(0.82, 0.68, 0.21, 1)
+shadow_size = 3
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_offset = Vector2(2, 3)
+outline_size = 2
+outline_color = Color(0.45, 0.35, 0.1, 0.6)
+
+[sub_resource type="LabelSettings" id="LabelSettings_subtitle"]
+font_size = 16
+font_color = Color(0.55, 0.5, 0.4, 0.7)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+bg_color = Color(0.12, 0.14, 0.22, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.3, 0.15, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+bg_color = Color(0.18, 0.2, 0.3, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.82, 0.68, 0.21, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+bg_color = Color(0.22, 0.24, 0.34, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.82, 0.68, 0.21, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_disabled"]
+bg_color = Color(0.08, 0.09, 0.14, 0.6)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.2, 0.25, 0.4)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_focus"]
+bg_color = Color(0.15, 0.17, 0.26, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.82, 0.68, 0.21, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -23,18 +116,35 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("2_panel")
 
-[node name="TitleLabel" type="Label" parent="."]
+[node name="TitleContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -200.0
-offset_top = 50.0
-offset_right = 200.0
-offset_bottom = 117.0
+offset_left = -280.0
+offset_top = 100.0
+offset_right = 280.0
+offset_bottom = 220.0
 grow_horizontal = 2
-theme_override_font_sizes/font_size = 48
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="TitleContainer"]
+layout_mode = 2
+label_settings = SubResource("LabelSettings_title")
 text = "IRON OATH"
+horizontal_alignment = 1
+
+[node name="Separator" type="ColorRect" parent="TitleContainer"]
+custom_minimum_size = Vector2(240, 2)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.82, 0.68, 0.21, 0.4)
+
+[node name="SubtitleLabel" type="Label" parent="TitleContainer"]
+layout_mode = 2
+label_settings = SubResource("LabelSettings_subtitle")
+text = "A Tactical Roguelite"
 horizontal_alignment = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
@@ -44,32 +154,80 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = -80.0
-offset_right = 100.0
-offset_bottom = 120.0
+offset_left = -140.0
+offset_top = 20.0
+offset_right = 140.0
+offset_bottom = 320.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 
 [node name="ContinueBtn" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.85, 0.82, 0.75, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.9, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(0.82, 0.68, 0.21, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.4, 0.4, 0.6)
+theme_override_colors/font_focus_color = Color(0.95, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_focus")
 text = "Continue"
 
 [node name="NewGameBtn" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.85, 0.82, 0.75, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.9, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(0.82, 0.68, 0.21, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.4, 0.4, 0.6)
+theme_override_colors/font_focus_color = Color(0.95, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_focus")
 text = "New Game"
 
 [node name="SettingsBtn" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.85, 0.82, 0.75, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.9, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(0.82, 0.68, 0.21, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.4, 0.4, 0.6)
+theme_override_colors/font_focus_color = Color(0.95, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_focus")
 text = "Settings"
 
 [node name="ExitBtn" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.85, 0.82, 0.75, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.9, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(0.82, 0.68, 0.21, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.4, 0.4, 0.6)
+theme_override_colors/font_focus_color = Color(0.95, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_focus")
 text = "Exit"
 
 [node name="VersionLabel" type="Label" parent="."]
@@ -79,13 +237,14 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -100.0
+offset_left = -140.0
 offset_top = -40.0
 offset_right = -20.0
-offset_bottom = -20.0
+offset_bottom = -16.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_colors/font_color = Color(0.45, 0.42, 0.38, 0.6)
+theme_override_font_sizes/font_size = 14
 text = "v0.1.0"
 horizontal_alignment = 2
 

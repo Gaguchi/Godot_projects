@@ -26,10 +26,10 @@ func _create_styles() -> void:
 	_style_active_player.border_width_top = 2
 	_style_active_player.border_width_left = 2
 	_style_active_player.border_width_right = 2
-	_style_active_player.corner_radius_top_left = 3
-	_style_active_player.corner_radius_top_right = 3
-	_style_active_player.corner_radius_bottom_left = 3
-	_style_active_player.corner_radius_bottom_right = 3
+	_style_active_player.corner_radius_top_left = 4
+	_style_active_player.corner_radius_top_right = 4
+	_style_active_player.corner_radius_bottom_left = 4
+	_style_active_player.corner_radius_bottom_right = 4
 
 	_style_active_enemy = StyleBoxFlat.new()
 	_style_active_enemy.bg_color = Color(0.25, 0.25, 0.35, 0.9)
@@ -38,23 +38,23 @@ func _create_styles() -> void:
 	_style_active_enemy.border_width_top = 2
 	_style_active_enemy.border_width_left = 2
 	_style_active_enemy.border_width_right = 2
-	_style_active_enemy.corner_radius_top_left = 3
-	_style_active_enemy.corner_radius_top_right = 3
-	_style_active_enemy.corner_radius_bottom_left = 3
-	_style_active_enemy.corner_radius_bottom_right = 3
+	_style_active_enemy.corner_radius_top_left = 4
+	_style_active_enemy.corner_radius_top_right = 4
+	_style_active_enemy.corner_radius_bottom_left = 4
+	_style_active_enemy.corner_radius_bottom_right = 4
 
 	_style_inactive = StyleBoxFlat.new()
 	_style_inactive.bg_color = Color(0.15, 0.15, 0.2, 0.8)
-	_style_inactive.corner_radius_top_left = 3
-	_style_inactive.corner_radius_top_right = 3
-	_style_inactive.corner_radius_bottom_left = 3
-	_style_inactive.corner_radius_bottom_right = 3
+	_style_inactive.corner_radius_top_left = 4
+	_style_inactive.corner_radius_top_right = 4
+	_style_inactive.corner_radius_bottom_left = 4
+	_style_inactive.corner_radius_bottom_right = 4
 
 
 func _create_panels() -> void:
 	for i in range(MAX_VISIBLE):
 		var panel: PanelContainer = PanelContainer.new()
-		panel.custom_minimum_size = Vector2(48, 36)
+		panel.custom_minimum_size = Vector2(60, 44)
 		panel.visible = false
 
 		var vbox: VBoxContainer = VBoxContainer.new()
@@ -62,11 +62,11 @@ func _create_panels() -> void:
 
 		var letter_label: Label = Label.new()
 		letter_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		letter_label.add_theme_font_size_override("font_size", 14)
+		letter_label.add_theme_font_size_override("font_size", 18)
 
 		var name_label: Label = Label.new()
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.add_theme_font_size_override("font_size", 8)
+		name_label.add_theme_font_size_override("font_size", 10)
 		name_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 
 		vbox.add_child(letter_label)

@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://scenes/ui/inventory_screen.gd" id="1_script"]
-[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_dark.tres" id="2_panel"]
+[ext_resource type="Script" uid="uid://6s3dsw2pimxh" path="res://scenes/ui/inventory_screen.gd" id="1_script"]
+[ext_resource type="StyleBox" uid="uid://lu8s6nq7q2y2" path="res://themes/styleboxes/panel_dark.tres" id="2_panel"]
 
 [node name="InventoryScreen" type="Control"]
 layout_mode = 3
@@ -21,7 +21,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.08, 0.08, 0.1, 1)
+color = Color(0.05, 0.06, 0.09, 1)
 mouse_filter = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
@@ -32,18 +32,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 30
-theme_override_constants/margin_top = 30
-theme_override_constants/margin_right = 30
-theme_override_constants/margin_bottom = 30
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 40
 
 [node name="Content" type="HBoxContainer" parent="MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 24
 mouse_filter = 2
 
 [node name="UnitListPanel" type="PanelContainer" parent="MarginContainer/Content"]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("2_panel")
@@ -55,7 +55,7 @@ theme_override_constants/separation = 10
 
 [node name="Label" type="Label" parent="MarginContainer/Content/UnitListPanel/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "Party Members"
 horizontal_alignment = 1
 
@@ -69,7 +69,7 @@ size_flags_vertical = 3
 [node name="UnitListContainer" type="VBoxContainer" parent="MarginContainer/Content/UnitListPanel/VBox/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 5
+theme_override_constants/separation = 8
 
 [node name="InventoryPanel" type="PanelContainer" parent="MarginContainer/Content"]
 layout_mode = 2
@@ -89,13 +89,14 @@ mouse_filter = 2
 [node name="UnitInfoLabel" type="Label" parent="MarginContainer/Content/InventoryPanel/VBox/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "Unit Name - Class - Lv. 1"
 autowrap_mode = 2
 
 [node name="StatsLabel" type="Label" parent="MarginContainer/Content/InventoryPanel/VBox/Header"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 15
 text = "HP: 20/20  Str: 10  Mag: 5"
 autowrap_mode = 2
 
@@ -118,11 +119,11 @@ layout_mode = 2
 [node name="WeaponLabel" type="Label" parent="MarginContainer/Content/InventoryPanel/VBox/EquipmentSection/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 text = "Iron Sword"
 
 [node name="UnequipBtn" type="Button" parent="MarginContainer/Content/InventoryPanel/VBox/EquipmentSection/HBox"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(110, 40)
 layout_mode = 2
 text = "Unequip"
 
@@ -150,21 +151,19 @@ alignment = 2
 mouse_filter = 2
 
 [node name="EquipBtn" type="Button" parent="MarginContainer/Content/InventoryPanel/VBox/ActionButtons"]
-custom_minimum_size = Vector2(80, 40)
+custom_minimum_size = Vector2(100, 44)
 layout_mode = 2
 text = "Equip"
 
 [node name="UseBtn" type="Button" parent="MarginContainer/Content/InventoryPanel/VBox/ActionButtons"]
-custom_minimum_size = Vector2(80, 40)
+custom_minimum_size = Vector2(100, 44)
 layout_mode = 2
 text = "Use"
 
 [node name="GiveBtn" type="Button" parent="MarginContainer/Content/InventoryPanel/VBox/ActionButtons"]
-custom_minimum_size = Vector2(80, 40)
+custom_minimum_size = Vector2(100, 44)
 layout_mode = 2
 text = "Give"
-
-
 
 [node name="TradeOverlay" type="Control" parent="."]
 visible = false
@@ -182,7 +181,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.7)
+color = Color(0, 0, 0, 0.75)
 
 [node name="Panel" type="PanelContainer" parent="TradeOverlay"]
 layout_mode = 1
@@ -191,10 +190,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -150.0
-offset_right = 200.0
-offset_bottom = 150.0
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 240.0
+offset_bottom = 180.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("2_panel")
@@ -205,7 +204,7 @@ theme_override_constants/separation = 20
 
 [node name="Label" type="Label" parent="TradeOverlay/Panel/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "Select Recipient"
 horizontal_alignment = 1
 
@@ -218,18 +217,19 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="CancelTradeBtn" type="Button" parent="TradeOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Cancel"
 
 [node name="CloseBtn" type="Button" parent="."]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -50.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = 50.0
+offset_left = -60.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 60.0
 grow_horizontal = 0
 text = "X"

@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://dp0qmjf3ogfd"]
 
 [ext_resource type="Script" uid="uid://ckqdrl5c3eufe" path="res://scenes/ui/screens/world_map_ui.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://scenes/ui/components/resource_display.tscn" id="2_resource"]
-[ext_resource type="PackedScene" path="res://scenes/ui/panels/location_info_panel.tscn" id="3_info"]
-[ext_resource type="StyleBox" path="res://themes/styleboxes/panel_dark.tres" id="4_panel"]
+[ext_resource type="PackedScene" uid="uid://resource_display_scene" path="res://scenes/ui/components/resource_display.tscn" id="2_resource"]
+[ext_resource type="PackedScene" uid="uid://location_info_panel_scene" path="res://scenes/ui/panels/location_info_panel.tscn" id="3_info"]
+[ext_resource type="StyleBox" uid="uid://lu8s6nq7q2y2" path="res://themes/styleboxes/panel_dark.tres" id="4_panel"]
 
 [node name="WorldMapUI" type="CanvasLayer"]
 script = ExtResource("1_script")
@@ -15,10 +15,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
@@ -30,12 +30,14 @@ theme_override_styles/panel = ExtResource("4_panel")
 
 [node name="Margin" type="MarginContainer" parent="MarginContainer/VBoxContainer/TopBar"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_right = 10
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
 
 [node name="ResourcesHBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer/TopBar/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 30
+theme_override_constants/separation = 40
 
 [node name="GoldDisplay" parent="MarginContainer/VBoxContainer/TopBar/Margin/ResourcesHBox" instance=ExtResource("2_resource")]
 unique_name_in_owner = true
@@ -53,7 +55,9 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="InventoryBtn" type="Button" parent="MarginContainer/VBoxContainer/TopBar/Margin/ResourcesHBox"]
+custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
+theme_override_font_sizes/font_size = 16
 text = "INVENTORY"
 
 [node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer"]
@@ -72,11 +76,12 @@ alignment = 2
 
 [node name="ThreatLabel" type="Label" parent="MarginContainer/VBoxContainer/BottomHBox/ThreatContainer"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "THREAT LEVEL"
 
 [node name="ThreatBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/BottomHBox/ThreatContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 max_value = 12.0
 value = 3.0

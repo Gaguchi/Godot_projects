@@ -6,15 +6,58 @@
 [ext_resource type="StyleBox" path="res://themes/styleboxes/button_disabled.tres" id="4_btn_dis"]
 [ext_resource type="StyleBox" path="res://themes/styleboxes/panel_dark.tres" id="5_pan_dark"]
 [ext_resource type="StyleBox" path="res://themes/styleboxes/panel_accent.tres" id="6_pan_accent"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/healthbar_bg.tres" id="7_hb_bg"]
+[ext_resource type="StyleBox" path="res://themes/styleboxes/healthbar_fill.tres" id="8_hb_fill"]
 
 [resource]
-Button/colors/font_color = Color(0.909804, 0.909804, 0.909804, 1)
-Button/colors/font_hover_color = Color(1, 1, 1, 1)
-Button/colors/font_pressed_color = Color(0.831373, 0.686275, 0.215686, 1)
+default_font_size = 16
+
+Button/colors/font_color = Color(0.82, 0.82, 0.86, 1)
+Button/colors/font_hover_color = Color(1, 0.96, 0.84, 1)
+Button/colors/font_pressed_color = Color(0.82, 0.68, 0.21, 1)
+Button/colors/font_disabled_color = Color(0.4, 0.4, 0.45, 1)
+Button/font_sizes/font_size = 16
 Button/styles/disabled = ExtResource("4_btn_dis")
 Button/styles/hover = ExtResource("2_btn_hov")
 Button/styles/normal = ExtResource("1_btn_norm")
 Button/styles/pressed = ExtResource("3_btn_press")
+
+Label/colors/font_color = Color(0.88, 0.88, 0.9, 1)
+Label/colors/font_shadow_color = Color(0, 0, 0, 0.3)
+Label/constants/shadow_offset_x = 1
+Label/constants/shadow_offset_y = 1
+Label/font_sizes/font_size = 16
+
 Panel/styles/panel = ExtResource("5_pan_dark")
 PanelContainer/styles/panel = ExtResource("5_pan_dark")
 TooltipPanel/styles/panel = ExtResource("6_pan_accent")
+
+TabContainer/colors/font_selected_color = Color(0.82, 0.68, 0.21, 1)
+TabContainer/colors/font_unselected_color = Color(0.55, 0.55, 0.6, 1)
+TabContainer/colors/font_hovered_color = Color(0.9, 0.9, 0.92, 1)
+TabContainer/font_sizes/font_size = 16
+
+HSlider/styles/slider = ExtResource("7_hb_bg")
+HSlider/styles/grabber_area = ExtResource("8_hb_fill")
+
+ProgressBar/styles/background = ExtResource("7_hb_bg")
+ProgressBar/styles/fill = ExtResource("8_hb_fill")
+ProgressBar/font_sizes/font_size = 12
+
+HSeparator/constants/separation = 8
+HSeparator/styles/separator = ExtResource("5_pan_dark")
+
+CheckBox/colors/font_color = Color(0.82, 0.82, 0.86, 1)
+CheckBox/colors/font_hover_color = Color(1, 0.96, 0.84, 1)
+
+OptionButton/colors/font_color = Color(0.82, 0.82, 0.86, 1)
+OptionButton/colors/font_hover_color = Color(1, 0.96, 0.84, 1)
+OptionButton/styles/normal = ExtResource("1_btn_norm")
+OptionButton/styles/hover = ExtResource("2_btn_hov")
+OptionButton/styles/pressed = ExtResource("3_btn_press")
+
+ItemList/styles/panel = ExtResource("5_pan_dark")
+ItemList/colors/font_color = Color(0.82, 0.82, 0.86, 1)
+ItemList/colors/font_selected_color = Color(0.82, 0.68, 0.21, 1)
+
+ScrollContainer/styles/panel = ExtResource("5_pan_dark")

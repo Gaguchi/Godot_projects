@@ -11,56 +11,56 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
 bg_color = Color(0.1, 0.1, 0.1, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_fill"]
-bg_color = Color(0.2, 0.8, 0.2, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_armor_bg"]
-bg_color = Color(0.1, 0.1, 0.15, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_armor_fill"]
-bg_color = Color(0.3, 0.5, 0.85, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_bg"]
-bg_color = Color(0.1, 0.1, 0.1, 1)
-corner_radius_top_left = 1
-corner_radius_top_right = 1
-corner_radius_bottom_right = 1
-corner_radius_bottom_left = 1
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_fill"]
-bg_color = Color(0.83, 0.69, 0.22, 1)
-corner_radius_top_left = 1
-corner_radius_top_right = 1
-corner_radius_bottom_right = 1
-corner_radius_bottom_left = 1
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_terrain_panel"]
-bg_color = Color(0.086, 0.129, 0.243, 0.85)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
-content_margin_left = 6.0
-content_margin_top = 2.0
-content_margin_right = 6.0
-content_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_fill"]
+bg_color = Color(0.2, 0.8, 0.2, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_armor_bg"]
+bg_color = Color(0.1, 0.1, 0.15, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_armor_fill"]
+bg_color = Color(0.3, 0.5, 0.85, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_bg"]
+bg_color = Color(0.1, 0.1, 0.1, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_fill"]
+bg_color = Color(0.83, 0.69, 0.22, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_terrain_panel"]
+bg_color = Color(0.086, 0.129, 0.243, 0.85)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
 
 [node name="Battlefield" type="Node2D"]
 script = ExtResource("1_battlefield")
@@ -95,12 +95,12 @@ layer = 10
 [node name="TurnOrderBar" type="HBoxContainer" parent="UI"]
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 10.0
-offset_top = 6.0
-offset_right = -10.0
-offset_bottom = 46.0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = 52.0
 grow_horizontal = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 6
 script = ExtResource("7_turn_order")
 
 [node name="TurnBanner" type="Label" parent="UI"]
@@ -108,15 +108,15 @@ visible = false
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -150.0
-offset_top = 50.0
-offset_right = 150.0
-offset_bottom = 100.0
+offset_left = -200.0
+offset_top = 60.0
+offset_right = 200.0
+offset_bottom = 120.0
 grow_horizontal = 2
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 32
 text = "Player Phase"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -126,10 +126,10 @@ visible = false
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = -150.0
-offset_right = 230.0
-offset_bottom = -10.0
+offset_left = 12.0
+offset_top = -212.0
+offset_right = 292.0
+offset_bottom = -12.0
 grow_vertical = 0
 
 [node name="VBox" type="VBoxContainer" parent="UI/UnitInfo"]
@@ -137,17 +137,17 @@ layout_mode = 2
 
 [node name="UnitName" type="Label" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 20
 text = "Unit Name"
 
 [node name="UnitClass" type="Label" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "Class: Fighter Lv.1"
 
 [node name="HPBar" type="ProgressBar" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 6)
+custom_minimum_size = Vector2(0, 10)
 theme_override_font_sizes/font_size = 1
 theme_override_styles/background = SubResource("StyleBoxFlat_hp_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
@@ -157,12 +157,12 @@ show_percentage = false
 
 [node name="HPLabel" type="Label" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "HP: 20/20"
 
 [node name="ArmorBar" type="ProgressBar" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 5)
+custom_minimum_size = Vector2(0, 8)
 theme_override_font_sizes/font_size = 1
 theme_override_styles/background = SubResource("StyleBoxFlat_armor_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_armor_fill")
@@ -172,44 +172,44 @@ show_percentage = false
 
 [node name="ArmorLabel" type="Label" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "Armor: 10/10"
 
 [node name="WeaponLabel" type="Label" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 text = "Weapon: Iron Sword"
 
 [node name="StatGrid" type="GridContainer" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
 columns = 4
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 1
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 2
 
 [node name="STRLabel" type="Label" parent="UI/UnitInfo/VBox/StatGrid"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 12
 text = "STR:5"
 
 [node name="SPDLabel" type="Label" parent="UI/UnitInfo/VBox/StatGrid"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 12
 text = "SPD:5"
 
 [node name="DEFLabel" type="Label" parent="UI/UnitInfo/VBox/StatGrid"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 12
 text = "DEF:5"
 
 [node name="MOVLabel" type="Label" parent="UI/UnitInfo/VBox/StatGrid"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 12
 text = "MOV:5"
 
 [node name="EXPBar" type="ProgressBar" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 4)
+custom_minimum_size = Vector2(0, 6)
 theme_override_font_sizes/font_size = 1
 theme_override_styles/background = SubResource("StyleBoxFlat_exp_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_exp_fill")
@@ -219,7 +219,7 @@ show_percentage = false
 
 [node name="EXPLabel" type="Label" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 12
 theme_override_colors/font_color = Color(0.83, 0.69, 0.22, 1)
 text = "EXP: 0/100"
 
@@ -228,10 +228,10 @@ visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -220.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = 200.0
+offset_left = -292.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 252.0
 grow_horizontal = 0
 
 [node name="VBox" type="VBoxContainer" parent="UI/CombatForecast"]
@@ -239,7 +239,7 @@ layout_mode = 2
 
 [node name="Title" type="Label" parent="UI/CombatForecast/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 text = "Combat Forecast"
 horizontal_alignment = 1
 
@@ -256,38 +256,38 @@ size_flags_horizontal = 3
 [node name="AttackerName" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.7, 1, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 15
 text = "Attacker"
 horizontal_alignment = 1
 
 [node name="AttackerHP" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "HP: 20"
 horizontal_alignment = 1
 
 [node name="AttackerArm" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.4, 0.6, 0.9, 1)
 text = "Arm: 5"
 horizontal_alignment = 1
 
 [node name="AttackerDmg" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "Dmg: 5"
 horizontal_alignment = 1
 
 [node name="AttackerHit" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "Hit: 90%"
 horizontal_alignment = 1
 
 [node name="AttackerCrit" type="Label" parent="UI/CombatForecast/VBox/HBox/AttackerPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "Crit: 5%"
 horizontal_alignment = 1
 
@@ -301,38 +301,38 @@ size_flags_horizontal = 3
 [node name="DefenderName" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 15
 text = "Defender"
 horizontal_alignment = 1
 
 [node name="DefenderHP" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "HP: 18"
 horizontal_alignment = 1
 
 [node name="DefenderArm" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.4, 0.6, 0.9, 1)
 text = "Arm: 3"
 horizontal_alignment = 1
 
 [node name="DefenderDmg" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "Dmg: 4"
 horizontal_alignment = 1
 
 [node name="DefenderHit" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "Hit: 75%"
 horizontal_alignment = 1
 
 [node name="DefenderCrit" type="Label" parent="UI/CombatForecast/VBox/HBox/DefenderPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "Crit: 0%"
 horizontal_alignment = 1
 
@@ -342,10 +342,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -190.0
-offset_top = -170.0
-offset_right = -8.0
-offset_bottom = -36.0
+offset_left = -252.0
+offset_top = -232.0
+offset_right = -12.0
+offset_bottom = -42.0
 grow_horizontal = 0
 grow_vertical = 0
 script = ExtResource("8_combat_log")
@@ -357,33 +357,33 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -190.0
-offset_top = -32.0
-offset_right = -8.0
-offset_bottom = -8.0
+offset_left = -252.0
+offset_top = -38.0
+offset_right = -12.0
+offset_bottom = -12.0
 grow_horizontal = 0
 grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_terrain_panel")
 
 [node name="HBox" type="HBoxContainer" parent="UI/TerrainInfo"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="TerrainName" type="Label" parent="UI/TerrainInfo/HBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
 text = "Plain"
 
 [node name="DefBonus" type="Label" parent="UI/TerrainInfo/HBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 text = "DEF+0"
 
 [node name="AvoBonus" type="Label" parent="UI/TerrainInfo/HBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 text = "AVO+0"
 
@@ -394,11 +394,11 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -40.0
-offset_top = -40.0
-offset_right = 40.0
-offset_bottom = -10.0
+offset_left = -50.0
+offset_top = -48.0
+offset_right = 50.0
+offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 text = "Wait"

@@ -21,20 +21,20 @@ func _build_ui() -> void:
 	# Semi-transparent dark panel style
 	var style: StyleBoxFlat = StyleBoxFlat.new()
 	style.bg_color = Color(0.086, 0.129, 0.243, 0.85)
-	style.corner_radius_top_left = 4
-	style.corner_radius_top_right = 4
-	style.corner_radius_bottom_left = 4
-	style.corner_radius_bottom_right = 4
-	style.content_margin_left = 4
-	style.content_margin_right = 4
-	style.content_margin_top = 4
-	style.content_margin_bottom = 4
+	style.corner_radius_top_left = 5
+	style.corner_radius_top_right = 5
+	style.corner_radius_bottom_left = 5
+	style.corner_radius_bottom_right = 5
+	style.content_margin_left = 6
+	style.content_margin_right = 6
+	style.content_margin_top = 6
+	style.content_margin_bottom = 6
 	add_theme_stylebox_override("panel", style)
 
 	# Header label
 	var header: Label = Label.new()
 	header.text = "Combat Log"
-	header.add_theme_font_size_override("font_size", 9)
+	header.add_theme_font_size_override("font_size", 12)
 	header.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
@@ -46,7 +46,7 @@ func _build_ui() -> void:
 	# VBox inside scroll
 	_log_vbox = VBoxContainer.new()
 	_log_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_log_vbox.add_theme_constant_override("separation", 1)
+	_log_vbox.add_theme_constant_override("separation", 2)
 	_scroll.add_child(_log_vbox)
 
 	# Outer VBox to hold header + scroll
@@ -63,7 +63,7 @@ func _build_ui() -> void:
 func add_entry(text: String, color: Color = Color.WHITE) -> void:
 	var label: Label = Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", 9)
+	label.add_theme_font_size_override("font_size", 12)
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
 	label.add_theme_constant_override("shadow_offset_x", 1)
