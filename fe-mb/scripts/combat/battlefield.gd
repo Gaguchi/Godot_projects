@@ -27,9 +27,10 @@ const GRID_HEIGHT: int = 10
 @onready var unit_info: PanelContainer = $UI/UnitInfo
 @onready var combat_forecast: PanelContainer = $UI/CombatForecast
 @onready var camera: Camera2D = $Camera2D
-@onready var terrain_info: Label = $UI/TerrainInfo
+@onready var terrain_info: PanelContainer = $UI/TerrainInfo
 @onready var wait_button: Button = $UI/WaitButton
 @onready var turn_order_display = $UI/TurnOrderBar
+@onready var combat_log = $UI/CombatLog
 
 ## Sub-components
 @onready var battle_grid: BattleGrid = $BattleGrid
@@ -288,6 +289,15 @@ func _execute_combat(attacker: Node2D, defender: Node2D) -> void:
 
 	var result: Dictionary = CombatManager.execute_combat(forecast)
 
+	# Log combat results
+	if combat_log:
+		for entry in result.log:
+			var is_player: bool = atk_data.is_player_unit if entry.attacker == atk_data.unit_name else def_data.is_player_unit
+			if entry.hit:
+				combat_log.log_attack(entry.attacker, entry.defender, entry.damage, entry.crit, is_player)
+			else:
+				combat_log.log_miss(entry.attacker, entry.defender, is_player)
+
 	var frame_tween: Tween = _frame_combatants(attacker, defender)
 	if frame_tween:
 		await frame_tween.finished
@@ -307,6 +317,9 @@ func _handle_unit_death(dead_unit: Node2D, killer: Node2D) -> void:
 	EventBus.unit_died.emit(dead_unit)
 	battle_grid.remove_unit_at(dead_pos)
 
+	if combat_log:
+		combat_log.log_death(dead_data.unit_name, dead_data.is_player_unit)
+
 	# Remove from turn queue so freed instances don't linger
 	var idx: int = turn_queue.find(dead_unit)
 	if idx != -1:
@@ -315,7 +328,12 @@ func _handle_unit_death(dead_unit: Node2D, killer: Node2D) -> void:
 			current_turn_index -= 1
 
 	if not dead_data.is_player_unit and killer:
-		killer.get_unit_data().add_experience(30)
+		var gains: Dictionary = killer.get_unit_data().add_experience(30)
+		if not gains.is_empty():
+			EventBus.unit_leveled_up.emit(killer.get_unit_data(), gains)
+			if combat_log:
+				combat_log.log_level_up(killer.get_unit_data().unit_name, gains)
+			await _show_level_up_notification(killer.get_unit_data(), gains)
 
 	if dead_data.is_player_unit:
 		GameManager.remove_unit(dead_data)
@@ -332,6 +350,8 @@ func _start_battle() -> void:
 		if unit.has_method("get_unit_data") and unit.get_unit_data():
 			unit.get_unit_data().reset_armor()
 	_build_turn_queue()
+	if combat_log:
+		combat_log.log_system("Battle Start")
 	_show_turn_banner("Battle Start")
 	await get_tree().create_timer(0.3).timeout
 	_advance_turn()
@@ -539,6 +559,9 @@ func _end_battle(victory: bool) -> void:
 
 	print("[Battlefield] Battle ended - Victory: ", victory)
 
+	if combat_log:
+		combat_log.log_system("Victory!" if victory else "Defeat...")
+
 	_show_turn_banner("Victory!" if victory else "Defeat...")
 
 	if victory:
@@ -614,6 +637,27 @@ func _show_unit_info(unit: Node2D) -> void:
 		else:
 			weapon_label.text = "Unarmed"
 
+	# Stat grid
+	var str_label: Label = $UI/UnitInfo/VBox/StatGrid/STRLabel
+	var spd_label: Label = $UI/UnitInfo/VBox/StatGrid/SPDLabel
+	var def_label: Label = $UI/UnitInfo/VBox/StatGrid/DEFLabel
+	var mov_label: Label = $UI/UnitInfo/VBox/StatGrid/MOVLabel
+	if str_label: str_label.text = "STR:%d" % data.strength
+	if spd_label: spd_label.text = "SPD:%d" % data.speed
+	if def_label: def_label.text = "DEF:%d" % data.defense
+	if mov_label: mov_label.text = "MOV:%d" % data.movement
+
+	# EXP (player units only)
+	var exp_bar: ProgressBar = $UI/UnitInfo/VBox/EXPBar
+	var exp_label: Label = $UI/UnitInfo/VBox/EXPLabel
+	if exp_bar:
+		exp_bar.max_value = UnitData.EXP_TO_LEVEL
+		exp_bar.value = data.experience
+		exp_bar.visible = data.is_player_unit
+	if exp_label:
+		exp_label.text = "EXP: %d/%d" % [data.experience, UnitData.EXP_TO_LEVEL]
+		exp_label.visible = data.is_player_unit
+
 
 func _update_terrain_info(grid_pos: Vector2i) -> void:
 	if not terrain_info or not battle_grid.is_in_bounds(grid_pos):
@@ -634,13 +678,85 @@ func _update_terrain_info(grid_pos: Vector2i) -> void:
 		BattleGrid.TerrainType.WATER: terrain_name = "Water"
 		_: terrain_name = "Unknown"
 
-	terrain_info.text = "%s  DEF+%d  AVO+%d" % [terrain_name, def_bonus, avoid_bonus]
+	var name_lbl: Label = terrain_info.get_node("HBox/TerrainName")
+	var def_lbl: Label = terrain_info.get_node("HBox/DefBonus")
+	var avo_lbl: Label = terrain_info.get_node("HBox/AvoBonus")
+
+	if name_lbl: name_lbl.text = terrain_name
+	if def_lbl:
+		def_lbl.text = "DEF+%d" % def_bonus
+		def_lbl.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if def_bonus > 0 else Color(0.7, 0.7, 0.7))
+	if avo_lbl:
+		avo_lbl.text = "AVO+%d" % avoid_bonus
+		avo_lbl.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if avoid_bonus > 0 else Color(0.7, 0.7, 0.7))
+
 	terrain_info.visible = true
 
 
 func _update_turn_order_display() -> void:
 	if turn_order_display and turn_order_display.has_method("update_queue"):
 		turn_order_display.update_queue(turn_queue, current_turn_index - 1)
+
+
+func _show_level_up_notification(unit_data: UnitData, gains: Dictionary) -> void:
+	var panel: PanelContainer = PanelContainer.new()
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0.086, 0.129, 0.243, 0.95)
+	style.border_color = Color(0.83, 0.69, 0.22)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	panel.add_theme_stylebox_override("panel", style)
+
+	var vbox: VBoxContainer = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	var title: Label = Label.new()
+	title.text = "%s leveled up to Lv.%d!" % [unit_data.unit_name, unit_data.level]
+	title.add_theme_font_size_override("font_size", 14)
+	title.add_theme_color_override("font_color", Color(0.83, 0.69, 0.22))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var gains_text: String = ""
+	for stat in gains:
+		if gains[stat] > 0:
+			gains_text += "%s+%d  " % [stat.to_upper(), gains[stat]]
+	if gains_text.is_empty():
+		gains_text = "No stat gains"
+
+	var gains_label: Label = Label.new()
+	gains_label.text = gains_text.strip_edges()
+	gains_label.add_theme_font_size_override("font_size", 11)
+	gains_label.add_theme_color_override("font_color", Color.WHITE)
+	gains_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(gains_label)
+
+	panel.add_child(vbox)
+	$UI.add_child(panel)
+
+	# Center on screen
+	panel.anchors_preset = Control.PRESET_CENTER
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+
+	# Animate: fade in, hold, fade out
+	panel.modulate = Color(1, 1, 1, 0)
+	var tween: Tween = create_tween()
+	tween.tween_property(panel, "modulate:a", 1.0, 0.2)
+	tween.tween_interval(1.5)
+	tween.tween_property(panel, "modulate:a", 0.0, 0.3)
+	await tween.finished
+	panel.queue_free()
 
 
 # --- Camera ---

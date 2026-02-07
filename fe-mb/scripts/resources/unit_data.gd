@@ -88,41 +88,49 @@ func reset_armor() -> void:
 	current_armor = defense
 
 
-## Add experience and check for level up
-func add_experience(amount: int) -> bool:
+## Add experience and check for level up. Returns stat gains dict if leveled up, empty dict otherwise.
+func add_experience(amount: int) -> Dictionary:
 	experience += amount
 	if experience >= EXP_TO_LEVEL:
 		experience -= EXP_TO_LEVEL
-		_level_up()
-		return true
-	return false
+		return _level_up()
+	return {}
 
 
-## Process level up with growth rates
-func _level_up() -> void:
+## Process level up with growth rates. Returns dictionary of stat gains.
+func _level_up() -> Dictionary:
 	level += 1
-	
-	# Roll for each stat gain based on growth rate
+	var gains: Dictionary = {"hp": 0, "str": 0, "mag": 0, "skl": 0, "spd": 0, "lck": 0, "def": 0, "res": 0}
+
 	if randi() % 100 < hp_growth:
 		max_hp += 1
-		current_hp += 1  # Also heal the gained HP
+		current_hp += 1
+		gains["hp"] = 1
 	if randi() % 100 < str_growth:
 		strength += 1
+		gains["str"] = 1
 	if randi() % 100 < mag_growth:
 		magic += 1
+		gains["mag"] = 1
 	if randi() % 100 < skl_growth:
 		skill += 1
+		gains["skl"] = 1
 	if randi() % 100 < spd_growth:
 		speed += 1
+		gains["spd"] = 1
 	if randi() % 100 < lck_growth:
 		luck += 1
+		gains["lck"] = 1
 	if randi() % 100 < def_growth:
 		defense += 1
-		current_armor += 1  # Also gain the armor immediately
+		current_armor += 1
+		gains["def"] = 1
 	if randi() % 100 < res_growth:
 		resistance += 1
-	
+		gains["res"] = 1
+
 	print("[UnitData] %s leveled up to %d!" % [unit_name, level])
+	return gains
 
 
 ## Get attack power (physical or magical based on weapon)

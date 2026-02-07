@@ -36,6 +36,8 @@ signal unit_died(unit: Node)
 signal unit_turn_started(unit: Node)
 @warning_ignore("unused_signal")
 signal combat_calculated(result: Dictionary)
+@warning_ignore("unused_signal")
+signal unit_leveled_up(unit_data: Resource, stat_gains: Dictionary)
 
 # UI signals
 @warning_ignore("unused_signal")

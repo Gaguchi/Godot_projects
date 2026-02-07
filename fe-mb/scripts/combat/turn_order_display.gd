@@ -8,10 +8,47 @@ const MAX_VISIBLE: int = 10
 var _panels: Array[PanelContainer] = []
 var _letters: Array[Label] = []
 var _names: Array[Label] = []
+var _style_active_player: StyleBoxFlat
+var _style_active_enemy: StyleBoxFlat
+var _style_inactive: StyleBoxFlat
 
 
 func _ready() -> void:
+	_create_styles()
 	_create_panels()
+
+
+func _create_styles() -> void:
+	_style_active_player = StyleBoxFlat.new()
+	_style_active_player.bg_color = Color(0.25, 0.25, 0.35, 0.9)
+	_style_active_player.border_color = Color(1.0, 0.85, 0.2)
+	_style_active_player.border_width_bottom = 2
+	_style_active_player.border_width_top = 2
+	_style_active_player.border_width_left = 2
+	_style_active_player.border_width_right = 2
+	_style_active_player.corner_radius_top_left = 3
+	_style_active_player.corner_radius_top_right = 3
+	_style_active_player.corner_radius_bottom_left = 3
+	_style_active_player.corner_radius_bottom_right = 3
+
+	_style_active_enemy = StyleBoxFlat.new()
+	_style_active_enemy.bg_color = Color(0.25, 0.25, 0.35, 0.9)
+	_style_active_enemy.border_color = Color(1.0, 0.3, 0.3)
+	_style_active_enemy.border_width_bottom = 2
+	_style_active_enemy.border_width_top = 2
+	_style_active_enemy.border_width_left = 2
+	_style_active_enemy.border_width_right = 2
+	_style_active_enemy.corner_radius_top_left = 3
+	_style_active_enemy.corner_radius_top_right = 3
+	_style_active_enemy.corner_radius_bottom_left = 3
+	_style_active_enemy.corner_radius_bottom_right = 3
+
+	_style_inactive = StyleBoxFlat.new()
+	_style_inactive.bg_color = Color(0.15, 0.15, 0.2, 0.8)
+	_style_inactive.corner_radius_top_left = 3
+	_style_inactive.corner_radius_top_right = 3
+	_style_inactive.corner_radius_bottom_left = 3
+	_style_inactive.corner_radius_bottom_right = 3
 
 
 func _create_panels() -> void:
@@ -75,28 +112,11 @@ func update_queue(queue: Array, active_index: int) -> void:
 		else:
 			letter.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
 
-		# Highlight active unit
+		# Highlight active unit (use cached styles)
 		if i == active_index:
-			var style: StyleBoxFlat = StyleBoxFlat.new()
-			style.bg_color = Color(0.25, 0.25, 0.35, 0.9)
-			style.border_color = Color(1.0, 0.85, 0.2) if data.is_player_unit else Color(1.0, 0.3, 0.3)
-			style.border_width_bottom = 2
-			style.border_width_top = 2
-			style.border_width_left = 2
-			style.border_width_right = 2
-			style.corner_radius_top_left = 3
-			style.corner_radius_top_right = 3
-			style.corner_radius_bottom_left = 3
-			style.corner_radius_bottom_right = 3
-			panel.add_theme_stylebox_override("panel", style)
+			panel.add_theme_stylebox_override("panel", _style_active_player if data.is_player_unit else _style_active_enemy)
 		else:
-			var style: StyleBoxFlat = StyleBoxFlat.new()
-			style.bg_color = Color(0.15, 0.15, 0.2, 0.8)
-			style.corner_radius_top_left = 3
-			style.corner_radius_top_right = 3
-			style.corner_radius_bottom_left = 3
-			style.corner_radius_bottom_right = 3
-			panel.add_theme_stylebox_override("panel", style)
+			panel.add_theme_stylebox_override("panel", _style_inactive)
 
 		panel.visible = true
 		display_index += 1

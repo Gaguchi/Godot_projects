@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dwkmnx5d2q0xw"]
+[gd_scene load_steps=16 format=3 uid="uid://dwkmnx5d2q0xw"]
 
 [ext_resource type="Script" uid="uid://dmowc6elghe6o" path="res://scripts/combat/battlefield.gd" id="1_battlefield"]
 [ext_resource type="Script" uid="uid://bgy465riktha8" path="res://scripts/combat/grid_overlay.gd" id="2_grid_overlay"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/combat/enemy_ai.gd" id="5_enemy_ai"]
 [ext_resource type="Script" path="res://scripts/combat/combat_animator.gd" id="6_combat_animator"]
 [ext_resource type="Script" path="res://scripts/combat/turn_order_display.gd" id="7_turn_order"]
+[ext_resource type="Script" path="res://scripts/combat/combat_log.gd" id="8_combat_log"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
 bg_color = Color(0.1, 0.1, 0.1, 1)
@@ -35,6 +36,31 @@ corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_bg"]
+bg_color = Color(0.1, 0.1, 0.1, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_fill"]
+bg_color = Color(0.83, 0.69, 0.22, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_terrain_panel"]
+bg_color = Color(0.086, 0.129, 0.243, 0.85)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
 
 [node name="Battlefield" type="Node2D"]
 script = ExtResource("1_battlefield")
@@ -155,34 +181,47 @@ theme_override_font_sizes/font_size = 11
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 text = "Weapon: Iron Sword"
 
-[node name="ActionMenu" type="PanelContainer" parent="UI"]
-visible = false
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -60.0
-offset_top = -50.0
-offset_right = 60.0
-offset_bottom = 50.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBox" type="VBoxContainer" parent="UI/ActionMenu"]
+[node name="StatGrid" type="GridContainer" parent="UI/UnitInfo/VBox"]
 layout_mode = 2
+columns = 4
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 1
 
-[node name="AttackBtn" type="Button" parent="UI/ActionMenu/VBox"]
+[node name="STRLabel" type="Label" parent="UI/UnitInfo/VBox/StatGrid"]
 layout_mode = 2
-text = "Attack"
+theme_override_font_sizes/font_size = 9
+text = "STR:5"
 
-[node name="WaitBtn" type="Button" parent="UI/ActionMenu/VBox"]
+[node name="SPDLabel" type="Label" parent="UI/UnitInfo/VBox/StatGrid"]
 layout_mode = 2
-text = "Wait"
+theme_override_font_sizes/font_size = 9
+text = "SPD:5"
 
-[node name="ItemBtn" type="Button" parent="UI/ActionMenu/VBox"]
+[node name="DEFLabel" type="Label" parent="UI/UnitInfo/VBox/StatGrid"]
 layout_mode = 2
-text = "Item"
+theme_override_font_sizes/font_size = 9
+text = "DEF:5"
+
+[node name="MOVLabel" type="Label" parent="UI/UnitInfo/VBox/StatGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "MOV:5"
+
+[node name="EXPBar" type="ProgressBar" parent="UI/UnitInfo/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 4)
+theme_override_font_sizes/font_size = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_exp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_exp_fill")
+max_value = 100.0
+value = 0.0
+show_percentage = false
+
+[node name="EXPLabel" type="Label" parent="UI/UnitInfo/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+theme_override_colors/font_color = Color(0.83, 0.69, 0.22, 1)
+text = "EXP: 0/100"
 
 [node name="CombatForecast" type="PanelContainer" parent="UI"]
 visible = false
@@ -297,26 +336,56 @@ theme_override_font_sizes/font_size = 11
 text = "Crit: 0%"
 horizontal_alignment = 1
 
-[node name="TerrainInfo" type="Label" parent="UI"]
+[node name="CombatLog" type="PanelContainer" parent="UI"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -190.0
+offset_top = -170.0
+offset_right = -8.0
+offset_bottom = -36.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("8_combat_log")
+
+[node name="TerrainInfo" type="PanelContainer" parent="UI"]
 visible = false
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -180.0
-offset_top = -30.0
-offset_right = -10.0
-offset_bottom = -10.0
+offset_left = -190.0
+offset_top = -32.0
+offset_right = -8.0
+offset_bottom = -8.0
 grow_horizontal = 0
 grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_terrain_panel")
+
+[node name="HBox" type="HBoxContainer" parent="UI/TerrainInfo"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TerrainName" type="Label" parent="UI/TerrainInfo/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-theme_override_font_sizes/font_size = 11
-text = "Plain  DEF+0  AVO+0"
-horizontal_alignment = 2
+text = "Plain"
+
+[node name="DefBonus" type="Label" parent="UI/TerrainInfo/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "DEF+0"
+
+[node name="AvoBonus" type="Label" parent="UI/TerrainInfo/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "AVO+0"
 
 [node name="WaitButton" type="Button" parent="UI"]
 visible = false

@@ -28,6 +28,7 @@ var attackable_tiles: Array[Vector2i] = []
 var attack_range_tiles: Array[Vector2i] = []
 var last_hover_tile: Vector2i = Vector2i(-1, -1)
 var pre_move_position: Vector2i = Vector2i(-1, -1)
+var _last_hovered_unit: Node2D = null
 
 ## Whether input is enabled
 var input_enabled: bool = false
@@ -56,6 +57,17 @@ func update_hover() -> void:
 	if hover == last_hover_tile:
 		return
 	last_hover_tile = hover
+
+	# Show/hide unit name tooltip on hover
+	var hovered_unit: Node2D = null
+	if battle_grid and battle_grid.is_in_bounds(hover):
+		hovered_unit = battle_grid.get_unit_at(hover)
+	if hovered_unit and hovered_unit.has_method("show_name_tooltip"):
+		hovered_unit.show_name_tooltip(true)
+	if _last_hovered_unit and _last_hovered_unit != hovered_unit and is_instance_valid(_last_hovered_unit):
+		if _last_hovered_unit.has_method("show_name_tooltip"):
+			_last_hovered_unit.show_name_tooltip(false)
+	_last_hovered_unit = hovered_unit
 
 	if is_selecting_target and attacking_unit:
 		_update_target_hover(hover)
@@ -181,6 +193,11 @@ func _deselect_unit() -> void:
 	pre_move_position = Vector2i(-1, -1)
 	is_selecting_target = false
 	_is_post_move_target = false
+
+	# Clear hover tooltip
+	if _last_hovered_unit and is_instance_valid(_last_hovered_unit) and _last_hovered_unit.has_method("show_name_tooltip"):
+		_last_hovered_unit.show_name_tooltip(false)
+	_last_hovered_unit = null
 
 	if unit_info_panel:
 		unit_info_panel.visible = false
