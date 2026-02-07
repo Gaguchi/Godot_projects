@@ -16,7 +16,7 @@ script = ExtResource("1_map")
 script = ExtResource("2_input")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(512, 384)
+position = Vector2(640, 352)
 
 [node name="UI" type="CanvasLayer" parent="."]
 

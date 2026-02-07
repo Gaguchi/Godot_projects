@@ -1,181 +1,106 @@
 {
     "name": "The Borderlands",
-    "description": "A sprawling frontier region with forests, settlements, and ancient ruins connected by winding roads.",
-    "width": 24,
-    "height": 18,
+    "version": "2.0",
+    "width": 20,
+    "height": 11,
     "tile_size": 64,
-    "spawn_point": {
-        "x": 2,
-        "y": 9
-    },
+    "spawn_point": {"x": 1, "y": 5},
     "layers": [
         {
             "name": "terrain",
             "type": "grid",
             "data": [
-                ["forest_7_pine", "forest_7_pine", "forest_7_pine", "forest_3_pine", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "water_plain_1", "water_plain_1", "water_plain_1", "water_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "forest_3_round", "forest_7_round", "forest_7_round", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "forest_7_pine", "forest_7_pine"],
-                ["forest_7_pine", "forest_3_pine", "forest_1_pine", "grass_plain_2", "grass_plain_1", "dirt_plain_1", "dirt_plain_2", "grass_plain_1", "water_plain_2", "water_plain_1", "water_plain_2", "water_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "forest_1_round", "forest_3_round", "forest_7_round", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "forest_3_pine", "forest_7_pine"],
-                ["forest_7_pine", "forest_1_pine", "grass_plain_1", "road_corner_bottom_right", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_T_bottom", "bridge_wood_horizontal", "bridge_wood_horizontal", "water_plain_1", "water_plain_2", "grass_plain_1", "grass_plain_2", "road_corner_bottom_right", "road_straight_horizontal", "road_straight_horizontal", "road_end_left", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "forest_7_pine"],
-                ["forest_3_pine", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "water_plain_2", "water_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "forest_7_pine"],
-                ["grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "water_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "stone_plain_1", "stone_plain_2", "stone_plain_1", "stone_plain_2", "grass_plain_1", "grass_plain_2", "forest_7_pine"],
-                ["grass_plain_2", "grass_plain_1", "grass_plain_2", "road_T_right", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_crossroads", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_crossroads", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_T_left", "grass_plain_1", "forest_7_pine"],
-                ["grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "stone_plain_2", "stone_plain_1", "stone_plain_2", "stone_plain_1", "road_straight_vertical", "grass_plain_2", "forest_7_round"],
-                ["grass_plain_2", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_1", "forest_7_round"],
-                ["grass_plain_1", "grass_plain_2", "road_corner_bottom_right", "road_crossroads", "road_straight_horizontal", "road_T_bottom", "road_straight_horizontal", "road_crossroads", "road_straight_horizontal", "road_straight_horizontal", "road_T_bottom", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_T_right", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_T_bottom", "road_straight_horizontal", "road_straight_horizontal", "road_crossroads", "road_end_left", "forest_7_round"],
-                ["grass_plain_2", "grass_plain_1", "road_straight_vertical", "road_straight_vertical", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_2", "forest_7_round"],
-                ["grass_plain_1", "grass_plain_2", "road_straight_vertical", "road_straight_vertical", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_1", "grass_plain_2"],
-                ["grass_plain_2", "grass_plain_1", "road_straight_vertical", "road_T_right", "road_straight_horizontal", "road_crossroads", "road_straight_horizontal", "road_T_left", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_2", "grass_plain_1"],
-                ["grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_1", "water_plain_1", "water_plain_2", "water_plain_1", "grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_1", "grass_plain_2"],
-                ["grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_2", "water_plain_2", "water_plain_1", "water_plain_2", "grass_plain_2", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_1", "grass_plain_2", "road_straight_vertical", "grass_plain_2", "grass_plain_1"],
-                ["forest_3_pine", "grass_plain_2", "road_corner_top_right", "road_straight_horizontal", "road_straight_horizontal", "road_crossroads", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_T_top", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_straight_horizontal", "road_T_top", "road_straight_horizontal", "road_straight_horizontal", "road_corner_top_left", "grass_plain_1", "grass_plain_2"],
-                ["forest_7_pine", "forest_3_pine", "grass_plain_1", "grass_plain_2", "grass_plain_1", "road_straight_vertical", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "forest_3_round", "forest_7_round"],
-                ["forest_7_pine", "forest_7_pine", "forest_3_pine", "grass_plain_1", "grass_plain_2", "road_end_top", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "forest_3_round", "forest_7_round", "forest_7_round"],
-                ["forest_7_pine", "forest_7_pine", "forest_7_pine", "forest_3_pine", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "grass_plain_1", "grass_plain_2", "forest_3_round", "forest_7_round", "forest_7_round", "forest_7_round"]
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+                ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"]
             ]
         },
         {
-            "name": "environment_objects",
-            "type": "objects",
+            "name": "roads",
+            "type": "grid",
             "data": [
-                {"x": 1, "y": 1, "asset": "tree_pine"},
-                {"x": 0, "y": 3, "asset": "tree_pine_small"},
-                {"x": 1, "y": 4, "asset": "bush_small"},
-                {"x": 16, "y": 1, "asset": "tree_round_top"},
-                {"x": 17, "y": 0, "asset": "tree_round_small"},
-                {"x": 22, "y": 3, "asset": "tree_pine"},
-                {"x": 23, "y": 5, "asset": "bush_berry"},
-                {"x": 18, "y": 4, "asset": "stone_mixed"},
-                {"x": 19, "y": 5, "asset": "boulder_large"},
-                {"x": 6, "y": 12, "asset": "stone_small"},
-                {"x": 7, "y": 13, "asset": "bush_small"},
-                {"x": 0, "y": 15, "asset": "tree_pine"},
-                {"x": 1, "y": 16, "asset": "tree_pine_small"},
-                {"x": 22, "y": 16, "asset": "tree_round_top"},
-                {"x": 23, "y": 15, "asset": "tree_round_small"},
-                {"x": 11, "y": 0, "asset": "stone_mixed_gray"},
-                {"x": 9, "y": 1, "asset": "bush_small"}
-            ]
-        },
-        {
-            "name": "structure_bases",
-            "type": "objects",
-            "data": [
-                {"x": 3, "y": 5, "asset": "house_small_1"},
-                {"x": 7, "y": 2, "asset": "windmill_base"},
-                {"x": 7, "y": 7, "asset": "tavern"},
-                {"x": 5, "y": 11, "asset": "smithy"},
-                {"x": 10, "y": 8, "asset": "market_stall"},
-                {"x": 14, "y": 2, "asset": "house_small_2"},
-                {"x": 14, "y": 5, "asset": "barn"},
-                {"x": 18, "y": 8, "asset": "tower_base"},
-                {"x": 21, "y": 5, "asset": "castle_base"},
-                {"x": 21, "y": 8, "asset": "tower_base"},
-                {"x": 5, "y": 16, "asset": "church_base"}
-            ]
-        },
-        {
-            "name": "structure_tops",
-            "type": "objects",
-            "data": [
-                {"x": 7, "y": 2, "asset": "windmill_top"},
-                {"x": 7, "y": 2, "asset": "windmill_blades_1"},
-                {"x": 18, "y": 8, "asset": "tower_top"},
-                {"x": 21, "y": 5, "asset": "castle_top"},
-                {"x": 21, "y": 8, "asset": "tower_top"},
-                {"x": 5, "y": 16, "asset": "church_top"}
+                [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, "road", null, "road", null, null, null, null, null, null, null, "road", null, null, null, null],
+                [null, null, null, null, null, "road", "road", "road", null, null, null, null, null, null, null, "road", null, null, null, null],
+                [null, null, null, null, null, null, null, "road", null, null, null, null, null, null, null, "road", null, null, null, null],
+                [null, null, null, null, null, null, null, "road", null, null, null, null, null, null, null, "road", null, null, null, null],
+                [null, "road", "road", "road", "road", "road", "road", "road", "road", "road", "road", "road", "road", "road", "road", "road", "road", "road", null, null],
+                [null, null, null, null, null, null, null, "road", null, null, null, null, null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, "road", null, null, "road", null, null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, "road", "road", "road", "road", null, null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, null, null, null, "road", null, null, null, null, null, null, null, null, null],
+                [null, null, null, null, null, null, null, null, null, null, "road", null, null, null, null, null, null, null, null, null]
             ]
         }
     ],
     "locations": [
         {
             "name": "Frontier Camp",
-            "x": 3,
-            "y": 8,
+            "x": 1,
+            "y": 5,
             "type": "CAMP"
         },
         {
-            "name": "Pine Crossing",
-            "x": 3,
+            "name": "Lakeside Village",
+            "x": 5,
+            "y": 1,
+            "type": "TOWN"
+        },
+        {
+            "name": "Central Market",
+            "x": 7,
             "y": 5,
             "type": "TOWN"
         },
         {
-            "name": "Miller's Rest",
+            "name": "Miller's Farm",
             "x": 7,
             "y": 2,
             "type": "EVENT"
         },
         {
-            "name": "Central Crossroads",
-            "x": 7,
-            "y": 8,
-            "type": "EVENT"
-        },
-        {
-            "name": "Riverside Market",
-            "x": 10,
-            "y": 8,
-            "type": "TOWN"
-        },
-        {
-            "name": "South Junction",
-            "x": 5,
-            "y": 11,
-            "type": "BATTLE"
-        },
-        {
-            "name": "Eastern Farm",
-            "x": 14,
+            "name": "Bandit Ambush",
+            "x": 11,
             "y": 5,
-            "type": "EVENT"
-        },
-        {
-            "name": "Hilltop Watchtower",
-            "x": 14,
-            "y": 8,
             "type": "BATTLE"
-        },
-        {
-            "name": "Stone Ruins",
-            "x": 18,
-            "y": 8,
-            "type": "DUNGEON"
         },
         {
             "name": "Borderkeep Castle",
-            "x": 21,
+            "x": 15,
             "y": 5,
             "type": "TOWN"
         },
         {
-            "name": "Eastern Gate",
-            "x": 21,
-            "y": 8,
-            "type": "EXIT"
-        },
-        {
-            "name": "Southern Shrine",
-            "x": 5,
-            "y": 14,
+            "name": "Desert Outpost",
+            "x": 17,
+            "y": 5,
             "type": "CAMP"
         },
         {
-            "name": "Forest Edge",
+            "name": "Northern Lookout",
+            "x": 15,
+            "y": 1,
+            "type": "EVENT"
+        },
+        {
+            "name": "Trading Post",
             "x": 10,
-            "y": 14,
+            "y": 8,
+            "type": "TOWN"
+        },
+        {
+            "name": "Southern Trail",
+            "x": 10,
+            "y": 10,
             "type": "BATTLE"
-        },
-        {
-            "name": "Far South Road",
-            "x": 18,
-            "y": 14,
-            "type": "EVENT"
-        },
-        {
-            "name": "Northern Bridge",
-            "x": 7,
-            "y": 5,
-            "type": "EVENT"
         }
     ]
 }
