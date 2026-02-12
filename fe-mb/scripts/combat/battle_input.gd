@@ -199,10 +199,8 @@ func _deselect_unit() -> void:
 		_last_hovered_unit.show_name_tooltip(false)
 	_last_hovered_unit = null
 
-	if unit_info_panel:
-		unit_info_panel.visible = false
-	if combat_forecast_panel:
-		combat_forecast_panel.visible = false
+	_fade_panel_out(unit_info_panel)
+	_fade_panel_out(combat_forecast_panel)
 	if grid_overlay:
 		grid_overlay.clear_highlights()
 
@@ -212,10 +210,8 @@ func _deselect_unit() -> void:
 func _clear_selection_visuals() -> void:
 	if grid_overlay:
 		grid_overlay.clear_highlights()
-	if unit_info_panel:
-		unit_info_panel.visible = false
-	if combat_forecast_panel:
-		combat_forecast_panel.visible = false
+	_fade_panel_out(unit_info_panel)
+	_fade_panel_out(combat_forecast_panel)
 
 
 func _update_path_preview(hover_tile: Vector2i) -> void:
@@ -286,9 +282,27 @@ func _show_combat_forecast(attacker: Node2D, defender: Node2D) -> void:
 		battle_grid.get_terrain_avoid_bonus(def_pos)
 	)
 
+	var blood_red := Color(0.769, 0.267, 0.267)
+	var parchment := Color(0.832, 0.812, 0.761)
+
 	var atk_panel: VBoxContainer = combat_forecast_panel.get_node("VBox/HBox/AttackerPanel")
 	atk_panel.get_node("AttackerName").text = atk_data.unit_name
-	atk_panel.get_node("AttackerHP").text = "HP: %d" % atk_data.current_hp
+
+	# Predicted HP for attacker
+	var atk_hp_label: Label = atk_panel.get_node("AttackerHP")
+	if forecast.defender_can_counter:
+		var atk_total_dmg: int = forecast.defender_damage * (2 if forecast.defender_doubles else 1)
+		var atk_hp_after: int = max(0, atk_data.current_hp - atk_total_dmg)
+		if atk_hp_after == 0:
+			atk_hp_label.text = "HP: %d → 0 KO" % atk_data.current_hp
+			atk_hp_label.add_theme_color_override("font_color", blood_red)
+		else:
+			atk_hp_label.text = "HP: %d → %d" % [atk_data.current_hp, atk_hp_after]
+			atk_hp_label.add_theme_color_override("font_color", parchment)
+	else:
+		atk_hp_label.text = "HP: %d" % atk_data.current_hp
+		atk_hp_label.add_theme_color_override("font_color", parchment)
+
 	atk_panel.get_node("AttackerArm").text = "Arm: %d" % atk_data.current_armor
 	atk_panel.get_node("AttackerDmg").text = "Dmg: %d%s" % [forecast.attacker_damage, " x2" if forecast.attacker_doubles else ""]
 	atk_panel.get_node("AttackerHit").text = "Hit: %d%%" % forecast.attacker_hit
@@ -296,7 +310,18 @@ func _show_combat_forecast(attacker: Node2D, defender: Node2D) -> void:
 
 	var def_panel: VBoxContainer = combat_forecast_panel.get_node("VBox/HBox/DefenderPanel")
 	def_panel.get_node("DefenderName").text = def_data.unit_name
-	def_panel.get_node("DefenderHP").text = "HP: %d" % def_data.current_hp
+
+	# Predicted HP for defender
+	var def_hp_label: Label = def_panel.get_node("DefenderHP")
+	var def_total_dmg: int = forecast.attacker_damage * (2 if forecast.attacker_doubles else 1)
+	var def_hp_after: int = max(0, def_data.current_hp - def_total_dmg)
+	if def_hp_after == 0:
+		def_hp_label.text = "HP: %d → 0 KO" % def_data.current_hp
+		def_hp_label.add_theme_color_override("font_color", blood_red)
+	else:
+		def_hp_label.text = "HP: %d → %d" % [def_data.current_hp, def_hp_after]
+		def_hp_label.add_theme_color_override("font_color", parchment)
+
 	def_panel.get_node("DefenderArm").text = "Arm: %d" % def_data.current_armor
 	if forecast.defender_can_counter:
 		def_panel.get_node("DefenderDmg").text = "Dmg: %d%s" % [forecast.defender_damage, " x2" if forecast.defender_doubles else ""]
@@ -307,9 +332,28 @@ func _show_combat_forecast(attacker: Node2D, defender: Node2D) -> void:
 		def_panel.get_node("DefenderHit").text = "Hit: --"
 		def_panel.get_node("DefenderCrit").text = "No Counter"
 
-	combat_forecast_panel.visible = true
+	_fade_panel_in(combat_forecast_panel)
 
 
 func _hide_combat_forecast() -> void:
-	if combat_forecast_panel:
-		combat_forecast_panel.visible = false
+	_fade_panel_out(combat_forecast_panel)
+
+
+func _fade_panel_in(panel: Control) -> void:
+	if not panel:
+		return
+	panel.modulate = Color(1, 1, 1, 0)
+	panel.visible = true
+	var tween = panel.create_tween()
+	tween.tween_property(panel, "modulate:a", 1.0, 0.15).set_ease(Tween.EASE_OUT)
+
+
+func _fade_panel_out(panel: Control) -> void:
+	if not panel or not panel.visible:
+		return
+	var tween = panel.create_tween()
+	tween.tween_property(panel, "modulate:a", 0.0, 0.1).set_ease(Tween.EASE_IN)
+	await tween.finished
+	if is_instance_valid(panel):
+		panel.visible = false
+		panel.modulate = Color(1, 1, 1, 1)

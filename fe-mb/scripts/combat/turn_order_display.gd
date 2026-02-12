@@ -20,31 +20,36 @@ func _ready() -> void:
 
 func _create_styles() -> void:
 	_style_active_player = StyleBoxFlat.new()
-	_style_active_player.bg_color = Color(0.25, 0.25, 0.35, 0.9)
-	_style_active_player.border_color = Color(1.0, 0.85, 0.2)
-	_style_active_player.border_width_bottom = 2
-	_style_active_player.border_width_top = 2
-	_style_active_player.border_width_left = 2
-	_style_active_player.border_width_right = 2
+	_style_active_player.bg_color = Color(0.05, 0.055, 0.08, 0.9)
+	_style_active_player.border_color = Color(0.69, 0.44, 0.25)
+	_style_active_player.border_width_bottom = 3
+	_style_active_player.border_width_top = 3
+	_style_active_player.border_width_left = 3
+	_style_active_player.border_width_right = 3
 	_style_active_player.corner_radius_top_left = 4
 	_style_active_player.corner_radius_top_right = 4
 	_style_active_player.corner_radius_bottom_left = 4
 	_style_active_player.corner_radius_bottom_right = 4
 
 	_style_active_enemy = StyleBoxFlat.new()
-	_style_active_enemy.bg_color = Color(0.25, 0.25, 0.35, 0.9)
-	_style_active_enemy.border_color = Color(1.0, 0.3, 0.3)
-	_style_active_enemy.border_width_bottom = 2
-	_style_active_enemy.border_width_top = 2
-	_style_active_enemy.border_width_left = 2
-	_style_active_enemy.border_width_right = 2
+	_style_active_enemy.bg_color = Color(0.05, 0.055, 0.08, 0.9)
+	_style_active_enemy.border_color = Color(0.769, 0.267, 0.267)
+	_style_active_enemy.border_width_bottom = 3
+	_style_active_enemy.border_width_top = 3
+	_style_active_enemy.border_width_left = 3
+	_style_active_enemy.border_width_right = 3
 	_style_active_enemy.corner_radius_top_left = 4
 	_style_active_enemy.corner_radius_top_right = 4
 	_style_active_enemy.corner_radius_bottom_left = 4
 	_style_active_enemy.corner_radius_bottom_right = 4
 
 	_style_inactive = StyleBoxFlat.new()
-	_style_inactive.bg_color = Color(0.15, 0.15, 0.2, 0.8)
+	_style_inactive.bg_color = Color(0.05, 0.055, 0.08, 0.8)
+	_style_inactive.border_color = Color(0.227, 0.239, 0.282, 0.6)
+	_style_inactive.border_width_bottom = 1
+	_style_inactive.border_width_top = 1
+	_style_inactive.border_width_left = 1
+	_style_inactive.border_width_right = 1
 	_style_inactive.corner_radius_top_left = 4
 	_style_inactive.corner_radius_top_right = 4
 	_style_inactive.corner_radius_bottom_left = 4
@@ -67,7 +72,7 @@ func _create_panels() -> void:
 		var name_label: Label = Label.new()
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_label.add_theme_font_size_override("font_size", 10)
-		name_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+		name_label.add_theme_color_override("font_color", Color(0.478, 0.463, 0.439))
 
 		vbox.add_child(letter_label)
 		vbox.add_child(name_label)
@@ -108,15 +113,17 @@ func update_queue(queue: Array, active_index: int) -> void:
 
 		# Color by team
 		if data.is_player_unit:
-			letter.add_theme_color_override("font_color", Color(0.3, 0.7, 1.0))
+			letter.add_theme_color_override("font_color", Color(0.353, 0.541, 0.671))
 		else:
-			letter.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+			letter.add_theme_color_override("font_color", Color(0.769, 0.267, 0.267))
 
 		# Highlight active unit (use cached styles)
 		if i == active_index:
 			panel.add_theme_stylebox_override("panel", _style_active_player if data.is_player_unit else _style_active_enemy)
+			panel.custom_minimum_size = Vector2(70, 50)
 		else:
 			panel.add_theme_stylebox_override("panel", _style_inactive)
+			panel.custom_minimum_size = Vector2(60, 44)
 
 		panel.visible = true
 		display_index += 1

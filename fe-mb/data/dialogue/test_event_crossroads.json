@@ -1,0 +1,60 @@
+{
+  "id": "test_event_crossroads",
+  "lines": [
+    {
+      "id": "start",
+      "speaker": "Narrator",
+      "text": "A massive fallen tree blocks the path ahead. The wood is thick and heavy.",
+      "choices": [
+        {
+          "text": "Try to move it",
+          "next": "strength_check",
+          "effects": [{ "type": "stat_check", "stat": "strength", "difficulty": 15, "success_next": "moved_tree", "fail_next": "failed_move" }]
+        },
+        {
+          "text": "Look for another way around",
+          "next": "detour"
+        },
+        {
+          "text": "Search the area while here",
+          "next": "search"
+        }
+      ]
+    },
+    {
+      "id": "moved_tree",
+      "speaker": "Narrator",
+      "text": "With great effort, the tree is pushed aside! You find a pouch of gold underneath.",
+      "effects": [{ "type": "add_gold", "amount": 25 }, { "type": "set_flag", "flag": "crossroads_cleared" }],
+      "next": null
+    },
+    {
+      "id": "failed_move",
+      "speaker": "Narrator",
+      "text": "The tree won't budge. Your party is bruised from the effort.",
+      "effects": [{ "type": "damage_party", "amount": 3 }],
+      "next": "detour_forced"
+    },
+    {
+      "id": "detour",
+      "speaker": "Narrator",
+      "text": "You take a longer path through the brush. It costs extra supplies but you arrive safely.",
+      "effects": [{ "type": "add_food", "amount": -1 }],
+      "next": null
+    },
+    {
+      "id": "detour_forced",
+      "speaker": "Narrator",
+      "text": "You'll have to go the long way around. The detour costs extra supplies.",
+      "effects": [{ "type": "add_food", "amount": -1 }],
+      "next": null
+    },
+    {
+      "id": "search",
+      "speaker": "Narrator",
+      "text": "While searching, you find some supplies someone stashed nearby. Useful!",
+      "effects": [{ "type": "add_food", "amount": 2 }],
+      "next": null
+    }
+  ]
+}

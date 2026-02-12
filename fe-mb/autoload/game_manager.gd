@@ -25,10 +25,17 @@ var current_state: GameState = GameState.MAIN_MENU
 var current_floor: int = 1
 var current_node_id: int = -1
 
+# Overworld state persistence
+var current_location_id: int = 0
+
 # Dungeon state
-# var in_dungeon: bool = false # Removed in favor of current_state == DUNGEON
 var current_dungeon_floor: int = 1
 var dungeon_completed: bool = false
+
+# Combat context (set before transitioning to battlefield)
+var pending_battle: Dictionary = {}
+# Format: { "enemies": Array[UnitData], "difficulty": int, "source": "overworld"|"dungeon" }
+var last_battle_victory: bool = false
 
 # Party management
 var party: Array[Resource] = []  # Array of UnitData
@@ -38,13 +45,11 @@ const STARTING_PARTY_SIZE: int = 3
 # Resources
 var gold: int = 0
 var food: int = 10
-var morale: int = 100  # 0-100 scale
 
 # Run statistics
 var battles_won: int = 0
 var units_lost: int = 0
 var nodes_visited: int = 0
-var last_battle_victory: bool = false
 
 
 func _ready() -> void:
@@ -70,12 +75,14 @@ func start_new_run() -> void:
 	party.clear()
 	gold = 50
 	food = 10
-	morale = 100
 	
 	battles_won = 0
 	units_lost = 0
 	nodes_visited = 0
-	
+	current_location_id = 0
+	pending_battle = {}
+	last_battle_victory = false
+
 	run_started.emit()
 	
 	# Add starter units
@@ -118,7 +125,6 @@ func remove_unit(unit: Resource) -> void:
 	if idx >= 0:
 		party.remove_at(idx)
 		units_lost += 1
-		morale = max(0, morale - 10)  # Morale drop on unit death
 		party_changed.emit()
 		resources_changed.emit()
 
@@ -133,11 +139,14 @@ func consume_food(amount: int = 1) -> void:
 	resources_changed.emit()
 
 
-## Apply starvation effects to party
+## Apply starvation effects to party - deals HP damage to all alive units
 func _apply_starvation() -> void:
-	print("[GameManager] Party is starving!")
-	morale = max(0, morale - 15)
-	# Could also apply HP damage to units here
+	print("[GameManager] Party is starving! Each unit takes 3 HP damage.")
+	for unit_data in party:
+		if unit_data.is_alive():
+			unit_data.current_hp = max(1, unit_data.current_hp - 3)
+			print("[GameManager] %s takes starvation damage (%d HP remaining)" % [unit_data.unit_name, unit_data.current_hp])
+	party_changed.emit()
 
 
 ## Modify gold
@@ -154,24 +163,6 @@ func spend_gold(amount: int) -> bool:
 	return false
 
 
-## Modify morale
-func change_morale(amount: int) -> void:
-	morale = clamp(morale + amount, 0, 100)
-	resources_changed.emit()
-
-
-## Get morale modifier for combat (affects hit/avoid)
-func get_morale_modifier() -> int:
-	if morale >= 80:
-		return 5  # High morale bonus
-	elif morale >= 50:
-		return 0  # Normal
-	elif morale >= 25:
-		return -5  # Low morale penalty
-	else:
-		return -10  # Critical morale penalty
-
-
 ## Rest party members, restoring health
 func rest_party(heal_percentage: float = 0.3) -> void:
 	print("[GameManager] Resting party...")
@@ -181,9 +172,6 @@ func rest_party(heal_percentage: float = 0.3) -> void:
 			var old_hp = unit_data.current_hp
 			unit_data.current_hp = min(unit_data.current_hp + heal_amount, unit_data.max_hp)
 			print("[GameManager] Healed %s for %d HP (%d -> %d)" % [unit_data.unit_name, heal_amount, old_hp, unit_data.current_hp])
-			
-	# Also restore some morale
-	change_morale(10)
 	print("[GameManager] Rest complete.")
 
 
@@ -203,10 +191,8 @@ func exit_dungeon(completed: bool = false) -> void:
 	dungeon_exited.emit(completed)
 	if completed:
 		print("[GameManager] Dungeon completed!")
-		change_morale(10)  # Morale boost for completing dungeon
 	else:
 		print("[GameManager] Escaped from dungeon")
-		change_morale(-5)  # Slight morale penalty for fleeing
 
 
 

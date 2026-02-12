@@ -107,7 +107,7 @@ func _draw_connections() -> void:
 				line.add_point(room.position)
 				line.add_point(other.position)
 				line.width = 2.0
-				line.default_color = Color(0.5, 0.5, 0.5, 0.6)
+				line.default_color = Color(0.227, 0.239, 0.282, 0.5)
 				connections_layer.add_child(line)
 
 
@@ -204,39 +204,29 @@ func _trigger_room_event(room: DungeonRoomData) -> void:
 	match room.room_type:
 		DungeonRoomData.RoomType.COMBAT, DungeonRoomData.RoomType.ELITE:
 			print("[DungeonMap] Starting combat...")
-			# Save state before leaving
-			GameManager.save_dungeon_state(rooms, current_room_id, dungeon_difficulty, max_floors)
-			# Change to combat scene
-			GameManager.save_dungeon_state(rooms, current_room_id, dungeon_difficulty, max_floors)
-			# Change to combat scene
-			SceneLoader.change_scene_to_file("res://scenes/combat/battlefield.tscn")
-			EventBus.combat_started.emit()
-			# Combat scene will handle state change to COMBAT
-		
+			_start_dungeon_combat(room)
+
 		DungeonRoomData.RoomType.BOSS:
 			print("[DungeonMap] Boss battle!")
-			# Save state before leaving
-			GameManager.save_dungeon_state(rooms, current_room_id, dungeon_difficulty, max_floors)
-			# Change to combat scene
-			SceneLoader.change_scene_to_file("res://scenes/combat/battlefield.tscn")
-			EventBus.combat_started.emit()
+			_start_dungeon_combat(room)
 		
 		DungeonRoomData.RoomType.TREASURE:
 			print("[DungeonMap] Found treasure!")
 			GameManager.add_gold(room.gold_reward)
+			EventBus.show_notification.emit("Found %d gold!" % room.gold_reward)
 		
 		DungeonRoomData.RoomType.REST:
 			print("[DungeonMap] Resting...")
 			GameManager.rest_party(0.3)
-			# TODO: Show visual feedback (e.g. campfire, toast message)
+			EventBus.show_notification.emit("Party rested. Healed 30%%.")
 		
 		DungeonRoomData.RoomType.SHOP:
 			print("[DungeonMap] Entering shop...")
-			# TODO: Show shop menu
+			EventBus.show_notification.emit("Welcome to the shop!")
 		
 		DungeonRoomData.RoomType.EVENT:
 			print("[DungeonMap] Random event!")
-			# TODO: Show event dialog
+			EventBus.show_notification.emit("Something stirs in the shadows...")
 	
 	# Check if boss defeated -> floor complete
 	# DEPRECATED: This check was premature. Now handled in _ready() after returning from combat.
@@ -254,7 +244,7 @@ func _on_floor_completed() -> void:
 	if current_floor >= max_floors:
 		print("[DungeonMap] Dungeon completed!")
 		dungeon_completed.emit()
-		dungeon_completed.emit()
+		GameManager.clear_dungeon_state()
 		GameManager.exit_dungeon(true)  # Completed (sets state OVERWORLD)
 		# Return to world map
 		SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
@@ -267,7 +257,7 @@ func _on_floor_completed() -> void:
 func _on_exit_pressed() -> void:
 	print("[DungeonMap] Exiting dungeon...")
 	dungeon_exited.emit()
-	dungeon_exited.emit()
+	GameManager.clear_dungeon_state()
 	GameManager.exit_dungeon(false)  # Abandoned (sets state OVERWORLD)
 	# Return to world map
 	SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
@@ -292,6 +282,59 @@ func _focus_camera_on_room(room_id: int) -> void:
 	if room and camera:
 		var tween = create_tween()
 		tween.tween_property(camera, "position", room.position, 0.3).set_ease(Tween.EASE_OUT)
+
+
+## Build enemies and transition to combat for a dungeon room
+func _start_dungeon_combat(room: DungeonRoomData) -> void:
+	var enemies: Array = []
+	var num = room.enemy_count if room.enemy_count > 0 else (2 + dungeon_difficulty)
+	var is_boss = room.room_type == DungeonRoomData.RoomType.BOSS
+	var is_elite = room.room_type == DungeonRoomData.RoomType.ELITE
+
+	for i in range(num):
+		var enemy = UnitData.new()
+		if is_boss:
+			enemy.unit_name = "Boss"
+			enemy.max_hp = 25 + (dungeon_difficulty * 5)
+			enemy.strength = 5 + dungeon_difficulty * 2
+			enemy.speed = 4 + dungeon_difficulty
+			enemy.defense = 3 + dungeon_difficulty
+		elif is_elite:
+			enemy.unit_name = "Elite %d" % (i + 1)
+			enemy.max_hp = 20 + (dungeon_difficulty * 3)
+			enemy.strength = 4 + dungeon_difficulty
+			enemy.speed = 4 + randi() % (dungeon_difficulty + 2)
+			enemy.defense = 2 + int(dungeon_difficulty / 2.0)
+		else:
+			enemy.unit_name = "Monster %d" % (i + 1)
+			enemy.max_hp = 14 + (dungeon_difficulty * 2)
+			enemy.strength = 3 + dungeon_difficulty
+			enemy.speed = 3 + randi() % (dungeon_difficulty + 2)
+			enemy.defense = 1 + int(dungeon_difficulty / 2.0)
+
+		enemy.is_player_unit = false
+		enemy.current_hp = enemy.max_hp
+		enemy.current_armor = enemy.defense
+
+		var weapon = ItemData.new()
+		weapon.weapon_type = (randi() % 3) as ItemData.WeaponType
+		weapon.might = 3 + int(dungeon_difficulty / 2.0)
+		weapon.hit = 80
+		weapon.range_max = 1
+		enemy.equipped_weapon = weapon
+
+		enemies.append(enemy)
+
+	GameManager.pending_battle = {
+		"enemies": enemies,
+		"difficulty": dungeon_difficulty,
+		"source": "dungeon",
+		"room_type": DungeonRoomData.RoomType.keys()[room.room_type]
+	}
+
+	GameManager.save_dungeon_state(rooms, current_room_id, dungeon_difficulty, max_floors)
+	EventBus.combat_started.emit()
+	SceneLoader.change_scene_to_file("res://scenes/combat/battlefield.tscn")
 
 
 ## Initialize dungeon with parameters

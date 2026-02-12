@@ -46,7 +46,21 @@ func set_health(new_health: int):
 		tween.tween_property(actual_bar, "value", new_health, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func set_preview_damage(damage: int):
-	# Used for combat forecast "flashing" or preview
-	# For now, just tween the actual bar to (current - damage) and back?
-	# Or implement a separate preview mode.
-	pass
+	if damage <= 0 or _max_health <= 0:
+		# Reset preview - restore actual bar
+		actual_bar.value = _current_health
+		return
+
+	var preview_hp = max(0, _current_health - damage)
+
+	# Show the "ghost" section: main bar stays at current, actual bar drops to preview
+	value = _current_health
+
+	# Actual bar tweens down to preview_hp to show the predicted drop
+	var tween = create_tween()
+	tween.tween_property(actual_bar, "value", preview_hp, 0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+func clear_preview():
+	var tween = create_tween()
+	tween.tween_property(actual_bar, "value", _current_health, 0.15).set_trans(Tween.TRANS_SINE)

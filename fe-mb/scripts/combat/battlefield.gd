@@ -45,12 +45,14 @@ var target_zoom: Vector2 = Vector2(0.75, 0.75)
 var is_camera_dragging: bool = false
 var camera_drag_start: Vector2 = Vector2.ZERO
 var _camera_tween: Tween = null
+var _banner_base_y: float = -1.0
 
 var UnitScene: PackedScene = preload("res://scenes/units/unit.tscn")
 
 var current_state: BattleState = BattleState.IDLE
 var player_units: Array = []
 var enemy_units: Array = []
+var party_sidebar: PartySidebar
 
 ## Speed-based turn system
 var turn_queue: Array = []
@@ -106,6 +108,15 @@ func _ready() -> void:
 
 	battle_grid.sync_units_from_container(units_container)
 	print("[Battlefield] Units in container: %d" % units_container.get_child_count())
+
+	# Set up party sidebar
+	party_sidebar = PartySidebar.new()
+	$UI.add_child(party_sidebar)
+	var sidebar_units: Array = []
+	for unit in units_container.get_children():
+		if unit.has_method("get_unit_data") and unit.get_unit_data() and unit.get_unit_data().is_player_unit:
+			sidebar_units.append(unit)
+	party_sidebar.setup(sidebar_units)
 
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -309,6 +320,14 @@ func _execute_combat(attacker: Node2D, defender: Node2D) -> void:
 	if not result.attacker_alive:
 		_handle_unit_death(attacker, null)
 
+	# Refresh party sidebar after combat
+	if party_sidebar:
+		var sidebar_units: Array = []
+		for unit in units_container.get_children():
+			if is_instance_valid(unit) and unit.has_method("get_unit_data") and unit.get_unit_data() and unit.get_unit_data().is_player_unit:
+				sidebar_units.append(unit)
+		party_sidebar.update_units(sidebar_units)
+
 
 func _handle_unit_death(dead_unit: Node2D, killer: Node2D) -> void:
 	var dead_data: UnitData = dead_unit.get_unit_data()
@@ -337,6 +356,14 @@ func _handle_unit_death(dead_unit: Node2D, killer: Node2D) -> void:
 
 	if dead_data.is_player_unit:
 		GameManager.remove_unit(dead_data)
+
+	# Update party sidebar on death
+	if party_sidebar:
+		var sidebar_units: Array = []
+		for unit in units_container.get_children():
+			if is_instance_valid(unit) and unit.has_method("get_unit_data") and unit.get_unit_data() and unit.get_unit_data().is_player_unit:
+				sidebar_units.append(unit)
+		party_sidebar.update_units(sidebar_units)
 
 	dead_unit.queue_free()
 
@@ -443,6 +470,13 @@ func _advance_turn() -> void:
 
 	var data: UnitData = active_unit.get_unit_data()
 
+	# Update party sidebar active indicator
+	if party_sidebar:
+		if data.is_player_unit:
+			party_sidebar.set_active(active_unit)
+		else:
+			party_sidebar.clear_active()
+
 	if data.is_player_unit:
 		_start_player_unit_turn(active_unit)
 	else:
@@ -459,6 +493,7 @@ func _start_player_unit_turn(unit: Node2D) -> void:
 		await cam_tween.finished
 
 	battle_input.set_active_unit(unit)
+	_show_unit_info(unit)
 
 	if wait_button:
 		wait_button.visible = true
@@ -573,9 +608,18 @@ func _end_battle(victory: bool) -> void:
 
 	await get_tree().create_timer(2.0).timeout
 
+	# Determine return destination based on combat source
+	var source = GameManager.pending_battle.get("source", "")
+	GameManager.pending_battle = {}  # Clear combat context
+
 	if victory:
-		GameManager.change_state(GameManager.GameState.DUNGEON)
-		SceneLoader.change_scene_to_file("res://scenes/dungeon/dungeon_map.tscn")
+		match source:
+			"dungeon":
+				GameManager.change_state(GameManager.GameState.DUNGEON)
+				SceneLoader.change_scene_to_file("res://scenes/dungeon/dungeon_map.tscn")
+			"overworld", _:
+				GameManager.change_state(GameManager.GameState.OVERWORLD)
+				SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")
 	else:
 		print("[Battlefield] Defeat... Run Ended")
 		GameManager.end_run(false)
@@ -589,11 +633,21 @@ func _show_turn_banner(text: String) -> void:
 	if not turn_banner:
 		return
 	turn_banner.text = text
+	turn_banner.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))
+	turn_banner.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.7))
 	turn_banner.modulate = Color(1, 1, 1, 0)
 	turn_banner.visible = true
 
+	# Store original Y for slide animation (only once to prevent drift)
+	if _banner_base_y < 0:
+		_banner_base_y = turn_banner.position.y
+	turn_banner.position.y = _banner_base_y + 10
+	var base_y: float = _banner_base_y
+
 	var tween: Tween = create_tween()
+	tween.set_parallel(true)
 	tween.tween_property(turn_banner, "modulate:a", 1.0, 0.25)
+	tween.tween_property(turn_banner, "position:y", base_y, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	await tween.finished
 	await get_tree().create_timer(0.6).timeout
 
@@ -613,9 +667,25 @@ func _show_unit_info(unit: Node2D) -> void:
 	var hp_label: Label = $UI/UnitInfo/VBox/HPLabel
 
 	name_label.text = data.unit_name
+	name_label.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))
 	class_label.text = "Class: %s Lv.%d" % [data.get_class_name(), data.level]
+	class_label.add_theme_color_override("font_color", Color(0.478, 0.463, 0.439))
 	hp_bar.max_value = data.max_hp
 	hp_bar.value = data.current_hp
+	# Tri-color HP bar: green >50%, ember 25-50%, red <25%
+	var hp_ratio: float = float(data.current_hp) / float(data.max_hp) if data.max_hp > 0 else 1.0
+	var hp_fill_style: StyleBoxFlat = StyleBoxFlat.new()
+	hp_fill_style.corner_radius_top_left = 3
+	hp_fill_style.corner_radius_top_right = 3
+	hp_fill_style.corner_radius_bottom_left = 3
+	hp_fill_style.corner_radius_bottom_right = 3
+	if hp_ratio > 0.5:
+		hp_fill_style.bg_color = Color(0.353, 0.541, 0.353)  # Moss green
+	elif hp_ratio > 0.25:
+		hp_fill_style.bg_color = Color(0.69, 0.44, 0.25)  # Ember
+	else:
+		hp_fill_style.bg_color = Color(0.769, 0.267, 0.267)  # Blood red
+	hp_bar.add_theme_stylebox_override("fill", hp_fill_style)
 	hp_label.text = "HP: %d/%d" % [data.current_hp, data.max_hp]
 
 	var armor_bar: ProgressBar = $UI/UnitInfo/VBox/ArmorBar
@@ -630,6 +700,7 @@ func _show_unit_info(unit: Node2D) -> void:
 		armor_label.text = "Armor: %d/%d" % [data.current_armor, data.defense]
 		armor_label.visible = data.defense > 0
 	if weapon_label:
+		weapon_label.add_theme_color_override("font_color", Color(0.478, 0.463, 0.439))
 		if data.equipped_weapon and data.equipped_weapon is ItemData:
 			var w: ItemData = data.equipped_weapon as ItemData
 			var wname: String = w.item_name if w.item_name != "Item" else w.get_weapon_type_name()
@@ -642,10 +713,18 @@ func _show_unit_info(unit: Node2D) -> void:
 	var spd_label: Label = $UI/UnitInfo/VBox/StatGrid/SPDLabel
 	var def_label: Label = $UI/UnitInfo/VBox/StatGrid/DEFLabel
 	var mov_label: Label = $UI/UnitInfo/VBox/StatGrid/MOVLabel
-	if str_label: str_label.text = "STR:%d" % data.strength
-	if spd_label: spd_label.text = "SPD:%d" % data.speed
-	if def_label: def_label.text = "DEF:%d" % data.defense
-	if mov_label: mov_label.text = "MOV:%d" % data.movement
+	if str_label:
+		str_label.text = "STR:%d" % data.strength
+		str_label.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))
+	if spd_label:
+		spd_label.text = "SPD:%d" % data.speed
+		spd_label.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))
+	if def_label:
+		def_label.text = "DEF:%d" % data.defense
+		def_label.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))
+	if mov_label:
+		mov_label.text = "MOV:%d" % data.movement
+		mov_label.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))
 
 	# EXP (player units only)
 	var exp_bar: ProgressBar = $UI/UnitInfo/VBox/EXPBar
@@ -656,6 +735,7 @@ func _show_unit_info(unit: Node2D) -> void:
 		exp_bar.visible = data.is_player_unit
 	if exp_label:
 		exp_label.text = "EXP: %d/%d" % [data.experience, UnitData.EXP_TO_LEVEL]
+		exp_label.add_theme_color_override("font_color", Color(0.69, 0.44, 0.25))
 		exp_label.visible = data.is_player_unit
 
 
@@ -682,13 +762,15 @@ func _update_terrain_info(grid_pos: Vector2i) -> void:
 	var def_lbl: Label = terrain_info.get_node("HBox/DefBonus")
 	var avo_lbl: Label = terrain_info.get_node("HBox/AvoBonus")
 
-	if name_lbl: name_lbl.text = terrain_name
+	if name_lbl:
+		name_lbl.text = terrain_name
+		name_lbl.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))
 	if def_lbl:
 		def_lbl.text = "DEF+%d" % def_bonus
-		def_lbl.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if def_bonus > 0 else Color(0.7, 0.7, 0.7))
+		def_lbl.add_theme_color_override("font_color", Color(0.353, 0.541, 0.353) if def_bonus > 0 else Color(0.478, 0.463, 0.439))
 	if avo_lbl:
 		avo_lbl.text = "AVO+%d" % avoid_bonus
-		avo_lbl.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if avoid_bonus > 0 else Color(0.7, 0.7, 0.7))
+		avo_lbl.add_theme_color_override("font_color", Color(0.353, 0.541, 0.353) if avoid_bonus > 0 else Color(0.478, 0.463, 0.439))
 
 	terrain_info.visible = true
 
@@ -701,8 +783,8 @@ func _update_turn_order_display() -> void:
 func _show_level_up_notification(unit_data: UnitData, gains: Dictionary) -> void:
 	var panel: PanelContainer = PanelContainer.new()
 	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = Color(0.086, 0.129, 0.243, 0.95)
-	style.border_color = Color(0.83, 0.69, 0.22)
+	style.bg_color = Color(0.05, 0.055, 0.08, 0.95)
+	style.border_color = Color(0.69, 0.44, 0.25)
 	style.border_width_left = 2
 	style.border_width_top = 2
 	style.border_width_right = 2
@@ -722,8 +804,8 @@ func _show_level_up_notification(unit_data: UnitData, gains: Dictionary) -> void
 
 	var title: Label = Label.new()
 	title.text = "%s leveled up to Lv.%d!" % [unit_data.unit_name, unit_data.level]
-	title.add_theme_font_size_override("font_size", 14)
-	title.add_theme_color_override("font_color", Color(0.83, 0.69, 0.22))
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(0.69, 0.44, 0.25))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
@@ -736,8 +818,8 @@ func _show_level_up_notification(unit_data: UnitData, gains: Dictionary) -> void
 
 	var gains_label: Label = Label.new()
 	gains_label.text = gains_text.strip_edges()
-	gains_label.add_theme_font_size_override("font_size", 11)
-	gains_label.add_theme_color_override("font_color", Color.WHITE)
+	gains_label.add_theme_font_size_override("font_size", 14)
+	gains_label.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))
 	gains_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(gains_label)
 
@@ -847,47 +929,76 @@ func _spawn_party_units() -> void:
 
 func _spawn_enemy_units() -> void:
 	print("[Battlefield] --- Spawning Enemy Units ---")
-	var difficulty: int = GameManager.active_dungeon_difficulty if GameManager.has_active_dungeon_state() else 1
-	var num_enemies: int = 2 + difficulty
 
+	# Check for pre-built enemies from pending_battle (overworld/dungeon context)
+	var pending_enemies: Array = []
+	if not GameManager.pending_battle.is_empty():
+		pending_enemies = GameManager.pending_battle.get("enemies", [])
+
+	# Build spawn positions
 	var enemy_spawns: Array = []
 	for x in range(GRID_WIDTH - 3, GRID_WIDTH):
 		for y in range(GRID_HEIGHT):
 			enemy_spawns.append(Vector2i(x, y))
 	enemy_spawns.shuffle()
 
-	var valid_spawns: int = 0
-	for i in range(enemy_spawns.size()):
-		if valid_spawns >= num_enemies:
-			break
+	if not pending_enemies.is_empty():
+		# Use pre-built enemy data from GameManager.pending_battle
+		var valid_spawns: int = 0
+		for enemy_data in pending_enemies:
+			if valid_spawns >= enemy_spawns.size():
+				break
 
-		var target_grid_pos: Vector2i = enemy_spawns[i]
-		var existing: Node2D = battle_grid.get_unit_at(target_grid_pos)
-		if existing:
-			continue
+			var target_grid_pos: Vector2i = enemy_spawns[valid_spawns]
+			var existing: Node2D = battle_grid.get_unit_at(target_grid_pos)
+			if existing:
+				valid_spawns += 1
+				continue
 
-		var unit: Node2D = UnitScene.instantiate()
-		var enemy_data: UnitData = UnitData.new()
-		enemy_data.unit_name = "Enemy %d" % (valid_spawns + 1)
-		enemy_data.is_player_unit = false
-		enemy_data.max_hp = 15 + (difficulty * 2)
-		enemy_data.current_hp = enemy_data.max_hp
-		enemy_data.strength = 3 + difficulty
-		enemy_data.speed = 3 + randi() % (difficulty + 3)
-		enemy_data.defense = 1 + int(difficulty / 2.0)
-		enemy_data.current_armor = enemy_data.defense
+			var unit: Node2D = UnitScene.instantiate()
+			unit.unit_data = enemy_data
+			unit.position = battle_grid.grid_to_world(target_grid_pos)
+			units_container.add_child(unit)
+			battle_grid.place_unit(unit, target_grid_pos)
+			print("[Battlefield] Spawned '%s' at Grid %s (spd %d)" % [enemy_data.unit_name, target_grid_pos, enemy_data.speed])
+			valid_spawns += 1
+	else:
+		# Fallback: procedural generation (legacy behavior)
+		var difficulty: int = GameManager.active_dungeon_difficulty if GameManager.has_active_dungeon_state() else 1
+		var num_enemies: int = 2 + difficulty
 
-		var weapon: ItemData = ItemData.new()
-		weapon.weapon_type = (randi() % 3) as ItemData.WeaponType
-		weapon.might = 3
-		weapon.hit = 80
-		weapon.range_max = 1
-		enemy_data.equipped_weapon = weapon
+		var valid_spawns: int = 0
+		for i in range(enemy_spawns.size()):
+			if valid_spawns >= num_enemies:
+				break
 
-		unit.unit_data = enemy_data
-		unit.position = battle_grid.grid_to_world(target_grid_pos)
-		units_container.add_child(unit)
+			var target_grid_pos: Vector2i = enemy_spawns[i]
+			var existing: Node2D = battle_grid.get_unit_at(target_grid_pos)
+			if existing:
+				continue
 
-		battle_grid.place_unit(unit, target_grid_pos)
-		print("[Battlefield] Spawned '%s' at Grid %s (spd %d)" % [enemy_data.unit_name, target_grid_pos, enemy_data.speed])
-		valid_spawns += 1
+			var unit: Node2D = UnitScene.instantiate()
+			var enemy_data: UnitData = UnitData.new()
+			enemy_data.unit_name = "Enemy %d" % (valid_spawns + 1)
+			enemy_data.is_player_unit = false
+			enemy_data.max_hp = 15 + (difficulty * 2)
+			enemy_data.current_hp = enemy_data.max_hp
+			enemy_data.strength = 3 + difficulty
+			enemy_data.speed = 3 + randi() % (difficulty + 3)
+			enemy_data.defense = 1 + int(difficulty / 2.0)
+			enemy_data.current_armor = enemy_data.defense
+
+			var weapon: ItemData = ItemData.new()
+			weapon.weapon_type = (randi() % 3) as ItemData.WeaponType
+			weapon.might = 3
+			weapon.hit = 80
+			weapon.range_max = 1
+			enemy_data.equipped_weapon = weapon
+
+			unit.unit_data = enemy_data
+			unit.position = battle_grid.grid_to_world(target_grid_pos)
+			units_container.add_child(unit)
+
+			battle_grid.place_unit(unit, target_grid_pos)
+			print("[Battlefield] Spawned '%s' at Grid %s (spd %d)" % [enemy_data.unit_name, target_grid_pos, enemy_data.speed])
+			valid_spawns += 1

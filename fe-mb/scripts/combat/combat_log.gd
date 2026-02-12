@@ -4,9 +4,9 @@ extends PanelContainer
 ## Color-coded entries: player=blue, enemy=red, system=gold
 
 const MAX_ENTRIES: int = 100
-const PLAYER_COLOR: Color = Color(0.3, 0.7, 1.0)
-const ENEMY_COLOR: Color = Color(1.0, 0.3, 0.3)
-const SYSTEM_COLOR: Color = Color(0.83, 0.69, 0.22)
+const PLAYER_COLOR: Color = Color(0.353, 0.541, 0.671)
+const ENEMY_COLOR: Color = Color(0.769, 0.267, 0.267)
+const SYSTEM_COLOR: Color = Color(0.69, 0.44, 0.25)
 
 var _scroll: ScrollContainer
 var _log_vbox: VBoxContainer
@@ -20,11 +20,11 @@ func _ready() -> void:
 func _build_ui() -> void:
 	# Semi-transparent dark panel style
 	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = Color(0.086, 0.129, 0.243, 0.85)
-	style.corner_radius_top_left = 5
-	style.corner_radius_top_right = 5
-	style.corner_radius_bottom_left = 5
-	style.corner_radius_bottom_right = 5
+	style.bg_color = Color(0.05, 0.055, 0.08, 0.9)
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
 	style.content_margin_left = 6
 	style.content_margin_right = 6
 	style.content_margin_top = 6
@@ -34,8 +34,8 @@ func _build_ui() -> void:
 	# Header label
 	var header: Label = Label.new()
 	header.text = "Combat Log"
-	header.add_theme_font_size_override("font_size", 12)
-	header.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	header.add_theme_font_size_override("font_size", 13)
+	header.add_theme_color_override("font_color", Color(0.478, 0.463, 0.439))
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 	# Scroll container for log entries
@@ -63,7 +63,7 @@ func _build_ui() -> void:
 func add_entry(text: String, color: Color = Color.WHITE) -> void:
 	var label: Label = Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_font_size_override("font_size", 13)
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
 	label.add_theme_constant_override("shadow_offset_x", 1)

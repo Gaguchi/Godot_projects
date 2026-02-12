@@ -125,11 +125,7 @@ static func _calculate_damage(attacker: UnitData, _defender: UnitData, triangle:
 static func _calculate_hit_rate(attacker: UnitData, defender: UnitData, triangle: int, terrain_bonus: int) -> int:
 	var hit = attacker.get_hit_rate()
 	var avoid = defender.get_avoid() + terrain_bonus
-	
-	# Add morale modifier
-	hit += GameManager.get_morale_modifier() if attacker.is_player_unit else 0
-	avoid += GameManager.get_morale_modifier() if defender.is_player_unit else 0
-	
+
 	var final_hit = hit - avoid + (triangle * WEAPON_TRIANGLE_HIT_BONUS)
 	return clamp(final_hit, 0, 100)
 

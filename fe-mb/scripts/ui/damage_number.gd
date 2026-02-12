@@ -20,7 +20,7 @@ func _ready() -> void:
 	if is_miss:
 		label.text = "MISS"
 		label.add_theme_color_override("font_color", Color.WHITE)
-		label.add_theme_font_size_override("font_size", 16)
+		label.add_theme_font_size_override("font_size", 14)
 	elif is_heal:
 		label.text = "+%d" % damage_value
 		label.add_theme_color_override("font_color", Color.LIME_GREEN)
@@ -50,19 +50,32 @@ func _ready() -> void:
 func _animate() -> void:
 	var tween = create_tween()
 	tween.set_parallel(true)
-	
-	# Float upward
-	tween.tween_property(self, "position:y", position.y - 40, 0.8).set_ease(Tween.EASE_OUT)
-	
+
+	# Random horizontal offset for visual variety
+	var x_offset: float = randf_range(-15, 15)
+	tween.tween_property(self, "position:x", position.x + x_offset, 0.8).set_ease(Tween.EASE_OUT)
+
+	# Float height varies by type
+	var float_height: float = 40.0
+	var duration: float = 0.8
+	if is_critical:
+		float_height = 60.0
+		duration = 1.0
+	elif is_miss:
+		float_height = 25.0
+		duration = 0.6
+
+	tween.tween_property(self, "position:y", position.y - float_height, duration).set_ease(Tween.EASE_OUT)
+
 	# Fade out
-	tween.tween_property(self, "modulate:a", 0.0, 0.8).set_delay(0.3)
-	
+	var fade_delay: float = 0.3 if not is_miss else 0.1
+	tween.tween_property(self, "modulate:a", 0.0, duration).set_delay(fade_delay)
+
 	# Scale pop for criticals
 	if is_critical:
 		tween.tween_property(self, "scale", Vector2(1.3, 1.3), 0.1)
 		tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.2).set_delay(0.1)
-	
-	# Remove after animation
+
 	await tween.finished
 	queue_free()
 

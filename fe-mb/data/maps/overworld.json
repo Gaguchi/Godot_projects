@@ -1,0 +1,61 @@
+{
+	"name": "The Campaign",
+	"regions": [
+		{ "id": "borderlands", "name": "The Borderlands", "color": "#4a7c3f" },
+		{ "id": "thornwood", "name": "Thornwood Wilds", "color": "#2d5a1e" },
+		{ "id": "ashfall", "name": "Ashfall Peaks", "color": "#8b4513" }
+	],
+	"nodes": [
+		{"id": 0,  "name": "Frontier Camp",       "type": "CAMP",    "x": 100,  "y": 400, "region": "borderlands", "connections": [1, 2, 32], "spawn_point": true},
+		{"id": 1,  "name": "Riverside Market",     "type": "TOWN",    "x": 250,  "y": 320, "region": "borderlands", "connections": [0, 3, 4]},
+		{"id": 2,  "name": "South Road Ambush",    "type": "BATTLE",  "x": 240,  "y": 510, "region": "borderlands", "connections": [0, 5], "enemy_level": 1, "enemy_count": 2},
+		{"id": 3,  "name": "Old Mill Crossing",    "type": "EVENT",   "x": 400,  "y": 260, "region": "borderlands", "connections": [1, 6, 7, 33]},
+		{"id": 4,  "name": "Bandit Hideout",       "type": "BATTLE",  "x": 380,  "y": 400, "region": "borderlands", "connections": [1, 5, 7], "enemy_level": 1, "enemy_count": 3},
+		{"id": 5,  "name": "South Junction",       "type": "BATTLE",  "x": 380,  "y": 540, "region": "borderlands", "connections": [2, 4, 8, 34], "enemy_level": 2, "enemy_count": 2},
+		{"id": 6,  "name": "Watchtower Ridge",     "type": "CAMP",    "x": 540,  "y": 200, "region": "borderlands", "connections": [3, 9, 33]},
+		{"id": 7,  "name": "Pine Crossing",        "type": "EVENT",   "x": 540,  "y": 360, "region": "borderlands", "connections": [3, 4, 9, 10]},
+		{"id": 8,  "name": "Smuggler's Cave",      "type": "DUNGEON", "x": 520,  "y": 540, "region": "borderlands", "connections": [5, 10, 34]},
+		{"id": 9,  "name": "Border Fortress",      "type": "BATTLE",  "x": 680,  "y": 280, "region": "borderlands", "connections": [6, 7, 11, 35], "enemy_level": 2, "enemy_count": 3},
+		{"id": 10, "name": "Roderick's Camp",      "type": "BATTLE",  "x": 680,  "y": 440, "region": "borderlands", "connections": [7, 8, 12], "enemy_level": 3, "enemy_count": 3},
+
+		{"id": 11, "name": "Thornwood Gate",       "type": "CAMP",    "x": 840,  "y": 240, "region": "thornwood", "connections": [9, 13, 14, 36]},
+		{"id": 12, "name": "Southern Trail",       "type": "EVENT",   "x": 830,  "y": 480, "region": "thornwood", "connections": [10, 15, 37]},
+		{"id": 13, "name": "Thornwood Chapel",     "type": "TOWN",    "x": 960,  "y": 180, "region": "thornwood", "connections": [11, 16, 38]},
+		{"id": 14, "name": "Dark Hollow",          "type": "BATTLE",  "x": 960,  "y": 340, "region": "thornwood", "connections": [11, 15, 17, 36], "enemy_level": 3, "enemy_count": 3},
+		{"id": 15, "name": "Cursed Clearing",      "type": "BATTLE",  "x": 960,  "y": 500, "region": "thornwood", "connections": [12, 14, 18, 37], "enemy_level": 3, "enemy_count": 2},
+		{"id": 16, "name": "Hermit's Tower",       "type": "EVENT",   "x": 1100, "y": 200, "region": "thornwood", "connections": [13, 19, 39]},
+		{"id": 17, "name": "Wolf Den",             "type": "BATTLE",  "x": 1100, "y": 360, "region": "thornwood", "connections": [14, 19, 20], "enemy_level": 4, "enemy_count": 3},
+		{"id": 18, "name": "Witch's Hut",          "type": "EVENT",   "x": 1100, "y": 520, "region": "thornwood", "connections": [15, 20, 40]},
+		{"id": 19, "name": "Ancient Ruins",        "type": "DUNGEON", "x": 1260, "y": 280, "region": "thornwood", "connections": [16, 17, 21, 39]},
+		{"id": 20, "name": "Morgana's Grove",      "type": "BATTLE",  "x": 1260, "y": 440, "region": "thornwood", "connections": [17, 18, 22, 40], "enemy_level": 5, "enemy_count": 3},
+
+		{"id": 21, "name": "Mountain Pass",        "type": "CAMP",    "x": 1420, "y": 240, "region": "ashfall", "connections": [19, 23, 24, 41]},
+		{"id": 22, "name": "Ashfall Trail",        "type": "EVENT",   "x": 1420, "y": 460, "region": "ashfall", "connections": [20, 25, 42]},
+		{"id": 23, "name": "Ashfall Outpost",      "type": "TOWN",    "x": 1560, "y": 180, "region": "ashfall", "connections": [21, 26]},
+		{"id": 24, "name": "Lava Fields",          "type": "BATTLE",  "x": 1560, "y": 340, "region": "ashfall", "connections": [21, 25, 27, 41], "enemy_level": 5, "enemy_count": 3},
+		{"id": 25, "name": "Scorched Village",     "type": "BATTLE",  "x": 1560, "y": 500, "region": "ashfall", "connections": [22, 24, 28, 42], "enemy_level": 5, "enemy_count": 2},
+		{"id": 26, "name": "Dragon's Lookout",     "type": "EVENT",   "x": 1700, "y": 200, "region": "ashfall", "connections": [23, 29, 43]},
+		{"id": 27, "name": "Iron Mine",            "type": "DUNGEON", "x": 1700, "y": 360, "region": "ashfall", "connections": [24, 29, 30]},
+		{"id": 28, "name": "Sulfur Springs",       "type": "CAMP",    "x": 1700, "y": 520, "region": "ashfall", "connections": [25, 30, 44]},
+		{"id": 29, "name": "Cragmaw Fortress",     "type": "BATTLE",  "x": 1860, "y": 280, "region": "ashfall", "connections": [26, 27, 43, 45], "enemy_level": 7, "enemy_count": 4},
+		{"id": 30, "name": "Final Approach",       "type": "BATTLE",  "x": 1860, "y": 440, "region": "ashfall", "connections": [27, 28, 44, 45], "enemy_level": 6, "enemy_count": 3},
+		{"id": 31, "name": "The Iron Throne",      "type": "EXIT",    "x": 2060, "y": 360, "region": "ashfall", "connections": [45]},
+
+		{"id": 32, "name": "Trader's Rest",        "type": "EVENT",   "x": 160,  "y": 280, "region": "borderlands", "connections": [0, 1]},
+		{"id": 33, "name": "North Ridge Path",     "type": "BATTLE",  "x": 470,  "y": 150, "region": "borderlands", "connections": [3, 6], "enemy_level": 1, "enemy_count": 2},
+		{"id": 34, "name": "Broken Bridge",        "type": "EVENT",   "x": 460,  "y": 620, "region": "borderlands", "connections": [5, 8]},
+		{"id": 35, "name": "Borderland Shrine",    "type": "CAMP",    "x": 760,  "y": 180, "region": "borderlands", "connections": [9, 11]},
+
+		{"id": 36, "name": "Foggy Marsh",          "type": "BATTLE",  "x": 900,  "y": 290, "region": "thornwood", "connections": [11, 14], "enemy_level": 3, "enemy_count": 2},
+		{"id": 37, "name": "Spider's Nest",        "type": "BATTLE",  "x": 900,  "y": 560, "region": "thornwood", "connections": [12, 15], "enemy_level": 3, "enemy_count": 3},
+		{"id": 38, "name": "Druid's Circle",       "type": "EVENT",   "x": 1030, "y": 110, "region": "thornwood", "connections": [13]},
+		{"id": 39, "name": "Moonlit Glade",        "type": "CAMP",    "x": 1180, "y": 140, "region": "thornwood", "connections": [16, 19]},
+		{"id": 40, "name": "Thornwood Depths",     "type": "DUNGEON", "x": 1180, "y": 580, "region": "thornwood", "connections": [18, 20]},
+
+		{"id": 41, "name": "Ember Creek",          "type": "BATTLE",  "x": 1490, "y": 290, "region": "ashfall", "connections": [21, 24], "enemy_level": 5, "enemy_count": 2},
+		{"id": 42, "name": "Ruined Chapel",        "type": "EVENT",   "x": 1490, "y": 560, "region": "ashfall", "connections": [22, 25]},
+		{"id": 43, "name": "Obsidian Cavern",      "type": "DUNGEON", "x": 1780, "y": 140, "region": "ashfall", "connections": [26, 29]},
+		{"id": 44, "name": "Warlord's Camp",       "type": "BATTLE",  "x": 1780, "y": 580, "region": "ashfall", "connections": [28, 30], "enemy_level": 6, "enemy_count": 3},
+		{"id": 45, "name": "Ashen Gate",           "type": "BATTLE",  "x": 1950, "y": 360, "region": "ashfall", "connections": [29, 30, 31], "enemy_level": 7, "enemy_count": 4}
+	]
+}

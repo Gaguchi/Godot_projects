@@ -57,6 +57,12 @@ signal skill_check_resolved(success: bool, skill_name: String)
 @warning_ignore("unused_signal")
 signal event_choice_made(event_id: String, choice_index: int)
 
+# Dialogue signals
+@warning_ignore("unused_signal")
+signal dialogue_requested(dialogue_id: String)
+@warning_ignore("unused_signal")
+signal location_arrived(location_id: int)
+
 # Shop signals
 @warning_ignore("unused_signal")
 signal shop_opened(shop_inventory: Array)
@@ -68,3 +74,25 @@ signal item_sold(item: Resource)
 
 func _ready() -> void:
 	print("[EventBus] Initialized")
+
+
+# --- Dialogue/Event Flags ---
+var _flags: Dictionary = {}
+
+func get_flag(flag_name: String) -> bool:
+	return _flags.get(flag_name, false)
+
+func set_flag(flag_name: String, value: bool = true) -> void:
+	if value:
+		_flags[flag_name] = true
+	else:
+		_flags.erase(flag_name)
+
+func clear_all_flags() -> void:
+	_flags.clear()
+
+func get_all_flags() -> Dictionary:
+	return _flags.duplicate()
+
+func set_flags_from_dict(flags: Dictionary) -> void:
+	_flags = flags.duplicate()

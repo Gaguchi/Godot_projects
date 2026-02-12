@@ -26,6 +26,9 @@ EventBus="*res://autoload/event_bus.gd"
 SaveManager="*res://autoload/save_manager.gd"
 SceneLoader="*res://autoload/scene_loader.gd"
 SettingsManager="*res://autoload/settings_manager.gd"
+AudioManager="*res://autoload/audio_manager.gd"
+NotificationManager="*res://scripts/ui/notification_manager.gd"
+DialogueManager="*res://autoload/dialogue_manager.gd"
 
 [display]
 

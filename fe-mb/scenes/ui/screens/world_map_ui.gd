@@ -2,7 +2,6 @@ extends CanvasLayer
 
 @onready var gold_display = %GoldDisplay
 @onready var supplies_display = %SuppliesDisplay
-@onready var morale_display = %MoraleDisplay
 @onready var threat_bar = %ThreatBar
 @onready var location_panel = %LocationInfoPanel
 
@@ -31,8 +30,6 @@ func _update_resources():
 		gold_display.update_value(GameManager.gold)
 	if "supplies" in GameManager:
 		supplies_display.update_value(GameManager.supplies)
-	if "morale" in GameManager:
-		morale_display.update_value(GameManager.morale)
 	
 func show_location_info(location: LocationData):
 	location_panel.setup(location)

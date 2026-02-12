@@ -113,7 +113,6 @@ func _serialize_game_manager() -> Dictionary:
 		"current_floor": GameManager.current_floor,
 		"gold": GameManager.gold,
 		"food": GameManager.food,
-		"morale": GameManager.morale,
 		"party": party_data,
 		"battles_won": GameManager.battles_won,
 		"units_lost": GameManager.units_lost,
@@ -131,7 +130,6 @@ func _deserialize_game_manager(data: Dictionary) -> void:
 	GameManager.current_floor = data.get("current_floor", 1)
 	GameManager.gold = data.get("gold", 0)
 	GameManager.food = data.get("food", 0)
-	GameManager.morale = data.get("morale", 100)
 	GameManager.battles_won = data.get("battles_won", 0)
 	GameManager.units_lost = data.get("units_lost", 0)
 

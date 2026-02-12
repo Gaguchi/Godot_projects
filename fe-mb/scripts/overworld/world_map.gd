@@ -1,5 +1,6 @@
 extends Node2D
-## WorldMap - Grid-based overworld with free movement (faster on roads, slower off-road)
+## WorldMap - FTL-style node graph overworld with organic map background
+## Click any node to auto-pathfind and travel through the graph.
 
 signal travel_started(from: LocationData, to: LocationData)
 signal travel_completed(location: LocationData)
@@ -7,125 +8,154 @@ signal region_completed(region_index: int)
 
 const LocationNodeScene = preload("res://scenes/overworld/location_node.tscn")
 
-@onready var map_visuals: Node2D = $MapVisuals
-@onready var locations_container: Node2D = $Locations
 @onready var connections_layer: Node2D = $Connections
+@onready var locations_container: Node2D = $Locations
 @onready var input_manager: Node2D = $WorldInputManager
 @onready var camera: Camera2D = $Camera2D
-@onready var ui_panel: PanelContainer = $UI/InfoPanel
-@onready var location_name_label: Label = $UI/InfoPanel/VBox/LocationName
-@onready var location_type_label: Label = $UI/InfoPanel/VBox/LocationType
-@onready var travel_btn: Button = $UI/InfoPanel/VBox/TravelBtn
-@onready var resources_label: Label = $UI/ResourcesPanel/Resources
+@onready var hover_tooltip: PanelContainer = $UI/HoverTooltip
+@onready var tooltip_label: Label = $UI/HoverTooltip/MarginContainer/Label
+
+var overworld_hud: OverworldHUD
 
 var pause_menu_scene = preload("res://scenes/ui/pause_menu.tscn")
 var map_pawn_scene = preload("res://scenes/overworld/map_pawn.tscn")
 var pause_menu: Control = null
 var player_pawn: Node2D = null
+var map_background: MapBackground = null
 
 # Map state
-var current_map_name: String = "test_overworld"
 var map_data: Dictionary = {}
-var terrain_map: Dictionary = {}  # Vector2i -> TerrainType
-var road_set: Dictionary = {}  # Quick lookup for road cells
-var tile_size: int = 64
-var map_width: int = 0
-var map_height: int = 0
-
+var regions: Array[Dictionary] = []
 var locations: Array[LocationData] = []
 var location_nodes: Dictionary = {}  # id -> LocationNode
-var current_location_id: int = 0
-var selected_location: LocationData = null
+var location_map: Dictionary = {}  # id -> LocationData
 var is_traveling: bool = false
 
-# Resources
-var supplies: int = 10
-var gold: int = 50
+# Connection line references
+var connection_lines: Dictionary = {}  # "min_max" key -> Line2D
 
-# Movement speeds (tiles per second)
-const BASE_SPEED: float = 6.0  # Fast on roads
+# Path preview
+var _preview_lines: Array[Line2D] = []
+
+var _hover_timer: SceneTreeTimer = null
+var _pending_hover_loc: LocationData = null
+
+# Event dialogue resource tracking
+var _pre_event_gold: int = 0
+var _pre_event_food: int = 0
 
 
 func _ready() -> void:
 	if GameManager.current_state != GameManager.GameState.OVERWORLD:
 		GameManager.change_state(GameManager.GameState.OVERWORLD)
-	
-	# Connect Input Manager and set camera reference
+
 	input_manager.camera = camera
 	input_manager.node_clicked.connect(_on_map_node_clicked)
-	
-	_connect_ui_signals()
-	load_map(current_map_name)
-	_update_resources_display()
+
+	# Create the bottom panel HUD
+	overworld_hud = OverworldHUD.new()
+	add_child(overworld_hud)
+	overworld_hud.setup(GameManager.party)
+
+	# Connect dialogue system for event resolution
+	DialogueManager.dialogue_finished.connect(_on_dialogue_finished)
+
+	_setup_pause_menu()
+	_load_map("overworld")
+	_update_hud_location()
 
 
-func _connect_ui_signals() -> void:
-	travel_btn.pressed.connect(_on_travel_pressed)
-	
-	# Instantiate Pause Menu if not present
+func _setup_pause_menu() -> void:
 	if not pause_menu:
 		pause_menu = pause_menu_scene.instantiate()
 		$UI.add_child(pause_menu)
 		pause_menu.hide()
 
 
-## Load a JSON map file
-func load_map(map_name: String) -> void:
-	# Clear existing visuals
-	for child in map_visuals.get_children():
-		child.queue_free()
+# --- Map Loading ---
+
+func _load_map(map_name: String) -> void:
+	# Clear existing
 	for child in locations_container.get_children():
 		child.queue_free()
 	for child in connections_layer.get_children():
 		child.queue_free()
 	location_nodes.clear()
-	
-	# Load map data
-	map_data = OverworldMapLoader.load_map_data(map_name)
+	location_map.clear()
+	connection_lines.clear()
+
+	# Load data
+	map_data = NodeMapLoader.load_map(map_name)
 	if map_data.is_empty():
 		push_error("[WorldMap] Failed to load map: " + map_name)
 		return
-	
-	tile_size = map_data.get("tile_size", 64)
-	map_width = map_data.get("width", 16)
-	map_height = map_data.get("height", 12)
-	
-	# Build visual layers (terrain, roads, objects)
-	var build_result = OverworldMapLoader.build_map_visuals(map_data, map_visuals)
-	terrain_map = build_result.terrain_map
-	
-	# Build road set for quick lookup
-	road_set.clear()
-	for cell in build_result.road_cells:
-		road_set[cell] = true
-	
-	# Extract locations from map JSON
-	locations = OverworldMapLoader.extract_locations(map_data, build_result.road_cells)
-	
-	# Create visual nodes for each location
+
+	regions = NodeMapLoader.parse_regions(map_data)
+	locations = NodeMapLoader.parse_locations(map_data)
+
+	for loc in locations:
+		location_map[loc.id] = loc
+
+	# Create procedural background
+	_create_background()
+
+	# Draw connection lines
+	_draw_connections()
+
+	# Create location nodes
 	for loc in locations:
 		var node = LocationNodeScene.instantiate()
 		node.setup(loc)
 		node.location_hovered.connect(_on_location_hovered)
+		node.location_unhovered.connect(_on_location_unhovered)
 		locations_container.add_child(node)
 		location_nodes[loc.id] = node
-	
-	# Draw connections between locations
-	_draw_connections()
-	
-	# Set starting position
-	current_location_id = 0
+
+	# Restore or set starting position
+	var start_id = GameManager.current_location_id
+	if start_id < 0 or start_id not in location_map:
+		start_id = NodeMapLoader.find_spawn_node(map_data)
+	GameManager.current_location_id = start_id
+
+	if start_id in location_map:
+		location_map[start_id].visited = true
+
 	_update_reachable_locations()
-	
-	# Spawn player pawn
 	_spawn_pawn()
-	
-	# Center camera on map
-	camera.position = Vector2(map_width * tile_size / 2.0, map_height * tile_size / 2.0)
-	
-	print("[WorldMap] Loaded map '%s' with %d locations, %d terrain cells" % [
-		map_data.get("name", map_name), locations.size(), terrain_map.size()
+
+	if start_id in location_nodes:
+		camera.position = location_nodes[start_id].position
+	else:
+		camera.position = Vector2(640, 360)
+
+	print("[WorldMap] Loaded map '%s': %d locations, %d regions" % [
+		map_data.get("name", map_name), locations.size(), regions.size()
 	])
+
+
+func _create_background() -> void:
+	if map_background:
+		map_background.queue_free()
+
+	map_background = MapBackground.new()
+	map_background.z_index = -10
+	add_child(map_background)
+	move_child(map_background, 0)
+
+	# Gather position data for background generation
+	var all_positions: Array[Vector2] = []
+	var region_positions: Dictionary = {}
+
+	for node_dict in map_data.get("nodes", []):
+		var pos = Vector2(node_dict.get("x", 0), node_dict.get("y", 0))
+		all_positions.append(pos)
+		var rid = node_dict.get("region", "")
+		if not rid.is_empty():
+			if rid not in region_positions:
+				region_positions[rid] = []
+			region_positions[rid].append(pos)
+
+	map_background.setup(all_positions, region_positions, regions)
 
 
 func _spawn_pawn() -> void:
@@ -133,268 +163,451 @@ func _spawn_pawn() -> void:
 		player_pawn = map_pawn_scene.instantiate()
 		add_child(player_pawn)
 		player_pawn.z_index = 10
-	
-	if current_location_id in location_nodes:
-		player_pawn.position = location_nodes[current_location_id].position
+
+	var loc_id = GameManager.current_location_id
+	if loc_id in location_nodes:
+		player_pawn.position = location_nodes[loc_id].position
 
 
 func _draw_connections() -> void:
 	for loc in locations:
 		for connected_id in loc.connected_locations:
-			if connected_id > loc.id:  # Only draw once per pair
-				var other = _get_location_by_id(connected_id)
-				if other:
-					# Draw a subtle connection line
-					var line = Line2D.new()
-					line.add_point(loc.position)
-					line.add_point(other.position)
-					line.width = 2.0
-					line.default_color = Color(1.0, 0.9, 0.3, 0.3)  # Subtle golden indicator
-					line.z_index = -5
-					connections_layer.add_child(line)
+			if connected_id > loc.id:
+				var other = location_map.get(connected_id)
+				if not other:
+					continue
+
+				var line = Line2D.new()
+				line.add_point(loc.position)
+				line.add_point(other.position)
+				line.width = 2.0
+				line.default_color = Color(0.227, 0.239, 0.282, 0.4)
+				line.z_index = -5
+				connections_layer.add_child(line)
+
+				var key = _connection_key(loc.id, connected_id)
+				connection_lines[key] = line
 
 
-func _get_location_by_id(id: int) -> LocationData:
-	for loc in locations:
-		if loc.id == id:
-			return loc
-	return null
+func _connection_key(a: int, b: int) -> String:
+	return "%d_%d" % [mini(a, b), maxi(a, b)]
 
+
+# --- Reachability & Visuals ---
 
 func _update_reachable_locations() -> void:
-	var current_loc = _get_location_by_id(current_location_id)
+	var current_id = GameManager.current_location_id
+	var current_loc = location_map.get(current_id)
 	if not current_loc:
 		return
-	
-	# With free movement, all locations are technically reachable
-	# But we still highlight connected ones for the FTL-style pathing
+
+	var adjacent_ids: Array[int] = current_loc.connected_locations
+
 	for id in location_nodes:
 		var node = location_nodes[id]
-		var loc_connected = id in current_loc.connected_locations
-		node.set_reachable(loc_connected)
-		node.set_current(id == current_location_id)
+		node.set_reachable(true)
+		node.set_current(id == current_id)
+		node.set_adjacent(id in adjacent_ids)
+
+	# Highlight adjacent connection lines
+	for key in connection_lines:
+		var line: Line2D = connection_lines[key]
+		var parts = key.split("_")
+		var id_a = int(parts[0])
+		var id_b = int(parts[1])
+
+		var is_active = (id_a == current_id and id_b in adjacent_ids) or \
+						(id_b == current_id and id_a in adjacent_ids)
+
+		if is_active:
+			line.default_color = Color(0.69, 0.44, 0.25, 0.6)
+			line.width = 3.0
+		else:
+			line.default_color = Color(0.227, 0.239, 0.282, 0.4)
+			line.width = 2.0
 
 
-# --- Input Handler ---
-func _on_map_node_clicked(hit_node: Node) -> void:
-	if is_traveling:
-		return
-	
-	# Expecting Area2D child of LocationNode
-	var loc_node = hit_node.get_parent()
-	if loc_node.has_method("setup") and loc_node.location_data:
-		_on_location_choice(loc_node.location_data)
+# --- BFS Pathfinding ---
 
+## Find shortest path through node graph. Returns node IDs (excluding start, including end).
+func _find_path(start_id: int, end_id: int) -> Array[int]:
+	if start_id == end_id:
+		return []
 
-func _on_location_choice(loc: LocationData) -> void:
-	if current_location_id == loc.id:
-		return
-	
-	# Calculate path using A* with terrain costs
-	var start_grid = OverworldMapLoader.world_to_grid(player_pawn.position, tile_size)
-	var end_grid = OverworldMapLoader.world_to_grid(loc.position, tile_size)
-	
-	var path = _find_terrain_path(start_grid, end_grid)
-	if path.is_empty():
-		print("[WorldMap] No valid path to destination!")
-		return
-	
-	# Cost is 1 supply per location hop
-	var cost = 1
-	if supplies < cost:
-		print("[WorldMap] Not enough supplies!")
-		return
-	
-	# Travel!
-	await _execute_terrain_travel(loc, path, cost)
+	var visited: Dictionary = {}
+	var queue: Array[int] = [start_id]
+	visited[start_id] = -1
 
+	while queue.size() > 0:
+		var current = queue.pop_front()
 
-func _execute_terrain_travel(target_loc: LocationData, path: Array[Vector2i], cost: int) -> void:
-	is_traveling = true
-	
-	# Deduct resources
-	supplies -= cost
-	_update_resources_display()
-	
-	# Animate along the path with variable speed based on terrain
-	await _animate_terrain_travel(path)
-	
-	# Update state
-	var old_id = current_location_id
-	current_location_id = target_loc.id
-	target_loc.visited = true
-	_update_reachable_locations()
-	
-	travel_started.emit(_get_location_by_id(old_id), target_loc)
-	
-	is_traveling = false
-	
-	# Trigger location event
-	_trigger_location_event(target_loc)
-
-
-func _animate_terrain_travel(path: Array[Vector2i]) -> void:
-	for i in range(1, path.size()):
-		var _from_pos = OverworldMapLoader.grid_to_world(path[i - 1], tile_size)
-		var to_pos = OverworldMapLoader.grid_to_world(path[i], tile_size)
-		
-		# Get terrain speed for destination cell
-		var terrain = terrain_map.get(path[i], OverworldMapLoader.TerrainType.GRASS)
-		var speed_mult = OverworldMapLoader.get_terrain_speed(terrain)
-		
-		# Calculate duration based on terrain (faster = shorter duration)
-		var step_duration = 1.0 / (BASE_SPEED * max(speed_mult, 0.1))
-		
-		var tween = create_tween()
-		tween.tween_property(player_pawn, "position", to_pos, step_duration).set_trans(Tween.TRANS_LINEAR)
-		await tween.finished
-
-
-## A* pathfinding with terrain costs (water is impassable)
-func _find_terrain_path(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
-	var empty: Array[Vector2i] = []
-	
-	# Check bounds
-	if not _is_in_bounds(start) or not _is_in_bounds(end):
-		return empty
-	
-	# Check if destination is passable
-	var end_terrain = terrain_map.get(end, OverworldMapLoader.TerrainType.GRASS)
-	if not OverworldMapLoader.is_passable(end_terrain):
-		return empty
-	
-	# A* algorithm
-	var open_set: Array = [start]
-	var came_from: Dictionary = {}
-	var g_score: Dictionary = {start: 0.0}
-	var f_score: Dictionary = {start: _heuristic(start, end)}
-	
-	var directions = [
-		Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
-		Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)  # Diagonals
-	]
-	
-	while not open_set.is_empty():
-		# Find node with lowest f_score
-		var current = open_set[0]
-		var current_f = f_score.get(current, INF)
-		for node in open_set:
-			var node_f = f_score.get(node, INF)
-			if node_f < current_f:
-				current = node
-				current_f = node_f
-		
-		if current == end:
-			# Reconstruct path
-			var path: Array[Vector2i] = [current]
-			while current in came_from:
-				current = came_from[current]
-				path.insert(0, current)
+		if current == end_id:
+			var path: Array[int] = []
+			var node_id = end_id
+			while node_id != start_id:
+				path.append(node_id)
+				node_id = visited[node_id]
+			path.reverse()
 			return path
-		
-		open_set.erase(current)
-		
-		for dir in directions:
-			var neighbor = current + dir
-			
-			if not _is_in_bounds(neighbor):
-				continue
-			
-			var terrain = terrain_map.get(neighbor, OverworldMapLoader.TerrainType.GRASS)
-			if not OverworldMapLoader.is_passable(terrain):
-				continue
-			
-			# Calculate movement cost (inverse of speed)
-			var speed = OverworldMapLoader.get_terrain_speed(terrain)
-			var move_cost = 1.0 / max(speed, 0.1)
-			
-			# Diagonal movement costs more
-			if dir.x != 0 and dir.y != 0:
-				move_cost *= 1.414
-			
-			var tentative_g = g_score.get(current, INF) + move_cost
-			
-			if tentative_g < g_score.get(neighbor, INF):
-				came_from[neighbor] = current
-				g_score[neighbor] = tentative_g
-				f_score[neighbor] = tentative_g + _heuristic(neighbor, end)
-				
-				if neighbor not in open_set:
-					open_set.append(neighbor)
-	
-	return empty
+
+		var loc = location_map.get(current)
+		if not loc:
+			continue
+		for neighbor_id in loc.connected_locations:
+			if neighbor_id not in visited:
+				visited[neighbor_id] = current
+				queue.append(neighbor_id)
+
+	return []
 
 
-func _heuristic(a: Vector2i, b: Vector2i) -> float:
-	# Diagonal distance heuristic
-	var dx = abs(a.x - b.x)
-	var dy = abs(a.y - b.y)
-	return max(dx, dy) + 0.414 * min(dx, dy)
+# --- Click & Travel ---
+
+func _on_dialogue_finished() -> void:
+	# Animate any resource changes that happened during dialogue effects
+	_animate_resource_change("gold", GameManager.gold - _pre_event_gold)
+	_animate_resource_change("food", GameManager.food - _pre_event_food)
+	overworld_hud.update_resources()
+	overworld_hud.update_party()
 
 
-func _is_in_bounds(pos: Vector2i) -> bool:
-	return pos.x >= 0 and pos.x < map_width and pos.y >= 0 and pos.y < map_height
-
-
-func _on_location_hovered(_loc_data: LocationData) -> void:
-	# Could show path preview here
-	pass
-
-
-func _on_travel_pressed() -> void:
-	if not selected_location or is_traveling:
+func _on_map_node_clicked(hit_node: Node) -> void:
+	if is_traveling or DialogueManager.is_active():
 		return
-	
-	if supplies < 1:
-		print("[WorldMap] Not enough supplies!")
-		return
-	
-	ui_panel.visible = false
-	
-	var start_grid = OverworldMapLoader.world_to_grid(player_pawn.position, tile_size)
-	var end_grid = OverworldMapLoader.world_to_grid(selected_location.position, tile_size)
-	var path = _find_terrain_path(start_grid, end_grid)
-	
-	if not path.is_empty():
-		await _execute_terrain_travel(selected_location, path, 1)
 
+	var loc_node = hit_node.get_parent()
+	if not loc_node.has_method("setup") or not loc_node.location_data:
+		return
+
+	var target = loc_node.location_data
+	var current_id = GameManager.current_location_id
+
+	if target.id == current_id:
+		return
+
+	var path = _find_path(current_id, target.id)
+	if path.is_empty():
+		return
+
+	_clear_path_preview()
+	_hide_hover_tooltip()
+	_travel_path(path)
+
+
+func _travel_path(path: Array[int]) -> void:
+	is_traveling = true
+
+	var start_loc = location_map.get(GameManager.current_location_id)
+	var final_target = location_map.get(path[-1])
+
+	if start_loc and final_target:
+		travel_started.emit(start_loc, final_target)
+
+	# Speed up animation for longer paths
+	var hop_duration = 0.3 if path.size() <= 4 else 0.2
+	var hop_pause = 0.08
+
+	for i in range(path.size()):
+		var node_id = path[i]
+		var target_loc = location_map.get(node_id)
+		if not target_loc:
+			continue
+
+		# Deduct 1 supply per hop
+		var old_food: int = GameManager.food
+		GameManager.consume_food(1)
+		_animate_resource_change("food", GameManager.food - old_food)
+		overworld_hud.update_resources()
+
+		# Animate pawn
+		var pawn_tween = create_tween()
+		pawn_tween.tween_property(player_pawn, "position", target_loc.position, hop_duration) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+		# Camera follows pawn
+		var cam_tween = create_tween()
+		cam_tween.tween_property(camera, "position", target_loc.position, hop_duration) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+		await pawn_tween.finished
+
+		# Update state as we pass through
+		GameManager.current_location_id = node_id
+		GameManager.nodes_visited += 1
+		target_loc.visited = true
+
+		# Brief pause at intermediate nodes
+		if i < path.size() - 1:
+			await get_tree().create_timer(hop_pause).timeout
+
+	_update_reachable_locations()
+	is_traveling = false
+
+	# Update HUD with final destination info
+	_update_hud_location()
+
+	# Trigger event only at final destination
+	if final_target:
+		_trigger_location_event(final_target)
+
+	if final_target:
+		travel_completed.emit(final_target)
+
+
+# --- Hover Preview ---
+
+func _on_location_hovered(loc_data: LocationData) -> void:
+	_clear_path_preview()
+
+	if is_traveling or not loc_data:
+		_hide_hover_tooltip()
+		_pending_hover_loc = null
+		return
+
+	var current_id = GameManager.current_location_id
+
+	# Draw path preview immediately (it's spatial, not obscuring)
+	if loc_data.id != current_id:
+		var path = _find_path(current_id, loc_data.id)
+		if not path.is_empty():
+			var full_path: Array[int] = [current_id]
+			full_path.append_array(path)
+			for i in range(full_path.size() - 1):
+				var from_loc = location_map.get(full_path[i])
+				var to_loc = location_map.get(full_path[i + 1])
+				if from_loc and to_loc:
+					var line = Line2D.new()
+					line.add_point(from_loc.position)
+					line.add_point(to_loc.position)
+					line.width = 4.0
+					line.default_color = Color(0.416, 0.439, 0.502, 0.45)
+					line.z_index = -3
+					connections_layer.add_child(line)
+					_preview_lines.append(line)
+
+	# Delay tooltip by 150ms
+	_pending_hover_loc = loc_data
+	_hover_timer = get_tree().create_timer(0.15)
+	_hover_timer.timeout.connect(func():
+		if _pending_hover_loc == loc_data:
+			if loc_data.id == current_id:
+				_show_hover_tooltip(loc_data, 0)
+			else:
+				var path = _find_path(current_id, loc_data.id)
+				if not path.is_empty():
+					_show_hover_tooltip(loc_data, path.size())
+				else:
+					_hide_hover_tooltip()
+	, CONNECT_ONE_SHOT)
+
+
+func _on_location_unhovered() -> void:
+	_pending_hover_loc = null
+	_clear_path_preview()
+	_hide_hover_tooltip()
+
+
+func _clear_path_preview() -> void:
+	for line in _preview_lines:
+		if is_instance_valid(line):
+			line.queue_free()
+	_preview_lines.clear()
+
+
+func _show_hover_tooltip(loc: LocationData, hops: int) -> void:
+	var type_name = LocationData.LocationType.keys()[loc.location_type]
+	var text = loc.location_name + "\n" + type_name
+
+	if hops > 0:
+		var supply_cost: int = hops
+		var current_supply: int = GameManager.food
+		text += "  |  %d hop%s" % [hops, "s" if hops > 1 else ""]
+		text += "\nCost: %d supplies (have: %d)" % [supply_cost, current_supply]
+
+		# Color the tooltip based on affordability
+		if current_supply < supply_cost:
+			tooltip_label.add_theme_color_override("font_color", Color(0.769, 0.267, 0.267))  # Blood red
+		elif current_supply - supply_cost <= 2:
+			tooltip_label.add_theme_color_override("font_color", Color(0.69, 0.44, 0.25))  # Ember warning
+		else:
+			tooltip_label.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))  # Parchment
+	else:
+		tooltip_label.add_theme_color_override("font_color", Color(0.832, 0.812, 0.761))  # Parchment
+
+	if loc.visited:
+		text += " (visited)"
+
+	tooltip_label.text = text
+	if not hover_tooltip.visible:
+		hover_tooltip.modulate = Color(1, 1, 1, 0)
+	hover_tooltip.visible = true
+	var show_tween = create_tween()
+	show_tween.tween_property(hover_tooltip, "modulate:a", 1.0, 0.1)
+
+	# Position tooltip near the node in screen space
+	var screen_pos = get_viewport().get_canvas_transform() * loc.position
+	var tooltip_pos = screen_pos + Vector2(20, -60)
+	# Clamp to viewport
+	tooltip_pos.x = clampf(tooltip_pos.x, 0, 1280 - 220)
+	tooltip_pos.y = clampf(tooltip_pos.y, 0, 720 - 70)
+
+	# Check if tooltip overlaps the node (within ~25px)
+	var node_screen = screen_pos
+	var tooltip_rect = Rect2(tooltip_pos, Vector2(220, 70))
+	var node_rect = Rect2(node_screen - Vector2(25, 25), Vector2(50, 50))
+	if tooltip_rect.intersects(node_rect):
+		# Flip to below-right of node
+		tooltip_pos = screen_pos + Vector2(20, 30)
+		tooltip_pos.x = clampf(tooltip_pos.x, 0, 1280 - 220)
+		tooltip_pos.y = clampf(tooltip_pos.y, 0, 720 - 70)
+
+	hover_tooltip.position = tooltip_pos
+
+
+func _hide_hover_tooltip() -> void:
+	if not hover_tooltip.visible:
+		return
+	var tween = create_tween()
+	tween.tween_property(hover_tooltip, "modulate:a", 0.0, 0.1)
+	tween.tween_callback(func():
+		hover_tooltip.visible = false
+		hover_tooltip.modulate = Color(1, 1, 1, 1)
+	)
+
+
+# --- Location Events ---
 
 func _trigger_location_event(loc: LocationData) -> void:
 	print("[WorldMap] Arrived at: %s (%s)" % [loc.location_name, LocationData.LocationType.keys()[loc.location_type]])
-	
+
 	match loc.location_type:
 		LocationData.LocationType.BATTLE:
-			print("[WorldMap] Starting battle...")
-			EventBus.combat_started.emit()
-		
+			_start_battle(loc)
 		LocationData.LocationType.TOWN:
-			print("[WorldMap] Welcome to town!")
-		
+			_enter_town(loc)
 		LocationData.LocationType.EVENT:
-			print("[WorldMap] Random event!")
-			gold += randi_range(5, 20)
-			_update_resources_display()
-		
+			_trigger_random_event(loc)
 		LocationData.LocationType.CAMP:
-			print("[WorldMap] Resting at camp...")
-		
+			_rest_at_camp(loc)
 		LocationData.LocationType.DUNGEON:
-			print("[WorldMap] Entering dungeon...")
-			var difficulty = 1
-			GameManager.enter_dungeon(difficulty)
-			SceneLoader.change_scene_to_file("res://scenes/dungeon/dungeon_map.tscn")
-		
+			_enter_dungeon(loc)
 		LocationData.LocationType.EXIT:
-			print("[WorldMap] Region complete!")
-			region_completed.emit(0)
-	
-	travel_completed.emit(loc)
-	ui_panel.visible = false
+			_reach_exit(loc)
 
 
-func _update_resources_display() -> void:
-	if resources_label:
-		resources_label.text = "Supplies: %d | Gold: %d" % [supplies, gold]
+func _start_battle(loc: LocationData) -> void:
+	var enemies: Array = []
+	var num_enemies = loc.enemy_party_size
+	var level = loc.enemy_level
+
+	for i in range(num_enemies):
+		var enemy = UnitData.new()
+		enemy.unit_name = "Bandit %d" % (i + 1)
+		enemy.is_player_unit = false
+		enemy.max_hp = 12 + (level * 3)
+		enemy.current_hp = enemy.max_hp
+		enemy.strength = 3 + level
+		enemy.speed = 3 + randi() % (level + 2)
+		enemy.defense = 1 + int(level / 2.0)
+		enemy.current_armor = enemy.defense
+
+		var weapon = ItemData.new()
+		weapon.weapon_type = (randi() % 3) as ItemData.WeaponType
+		weapon.might = 3 + int(level / 2.0)
+		weapon.hit = 80
+		weapon.range_max = 1
+		enemy.equipped_weapon = weapon
+
+		enemies.append(enemy)
+
+	GameManager.pending_battle = {
+		"enemies": enemies,
+		"difficulty": level,
+		"source": "overworld",
+		"location_id": loc.id,
+		"location_name": loc.location_name
+	}
+
+	print("[WorldMap] Starting battle: %d enemies (level %d)" % [num_enemies, level])
+	SceneLoader.change_scene_to_file("res://scenes/combat/battlefield.tscn")
+
+
+func _enter_town(loc: LocationData) -> void:
+	print("[WorldMap] Welcome to %s!" % loc.location_name)
+	for unit in GameManager.party:
+		if unit.is_alive():
+			unit.current_hp = min(unit.current_hp + 5, unit.max_hp)
+	EventBus.show_notification.emit("Welcome to %s! Party healed slightly." % loc.location_name)
+	overworld_hud.update_resources()
+	overworld_hud.update_party()
+
+
+func _trigger_random_event(_loc: LocationData) -> void:
+	# Snapshot resources before dialogue so we can animate changes after
+	_pre_event_gold = GameManager.gold
+	_pre_event_food = GameManager.food
+
+	# TODO: Wave 2 will use EventManager to pick dialogue based on location/flags
+	DialogueManager.start_dialogue("test_event_crossroads")
+
+
+func _rest_at_camp(loc: LocationData) -> void:
+	GameManager.rest_party(0.3)
+	EventBus.show_notification.emit("Rested at %s. Party healed 30%%." % loc.location_name)
+	overworld_hud.update_resources()
+	overworld_hud.update_party()
+
+
+func _enter_dungeon(loc: LocationData) -> void:
+	var difficulty = loc.enemy_level
+	GameManager.enter_dungeon(difficulty)
+	SceneLoader.change_scene_to_file("res://scenes/dungeon/dungeon_map.tscn")
+
+
+func _reach_exit(loc: LocationData) -> void:
+	GameManager.end_run(true)
+	EventBus.show_notification.emit("Victory! You've conquered the campaign!")
+
+
+## Update the HUD location section with current location info
+func _update_hud_location() -> void:
+	if not overworld_hud:
+		return
+	var current_loc = location_map.get(GameManager.current_location_id)
+	if current_loc:
+		var type_name = LocationData.LocationType.keys()[current_loc.location_type]
+		overworld_hud.update_location(current_loc.location_name, type_name)
+	else:
+		overworld_hud.update_location("---", "")
+
+
+func _animate_resource_change(resource_name: String, delta: int) -> void:
+	if delta == 0 or not overworld_hud:
+		return
+	var target_label: Label = overworld_hud.get_resource_label(resource_name)
+	if not target_label:
+		return
+	var float_label: Label = Label.new()
+	float_label.text = "+%d" % delta if delta > 0 else str(delta)
+	float_label.add_theme_font_size_override("font_size", 14)
+	float_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	float_label.add_theme_constant_override("shadow_offset_x", 1)
+	float_label.add_theme_constant_override("shadow_offset_y", 1)
+	if delta > 0:
+		float_label.add_theme_color_override("font_color", Color(0.353, 0.541, 0.353))  # Moss green
+	else:
+		float_label.add_theme_color_override("font_color", Color(0.769, 0.267, 0.267))  # Blood red
+	# Position above the target label in the UI layer
+	float_label.position = target_label.position + Vector2(0, -5)
+	target_label.get_parent().add_child(float_label)
+	# Animate: float up 20px + fade out
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(float_label, "position:y", float_label.position.y - 20, 0.8).set_ease(Tween.EASE_OUT)
+	tween.tween_property(float_label, "modulate:a", 0.0, 0.8).set_delay(0.2)
+	await tween.finished
+	if is_instance_valid(float_label):
+		float_label.queue_free()
 
 
 func _unhandled_input(event: InputEvent) -> void:
