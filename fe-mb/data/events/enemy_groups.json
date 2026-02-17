@@ -1,0 +1,30 @@
+{
+    "bandits_small": {
+        "name": "Bandit Ambush",
+        "enemies": [
+            { "name": "Bandit", "class": "FIGHTER", "level": 1, "count": 2 },
+            { "name": "Bandit Archer", "class": "ARCHER", "level": 1, "count": 1 }
+        ]
+    },
+    "wolves": {
+        "name": "Wolf Pack",
+        "enemies": [
+            { "name": "Wolf", "class": "THIEF", "level": 1, "count": 3 }
+        ]
+    },
+    "brigands": {
+        "name": "Brigand Raiders",
+        "enemies": [
+            { "name": "Brigand", "class": "FIGHTER", "level": 2, "count": 2 },
+            { "name": "Brigand Chief", "class": "KNIGHT", "level": 2, "count": 1 }
+        ]
+    },
+    "darens_gang": {
+        "name": "Daren's Gang",
+        "enemies": [
+            { "name": "Bandit Thug", "class": "FIGHTER", "level": 2, "count": 2 },
+            { "name": "Bandit Archer", "class": "ARCHER", "level": 2, "count": 1 },
+            { "name": "Daren", "class": "FIGHTER", "level": 2, "count": 1, "capture_target": true, "bounty_value": 50 }
+        ]
+    }
+}

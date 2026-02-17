@@ -1,0 +1,72 @@
+{
+	"title": "Blood Ties - Daren Captured",
+	"lines": [
+		{
+			"id": "start",
+			"speaker": "Kael",
+			"text": "You did it. You actually brought him back alive.",
+			"portrait": "kael",
+			"next": "daren_speaks"
+		},
+		{
+			"id": "daren_speaks",
+			"speaker": "Daren",
+			"text": "Kael...? I thought you'd given up on me.",
+			"portrait": "daren",
+			"next": "kael_response"
+		},
+		{
+			"id": "kael_response",
+			"speaker": "Kael",
+			"text": "Never. But you're done running with bandits. I'll sort you out myself.",
+			"portrait": "kael",
+			"next": "join"
+		},
+		{
+			"id": "join",
+			"speaker": "Kael",
+			"text": "A deal's a deal. You've earned my bow and my skills. Where you go, I go.",
+			"portrait": "kael",
+			"effects": [
+				{
+					"type": "recruit_unit",
+					"unit_name": "Kael",
+					"unit_class": "BOUNTY_HUNTER",
+					"level": 3,
+					"max_hp": 24,
+					"strength": 7,
+					"magic": 0,
+					"skill": 9,
+					"speed": 8,
+					"luck": 6,
+					"defense": 4,
+					"resistance": 3,
+					"movement": 5,
+					"hp_growth": 55,
+					"str_growth": 40,
+					"mag_growth": 0,
+					"skl_growth": 50,
+					"spd_growth": 45,
+					"lck_growth": 35,
+					"def_growth": 20,
+					"res_growth": 15,
+					"weapon": {
+						"item_name": "Hunter's Bow",
+						"weapon_type": "BOW",
+						"might": 7,
+						"hit": 90,
+						"crit": 5,
+						"weight": 4,
+						"range_min": 2,
+						"range_max": 2,
+						"max_uses": 40,
+						"current_uses": 40
+					}
+				},
+				{ "type": "advance_quest", "quest_id": "sq_blood_ties", "stage": 2 },
+				{ "type": "complete_quest", "quest_id": "sq_blood_ties" },
+				{ "type": "set_flag", "flag": "sq_blood_ties_daren_captured" }
+			]
+		}
+	]
+}

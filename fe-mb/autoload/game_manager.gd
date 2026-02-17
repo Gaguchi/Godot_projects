@@ -36,6 +36,11 @@ var dungeon_completed: bool = false
 var pending_battle: Dictionary = {}
 # Format: { "enemies": Array[UnitData], "difficulty": int, "source": "overworld"|"dungeon" }
 var last_battle_victory: bool = false
+var pending_travel_path: Array[int] = []  # Remaining hops to resume after mid-travel encounter
+var pending_post_battle_dialogue: String = ""  # Dialogue to trigger after returning to overworld
+
+# Capture/bounty system
+var captured_enemies: Array[Resource] = []  # Array of UnitData for bounty turn-in
 
 # Party management
 var party: Array[Resource] = []  # Array of UnitData
@@ -73,8 +78,8 @@ func start_new_run() -> void:
 	current_node_id = -1
 	
 	party.clear()
-	gold = 50
-	food = 10
+	gold = 80
+	food = 15
 	
 	battles_won = 0
 	units_lost = 0
@@ -82,23 +87,90 @@ func start_new_run() -> void:
 	current_location_id = 0
 	pending_battle = {}
 	last_battle_victory = false
+	pending_travel_path.clear()
+	pending_post_battle_dialogue = ""
+	captured_enemies.clear()
+
+	# Reset dungeon state
+	current_dungeon_floor = 1
+	dungeon_completed = false
+	clear_dungeon_state()
+
+	# Reset all subsystems
+	EventBus.clear_all_flags()
+	QuestManager.reset()
+	EventManager.reset()
 
 	run_started.emit()
 	
-	# Add starter units
-	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7; u1.defense = 5; u1.current_armor = u1.defense
-	var i1 = ItemData.new(); i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; u1.equipped_weapon = i1;
+	# Add starter units — Roy (LORD), Marcus (KNIGHT), Lilina (MAGE)
+	var u1 = UnitData.new()
+	u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.is_player_unit = true
+	u1.level = 1; u1.max_hp = 22; u1.current_hp = 22
+	u1.strength = 6; u1.magic = 1; u1.skill = 6; u1.speed = 7; u1.luck = 7
+	u1.defense = 5; u1.resistance = 2; u1.movement = 5; u1.current_armor = u1.defense
+	u1.hp_growth = 80; u1.str_growth = 50; u1.mag_growth = 5; u1.skl_growth = 50
+	u1.spd_growth = 45; u1.lck_growth = 60; u1.def_growth = 30; u1.res_growth = 25
+	var i1 = ItemData.new(); i1.item_name = "Iron Sword"; i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; i1.weight = 5; u1.equipped_weapon = i1
+	_assign_starting_deck(u1)
 	add_unit(u1)
 
-	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.defense = 10; u2.current_armor = u2.defense
-	var i2 = ItemData.new(); i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; u2.equipped_weapon = i2;
+	var u2 = UnitData.new()
+	u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.is_player_unit = true
+	u2.level = 1; u2.max_hp = 28; u2.current_hp = 28
+	u2.strength = 8; u2.magic = 0; u2.skill = 7; u2.speed = 4; u2.luck = 4
+	u2.defense = 10; u2.resistance = 1; u2.movement = 5; u2.current_armor = u2.defense
+	u2.hp_growth = 70; u2.str_growth = 45; u2.mag_growth = 0; u2.skl_growth = 40
+	u2.spd_growth = 25; u2.lck_growth = 20; u2.def_growth = 50; u2.res_growth = 15
+	var i2 = ItemData.new(); i2.item_name = "Iron Lance"; i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; i2.weight = 8; u2.equipped_weapon = i2
+	_assign_starting_deck(u2)
 	add_unit(u2)
 
-	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.defense = 3; u3.current_armor = u3.defense
-	var i3 = ItemData.new(); i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 6; i3.hit = 85; i3.range_max = 2; u3.equipped_weapon = i3;
+	var u3 = UnitData.new()
+	u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.is_player_unit = true
+	u3.level = 1; u3.max_hp = 18; u3.current_hp = 18
+	u3.strength = 1; u3.magic = 8; u3.skill = 5; u3.speed = 6; u3.luck = 6
+	u3.defense = 3; u3.resistance = 7; u3.movement = 5; u3.current_armor = 0  # Mages have no armor
+	u3.hp_growth = 55; u3.str_growth = 5; u3.mag_growth = 65; u3.skl_growth = 40
+	u3.spd_growth = 40; u3.lck_growth = 45; u3.def_growth = 15; u3.res_growth = 50
+	var i3 = ItemData.new(); i3.item_name = "Fire"; i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 5; i3.hit = 90; i3.weight = 4; i3.range_max = 2; u3.equipped_weapon = i3
+	_assign_starting_deck(u3)
 	add_unit(u3)
 
 	print("[GameManager] New run started with 3 units")
+
+
+## Assign a starting deck to a unit based on their class
+func _assign_starting_deck(unit: UnitData) -> void:
+	var class_key: String = UnitData.UnitClass.keys()[unit.unit_class]
+	var file := FileAccess.open("res://data/cards/class_decks.json", FileAccess.READ)
+	if not file:
+		printerr("[GameManager] Failed to load class_decks.json")
+		return
+
+	var json := JSON.new()
+	var err := json.parse(file.get_as_text())
+	file.close()
+	if err != OK:
+		printerr("[GameManager] Failed to parse class_decks.json: %s" % json.get_error_message())
+		return
+
+	var all_decks: Dictionary = json.data
+	if class_key not in all_decks:
+		printerr("[GameManager] No deck found for class: %s" % class_key)
+		return
+
+	var deck_def: Dictionary = all_decks[class_key]
+	var cards_data: Array = deck_def.get("cards", [])
+
+	unit.deck.clear()
+	for card_entry in cards_data:
+		var copies: int = card_entry.get("copies", 1)
+		for i in copies:
+			var card := CardData.create_from_dict(card_entry)
+			unit.deck.append(card)
+
+	print("[GameManager] Assigned %d-card deck to %s (%s)" % [unit.deck.size(), unit.unit_name, class_key])
 
 
 ## End the current run
@@ -129,23 +201,23 @@ func remove_unit(unit: Resource) -> void:
 		resources_changed.emit()
 
 
-## Consume food when moving to a new node
+## Consume food when moving to a new node. If food runs out, party takes starvation damage.
 func consume_food(amount: int = 1) -> void:
 	food -= amount
 	if food < 0:
+		var starve_dmg := 3
 		food = 0
-		# Apply starvation penalty
-		_apply_starvation()
+		_apply_starvation(starve_dmg)
 	resources_changed.emit()
 
 
-## Apply starvation effects to party - deals HP damage to all alive units
-func _apply_starvation() -> void:
-	print("[GameManager] Party is starving! Each unit takes 3 HP damage.")
-	for unit_data in party:
-		if unit_data.is_alive():
-			unit_data.current_hp = max(1, unit_data.current_hp - 3)
-			print("[GameManager] %s takes starvation damage (%d HP remaining)" % [unit_data.unit_name, unit_data.current_hp])
+## Deal starvation damage to all living party members and notify the player
+func _apply_starvation(damage: int) -> void:
+	for unit in party:
+		if unit.is_alive():
+			unit.current_hp = max(1, unit.current_hp - damage)
+	EventBus.show_notification.emit("No food! Party takes %d starvation damage." % damage)
+	print("[GameManager] Starvation: -%d HP to all units" % damage)
 	party_changed.emit()
 
 
@@ -232,21 +304,42 @@ func clear_dungeon_state() -> void:
 	active_dungeon_current_room_id = 0
 	print("[GameManager] Cleared dungeon state")
 
+## Add a captured enemy for bounty turn-in
+func add_captured_enemy(unit_data: Resource) -> void:
+	captured_enemies.append(unit_data)
+	print("[GameManager] Captured: %s (bounty: %dg)" % [unit_data.unit_name, get_bounty_value(unit_data)])
+
+
+## Get bounty value for a captured unit (level-based tiers, or override if set)
+func get_bounty_value(unit_data: UnitData) -> int:
+	if unit_data.bounty_value > 0:
+		return unit_data.bounty_value
+	if unit_data.level <= 2:
+		return 20
+	elif unit_data.level <= 4:
+		return 40
+	else:
+		return 60
+
+
 ## Helper for debugging: ensures party has units
 func ensure_party() -> void:
 	if not party.is_empty():
 		return
 		
 	print("[GameManager] Party empty, adding debug units...")
-	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7; u1.defense = 5; u1.current_armor = u1.defense
-	var i1 = ItemData.new(); i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; u1.equipped_weapon = i1;
+	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7; u1.skill = 6; u1.luck = 7; u1.defense = 5; u1.resistance = 2; u1.current_armor = u1.defense
+	var i1 = ItemData.new(); i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; i1.weight = 5; u1.equipped_weapon = i1;
+	_assign_starting_deck(u1)
 	add_unit(u1)
 
-	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.defense = 10; u2.current_armor = u2.defense
-	var i2 = ItemData.new(); i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; u2.equipped_weapon = i2;
+	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.speed = 4; u2.skill = 7; u2.luck = 4; u2.defense = 10; u2.resistance = 1; u2.current_armor = u2.defense
+	var i2 = ItemData.new(); i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; i2.weight = 8; u2.equipped_weapon = i2;
+	_assign_starting_deck(u2)
 	add_unit(u2)
 
-	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.defense = 3; u3.current_armor = u3.defense
-	var i3 = ItemData.new(); i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 6; i3.hit = 85; i3.range_max = 2; u3.equipped_weapon = i3;
+	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.speed = 6; u3.skill = 5; u3.luck = 6; u3.defense = 3; u3.resistance = 7; u3.current_armor = 0
+	var i3 = ItemData.new(); i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 5; i3.hit = 90; i3.weight = 4; i3.range_max = 2; u3.equipped_weapon = i3;
+	_assign_starting_deck(u3)
 	add_unit(u3)
 

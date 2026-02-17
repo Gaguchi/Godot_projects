@@ -4,14 +4,15 @@ extends Resource
 ## Used for both player units and enemies
 
 enum UnitClass {
-	FIGHTER,    # Balanced melee
-	KNIGHT,     # High defense, low speed
-	CAVALIER,   # High movement
-	ARCHER,     # Ranged physical
-	MAGE,       # Ranged magic
-	CLERIC,     # Healer
-	THIEF,      # High speed, lockpicking
-	LORD        # Player's main character
+	FIGHTER,       # Balanced melee
+	KNIGHT,        # High defense, low speed
+	CAVALIER,      # High movement
+	ARCHER,        # Ranged physical
+	MAGE,          # Ranged magic
+	CLERIC,        # Healer
+	THIEF,         # High speed, lockpicking
+	LORD,          # Player's main character
+	BOUNTY_HUNTER  # Ranged + improved capture rates
 }
 
 @export_group("Identity")
@@ -20,6 +21,9 @@ enum UnitClass {
 @export var level: int = 1
 @export var experience: int = 0
 @export var is_player_unit: bool = true
+@export var is_bound: bool = false           # Captured/tied up in combat
+@export var is_capture_target: bool = false   # Flagged as quest capture target
+@export var bounty_value: int = 0             # Gold reward when turned in (0 = use default tier)
 
 @export_group("Current Stats")
 @export var current_hp: int = 20
@@ -33,7 +37,7 @@ enum UnitClass {
 @export var speed: int = 5         # Avoid, double attacks
 @export var luck: int = 5          # Crit avoid, various checks
 @export var defense: int = 5       # Max armor (absorbs damage before HP)
-@export var resistance: int = 2    # Legacy stat (unused — armor absorbs all damage)
+@export var resistance: int = 2    # Reduces magic damage (flat DR = floor(RES/2))
 @export var movement: int = 5      # Tiles per turn
 
 @export_group("Growth Rates (%)")
@@ -50,6 +54,10 @@ enum UnitClass {
 @export var equipped_weapon: Resource  # ItemData
 @export var inventory: Array[Resource] = []  # Array of ItemData
 
+@export_group("Card Deck")
+@export var deck: Array[Resource] = []  # Array of CardData
+@export var max_ap: int = 3  # Action points per turn in card combat
+
 const EXP_TO_LEVEL: int = 100  # EXP needed to level up
 
 
@@ -64,11 +72,27 @@ func is_alive() -> bool:
 
 
 ## Take damage — armor absorbs first, overflow goes to HP. Returns true if unit dies.
-func take_damage(amount: int) -> bool:
-	var armor_absorbed: int = min(current_armor, amount)
-	current_armor -= armor_absorbed
-	var remaining: int = amount - armor_absorbed
-	current_hp = max(0, current_hp - remaining)
+## Magic attacks are armor-piercing: half damage to armor, half directly to HP.
+func take_damage(amount: int, is_magic: bool = false) -> bool:
+	if amount <= 0:
+		return current_hp <= 0
+
+	if is_magic and current_armor > 0:
+		# Armor-piercing: half goes to armor, half bypasses to HP
+		var to_armor: int = int(amount / 2.0)
+		var to_hp: int = amount - to_armor
+		var armor_absorbed: int = min(current_armor, to_armor)
+		current_armor -= armor_absorbed
+		# Armor overflow (if armor < half damage) also goes to HP
+		to_hp += (to_armor - armor_absorbed)
+		current_hp = max(0, current_hp - to_hp)
+	else:
+		# Physical: armor absorbs first, overflow to HP
+		var armor_absorbed: int = min(current_armor, amount)
+		current_armor -= armor_absorbed
+		var remaining: int = amount - armor_absorbed
+		current_hp = max(0, current_hp - remaining)
+
 	return current_hp <= 0
 
 
@@ -80,12 +104,19 @@ func heal(amount: int) -> void:
 ## Full heal (HP and armor)
 func full_heal() -> void:
 	current_hp = max_hp
-	current_armor = defense
+	if unit_class == UnitClass.MAGE or unit_class == UnitClass.CLERIC:
+		current_armor = 0
+	else:
+		current_armor = defense
 
 
 ## Reset armor to max (called at the start of each combat room)
+## Mages and Clerics have no armor — they trade protection for magic power.
 func reset_armor() -> void:
-	current_armor = defense
+	if unit_class == UnitClass.MAGE or unit_class == UnitClass.CLERIC:
+		current_armor = 0
+	else:
+		current_armor = defense
 
 
 ## Add experience and check for level up. Returns stat gains dict if leveled up, empty dict otherwise.
@@ -128,6 +159,11 @@ func _level_up() -> Dictionary:
 	if randi() % 100 < res_growth:
 		resistance += 1
 		gains["res"] = 1
+
+	# AP increase at milestone levels (cap at 5)
+	if level in [5, 10, 15] and max_ap < 5:
+		max_ap += 1
+		print("[UnitData] %s gained +1 AP (now %d)" % [unit_name, max_ap])
 
 	print("[UnitData] %s leveled up to %d!" % [unit_name, level])
 	return gains
@@ -189,6 +225,7 @@ func get_class_name() -> String:
 		UnitClass.CLERIC: return "Cleric"
 		UnitClass.THIEF: return "Thief"
 		UnitClass.LORD: return "Lord"
+		UnitClass.BOUNTY_HUNTER: return "Bounty Hunter"
 	return "Unknown"
 
 
@@ -251,6 +288,11 @@ func to_dict() -> Dictionary:
 		if item and item.has_method("to_dict"):
 			inventory_list.append(item.to_dict())
 	
+	var deck_list = []
+	for card in deck:
+		if card and card.has_method("to_dict"):
+			deck_list.append(card.to_dict())
+
 	return {
 		"unit_name": unit_name,
 		"unit_class": unit_class,
@@ -277,7 +319,11 @@ func to_dict() -> Dictionary:
 		"def_growth": def_growth,
 		"res_growth": res_growth,
 		"equipped_weapon": weapon_dict,
-		"inventory": inventory_list
+		"inventory": inventory_list,
+		"deck": deck_list,
+		"max_ap": max_ap,
+		"is_capture_target": is_capture_target,
+		"bounty_value": bounty_value
 	}
 
 
@@ -309,6 +355,18 @@ func from_dict(data: Dictionary) -> void:
 	def_growth = data.get("def_growth", 25)
 	res_growth = data.get("res_growth", 20)
 	
+	is_capture_target = data.get("is_capture_target", false)
+	bounty_value = data.get("bounty_value", 0)
+	max_ap = data.get("max_ap", 3)
+
+	# Deserialize Deck
+	deck.clear()
+	var deck_data = data.get("deck", [])
+	for card_dict in deck_data:
+		var new_card = CardData.new()
+		new_card.from_dict(card_dict)
+		deck.append(new_card)
+
 	# Deserialize Weapon
 	var weapon_data = data.get("equipped_weapon", {})
 	if not weapon_data.is_empty():

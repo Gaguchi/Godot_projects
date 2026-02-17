@@ -1,0 +1,67 @@
+{
+    "id": "bandit_threat",
+    "lines": [
+        {
+            "id": "start",
+            "speaker": "Bandit Leader",
+            "text": "Hold it right there! This road has a toll now. Pay up or draw steel.",
+            "choices": [
+                {
+                    "text": "Pay the toll (15 gold)",
+                    "next": "pay",
+                    "condition": { "type": "has_gold", "amount": 15 },
+                    "effects": [
+                        { "type": "add_gold", "amount": -15 }
+                    ]
+                },
+                {
+                    "text": "Intimidate them (STR check)",
+                    "next": null,
+                    "effects": [
+                        {
+                            "type": "stat_check",
+                            "stat": "strength",
+                            "difficulty": 12,
+                            "success_next": "intimidate_success",
+                            "fail_next": "intimidate_fail"
+                        }
+                    ]
+                },
+                {
+                    "text": "Fight them!",
+                    "next": "fight",
+                    "effects": [
+                        { "type": "start_combat", "enemy_group": "bandits_small" }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "pay",
+            "speaker": "Bandit Leader",
+            "text": "Smart choice. You can pass. This time.",
+            "next": null
+        },
+        {
+            "id": "intimidate_success",
+            "speaker": "Bandit Leader",
+            "text": "Whoa, easy now! We don't want trouble. Go on through, no charge.",
+            "next": null
+        },
+        {
+            "id": "intimidate_fail",
+            "speaker": "Bandit Leader",
+            "text": "Ha! Nice try. But you don't scare us. Get 'em, boys!",
+            "effects": [
+                { "type": "start_combat", "enemy_group": "bandits_small" }
+            ],
+            "next": null
+        },
+        {
+            "id": "fight",
+            "speaker": "",
+            "text": "The bandits draw their weapons!",
+            "next": null
+        }
+    ]
+}

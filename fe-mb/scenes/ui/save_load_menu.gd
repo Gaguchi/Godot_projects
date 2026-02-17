@@ -48,11 +48,12 @@ func _refresh_slots() -> void:
 			btn.disabled = not is_save_mode
 			del_btn.visible = false # Can't delete empty slot
 		else:
-			var info = "Slot %d\n%s\nFloor %d | Gold: %d" % [
-				slot_index, 
-				metadata.get("date", "Unknown"), 
-				metadata.get("floor", 1), 
-				metadata.get("gold", 0)
+			var info = "Slot %d  —  %s\nGold: %d | Food: %d | Party: %d" % [
+				slot_index,
+				metadata.get("date", "Unknown"),
+				metadata.get("gold", 0),
+				metadata.get("food", 0),
+				metadata.get("party_count", 0)
 			]
 			btn.text = info
 			btn.disabled = false

@@ -1,0 +1,41 @@
+{
+	"quests": [
+		{
+			"id": "sq_blood_ties",
+			"name": "Blood Ties",
+			"source": "Pine Crossing Tavern",
+			"description": "Kael, a bounty hunter, asks you to capture her brother Daren alive. He fell in with a bandit gang operating near the frontier.",
+			"stages": [
+				{"stage": 0, "label": "Find Daren's gang on the road near Frontier Camp"},
+				{"stage": 1, "label": "Defeat the bandits (capture Daren alive if possible)"},
+				{"stage": 2, "label": "Return to report the outcome"}
+			],
+			"location_indicators": [
+				{"location": "Pine Crossing", "stage": -1}
+			],
+			"quest_nodes": [
+				{
+					"name": "Daren's Camp",
+					"x": 180,
+					"y": 510,
+					"region": "borderlands",
+					"connections": [0, 2],
+					"spawn_on_stage": 0,
+					"battle": {
+						"enemy_group": "darens_gang",
+						"name": "Daren's Bandits",
+						"capture_targets": [
+							{
+								"unit_name": "Daren",
+								"captured_dialogue": "sq_blood_ties_daren_captured",
+								"killed_dialogue": "sq_blood_ties_daren_killed",
+								"captured_flag": "daren_captured",
+								"killed_flag": "daren_killed"
+							}
+						]
+					}
+				}
+			]
+		}
+	]
+}

@@ -11,11 +11,13 @@ func get_save_path(slot: int) -> String:
 
 func save_game(slot: int) -> void:
 	var save_data = {
-		"version": "0.1.0",
+		"version": "0.3.0",
 		"timestamp": Time.get_unix_time_from_system(),
-		"date_string": Time.get_datetime_string_from_system(false, true), 
+		"date_string": Time.get_datetime_string_from_system(false, true),
 		"game_manager": _serialize_game_manager(),
-		# Add other systems here (e.g., QuestManager, WorldMap state)
+		"quest_manager": QuestManager.get_save_data(),
+		"event_manager": EventManager.get_save_data(),
+		"flags": EventBus.get_all_flags(),
 	}
 	
 	var path = get_save_path(slot)
@@ -24,6 +26,7 @@ func save_game(slot: int) -> void:
 		var json_string = JSON.stringify(save_data, "\t")
 		file.store_string(json_string)
 		print("[SaveManager] Game saved to slot %d at %s" % [slot, path])
+		EventBus.show_notification.emit("Progress saved.")
 	else:
 		printerr("[SaveManager] Failed to open save file for writing: %s" % FileAccess.get_open_error())
 
@@ -50,7 +53,10 @@ func load_game(slot: int) -> bool:
 	
 	# Restore State
 	_deserialize_game_manager(save_data.get("game_manager", {}))
-	
+	QuestManager.load_save_data(save_data.get("quest_manager", {}))
+	EventManager.load_save_data(save_data.get("event_manager", {}))
+	_deserialize_flags(save_data.get("flags", {}))
+
 	print("[SaveManager] Game loaded from slot %d." % slot)
 	return true
 
@@ -93,7 +99,8 @@ func get_slot_metadata(slot: int) -> Dictionary:
 		"date": data.get("date_string", "Unknown Date"),
 		"floor": gm_data.get("current_floor", 1),
 		"gold": gm_data.get("gold", 0),
-		"party_count": gm_data.get("party", []).size()
+		"food": gm_data.get("food", 0),
+		"party_count": gm_data.get("party", []).size(),
 	}
 
 # --- Serialization Helpers ---
@@ -108,6 +115,11 @@ func _serialize_game_manager() -> Dictionary:
 	# Since GameManager active_dungeon_rooms is an array of Resources, we need to handle it deep
 	# For now, let's focus on Party and Resources
 	
+	var captured_data: Array = []
+	for unit in GameManager.captured_enemies:
+		if unit.has_method("to_dict"):
+			captured_data.append(unit.to_dict())
+
 	return {
 		"is_run_active": GameManager.is_run_active,
 		"current_floor": GameManager.current_floor,
@@ -116,10 +128,11 @@ func _serialize_game_manager() -> Dictionary:
 		"party": party_data,
 		"battles_won": GameManager.battles_won,
 		"units_lost": GameManager.units_lost,
-
 		"last_battle_victory": GameManager.last_battle_victory,
-		"current_state": GameManager.current_state # Save enum as int
-		# "dungeon_state": ... (Complex, needs its own handler)
+		"current_state": GameManager.current_state,
+		"current_location_id": GameManager.current_location_id,
+		"nodes_visited": GameManager.nodes_visited,
+		"captured_enemies": captured_data,
 	}
 
 func _deserialize_game_manager(data: Dictionary) -> void:
@@ -134,12 +147,14 @@ func _deserialize_game_manager(data: Dictionary) -> void:
 	GameManager.units_lost = data.get("units_lost", 0)
 
 	GameManager.last_battle_victory = data.get("last_battle_victory", false)
-	
+	GameManager.current_location_id = data.get("current_location_id", 0)
+	GameManager.nodes_visited = data.get("nodes_visited", 0)
+
 	# Restore State (handling potential missing key for old saves)
 	var state_val = data.get("current_state", GameManager.GameState.MAIN_MENU)
 	GameManager.current_state = state_val
 	print("[SaveManager] Restored GameState: %s" % GameManager.GameState.keys()[state_val])
-	
+
 	# Reconstruct Party
 	GameManager.party.clear()
 	var party_raw = data.get("party", [])
@@ -147,6 +162,21 @@ func _deserialize_game_manager(data: Dictionary) -> void:
 		var unit = UnitData.new()
 		unit.from_dict(unit_dict)
 		GameManager.party.append(unit)
-	
+
+	# Reconstruct captured enemies
+	GameManager.captured_enemies.clear()
+	var captured_raw = data.get("captured_enemies", [])
+	for unit_dict in captured_raw:
+		var unit = UnitData.new()
+		unit.from_dict(unit_dict)
+		GameManager.captured_enemies.append(unit)
+
 	GameManager.party_changed.emit()
 	GameManager.resources_changed.emit()
+
+
+func _deserialize_flags(data: Dictionary) -> void:
+	if data.is_empty():
+		return
+	EventBus.set_flags_from_dict(data)
+	print("[SaveManager] Restored %d EventBus flags" % data.size())

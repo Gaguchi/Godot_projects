@@ -166,13 +166,15 @@ func _input(event: InputEvent) -> void:
 
 
 func _handle_advance() -> void:
-	get_viewport().set_input_as_handled()
 	if _is_typing:
 		# Skip typewriter, show all text immediately
 		_finish_typing()
+		get_viewport().set_input_as_handled()
 	elif not _choices_container.visible or _choices_container.get_child_count() == 0:
 		# No choices visible, advance dialogue
 		advance_requested.emit()
+		get_viewport().set_input_as_handled()
+	# When choices are visible, do NOT consume the event — let buttons receive it
 
 
 # =============================================================================
@@ -189,8 +191,8 @@ func show_line(speaker: String, text: String, portrait: String) -> void:
 		_speaker_label.text = speaker
 		_speaker_label.visible = true
 
-	# Portrait
-	if portrait != "":
+	# Portrait — only load if it's a valid resource path
+	if portrait != "" and portrait.begins_with("res://"):
 		var tex := load(portrait)
 		if tex:
 			_portrait_rect.texture = tex

@@ -91,6 +91,13 @@ func set_active_turn(active: bool) -> void:
 		selection_highlight.modulate = Color.WHITE
 
 
+## Set bound visual state (captured/tied up)
+func set_bound(bound: bool) -> void:
+	if unit_data:
+		unit_data.is_bound = bound
+	_update_visuals()
+
+
 ## Show/hide the unit name tooltip on hover
 func show_name_tooltip(show: bool) -> void:
 	if name_label:
@@ -124,8 +131,11 @@ func _update_visuals() -> void:
 		sprite.modulate = Color.WHITE
 
 	if unit_data:
+		# Dim if bound (captured)
+		if unit_data.is_bound:
+			sprite.modulate = Color(0.5, 0.5, 0.5, 0.6)
 		# Dim if already acted
-		if has_acted:
+		elif has_acted:
 			sprite.modulate = sprite.modulate.darkened(0.4)
 
 		# Update HP bar
@@ -165,6 +175,7 @@ func _get_class_letter() -> String:
 		UnitData.UnitClass.CLERIC: return "H"
 		UnitData.UnitClass.THIEF: return "T"
 		UnitData.UnitClass.LORD: return "L"
+		UnitData.UnitClass.BOUNTY_HUNTER: return "B"
 	return "?"
 
 
@@ -240,6 +251,20 @@ static func _generate_class_sprite(unit_class: UnitData.UnitClass, team_color: C
 			_fill_rect(img, 17, 0, 3, 3, gold)            # Crown left point
 			_fill_rect(img, 23, 0, 3, 3, gold)            # Crown center point
 			_fill_rect(img, 29, 0, 3, 3, gold)            # Crown right point
+		UnitData.UnitClass.BOUNTY_HUNTER:
+			_fill_rect(img, 8, 12, 3, 24, wood)           # Bow stave
+			_fill_rect(img, 6, 12, 3, 3, wood)            # Bow top
+			_fill_rect(img, 6, 33, 3, 3, wood)            # Bow bottom
+			_fill_rect(img, 34, 16, 2, 14, wood)          # Arrow
+			_fill_rect(img, 33, 14, 4, 3, metal)          # Arrowhead
+			# Rope coil (distinct from plain Archer)
+			var rope: Color = Color(0.7, 0.55, 0.3)
+			_fill_rect(img, 12, 34, 5, 3, rope)           # Rope coil bottom
+			_fill_rect(img, 11, 31, 3, 3, rope)           # Rope coil left
+			_fill_rect(img, 16, 31, 3, 3, rope)           # Rope coil right
+			_fill_rect(img, 12, 28, 5, 3, rope)           # Rope coil top
+			# Hood
+			_fill_circle(img, 24, 10, 7, dark)            # Dark hood over head
 
 	return ImageTexture.create_from_image(img)
 

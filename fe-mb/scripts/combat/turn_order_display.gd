@@ -117,13 +117,16 @@ func update_queue(queue: Array, active_index: int) -> void:
 		else:
 			letter.add_theme_color_override("font_color", Color(0.769, 0.267, 0.267))
 
-		# Highlight active unit (use cached styles)
+		# Highlight active unit (use cached styles, avoid redundant size changes)
 		if i == active_index:
-			panel.add_theme_stylebox_override("panel", _style_active_player if data.is_player_unit else _style_active_enemy)
-			panel.custom_minimum_size = Vector2(70, 50)
+			var target_style := _style_active_player if data.is_player_unit else _style_active_enemy
+			panel.add_theme_stylebox_override("panel", target_style)
+			if panel.custom_minimum_size != Vector2(70, 50):
+				panel.custom_minimum_size = Vector2(70, 50)
 		else:
 			panel.add_theme_stylebox_override("panel", _style_inactive)
-			panel.custom_minimum_size = Vector2(60, 44)
+			if panel.custom_minimum_size != Vector2(60, 44):
+				panel.custom_minimum_size = Vector2(60, 44)
 
 		panel.visible = true
 		display_index += 1

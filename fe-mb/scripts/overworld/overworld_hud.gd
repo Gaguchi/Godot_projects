@@ -3,6 +3,8 @@ extends CanvasLayer
 ## OverworldHUD - Bannerlord-style bottom panel showing party, location, and resources
 ## Built entirely in code. Add as child of WorldMap and call setup() with party data.
 
+signal quest_log_requested
+
 # Color palette - Stone & Steel theme
 const COLOR_PANEL_BG := Color(0.05, 0.055, 0.08, 0.95)
 const COLOR_IRON_BORDER := Color(0.227, 0.239, 0.282)
@@ -23,6 +25,7 @@ const CLASS_COLORS := {
 	UnitData.UnitClass.CLERIC: Color(0.8, 0.8, 0.8),
 	UnitData.UnitClass.THIEF: Color(0.4, 0.4, 0.45),
 	UnitData.UnitClass.CAVALIER: Color(0.55, 0.4, 0.3),
+	UnitData.UnitClass.BOUNTY_HUNTER: Color(0.6, 0.5, 0.8),
 }
 
 # Class initial letters
@@ -35,6 +38,7 @@ const CLASS_INITIALS := {
 	UnitData.UnitClass.CLERIC: "C",
 	UnitData.UnitClass.THIEF: "T",
 	UnitData.UnitClass.CAVALIER: "V",
+	UnitData.UnitClass.BOUNTY_HUNTER: "B",
 }
 
 # Node references (built in _ready)
@@ -143,6 +147,32 @@ func _build_ui() -> void:
 	_run_stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_run_stats_label.text = "Battles: 0 | Visited: 0"
 	location_section.add_child(_run_stats_label)
+
+	# Quest Log button
+	var quest_btn := Button.new()
+	quest_btn.text = "Quest Log"
+	quest_btn.custom_minimum_size = Vector2(100, 24)
+	quest_btn.add_theme_font_size_override("font_size", 12)
+	quest_btn.add_theme_color_override("font_color", COLOR_WORN_STONE)
+	quest_btn.add_theme_color_override("font_hover_color", COLOR_EMBER)
+	quest_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	quest_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var quest_style := StyleBoxFlat.new()
+	quest_style.bg_color = Color(0, 0, 0, 0)
+	quest_style.set_border_width_all(0)
+	quest_style.border_width_bottom = 1
+	quest_style.border_color = Color(COLOR_IRON_BORDER, 0.3)
+	quest_style.content_margin_top = 2
+	quest_style.content_margin_bottom = 2
+	quest_btn.add_theme_stylebox_override("normal", quest_style)
+
+	var quest_hover := quest_style.duplicate()
+	quest_hover.border_color = COLOR_EMBER
+	quest_btn.add_theme_stylebox_override("hover", quest_hover)
+
+	quest_btn.pressed.connect(func(): quest_log_requested.emit())
+	location_section.add_child(quest_btn)
 
 	# Separator
 	var sep2 := VSeparator.new()

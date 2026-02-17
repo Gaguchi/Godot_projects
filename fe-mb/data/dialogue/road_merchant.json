@@ -1,0 +1,47 @@
+{
+    "id": "road_merchant",
+    "lines": [
+        {
+            "id": "start",
+            "speaker": "Traveling Merchant",
+            "text": "Hail, travelers! I've got wares if you've got coin. Some fresh supplies, perhaps?",
+            "choices": [
+                {
+                    "text": "Buy food (10 gold)",
+                    "next": "buy_food",
+                    "condition": { "type": "has_gold", "amount": 10 },
+                    "effects": [
+                        { "type": "add_gold", "amount": -10 },
+                        { "type": "add_food", "amount": 3 }
+                    ]
+                },
+                {
+                    "text": "Ask about the road ahead",
+                    "next": "road_info"
+                },
+                {
+                    "text": "No thanks. Safe travels.",
+                    "next": "decline"
+                }
+            ]
+        },
+        {
+            "id": "buy_food",
+            "speaker": "Traveling Merchant",
+            "text": "Three days' rations, packed and ready. You won't regret it on the long road ahead.",
+            "next": null
+        },
+        {
+            "id": "road_info",
+            "speaker": "Traveling Merchant",
+            "text": "Watch yourself out there. I saw brigands camped near the southern crossroads. Nasty lot.",
+            "next": null
+        },
+        {
+            "id": "decline",
+            "speaker": "Traveling Merchant",
+            "text": "Suit yourself. The road is long and lonely — may fortune favor you.",
+            "next": null
+        }
+    ]
+}

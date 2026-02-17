@@ -1,0 +1,20 @@
+{
+	"name": "Borderkeep Castle",
+	"description": "A fortified stronghold guarding the eastern frontier. Well-stocked but expensive.",
+	"buildings": {
+		"inn": { "heal_cost_per_unit": 20 },
+		"shop": {
+			"stock": ["steel_sword", "steel_lance", "iron_bow", "thunder", "heal_staff", "vulnerary", "elixir", "food_rations"]
+		},
+		"tavern": {
+			"rumors": [
+				"The lord has been hiring sellswords. War is coming, mark my words.",
+				"Beyond the eastern gate lies the scorched lands. Only the desperate go there.",
+				"Steel weapons from the castle forge are the finest you'll find this side of the mountains.",
+				"There's talk of an ancient dungeon beneath the Stone Ruins. Treasure for the bold."
+			]
+		},
+		"guild": { "locked": true, "locked_text": "The castle guild only serves the lord's bannermen." },
+		"arena": { "locked": true, "locked_text": "The arena awaits the lord's tournament decree." }
+	}
+}

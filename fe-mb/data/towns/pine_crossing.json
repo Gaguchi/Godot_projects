@@ -1,0 +1,31 @@
+{
+	"name": "Pine Crossing",
+	"description": "A quiet crossroads settlement nestled among the pines.",
+	"buildings": {
+		"inn": { "heal_cost_per_unit": 8 },
+		"shop": {
+			"stock": ["iron_sword", "iron_lance", "vulnerary", "food_rations"]
+		},
+		"tavern": {
+			"rumors": [
+				"Wolves have grown bold on the northern roads. Travel in numbers.",
+				"A merchant caravan went missing near the Thornwood. Bandits, most like.",
+				"They say the old Stone Ruins are cursed. No one who enters comes out the same."
+			],
+			"quests": [
+				{
+					"quest_id": "sq_blood_ties",
+					"npc_name": "Kael",
+					"npc_desc": "A hooded bounty hunter nursing a drink alone.",
+					"dialogue_id": "sq_blood_ties_accept",
+					"show_conditions": [
+						{ "type": "not_flag", "flag": "sq_blood_ties_active" },
+						{ "type": "not_flag", "flag": "sq_blood_ties_complete" }
+					]
+				}
+			]
+		},
+		"guild": { "locked": true, "locked_text": "The guild hall is boarded shut." },
+		"arena": { "locked": true, "locked_text": "The fighting pit lies dormant." }
+	}
+}

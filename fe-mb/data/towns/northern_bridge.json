@@ -1,0 +1,19 @@
+{
+	"name": "Northern Bridge",
+	"description": "A small settlement built around the only bridge spanning the northern gorge.",
+	"buildings": {
+		"inn": { "heal_cost_per_unit": 10 },
+		"shop": {
+			"stock": ["iron_sword", "iron_lance", "fire", "vulnerary", "food_rations"]
+		},
+		"tavern": {
+			"rumors": [
+				"The bridge toll keeps going up. The mayor's getting greedy.",
+				"Mountain folk say they've seen strange lights in the gorge at night.",
+				"A company of knights rode north last month. Haven't been seen since."
+			]
+		},
+		"guild": { "locked": true, "locked_text": "Too small a town for a proper guild." },
+		"arena": { "locked": true, "locked_text": "No arena here. Try Borderkeep." }
+	}
+}

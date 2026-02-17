@@ -24,6 +24,12 @@ func decide_action(enemy: Node2D, player_units: Array, _enemy_units: Array) -> D
 	var enemy_pos: Vector2i = battle_grid.world_to_grid(enemy.position)
 	var weapon_range: Vector2i = battle_grid.get_weapon_range(enemy_data)
 
+	# Check for bound allies to untie (50% chance to prioritize untie)
+	if randf() < 0.5:
+		var bound_ally: Node2D = _find_adjacent_bound_ally(enemy, _enemy_units)
+		if bound_ally:
+			return {"action": "untie", "move_to": Vector2i(-1, -1), "target": bound_ally}
+
 	# Calculate all tiles this enemy can reach
 	var reachable: Array[Vector2i] = battle_grid.get_reachable_tiles(enemy)
 	var attack_candidates: Array[Vector2i] = [enemy_pos]
@@ -83,18 +89,16 @@ func decide_action(enemy: Node2D, player_units: Array, _enemy_units: Array) -> D
 
 
 ## Score a potential target for enemy AI decision-making
+## Deterministic scoring — all attacks always hit, no hit% weighting
 func _score_target(enemy_data: UnitData, target_data: UnitData, target_node: Node2D, forecast: Dictionary, enemy_pos: Vector2i, attack_pos: Vector2i) -> float:
 	var score: float = 0.0
 
-	# Expected damage (damage * hit chance / 100)
-	var expected_dmg: float = forecast.attacker_damage * forecast.attacker_hit / 100.0
-	if forecast.attacker_doubles:
-		expected_dmg *= 2.0
-	score += expected_dmg
+	# Direct damage (deterministic — always hits)
+	var dmg: float = forecast.attacker_damage
+	score += dmg
 
 	# Can we kill the target?
-	var total_dmg: int = forecast.attacker_damage * (2 if forecast.attacker_doubles else 1)
-	if total_dmg >= target_data.current_hp and forecast.attacker_hit >= 50:
+	if dmg >= target_data.current_hp:
 		score += 100.0
 
 	# Target is wounded (< 50% HP) - finish them off
@@ -111,10 +115,6 @@ func _score_target(enemy_data: UnitData, target_data: UnitData, target_node: Nod
 			score += 15.0
 		elif triangle < 0:
 			score -= 10.0
-
-	# Can double attack
-	if forecast.attacker_doubles:
-		score += 10.0
 
 	# Proximity bonus - prefer closer targets (less movement)
 	var move_dist: int = abs(attack_pos.x - enemy_pos.x) + abs(attack_pos.y - enemy_pos.y)
@@ -145,3 +145,16 @@ func _find_closest_player(enemy: Node2D, player_units: Array) -> Node2D:
 			nearest = unit
 
 	return nearest
+
+
+## Find an adjacent ally that is bound (for untie behavior)
+func _find_adjacent_bound_ally(enemy: Node2D, enemy_units: Array) -> Node2D:
+	var pos: Vector2i = battle_grid.world_to_grid(enemy.position)
+	for dir in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+		var adj_pos: Vector2i = pos + dir
+		var adj_unit: Node2D = battle_grid.get_unit_at(adj_pos)
+		if adj_unit and is_instance_valid(adj_unit) and adj_unit in enemy_units:
+			var data: UnitData = adj_unit.get_unit_data()
+			if data and data.is_bound:
+				return adj_unit
+	return null

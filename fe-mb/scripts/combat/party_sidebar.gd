@@ -20,8 +20,19 @@ var _slot_containers: Dictionary = {}  # unit_name -> PanelContainer (the slot i
 var _active_unit_name: String = ""
 var _vbox: VBoxContainer = null
 
+# Cached StyleBoxFlat objects (avoid re-creating every update to prevent message queue overflow)
+var _cached_slot_active: StyleBoxFlat = null
+var _cached_slot_inactive: StyleBoxFlat = null
+var _cached_hp_bg: StyleBoxFlat = null
+var _cached_hp_fill_green: StyleBoxFlat = null
+var _cached_hp_fill_amber: StyleBoxFlat = null
+var _cached_hp_fill_red: StyleBoxFlat = null
+var _hp_bar_color_tier: Dictionary = {}  # unit_name -> String ("green"/"amber"/"red")
+
 
 func setup(units: Array) -> void:
+	_init_cached_styles()
+
 	# --- Root panel styling ---
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = COLOR_PANEL_BG
@@ -137,7 +148,7 @@ func _create_unit_slot(data: UnitData) -> void:
 	hp_bar.value = data.current_hp
 	hp_bar.show_percentage = false
 	hp_bar.add_theme_font_size_override("font_size", 1)
-	_apply_hp_bar_style(hp_bar, data.current_hp, data.max_hp)
+	_apply_hp_bar_style(hp_bar, data.current_hp, data.max_hp, unit_name)
 	hp_row.add_child(hp_bar)
 
 	var hp_label := Label.new()
@@ -168,52 +179,83 @@ func _create_unit_slot(data: UnitData) -> void:
 	_vbox.add_child(slot)
 
 
+func _init_cached_styles() -> void:
+	# Slot styles (reused instead of creating new ones each time)
+	_cached_slot_active = StyleBoxFlat.new()
+	_cached_slot_active.bg_color = COLOR_ACTIVE_BG
+	_cached_slot_active.border_color = COLOR_EMBER
+	_cached_slot_active.set_border_width_all(2)
+	_cached_slot_active.set_corner_radius_all(3)
+	_cached_slot_active.set_content_margin_all(4)
+
+	_cached_slot_inactive = StyleBoxFlat.new()
+	_cached_slot_inactive.bg_color = Color(0.05, 0.055, 0.08, 0.0)
+	_cached_slot_inactive.border_color = COLOR_IRON_BORDER
+	_cached_slot_inactive.set_border_width_all(2)
+	_cached_slot_inactive.set_corner_radius_all(3)
+	_cached_slot_inactive.set_content_margin_all(4)
+
+	# HP bar styles (reused — just swap which fill style is assigned)
+	_cached_hp_bg = StyleBoxFlat.new()
+	_cached_hp_bg.bg_color = COLOR_HP_BAR_BG
+	_cached_hp_bg.set_corner_radius_all(2)
+
+	_cached_hp_fill_green = StyleBoxFlat.new()
+	_cached_hp_fill_green.bg_color = COLOR_MOSS_GREEN
+	_cached_hp_fill_green.set_corner_radius_all(2)
+
+	_cached_hp_fill_amber = StyleBoxFlat.new()
+	_cached_hp_fill_amber.bg_color = COLOR_EMBER
+	_cached_hp_fill_amber.set_corner_radius_all(2)
+
+	_cached_hp_fill_red = StyleBoxFlat.new()
+	_cached_hp_fill_red.bg_color = COLOR_BLOOD_RED
+	_cached_hp_fill_red.set_corner_radius_all(2)
+
+
 func _make_slot_style(is_active: bool) -> StyleBoxFlat:
+	if _cached_slot_active:
+		return _cached_slot_active if is_active else _cached_slot_inactive
+	# Fallback before setup()
 	var style := StyleBoxFlat.new()
 	if is_active:
 		style.bg_color = COLOR_ACTIVE_BG
 		style.border_color = COLOR_EMBER
 	else:
-		style.bg_color = Color(0.05, 0.055, 0.08, 0.0)  # transparent bg
+		style.bg_color = Color(0.05, 0.055, 0.08, 0.0)
 		style.border_color = COLOR_IRON_BORDER
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.corner_radius_top_left = 3
-	style.corner_radius_top_right = 3
-	style.corner_radius_bottom_left = 3
-	style.corner_radius_bottom_right = 3
-	style.content_margin_left = 4
-	style.content_margin_right = 4
-	style.content_margin_top = 4
-	style.content_margin_bottom = 4
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(3)
+	style.set_content_margin_all(4)
 	return style
 
 
-func _apply_hp_bar_style(hp_bar: ProgressBar, current_hp: int, max_hp: int) -> void:
+func _apply_hp_bar_style(hp_bar: ProgressBar, current_hp: int, max_hp: int, unit_name: String = "") -> void:
 	var hp_ratio: float = float(current_hp) / float(max_hp) if max_hp > 0 else 1.0
 
-	var fill_style := StyleBoxFlat.new()
-	fill_style.corner_radius_top_left = 2
-	fill_style.corner_radius_top_right = 2
-	fill_style.corner_radius_bottom_left = 2
-	fill_style.corner_radius_bottom_right = 2
-	if hp_ratio > 0.5:
-		fill_style.bg_color = COLOR_MOSS_GREEN
-	elif hp_ratio > 0.25:
-		fill_style.bg_color = COLOR_EMBER
-	else:
-		fill_style.bg_color = COLOR_BLOOD_RED
-	hp_bar.add_theme_stylebox_override("fill", fill_style)
+	# Determine color tier
+	var tier: String = "green"
+	if hp_ratio <= 0.25:
+		tier = "red"
+	elif hp_ratio <= 0.5:
+		tier = "amber"
 
-	var bg_style := StyleBoxFlat.new()
-	bg_style.bg_color = COLOR_HP_BAR_BG
-	bg_style.corner_radius_top_left = 2
-	bg_style.corner_radius_top_right = 2
-	bg_style.corner_radius_bottom_left = 2
-	bg_style.corner_radius_bottom_right = 2
-	hp_bar.add_theme_stylebox_override("background", bg_style)
+	# Only re-apply fill style if the color tier changed (avoids layout thrashing)
+	var prev_tier: String = _hp_bar_color_tier.get(unit_name, "")
+	if tier != prev_tier or prev_tier == "":
+		var fill_style: StyleBoxFlat
+		match tier:
+			"green": fill_style = _cached_hp_fill_green
+			"amber": fill_style = _cached_hp_fill_amber
+			"red": fill_style = _cached_hp_fill_red
+			_: fill_style = _cached_hp_fill_green
+		hp_bar.add_theme_stylebox_override("fill", fill_style)
+		if unit_name != "":
+			_hp_bar_color_tier[unit_name] = tier
+
+	# Background only needs to be set once, but it's cheap if cached
+	if prev_tier == "":
+		hp_bar.add_theme_stylebox_override("background", _cached_hp_bg)
 
 
 func _get_weapon_text(data: UnitData) -> String:
@@ -259,7 +301,7 @@ func _update_slot_from_data(unit_name: String, data: UnitData) -> void:
 	var hp_bar: ProgressBar = refs["hp_bar"]
 	hp_bar.max_value = data.max_hp
 	hp_bar.value = data.current_hp
-	_apply_hp_bar_style(hp_bar, data.current_hp, data.max_hp)
+	_apply_hp_bar_style(hp_bar, data.current_hp, data.max_hp, unit_name)
 
 	var hp_label: Label = refs["hp_label"]
 	hp_label.text = "%d" % data.current_hp

@@ -1,0 +1,19 @@
+{
+	"name": "South Junction",
+	"description": "A rough waystation where southern trade routes converge.",
+	"buildings": {
+		"inn": { "heal_cost_per_unit": 6 },
+		"shop": {
+			"stock": ["iron_axe", "iron_bow", "vulnerary", "food_rations"]
+		},
+		"tavern": {
+			"rumors": [
+				"The southern pass is crawling with deserters turned bandit.",
+				"If you're headed east, stock up on provisions. The land grows harsh.",
+				"Some fool tried to challenge the warlord's men. Didn't end well."
+			]
+		},
+		"guild": { "locked": true, "locked_text": "No guild presence this far south." },
+		"arena": { "locked": true, "locked_text": "The locals prefer settling scores in the alley." }
+	}
+}

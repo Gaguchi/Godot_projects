@@ -99,6 +99,51 @@ func _play_death(unit: Node2D) -> void:
 	await tween.finished
 
 
+## Play a single deterministic attack animation (for card system)
+## No hit/miss — always hits. Shows damage number.
+func play_single_attack(attacker: Node2D, target: Node2D, damage: int, is_magic: bool = false) -> void:
+	if not is_instance_valid(attacker) or not is_instance_valid(target):
+		return
+
+	# Slide attacker toward target
+	var original_pos: Vector2 = attacker.position
+	var direction: Vector2 = (target.position - attacker.position).normalized()
+	var slide_target: Vector2 = attacker.position + direction * 12.0
+
+	var slide_in: Tween = battlefield.create_tween()
+	slide_in.tween_property(attacker, "position", slide_target, 0.08).set_trans(Tween.TRANS_QUAD)
+	await slide_in.finished
+
+	# Flash target
+	if is_instance_valid(target):
+		if is_magic:
+			# Purple flash for magic
+			target.modulate = Color(0.7, 0.5, 1.0) * 1.5
+			var flash_tween: Tween = battlefield.create_tween()
+			flash_tween.tween_property(target, "modulate", Color.WHITE, 0.15)
+		else:
+			_flash_white(target)
+
+	# Damage number
+	if is_instance_valid(target):
+		_spawn_damage_number(target.position, damage, false, false)
+		if target.has_method("_update_visuals"):
+			target._update_visuals()
+
+	# Slide back
+	if is_instance_valid(attacker):
+		var slide_back: Tween = battlefield.create_tween()
+		slide_back.tween_property(attacker, "position", original_pos, 0.08).set_trans(Tween.TRANS_QUAD)
+		await slide_back.finished
+
+	await battlefield.get_tree().create_timer(0.2).timeout
+
+	# Death animation if target died
+	if is_instance_valid(target) and target.has_method("get_unit_data"):
+		if not target.get_unit_data().is_alive():
+			await _play_death(target)
+
+
 ## Spawn a floating damage number
 func _spawn_damage_number(world_pos: Vector2, damage: int, is_crit: bool, is_miss: bool) -> void:
 	if not DamageNumberScene:

@@ -34,6 +34,12 @@ var is_traveling: bool = false
 # Connection line references
 var connection_lines: Dictionary = {}  # "min_max" key -> Line2D
 
+# Dynamic quest nodes
+const QUEST_NODE_BASE_ID: int = 10000
+var _next_quest_node_id: int = QUEST_NODE_BASE_ID
+var _quest_nodes_active: Dictionary = {}  # "quest_id_nodeindex" -> node_id
+var _quest_battle_data: Dictionary = {}  # node_id -> battle config dict
+
 # Path preview
 var _preview_lines: Array[Line2D] = []
 
@@ -43,6 +49,9 @@ var _pending_hover_loc: LocationData = null
 # Event dialogue resource tracking
 var _pre_event_gold: int = 0
 var _pre_event_food: int = 0
+
+# Travel encounter state — tracks combat triggered from dialogue effects
+var _encounter_combat_data: Dictionary = {}
 
 
 func _ready() -> void:
@@ -56,13 +65,57 @@ func _ready() -> void:
 	overworld_hud = OverworldHUD.new()
 	add_child(overworld_hud)
 	overworld_hud.setup(GameManager.party)
+	overworld_hud.quest_log_requested.connect(_open_quest_log)
 
 	# Connect dialogue system for event resolution
 	DialogueManager.dialogue_finished.connect(_on_dialogue_finished)
+	DialogueManager.effect_executed.connect(_on_dialogue_effect_executed)
+
+	# Connect quest signals for dynamic node management
+	QuestManager.quest_started.connect(_on_quest_changed)
+	QuestManager.quest_completed.connect(_on_quest_changed)
+	QuestManager.quest_stage_changed.connect(_on_quest_stage_changed)
 
 	_setup_pause_menu()
 	_load_map("overworld")
 	_update_hud_location()
+	_update_quest_indicators()
+
+	# Guard against input during post-battle / post-dialogue resume
+	var _has_pending_work: bool = (
+		GameManager.pending_post_battle_dialogue != "" or
+		not GameManager.pending_travel_path.is_empty()
+	)
+	if _has_pending_work:
+		is_traveling = true  # Block clicks during resume
+
+	# Handle post-battle dialogue (e.g. quest capture resolution)
+	if GameManager.pending_post_battle_dialogue != "":
+		var dialogue_id: String = GameManager.pending_post_battle_dialogue
+		GameManager.pending_post_battle_dialogue = ""
+		await get_tree().create_timer(0.3).timeout
+		_pre_event_gold = GameManager.gold
+		_pre_event_food = GameManager.food
+		DialogueManager.start_dialogue(dialogue_id)
+		await DialogueManager.dialogue_finished
+
+	# Resume travel if returning from a mid-travel encounter
+	if not GameManager.pending_travel_path.is_empty():
+		var remaining_path = GameManager.pending_travel_path.duplicate()
+		GameManager.pending_travel_path.clear()
+		await get_tree().create_timer(0.3).timeout
+		EventBus.show_notification.emit("Resuming journey...")
+		_travel_path(remaining_path)  # sets is_traveling internally
+	elif _has_pending_work:
+		is_traveling = false  # Unblock only if _travel_path wasn't called
+
+	# Show prologue on first game start
+	if not EventBus.get_flag("prologue_seen"):
+		is_traveling = true  # Block map clicks during prologue
+		await get_tree().create_timer(0.5).timeout
+		DialogueManager.start_dialogue("prologue")
+		await DialogueManager.dialogue_finished
+		is_traveling = false
 
 
 func _setup_pause_menu() -> void:
@@ -84,7 +137,7 @@ func _load_map(map_name: String) -> void:
 	location_map.clear()
 	connection_lines.clear()
 
-	# Load data
+	# Load map data via NodeMapLoader (FTL-style: "nodes" key with explicit connections)
 	map_data = NodeMapLoader.load_map(map_name)
 	if map_data.is_empty():
 		push_error("[WorldMap] Failed to load map: " + map_name)
@@ -96,7 +149,7 @@ func _load_map(map_name: String) -> void:
 	for loc in locations:
 		location_map[loc.id] = loc
 
-	# Create procedural background
+	# Create procedural background (water + landmass + region tints)
 	_create_background()
 
 	# Draw connection lines
@@ -110,6 +163,9 @@ func _load_map(map_name: String) -> void:
 		node.location_unhovered.connect(_on_location_unhovered)
 		locations_container.add_child(node)
 		location_nodes[loc.id] = node
+
+	# Spawn dynamic quest nodes for active quests (before position restore)
+	_sync_quest_nodes()
 
 	# Restore or set starting position
 	var start_id = GameManager.current_location_id
@@ -269,6 +325,20 @@ func _on_dialogue_finished() -> void:
 	_animate_resource_change("food", GameManager.food - _pre_event_food)
 	overworld_hud.update_resources()
 	overworld_hud.update_party()
+	_sync_quest_nodes()
+	_update_reachable_locations()
+	_update_hud_location()
+	_update_quest_indicators()
+
+
+func _on_dialogue_effect_executed(effect_type: String, effect_data: Dictionary) -> void:
+	if effect_type == "start_combat":
+		var group_id: String = effect_data.get("enemy_group", "")
+		_encounter_combat_data = {
+			"enemy_group": group_id,
+			"enemies": EventManager.generate_enemies(group_id),
+			"name": "Ambush!",
+		}
 
 
 func _on_map_node_clicked(hit_node: Node) -> void:
@@ -336,9 +406,50 @@ func _travel_path(path: Array[int]) -> void:
 		GameManager.nodes_visited += 1
 		target_loc.visited = true
 
-		# Brief pause at intermediate nodes
+		# Roll for travel encounter on intermediate hops (not the final destination)
 		if i < path.size() - 1:
-			await get_tree().create_timer(hop_pause).timeout
+			var encounter = EventManager.roll_travel_encounter()
+			var remaining_path: Array[int] = []
+			for j in range(i + 1, path.size()):
+				remaining_path.append(path[j])
+
+			if encounter["type"] == "dialogue":
+				# Dialogue encounter — resolve inline, then check for combat
+				_encounter_combat_data = {}
+				_pre_event_gold = GameManager.gold
+				_pre_event_food = GameManager.food
+				is_traveling = false
+				_update_reachable_locations()
+				_update_hud_location()
+
+				DialogueManager.start_dialogue(encounter["dialogue_id"])
+				await DialogueManager.dialogue_finished
+
+				# Check if dialogue triggered a start_combat effect
+				if not _encounter_combat_data.is_empty():
+					GameManager.pending_travel_path = remaining_path
+					_start_encounter_battle(
+						_encounter_combat_data["enemies"],
+						_encounter_combat_data.get("name", "Ambush!")
+					)
+					_encounter_combat_data = {}
+					return
+
+				# No combat — resume traveling
+				is_traveling = true
+				await get_tree().create_timer(hop_pause).timeout
+
+			elif encounter["type"] == "battle":
+				# Direct battle encounter — save remaining path and transition
+				GameManager.pending_travel_path = remaining_path
+				var enemies = EventManager.generate_enemies(encounter.get("enemy_group", ""))
+				var ct: Array = encounter.get("capture_targets", [])
+				_start_encounter_battle(enemies, encounter.get("name", "Enemy Encounter"), ct)
+				return
+
+			else:
+				# No encounter — brief pause and continue
+				await get_tree().create_timer(hop_pause).timeout
 
 	_update_reachable_locations()
 	is_traveling = false
@@ -480,82 +591,60 @@ func _hide_hover_tooltip() -> void:
 func _trigger_location_event(loc: LocationData) -> void:
 	print("[WorldMap] Arrived at: %s (%s)" % [loc.location_name, LocationData.LocationType.keys()[loc.location_type]])
 
+	# Auto-save on arrival at any location
+	if GameManager.current_save_slot > 0:
+		SaveManager.save_game(GameManager.current_save_slot)
+
 	match loc.location_type:
-		LocationData.LocationType.BATTLE:
-			_start_battle(loc)
 		LocationData.LocationType.TOWN:
 			_enter_town(loc)
-		LocationData.LocationType.EVENT:
-			_trigger_random_event(loc)
 		LocationData.LocationType.CAMP:
 			_rest_at_camp(loc)
 		LocationData.LocationType.DUNGEON:
 			_enter_dungeon(loc)
 		LocationData.LocationType.EXIT:
 			_reach_exit(loc)
+		LocationData.LocationType.QUEST:
+			_enter_quest_battle(loc)
 
 
-func _start_battle(loc: LocationData) -> void:
-	var enemies: Array = []
-	var num_enemies = loc.enemy_party_size
-	var level = loc.enemy_level
-
-	for i in range(num_enemies):
-		var enemy = UnitData.new()
-		enemy.unit_name = "Bandit %d" % (i + 1)
-		enemy.is_player_unit = false
-		enemy.max_hp = 12 + (level * 3)
-		enemy.current_hp = enemy.max_hp
-		enemy.strength = 3 + level
-		enemy.speed = 3 + randi() % (level + 2)
-		enemy.defense = 1 + int(level / 2.0)
-		enemy.current_armor = enemy.defense
-
-		var weapon = ItemData.new()
-		weapon.weapon_type = (randi() % 3) as ItemData.WeaponType
-		weapon.might = 3 + int(level / 2.0)
-		weapon.hit = 80
-		weapon.range_max = 1
-		enemy.equipped_weapon = weapon
-
-		enemies.append(enemy)
-
+## Start a battle from a travel encounter (random battle or dialogue-triggered combat)
+func _start_encounter_battle(enemies: Array, encounter_name: String, capture_targets: Array = []) -> void:
 	GameManager.pending_battle = {
 		"enemies": enemies,
-		"difficulty": level,
-		"source": "overworld",
-		"location_id": loc.id,
-		"location_name": loc.location_name
+		"difficulty": 1,
+		"source": "travel_encounter",
+		"location_id": GameManager.current_location_id,
+		"location_name": encounter_name,
 	}
+	if not capture_targets.is_empty():
+		GameManager.pending_battle["capture_targets"] = capture_targets
 
-	print("[WorldMap] Starting battle: %d enemies (level %d)" % [num_enemies, level])
+	print("[WorldMap] Travel encounter battle: %s (%d enemies)" % [encounter_name, enemies.size()])
 	SceneLoader.change_scene_to_file("res://scenes/combat/battlefield.tscn")
 
 
 func _enter_town(loc: LocationData) -> void:
 	print("[WorldMap] Welcome to %s!" % loc.location_name)
-	for unit in GameManager.party:
-		if unit.is_alive():
-			unit.current_hp = min(unit.current_hp + 5, unit.max_hp)
-	EventBus.show_notification.emit("Welcome to %s! Party healed slightly." % loc.location_name)
-	overworld_hud.update_resources()
-	overworld_hud.update_party()
-
-
-func _trigger_random_event(_loc: LocationData) -> void:
-	# Snapshot resources before dialogue so we can animate changes after
-	_pre_event_gold = GameManager.gold
-	_pre_event_food = GameManager.food
-
-	# TODO: Wave 2 will use EventManager to pick dialogue based on location/flags
-	DialogueManager.start_dialogue("test_event_crossroads")
+	var town_menu := TownMenu.new()
+	add_child(town_menu)
+	town_menu.open(loc.location_name)
+	town_menu.town_closed.connect(func():
+		town_menu.queue_free()
+		overworld_hud.update_resources()
+		overworld_hud.update_party()
+	)
 
 
 func _rest_at_camp(loc: LocationData) -> void:
-	GameManager.rest_party(0.3)
-	EventBus.show_notification.emit("Rested at %s. Party healed 30%%." % loc.location_name)
-	overworld_hud.update_resources()
-	overworld_hud.update_party()
+	var popup := CampPopup.new()
+	add_child(popup)
+	popup.open(loc.location_name)
+	popup.popup_closed.connect(func():
+		popup.queue_free()
+		overworld_hud.update_resources()
+		overworld_hud.update_party()
+	)
 
 
 func _enter_dungeon(loc: LocationData) -> void:
@@ -567,6 +656,30 @@ func _enter_dungeon(loc: LocationData) -> void:
 func _reach_exit(loc: LocationData) -> void:
 	GameManager.end_run(true)
 	EventBus.show_notification.emit("Victory! You've conquered the campaign!")
+
+
+func _enter_quest_battle(loc: LocationData) -> void:
+	var battle_data: Dictionary = _quest_battle_data.get(loc.id, {})
+	if battle_data.is_empty():
+		EventBus.show_notification.emit("Nothing here...")
+		return
+
+	var enemy_group: String = battle_data.get("enemy_group", "")
+	var enemies: Array = EventManager.generate_enemies(enemy_group)
+	var battle_name: String = battle_data.get("name", "Quest Battle")
+	var capture_targets: Array = battle_data.get("capture_targets", [])
+
+	GameManager.pending_battle = {
+		"enemies": enemies,
+		"difficulty": 1,
+		"source": "quest_battle",
+		"location_id": loc.id,
+		"location_name": battle_name,
+		"capture_targets": capture_targets,
+	}
+
+	print("[WorldMap] Quest battle: %s (%d enemies)" % [battle_name, enemies.size()])
+	SceneLoader.change_scene_to_file("res://scenes/combat/battlefield.tscn")
 
 
 ## Update the HUD location section with current location info
@@ -608,6 +721,166 @@ func _animate_resource_change(resource_name: String, delta: int) -> void:
 	await tween.finished
 	if is_instance_valid(float_label):
 		float_label.queue_free()
+
+
+## Open the quest log overlay.
+func _open_quest_log() -> void:
+	if is_traveling or DialogueManager.is_active():
+		return
+	var quest_log := QuestLogPanel.new()
+	add_child(quest_log)
+
+
+# --- Dynamic Quest Nodes ---
+
+func _on_quest_changed(_quest_id: String) -> void:
+	_sync_quest_nodes()
+	_update_reachable_locations()
+	_update_quest_indicators()
+
+
+func _on_quest_stage_changed(_quest_id: String, _stage: int) -> void:
+	_sync_quest_nodes()
+	_update_reachable_locations()
+	_update_quest_indicators()
+
+
+## Synchronize dynamic quest nodes: create missing, remove stale.
+func _sync_quest_nodes() -> void:
+	var desired: Array = QuestManager.get_active_quest_nodes()
+	var desired_keys: Dictionary = {}
+
+	for entry in desired:
+		var key: String = "%s_%d" % [entry["quest_id"], entry["node_index"]]
+		desired_keys[key] = entry
+
+	# Remove nodes that shouldn't exist anymore
+	var keys_to_remove: Array = []
+	for key in _quest_nodes_active:
+		if key not in desired_keys:
+			keys_to_remove.append(key)
+	for key in keys_to_remove:
+		_remove_quest_node(key)
+
+	# Create nodes that should exist but don't
+	for key in desired_keys:
+		if key not in _quest_nodes_active:
+			_create_quest_node(key, desired_keys[key])
+
+
+func _create_quest_node(key: String, entry: Dictionary) -> void:
+	var data: Dictionary = entry["data"]
+	var node_id: int = _next_quest_node_id
+	_next_quest_node_id += 1
+
+	# Create LocationData
+	var loc := LocationData.new()
+	loc.id = node_id
+	loc.location_name = data.get("name", "Quest Location")
+	loc.location_type = LocationData.LocationType.QUEST
+	loc.position = Vector2(data.get("x", 0), data.get("y", 0))
+	var connections: Array = data.get("connections", [])
+	for c in connections:
+		loc.connected_locations.append(int(c))
+
+	# Register in data structures
+	locations.append(loc)
+	location_map[node_id] = loc
+
+	# Make connected nodes connect back to this one
+	for c_id in loc.connected_locations:
+		var c_loc: LocationData = location_map.get(c_id)
+		if c_loc and node_id not in c_loc.connected_locations:
+			c_loc.connected_locations.append(node_id)
+
+	# Create visual node
+	var vis_node = LocationNodeScene.instantiate()
+	vis_node.setup(loc)
+	vis_node.location_hovered.connect(_on_location_hovered)
+	vis_node.location_unhovered.connect(_on_location_unhovered)
+	locations_container.add_child(vis_node)
+	location_nodes[node_id] = vis_node
+
+	# Draw connection lines
+	for c_id in loc.connected_locations:
+		var other_loc: LocationData = location_map.get(c_id)
+		if other_loc:
+			var line = Line2D.new()
+			line.add_point(loc.position)
+			line.add_point(other_loc.position)
+			line.width = 2.0
+			line.default_color = Color(0.227, 0.239, 0.282, 0.4)
+			line.z_index = -5
+			connections_layer.add_child(line)
+			var conn_key = _connection_key(node_id, c_id)
+			connection_lines[conn_key] = line
+
+	# Store battle data if present
+	if data.has("battle"):
+		_quest_battle_data[node_id] = data["battle"]
+
+	_quest_nodes_active[key] = node_id
+	print("[WorldMap] Created quest node '%s' (id %d) at %s" % [loc.location_name, node_id, loc.position])
+
+
+func _remove_quest_node(key: String) -> void:
+	var node_id: int = _quest_nodes_active[key]
+	var loc: LocationData = location_map.get(node_id)
+
+	# If player is at this node, relocate to a connected base node
+	if GameManager.current_location_id == node_id and loc:
+		for c_id in loc.connected_locations:
+			if c_id < QUEST_NODE_BASE_ID and location_map.has(c_id):
+				GameManager.current_location_id = c_id
+				if player_pawn and location_nodes.has(c_id):
+					player_pawn.position = location_nodes[c_id].position
+				if camera:
+					camera.position = location_nodes[c_id].position
+				break
+
+	# Remove connection lines
+	if loc:
+		for c_id in loc.connected_locations:
+			var conn_key = _connection_key(node_id, c_id)
+			if connection_lines.has(conn_key):
+				var line: Line2D = connection_lines[conn_key]
+				if is_instance_valid(line):
+					line.queue_free()
+				connection_lines.erase(conn_key)
+			# Remove back-connection from the other node
+			var c_loc: LocationData = location_map.get(c_id)
+			if c_loc:
+				c_loc.connected_locations.erase(node_id)
+
+	# Remove visual node
+	if location_nodes.has(node_id):
+		var vis_node = location_nodes[node_id]
+		if is_instance_valid(vis_node):
+			vis_node.queue_free()
+		location_nodes.erase(node_id)
+
+	# Remove from data structures
+	location_map.erase(node_id)
+	for i in range(locations.size() - 1, -1, -1):
+		if locations[i].id == node_id:
+			locations.remove_at(i)
+			break
+
+	_quest_battle_data.erase(node_id)
+	_quest_nodes_active.erase(key)
+	print("[WorldMap] Removed quest node (id %d)" % node_id)
+
+
+## Update quest "!" indicators on location nodes based on QuestManager data.
+func _update_quest_indicators() -> void:
+	var quest_locs: Dictionary = QuestManager.get_quest_locations()
+	for id in location_nodes:
+		var node = location_nodes[id]
+		var loc: LocationData = location_map.get(id)
+		if loc and loc.location_name in quest_locs:
+			node.set_quest_indicator(true)
+		else:
+			node.set_quest_indicator(false)
 
 
 func _unhandled_input(event: InputEvent) -> void:

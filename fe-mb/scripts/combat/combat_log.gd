@@ -7,6 +7,7 @@ const MAX_ENTRIES: int = 100
 const PLAYER_COLOR: Color = Color(0.353, 0.541, 0.671)
 const ENEMY_COLOR: Color = Color(0.769, 0.267, 0.267)
 const SYSTEM_COLOR: Color = Color(0.69, 0.44, 0.25)
+const SUBDUE_COLOR: Color = Color(0.6, 0.5, 0.8)
 
 var _scroll: ScrollContainer
 var _log_vbox: VBoxContainer
@@ -113,6 +114,35 @@ func log_level_up(unit_name: String, gains: Dictionary) -> void:
 	if gains_str.is_empty():
 		gains_str = "No gains"
 	add_entry("%s leveled up! %s" % [unit_name, gains_str], SYSTEM_COLOR)
+
+
+## Log a subdue attempt
+func log_subdue(attacker_name: String, target_name: String, success: bool, is_player: bool) -> void:
+	if success:
+		add_entry("%s subdued %s!" % [attacker_name, target_name], SUBDUE_COLOR)
+	else:
+		var color: Color = PLAYER_COLOR if is_player else ENEMY_COLOR
+		add_entry("%s failed to subdue %s" % [attacker_name, target_name], color.lerp(Color.GRAY, 0.4))
+
+
+## Log an untie action
+func log_untie(rescuer_name: String, target_name: String, _is_player: bool) -> void:
+	add_entry("%s freed %s!" % [rescuer_name, target_name], SUBDUE_COLOR)
+
+
+## Log a card play (damage)
+func log_card_play(unit_name: String, card_name: String, target_name: String, damage: int) -> void:
+	add_entry("%s plays %s on %s - %d dmg" % [unit_name, card_name, target_name, damage], PLAYER_COLOR)
+
+
+## Log a card heal
+func log_card_heal(unit_name: String, card_name: String, target_name: String, healing: int) -> void:
+	add_entry("%s plays %s on %s - %d heal" % [unit_name, card_name, target_name, healing], Color(0.353, 0.541, 0.353))
+
+
+## Log a card effect (no damage/heal)
+func log_card_effect(unit_name: String, card_name: String) -> void:
+	add_entry("%s plays %s" % [unit_name, card_name], PLAYER_COLOR)
 
 
 ## Log a system message

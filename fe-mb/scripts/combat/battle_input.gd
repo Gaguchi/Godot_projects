@@ -9,8 +9,11 @@ signal move_requested(unit: Node2D, target: Vector2i)
 signal attack_requested(attacker: Node2D, target: Node2D)
 signal attack_after_move_requested(attacker: Node2D, target: Node2D, move_tile: Vector2i)
 signal wait_requested(unit: Node2D)
+signal subdue_requested(attacker: Node2D, target: Node2D)
 signal undo_move_requested()
 signal target_selection_cancelled()
+signal card_target_confirmed(target: Node2D)
+signal ground_target_confirmed(tile: Vector2i)
 
 ## References set by battlefield
 var battle_grid: BattleGrid
@@ -34,6 +37,12 @@ var _last_hovered_unit: Node2D = null
 var input_enabled: bool = false
 var is_selecting_target: bool = false
 var _is_post_move_target: bool = false  # Target selection after moving
+var _subdue_mode: bool = false  # When true, clicks on adjacent enemies attempt subdue instead of attack
+var _card_targeting: bool = false  # When true, selecting target for a card
+var _card_target_tiles: Array[Vector2i] = []  # Valid card target positions
+var _ground_targeting: bool = false  # When true, selecting ground tile for AOE
+var _ground_target_tiles: Array[Vector2i] = []
+var _ground_aoe_radius: int = 0
 
 
 func handle_input(event: InputEvent) -> void:
@@ -50,13 +59,20 @@ func handle_input(event: InputEvent) -> void:
 
 
 func update_hover() -> void:
-	if not input_enabled or not grid_overlay:
+	if not grid_overlay:
 		return
 
 	var hover: Vector2i = grid_overlay.get_hover_tile()
 	if hover == last_hover_tile:
 		return
 	last_hover_tile = hover
+
+	# AOE preview works even when input_enabled is false (visual only)
+	if _ground_targeting and _ground_aoe_radius > 0:
+		_update_aoe_preview(hover)
+
+	if not input_enabled:
+		return
 
 	# Show/hide unit name tooltip on hover
 	var hovered_unit: Node2D = null
@@ -83,6 +99,14 @@ func _get_world_mouse_position() -> Vector2:
 
 
 func _handle_click(grid_pos: Vector2i) -> void:
+	if _ground_targeting:
+		_handle_ground_target_click(grid_pos)
+		return
+
+	if _card_targeting:
+		_handle_card_target_click(grid_pos)
+		return
+
 	if is_selecting_target:
 		_handle_target_selection(grid_pos)
 		return
@@ -95,7 +119,8 @@ func _handle_click(grid_pos: Vector2i) -> void:
 	if clicked_unit:
 		var clicked_data: UnitData = clicked_unit.get_unit_data()
 		if not clicked_data.is_player_unit:
-			_handle_enemy_click(clicked_unit, grid_pos)
+			# In card mode, clicking enemies just shows info (no direct attack)
+			_show_unit_info(clicked_unit)
 	elif grid_pos in walkable_tiles:
 		# Store pre-move position for undo
 		pre_move_position = battle_grid.world_to_grid(selected_unit.position)
@@ -103,19 +128,36 @@ func _handle_click(grid_pos: Vector2i) -> void:
 
 
 func _handle_right_click() -> void:
+	if _ground_targeting:
+		_ground_targeting = false
+		_ground_target_tiles.clear()
+		if grid_overlay:
+			grid_overlay.set_aoe_preview_tiles([])
+			grid_overlay.clear_highlights()
+		print("[Input] Ground targeting cancelled (right-click)")
+		target_selection_cancelled.emit()
+		return
+
+	if _card_targeting:
+		# Cancel card targeting — return to hand
+		_card_targeting = false
+		_card_target_tiles.clear()
+		if grid_overlay:
+			grid_overlay.clear_highlights()
+		print("[Input] Card targeting cancelled (right-click)")
+		target_selection_cancelled.emit()
+		return
+
 	if is_selecting_target and _is_post_move_target and pre_move_position != Vector2i(-1, -1):
-		# Undo move during post-move target selection
 		_is_post_move_target = false
 		is_selecting_target = false
 		attacking_unit = null
 		undo_move_requested.emit()
 	elif is_selecting_target:
-		# Cancel target selection (e.g. direct attack cancelled) - wait instead
 		is_selecting_target = false
 		_is_post_move_target = false
 		attacking_unit = null
-		if active_unit:
-			wait_requested.emit(active_unit)
+		target_selection_cancelled.emit()
 
 
 func _handle_enemy_click(enemy: Node2D, grid_pos: Vector2i) -> void:
@@ -123,9 +165,24 @@ func _handle_enemy_click(enemy: Node2D, grid_pos: Vector2i) -> void:
 		_show_unit_info(enemy)
 		return
 
+	# Check if enemy is bound (can't attack or subdue bound enemies)
+	var enemy_data: UnitData = enemy.get_unit_data()
+	if enemy_data and enemy_data.is_bound:
+		return
+
 	if grid_pos in attackable_tiles:
-		# Direct attack without moving
 		var attacker: Node2D = selected_unit
+		# Subdue mode: only works at melee range (distance 1)
+		if _subdue_mode:
+			var attacker_pos: Vector2i = battle_grid.world_to_grid(attacker.position)
+			var dist: int = abs(grid_pos.x - attacker_pos.x) + abs(grid_pos.y - attacker_pos.y)
+			if dist == 1:
+				attacking_unit = attacker
+				_clear_selection_visuals()
+				_subdue_mode = false
+				subdue_requested.emit(attacker, enemy)
+				return
+		# Normal attack
 		attacking_unit = attacker
 		_clear_selection_visuals()
 		attack_requested.emit(attacker, enemy)
@@ -162,6 +219,11 @@ func enter_target_selection_after_move(unit: Node2D, attack_tiles: Array[Vector2
 		grid_overlay.set_attackable_tiles(attackable_tiles)
 
 
+## Toggle subdue mode on/off
+func set_subdue_mode(enabled: bool) -> void:
+	_subdue_mode = enabled
+
+
 ## Public deselect (called by battlefield for cleanup)
 func deselect_unit() -> void:
 	_deselect_unit()
@@ -193,6 +255,7 @@ func _deselect_unit() -> void:
 	pre_move_position = Vector2i(-1, -1)
 	is_selecting_target = false
 	_is_post_move_target = false
+	_subdue_mode = false
 
 	# Clear hover tooltip
 	if _last_hovered_unit and is_instance_valid(_last_hovered_unit) and _last_hovered_unit.has_method("show_name_tooltip"):
@@ -357,3 +420,104 @@ func _fade_panel_out(panel: Control) -> void:
 	if is_instance_valid(panel):
 		panel.visible = false
 		panel.modulate = Color(1, 1, 1, 1)
+
+
+## Enter card target selection mode — highlights valid target tiles
+func enter_card_target_selection(unit: Node2D, valid_targets: Array[Vector2i]) -> void:
+	_card_targeting = true
+	_card_target_tiles = valid_targets
+	attacking_unit = unit
+	input_enabled = true
+	print("[Input] Card target selection started — %d valid targets" % valid_targets.size())
+
+	if grid_overlay:
+		grid_overlay.set_walkable_tiles([])
+		grid_overlay.set_attackable_tiles(valid_targets)
+
+
+## Handle click during card target selection
+func _handle_card_target_click(grid_pos: Vector2i) -> void:
+	if grid_pos in _card_target_tiles:
+		var target: Node2D = battle_grid.get_unit_at(grid_pos)
+		if target:
+			_card_targeting = false
+			_card_target_tiles.clear()
+			if grid_overlay:
+				grid_overlay.clear_highlights()
+			card_target_confirmed.emit(target)
+			return
+
+	# Clicked outside valid targets — cancel
+	_card_targeting = false
+	_card_target_tiles.clear()
+	if grid_overlay:
+		grid_overlay.clear_highlights()
+	target_selection_cancelled.emit()
+
+
+## Clear movement highlights (called after unit has moved this turn)
+func clear_movement_highlights() -> void:
+	walkable_tiles.clear()
+	attack_range_tiles.clear()
+	if grid_overlay:
+		grid_overlay.set_walkable_tiles([])
+		grid_overlay.set_attackable_tiles([])
+
+
+## Enter ground target selection mode — highlights valid tiles for AOE
+func enter_ground_target_selection(unit: Node2D, valid_tiles: Array[Vector2i], aoe_radius: int) -> void:
+	_ground_targeting = true
+	_ground_target_tiles = valid_tiles
+	_ground_aoe_radius = aoe_radius
+	attacking_unit = unit
+	input_enabled = true
+
+	if grid_overlay:
+		grid_overlay.set_walkable_tiles([])
+		grid_overlay.set_attackable_tiles(valid_tiles)
+	print("[Input] Ground target selection started — %d valid tiles, AOE radius %d" % [valid_tiles.size(), aoe_radius])
+
+
+## Update AOE impact zone preview around hovered tile
+func _update_aoe_preview(hover: Vector2i) -> void:
+	if not grid_overlay or not battle_grid:
+		return
+
+	# Only show preview if hovering over a valid target tile
+	if hover not in _ground_target_tiles:
+		grid_overlay.set_aoe_preview_tiles([])
+		return
+
+	var preview: Array = [hover]
+	for x in range(hover.x - _ground_aoe_radius, hover.x + _ground_aoe_radius + 1):
+		for y in range(hover.y - _ground_aoe_radius, hover.y + _ground_aoe_radius + 1):
+			var pos := Vector2i(x, y)
+			if pos == hover:
+				continue
+			var dist: int = abs(pos.x - hover.x) + abs(pos.y - hover.y)
+			if dist <= _ground_aoe_radius and battle_grid.is_in_bounds(pos):
+				preview.append(pos)
+
+	grid_overlay.set_aoe_preview_tiles(preview)
+
+
+## Handle click during ground target selection
+func _handle_ground_target_click(grid_pos: Vector2i) -> void:
+	if grid_pos in _ground_target_tiles:
+		print("[Input] Ground target confirmed at (%d,%d)" % [grid_pos.x, grid_pos.y])
+		_ground_targeting = false
+		_ground_target_tiles.clear()
+		if grid_overlay:
+			grid_overlay.set_aoe_preview_tiles([])
+			grid_overlay.clear_highlights()
+		ground_target_confirmed.emit(grid_pos)
+		return
+
+	# Clicked outside valid tiles — cancel
+	print("[Input] Ground target click outside valid area (%d,%d) — cancelled" % [grid_pos.x, grid_pos.y])
+	_ground_targeting = false
+	_ground_target_tiles.clear()
+	if grid_overlay:
+		grid_overlay.set_aoe_preview_tiles([])
+		grid_overlay.clear_highlights()
+	target_selection_cancelled.emit()

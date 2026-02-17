@@ -208,6 +208,23 @@ static func build_map_visuals(map_data: Dictionary, parent: Node2D) -> Dictionar
 	return result
 
 
+## Extract road cells from map data WITHOUT building any sprites.
+## Used by FTL-style map to generate connections between locations.
+static func extract_road_cells(map_data: Dictionary) -> Array:
+	var road_cells: Array = []
+	for layer in map_data.get("layers", []):
+		if layer.get("type", "grid") != "grid":
+			continue
+		var grid_data = layer.get("data", [])
+		for y in range(grid_data.size()):
+			var row = grid_data[y]
+			for x in range(row.size()):
+				var tile_name = row[x]
+				if tile_name is String and is_road_tile(tile_name):
+					road_cells.append(Vector2i(x, y))
+	return road_cells
+
+
 ## Convert grid position to world position (center of tile)
 static func grid_to_world(grid_pos: Vector2i, ts: int = tile_size) -> Vector2:
 	return Vector2(grid_pos.x * ts + ts / 2, grid_pos.y * ts + ts / 2)
@@ -232,14 +249,13 @@ static func extract_locations(map_data: Dictionary, road_cells: Array) -> Array[
 		loc.location_name = loc_json.get("name", "Location %d" % i)
 		
 		# Parse type
-		var type_str = loc_json.get("type", "EVENT")
+		var type_str = loc_json.get("type", "CAMP")
 		match type_str:
 			"TOWN": loc.location_type = LocationData.LocationType.TOWN
-			"BATTLE": loc.location_type = LocationData.LocationType.BATTLE
-			"EVENT": loc.location_type = LocationData.LocationType.EVENT
 			"CAMP": loc.location_type = LocationData.LocationType.CAMP
 			"DUNGEON": loc.location_type = LocationData.LocationType.DUNGEON
 			"EXIT": loc.location_type = LocationData.LocationType.EXIT
+			_: loc.location_type = LocationData.LocationType.CAMP
 		
 		# Grid position stored, but position is world coords for compatibility
 		var grid_x = loc_json.get("x", 0)

@@ -29,6 +29,8 @@ SettingsManager="*res://autoload/settings_manager.gd"
 AudioManager="*res://autoload/audio_manager.gd"
 NotificationManager="*res://scripts/ui/notification_manager.gd"
 DialogueManager="*res://autoload/dialogue_manager.gd"
+EventManager="*res://autoload/event_manager.gd"
+QuestManager="*res://autoload/quest_manager.gd"
 
 [display]
 

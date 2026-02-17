@@ -115,6 +115,56 @@ func is_ranged() -> bool:
 	return range_max > 1
 
 
+## Create an ItemData from a catalog dictionary entry
+## Handles string-to-enum conversion for item_type and weapon_type
+static func create_from_dict(data: Dictionary) -> ItemData:
+	var item := ItemData.new()
+	item.item_name = data.get("item_name", "Item")
+	item.description = data.get("description", "")
+
+	# Handle string or int item_type
+	var it = data.get("item_type", 0)
+	if it is String:
+		match it:
+			"WEAPON": item.item_type = ItemType.WEAPON
+			"CONSUMABLE": item.item_type = ItemType.CONSUMABLE
+			"KEY_ITEM": item.item_type = ItemType.KEY_ITEM
+			_: item.item_type = ItemType.WEAPON
+	else:
+		item.item_type = it
+
+	# Handle string or int weapon_type
+	var wt = data.get("weapon_type", 0)
+	if wt is String:
+		match wt:
+			"NONE": item.weapon_type = WeaponType.NONE
+			"SWORD": item.weapon_type = WeaponType.SWORD
+			"LANCE": item.weapon_type = WeaponType.LANCE
+			"AXE": item.weapon_type = WeaponType.AXE
+			"BOW": item.weapon_type = WeaponType.BOW
+			"TOME": item.weapon_type = WeaponType.TOME
+			"STAFF": item.weapon_type = WeaponType.STAFF
+			_: item.weapon_type = WeaponType.NONE
+	else:
+		item.weapon_type = wt
+
+	item.might = data.get("might", 0)
+	item.hit = data.get("hit", 0)
+	item.crit = data.get("crit", 0)
+	item.weight = data.get("weight", 0)
+	item.range_min = data.get("range_min", 1)
+	item.range_max = data.get("range_max", 1)
+	item.max_uses = data.get("max_uses", 1)
+	item.current_uses = data.get("current_uses", item.max_uses)
+	item.is_unbreakable = data.get("is_unbreakable", false)
+	item.heal_amount = data.get("heal_amount", 0)
+	item.stat_boost = data.get("stat_boost", "")
+	item.boost_amount = data.get("boost_amount", 0)
+	item.buy_price = data.get("buy_price", 0)
+	item.sell_price = data.get("sell_price", 0)
+	return item
+
+
 ## Serialize to dictionary
 func to_dict() -> Dictionary:
 	return {

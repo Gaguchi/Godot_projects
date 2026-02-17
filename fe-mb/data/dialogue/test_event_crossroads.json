@@ -8,7 +8,6 @@
       "choices": [
         {
           "text": "Try to move it",
-          "next": "strength_check",
           "effects": [{ "type": "stat_check", "stat": "strength", "difficulty": 15, "success_next": "moved_tree", "fail_next": "failed_move" }]
         },
         {

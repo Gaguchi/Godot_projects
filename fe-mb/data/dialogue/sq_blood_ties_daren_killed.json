@@ -1,0 +1,31 @@
+{
+	"title": "Blood Ties - Daren Killed",
+	"lines": [
+		{
+			"id": "start",
+			"speaker": "Kael",
+			"text": "...He's dead, then.",
+			"portrait": "kael",
+			"next": "payment"
+		},
+		{
+			"id": "payment",
+			"speaker": "Kael",
+			"text": "I asked you to bring him back alive. But... the bandits gave you no choice. I understand.",
+			"portrait": "kael",
+			"next": "gold"
+		},
+		{
+			"id": "gold",
+			"speaker": "Kael",
+			"text": "Here's 80 gold for dealing with the gang. I need some time alone.",
+			"portrait": "kael",
+			"effects": [
+				{ "type": "add_gold", "amount": 80 },
+				{ "type": "advance_quest", "quest_id": "sq_blood_ties", "stage": 2 },
+				{ "type": "complete_quest", "quest_id": "sq_blood_ties" },
+				{ "type": "set_flag", "flag": "sq_blood_ties_daren_killed" }
+			]
+		}
+	]
+}

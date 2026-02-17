@@ -9,6 +9,8 @@ var grid_height: int = 7
 var walkable_tiles: Array = []
 var attackable_tiles: Array = []  # Attack-only tiles (beyond movement)
 var attack_from_position_tiles: Array = []  # Tiles from which we can attack
+var card_range_tiles: Array = []  # Card effective range preview (on hover)
+var aoe_preview_tiles: Array = []  # AOE impact zone preview (during ground targeting)
 var selected_tile: Vector2i = Vector2i(-1, -1)
 var hover_tile: Vector2i = Vector2i(-1, -1)
 var path_preview: Array = []  # Path from selected unit to hover tile
@@ -20,6 +22,8 @@ var attackable_color: Color = Color(1.0, 0.2, 0.2, 0.35)  # Red
 var selected_color: Color = Color(1.0, 1.0, 0.2, 0.5)  # Yellow
 var hover_color: Color = Color(1.0, 1.0, 1.0, 0.3)  # White
 var path_color: Color = Color(0.3, 0.9, 0.3, 0.6)  # Green
+var card_range_color: Color = Color(0.69, 0.44, 0.25, 0.2)  # Ember (soft)
+var aoe_preview_color: Color = Color(0.5, 0.3, 0.65, 0.4)  # Purple (AOE zone)
 
 
 func _ready() -> void:
@@ -46,11 +50,20 @@ func _process(_delta: float) -> void:
 func _draw() -> void:
 	_draw_grid()
 
+	# Card range preview (below everything else)
+	for tile in card_range_tiles:
+		_draw_tile_highlight(tile, card_range_color)
+
 	for tile in walkable_tiles:
 		_draw_tile_highlight(tile, walkable_color)
 
 	for tile in attackable_tiles:
 		_draw_tile_highlight(tile, attackable_color)
+
+	# AOE impact preview (above attack highlights)
+	for tile in aoe_preview_tiles:
+		_draw_tile_highlight(tile, aoe_preview_color)
+		_draw_tile_border(tile, Color(0.5, 0.3, 0.65, 0.7), 2.0)
 
 	_draw_path_preview()
 
@@ -137,10 +150,24 @@ func set_path_preview(path: Array) -> void:
 	queue_redraw()
 
 
+## Set card range preview tiles
+func set_card_range_tiles(tiles: Array) -> void:
+	card_range_tiles = tiles
+	queue_redraw()
+
+
+## Set AOE impact preview tiles
+func set_aoe_preview_tiles(tiles: Array) -> void:
+	aoe_preview_tiles = tiles
+	queue_redraw()
+
+
 ## Clear all highlights
 func clear_highlights() -> void:
 	walkable_tiles.clear()
 	attackable_tiles.clear()
+	card_range_tiles.clear()
+	aoe_preview_tiles.clear()
 	path_preview.clear()
 	selected_tile = Vector2i(-1, -1)
 	queue_redraw()

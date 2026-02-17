@@ -1,0 +1,20 @@
+{
+	"name": "Riverside Market",
+	"description": "A bustling trade hub where the river meets the road.",
+	"buildings": {
+		"inn": { "heal_cost_per_unit": 12 },
+		"shop": {
+			"stock": ["iron_sword", "iron_lance", "iron_axe", "iron_bow", "fire", "vulnerary", "elixir", "food_rations"]
+		},
+		"tavern": {
+			"rumors": [
+				"The river's been running low this season. Bad omen, the fishermen say.",
+				"Borderkeep Castle has doubled its garrison. Something's got the lord spooked.",
+				"I heard there's good coin to be made clearing the roads of brigands.",
+				"A traveling healer passed through last week. Sold potions at a fair price."
+			]
+		},
+		"guild": { "locked": true, "locked_text": "The guild is accepting no new contracts." },
+		"arena": { "locked": true, "locked_text": "The arena is closed for repairs." }
+	}
+}

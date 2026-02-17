@@ -5,6 +5,7 @@ signal exit_requested
 
 @onready var resume_btn: Button = $Panel/VBox/ResumeBtn
 @onready var save_btn: Button = $Panel/VBox/SaveBtn
+@onready var load_btn: Button = $Panel/VBox/LoadBtn
 @onready var party_btn: Button = $Panel/VBox/PartyBtn
 @onready var exit_btn: Button = $Panel/VBox/ExitBtn
 @onready var save_load_menu: Control = $SaveLoadMenu
@@ -14,6 +15,7 @@ signal exit_requested
 func _ready() -> void:
 	resume_btn.pressed.connect(_on_resume_pressed)
 	save_btn.pressed.connect(_on_save_pressed)
+	load_btn.pressed.connect(_on_load_pressed)
 	party_btn.pressed.connect(_on_party_pressed)
 	$Panel/VBox/SettingsBtn.pressed.connect(_on_settings_pressed)
 	exit_btn.pressed.connect(_on_exit_pressed)
@@ -66,6 +68,10 @@ func _on_save_pressed() -> void:
 	save_load_menu.setup(true, "Save Progress")
 	save_load_menu.show()
 
+func _on_load_pressed() -> void:
+	save_load_menu.setup(false, "Load Game")
+	save_load_menu.show()
+
 func _on_party_pressed() -> void:
 	party_screen.setup()
 	party_screen.show()
@@ -99,7 +105,11 @@ func _on_slot_selected(slot_index: int) -> void:
 		GameManager.current_save_slot = slot_index
 		SaveManager.save_game(slot_index)
 		save_load_menu.hide()
-		# Optional: Show "Saved!" label
 	else:
-		# Generally pause menu is for saving, but if we allowed loading:
-		pass
+		print("[PauseMenu] Loading from slot %d..." % slot_index)
+		save_load_menu.hide()
+		close()
+		SaveManager.load_game(slot_index)
+		GameManager.current_save_slot = slot_index
+		GameManager.change_state(GameManager.GameState.OVERWORLD)
+		SceneLoader.change_scene_to_file("res://scenes/overworld/world_map.tscn")

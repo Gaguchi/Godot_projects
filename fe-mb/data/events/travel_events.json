@@ -1,0 +1,70 @@
+[
+    {
+        "id": "road_merchant",
+        "type": "dialogue",
+        "dialogue_id": "road_merchant",
+        "weight": 10,
+        "one_shot": false,
+        "conditions": []
+    },
+    {
+        "id": "bandit_threat",
+        "type": "dialogue",
+        "dialogue_id": "bandit_threat",
+        "weight": 8,
+        "one_shot": false,
+        "conditions": []
+    },
+    {
+        "id": "wounded_traveler",
+        "type": "dialogue",
+        "dialogue_id": "wounded_traveler",
+        "weight": 6,
+        "one_shot": false,
+        "conditions": []
+    },
+    {
+        "id": "bandit_ambush",
+        "type": "battle",
+        "enemy_group": "bandits_small",
+        "weight": 8,
+        "one_shot": false,
+        "conditions": []
+    },
+    {
+        "id": "wolf_pack",
+        "type": "battle",
+        "enemy_group": "wolves",
+        "weight": 6,
+        "one_shot": false,
+        "conditions": []
+    },
+    {
+        "id": "brigand_raiders",
+        "type": "battle",
+        "enemy_group": "brigands",
+        "weight": 4,
+        "one_shot": false,
+        "conditions": []
+    },
+    {
+        "id": "sq_blood_ties_encounter",
+        "type": "battle",
+        "enemy_group": "darens_gang",
+        "weight": 100,
+        "one_shot": true,
+        "conditions": [
+            { "type": "has_flag", "flag": "sq_blood_ties_active" },
+            { "type": "not_flag", "flag": "sq_blood_ties_complete" }
+        ],
+        "capture_targets": [
+            {
+                "unit_name": "Daren",
+                "captured_dialogue": "sq_blood_ties_daren_captured",
+                "killed_dialogue": "sq_blood_ties_daren_killed",
+                "captured_flag": "sq_blood_ties_daren_captured",
+                "killed_flag": "sq_blood_ties_daren_killed"
+            }
+        ]
+    }
+]

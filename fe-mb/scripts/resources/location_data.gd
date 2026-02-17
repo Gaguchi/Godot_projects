@@ -4,16 +4,15 @@ class_name LocationData
 
 enum LocationType {
 	TOWN,       # Shop, recruit, rest
-	BATTLE,     # Combat encounter
-	EVENT,      # Random event
 	CAMP,       # Rest and heal
 	DUNGEON,    # Enter dungeon (Slay the Spire style)
-	EXIT        # Exit to next region
+	EXIT,       # Exit to next region
+	QUEST       # Dynamic quest objective (battle, event)
 }
 
 @export var id: int = 0
 @export var location_name: String = "Unknown"
-@export var location_type: LocationType = LocationType.EVENT
+@export var location_type: LocationType = LocationType.CAMP
 @export var position: Vector2 = Vector2.ZERO
 @export var connected_locations: Array[int] = []  # IDs of connected locations
 @export var visited: bool = false
@@ -32,11 +31,10 @@ enum LocationType {
 func get_icon_text() -> String:
 	match location_type:
 		LocationType.TOWN: return "🏘️"
-		LocationType.BATTLE: return "⚔️"
-		LocationType.EVENT: return "❓"
 		LocationType.CAMP: return "⛺"
 		LocationType.DUNGEON: return "🏰"
 		LocationType.EXIT: return "🚪"
+		LocationType.QUEST: return "⚔️"
 	return "?"
 
 
@@ -44,9 +42,8 @@ func get_icon_text() -> String:
 func get_color() -> Color:
 	match location_type:
 		LocationType.TOWN: return Color.CORNFLOWER_BLUE
-		LocationType.BATTLE: return Color.INDIAN_RED
-		LocationType.EVENT: return Color.GOLD
 		LocationType.CAMP: return Color.FOREST_GREEN
 		LocationType.DUNGEON: return Color.DARK_VIOLET
 		LocationType.EXIT: return Color.WHITE
+		LocationType.QUEST: return Color(0.85, 0.3, 0.2)
 	return Color.GRAY

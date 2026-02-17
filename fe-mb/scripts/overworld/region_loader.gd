@@ -62,11 +62,11 @@ static func _create_fallback_region(region_index: int) -> RegionData:
 	var start_conns: Array[int] = [1, 2]
 	start.connected_locations = start_conns
 	
-	var battle1 = _create_location(1, "Forest Path", LocationData.LocationType.BATTLE, Vector2(200, 150))
+	var battle1 = _create_location(1, "Forest Path", LocationData.LocationType.CAMP, Vector2(200, 150))
 	var battle1_conns: Array[int] = [0, 3]
 	battle1.connected_locations = battle1_conns
-	
-	var battle2 = _create_location(2, "Mountain Road", LocationData.LocationType.BATTLE, Vector2(200, 350))
+
+	var battle2 = _create_location(2, "Mountain Road", LocationData.LocationType.CAMP, Vector2(200, 350))
 	var battle2_conns: Array[int] = [0, 3]
 	battle2.connected_locations = battle2_conns
 	
@@ -78,7 +78,7 @@ static func _create_fallback_region(region_index: int) -> RegionData:
 	var dungeon_conns: Array[int] = [3, 6]
 	dungeon.connected_locations = dungeon_conns
 	
-	var event = _create_location(5, "Ancient Shrine", LocationData.LocationType.EVENT, Vector2(550, 350))
+	var event = _create_location(5, "Ancient Shrine", LocationData.LocationType.CAMP, Vector2(550, 350))
 	var event_conns: Array[int] = [3, 6]
 	event.connected_locations = event_conns
 	

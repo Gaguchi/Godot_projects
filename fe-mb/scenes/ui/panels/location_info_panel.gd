@@ -21,9 +21,8 @@ func setup(location: LocationData):
 func _get_description(type: int) -> String:
 	match type:
 		LocationData.LocationType.TOWN: return "A safe haven to rest and trade."
-		LocationData.LocationType.BATTLE: return "Enemy forces detected ahead."
-		LocationData.LocationType.EVENT: return "Unknown anomaly."
 		LocationData.LocationType.CAMP: return "A quiet spot to recover."
 		LocationData.LocationType.DUNGEON: return "A dangerous dungeon entrance."
 		LocationData.LocationType.EXIT: return "Gateway to the next region."
+		LocationData.LocationType.QUEST: return "A quest objective awaits."
 		_: return "Unknown location."

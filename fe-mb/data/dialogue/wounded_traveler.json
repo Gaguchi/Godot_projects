@@ -1,0 +1,57 @@
+{
+    "id": "wounded_traveler",
+    "lines": [
+        {
+            "id": "start",
+            "speaker": "Wounded Traveler",
+            "text": "Please... help me. Bandits took everything. I just need some food to make it to the next town.",
+            "choices": [
+                {
+                    "text": "Give food (2 rations)",
+                    "next": "give_food",
+                    "effects": [
+                        { "type": "add_food", "amount": -2 },
+                        { "type": "set_flag", "flag": "helped_traveler" }
+                    ]
+                },
+                {
+                    "text": "Give gold (5 gold)",
+                    "next": "give_gold",
+                    "condition": { "type": "has_gold", "amount": 5 },
+                    "effects": [
+                        { "type": "add_gold", "amount": -5 },
+                        { "type": "set_flag", "flag": "helped_traveler" }
+                    ]
+                },
+                {
+                    "text": "Sorry, we can't spare anything.",
+                    "next": "refuse"
+                }
+            ]
+        },
+        {
+            "id": "give_food",
+            "speaker": "Wounded Traveler",
+            "text": "Bless you. Take this — it's all I have left, but you need it more than me now.",
+            "effects": [
+                { "type": "add_gold", "amount": 8 }
+            ],
+            "next": null
+        },
+        {
+            "id": "give_gold",
+            "speaker": "Wounded Traveler",
+            "text": "Thank you, kind souls. I heard there's a hidden cache near the old ruins. Maybe it'll help you.",
+            "effects": [
+                { "type": "add_food", "amount": 1 }
+            ],
+            "next": null
+        },
+        {
+            "id": "refuse",
+            "speaker": "Wounded Traveler",
+            "text": "I... I understand. The road is hard on everyone.",
+            "next": null
+        }
+    ]
+}

@@ -39,7 +39,7 @@ static func parse_locations(map_data: Dictionary) -> Array[LocationData]:
 		loc.id = node_dict.get("id", 0)
 		loc.location_name = node_dict.get("name", "Unknown")
 		loc.position = Vector2(node_dict.get("x", 0), node_dict.get("y", 0))
-		loc.location_type = _parse_location_type(node_dict.get("type", "EVENT"))
+		loc.location_type = _parse_location_type(node_dict.get("type", "CAMP"))
 
 		# Build connections (bidirectional)
 		var connections = node_dict.get("connections", [])
@@ -90,12 +90,10 @@ static func find_spawn_node(map_data: Dictionary) -> int:
 static func _parse_location_type(type_str: String) -> LocationData.LocationType:
 	match type_str.to_upper():
 		"TOWN": return LocationData.LocationType.TOWN
-		"BATTLE": return LocationData.LocationType.BATTLE
-		"EVENT": return LocationData.LocationType.EVENT
 		"CAMP": return LocationData.LocationType.CAMP
 		"DUNGEON": return LocationData.LocationType.DUNGEON
 		"EXIT": return LocationData.LocationType.EXIT
-	return LocationData.LocationType.EVENT
+	return LocationData.LocationType.CAMP
 
 
 ## Ensure all connections are bidirectional

@@ -1,0 +1,72 @@
+{
+	"title": "Blood Ties - Quest Acceptance",
+	"lines": [
+		{
+			"id": "start",
+			"speaker": "Kael",
+			"text": "You there. You look like capable fighters. I have a job, if you've got the stomach for it.",
+			"portrait": "kael",
+			"next": "explain"
+		},
+		{
+			"id": "explain",
+			"speaker": "Kael",
+			"text": "My brother Daren fell in with a bandit gang. They've been raiding travelers on the road near Frontier Camp.",
+			"portrait": "kael",
+			"next": "request"
+		},
+		{
+			"id": "request",
+			"speaker": "Kael",
+			"text": "I need him captured alive. Not killed. Use the Subdue skill when he's weakened, and tie him up before his friends can free him.",
+			"portrait": "kael",
+			"next": "offer",
+			"choices": [
+				{
+					"text": "We'll bring him back alive.",
+					"next": "accept"
+				},
+				{
+					"text": "What's in it for us?",
+					"next": "offer"
+				},
+				{
+					"text": "Not our problem.",
+					"next": "decline"
+				}
+			]
+		},
+		{
+			"id": "offer",
+			"speaker": "Kael",
+			"text": "Capture Daren, and I'll join your company. I'm a bounty hunter by trade. If he dies... I'll pay you 80 gold, but we part ways after that.",
+			"portrait": "kael",
+			"choices": [
+				{
+					"text": "You have a deal.",
+					"next": "accept"
+				},
+				{
+					"text": "We'll think about it.",
+					"next": "decline"
+				}
+			]
+		},
+		{
+			"id": "accept",
+			"speaker": "Kael",
+			"text": "Good. Daren's gang has been spotted on the road between here and Frontier Camp. Travel that way and you'll find them. Remember — use Subdue on weakened enemies to tie them up.",
+			"portrait": "kael",
+			"effects": [
+				{ "type": "start_quest", "quest_id": "sq_blood_ties" },
+				{ "type": "advance_quest", "quest_id": "sq_blood_ties", "stage": 1 }
+			]
+		},
+		{
+			"id": "decline",
+			"speaker": "Kael",
+			"text": "Suit yourself. I'll be here if you change your mind.",
+			"portrait": "kael"
+		}
+	]
+}

@@ -63,6 +63,12 @@ signal dialogue_requested(dialogue_id: String)
 @warning_ignore("unused_signal")
 signal location_arrived(location_id: int)
 
+# Travel encounter signals
+@warning_ignore("unused_signal")
+signal travel_encounter_started(encounter_data: Dictionary)
+@warning_ignore("unused_signal")
+signal travel_encounter_resolved(encounter_type: String)
+
 # Shop signals
 @warning_ignore("unused_signal")
 signal shop_opened(shop_inventory: Array)
@@ -96,3 +102,58 @@ func get_all_flags() -> Dictionary:
 
 func set_flags_from_dict(flags: Dictionary) -> void:
 	_flags = flags.duplicate()
+
+
+# --- Shared Condition Checking ---
+
+## Evaluate a single condition dict. Returns true if the condition passes.
+func evaluate_condition(cond: Dictionary) -> bool:
+	var cond_type: String = cond.get("type", "")
+	match cond_type:
+		"has_flag":
+			return get_flag(cond.get("flag", ""))
+		"not_flag":
+			return not get_flag(cond.get("flag", ""))
+		"has_gold":
+			return GameManager.gold >= cond.get("amount", 0)
+		"has_food":
+			return GameManager.food >= cond.get("amount", 0)
+		"min_party_size":
+			var alive := 0
+			for unit in GameManager.party:
+				if unit.is_alive():
+					alive += 1
+			return alive >= cond.get("count", 1)
+		"has_unit_class":
+			var target_class: String = cond.get("class", "")
+			for unit in GameManager.party:
+				if unit.get_class_name() == target_class:
+					return true
+			return false
+		"stat_min":
+			var stat: String = cond.get("stat", "strength")
+			var min_val: int = cond.get("min_value", 0)
+			for unit in GameManager.party:
+				if unit.get(stat) >= min_val:
+					return true
+			return false
+		"has_item":
+			var item_name: String = cond.get("item_name", "")
+			for unit in GameManager.party:
+				for item in unit.inventory:
+					if item.item_name == item_name:
+						return true
+			return false
+		"quest_active":
+			return QuestManager.is_quest_active(cond.get("quest_id", ""))
+		"quest_complete":
+			return QuestManager.is_quest_complete(cond.get("quest_id", ""))
+	return true  # Unknown condition type = pass
+
+
+## Evaluate an array of conditions. All must pass (AND logic).
+func check_conditions(conditions: Array) -> bool:
+	for cond in conditions:
+		if cond is Dictionary and not evaluate_condition(cond):
+			return false
+	return true

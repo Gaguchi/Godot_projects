@@ -11,6 +11,9 @@ const CRIT_DAMAGE_MULTIPLIER: int = 3
 
 ## Calculate full combat forecast between two units
 static func calculate_combat(attacker: UnitData, defender: UnitData, terrain_def_bonus: int = 0, terrain_avoid_bonus: int = 0) -> Dictionary:
+	var atk_is_magic: bool = _is_magic_attack(attacker)
+	var def_is_magic: bool = _is_magic_attack(defender)
+
 	var result = {
 		"attacker": attacker,
 		"defender": defender,
@@ -18,34 +21,36 @@ static func calculate_combat(attacker: UnitData, defender: UnitData, terrain_def
 		"attacker_hit": 0,
 		"attacker_crit": 0,
 		"attacker_doubles": false,
+		"attacker_is_magic": atk_is_magic,
 		"defender_damage": 0,
 		"defender_hit": 0,
 		"defender_crit": 0,
 		"defender_doubles": false,
 		"defender_can_counter": false,
+		"defender_is_magic": def_is_magic,
 	}
-	
+
 	# Check if defender can counter (has weapon and in range)
 	var attack_range = _get_attack_range(attacker)
 	var counter_range = _get_attack_range(defender)
 	result.defender_can_counter = counter_range > 0 and attack_range == counter_range
-	
+
 	# Get weapon triangle advantage
 	var triangle = _get_weapon_triangle(attacker, defender)
-	
+
 	# Calculate attacker stats
 	result.attacker_damage = _calculate_damage(attacker, defender, triangle, terrain_def_bonus)
 	result.attacker_hit = _calculate_hit_rate(attacker, defender, triangle, terrain_avoid_bonus)
 	result.attacker_crit = _calculate_crit_rate(attacker, defender)
 	result.attacker_doubles = _can_double_attack(attacker, defender)
-	
+
 	# Calculate defender stats (if can counter)
 	if result.defender_can_counter:
 		result.defender_damage = _calculate_damage(defender, attacker, -triangle, 0)
 		result.defender_hit = _calculate_hit_rate(defender, attacker, -triangle, 0)
 		result.defender_crit = _calculate_crit_rate(defender, attacker)
 		result.defender_doubles = _can_double_attack(defender, attacker)
-	
+
 	return result
 
 
@@ -53,36 +58,38 @@ static func calculate_combat(attacker: UnitData, defender: UnitData, terrain_def
 static func execute_combat(forecast: Dictionary) -> Dictionary:
 	var attacker: UnitData = forecast.attacker
 	var defender: UnitData = forecast.defender
+	var atk_magic: bool = forecast.attacker_is_magic
+	var def_magic: bool = forecast.defender_is_magic
 	var combat_log = []
-	
+
 	# Attacker's first attack
-	var attack_result = _perform_attack(attacker, defender, forecast.attacker_hit, forecast.attacker_damage, forecast.attacker_crit)
+	var attack_result = _perform_attack(attacker, defender, forecast.attacker_hit, forecast.attacker_damage, forecast.attacker_crit, atk_magic)
 	combat_log.append(attack_result)
-	
+
 	if not defender.is_alive():
 		return {"log": combat_log, "attacker_alive": true, "defender_alive": false}
-	
+
 	# Defender's counter attack
 	if forecast.defender_can_counter:
-		var counter_result = _perform_attack(defender, attacker, forecast.defender_hit, forecast.defender_damage, forecast.defender_crit)
+		var counter_result = _perform_attack(defender, attacker, forecast.defender_hit, forecast.defender_damage, forecast.defender_crit, def_magic)
 		combat_log.append(counter_result)
-		
+
 		if not attacker.is_alive():
 			return {"log": combat_log, "attacker_alive": false, "defender_alive": true}
-	
+
 	# Attacker's double attack
 	if forecast.attacker_doubles and defender.is_alive():
-		var double_result = _perform_attack(attacker, defender, forecast.attacker_hit, forecast.attacker_damage, forecast.attacker_crit)
+		var double_result = _perform_attack(attacker, defender, forecast.attacker_hit, forecast.attacker_damage, forecast.attacker_crit, atk_magic)
 		combat_log.append(double_result)
-		
+
 		if not defender.is_alive():
 			return {"log": combat_log, "attacker_alive": true, "defender_alive": false}
-	
+
 	# Defender's double counter
 	if forecast.defender_can_counter and forecast.defender_doubles and attacker.is_alive():
-		var double_counter = _perform_attack(defender, attacker, forecast.defender_hit, forecast.defender_damage, forecast.defender_crit)
+		var double_counter = _perform_attack(defender, attacker, forecast.defender_hit, forecast.defender_damage, forecast.defender_crit, def_magic)
 		combat_log.append(double_counter)
-	
+
 	return {
 		"log": combat_log,
 		"attacker_alive": attacker.is_alive(),
@@ -91,18 +98,18 @@ static func execute_combat(forecast: Dictionary) -> Dictionary:
 
 
 ## Perform a single attack roll
-static func _perform_attack(attacker: UnitData, defender: UnitData, hit_rate: int, damage: int, crit_rate: int) -> Dictionary:
+static func _perform_attack(attacker: UnitData, defender: UnitData, hit_rate: int, damage: int, crit_rate: int, is_magic: bool = false) -> Dictionary:
 	var roll = randi() % 100
 	var hit = roll < hit_rate
 	var crit = false
 	var final_damage = 0
-	
+
 	if hit:
 		var crit_roll = randi() % 100
 		crit = crit_roll < crit_rate
 		final_damage = damage * CRIT_DAMAGE_MULTIPLIER if crit else damage
-		defender.take_damage(final_damage)
-	
+		defender.take_damage(final_damage, is_magic)
+
 	return {
 		"attacker": attacker.unit_name,
 		"defender": defender.unit_name,
@@ -114,10 +121,17 @@ static func _perform_attack(attacker: UnitData, defender: UnitData, hit_rate: in
 	}
 
 
-## Calculate raw damage (armor absorption happens in UnitData.take_damage)
-static func _calculate_damage(attacker: UnitData, _defender: UnitData, triangle: int, _terrain_bonus: int) -> int:
+## Calculate damage after flat DR from DEF (physical) or RES (magic) + terrain bonus.
+## Armor absorption happens separately in UnitData.take_damage().
+static func _calculate_damage(attacker: UnitData, defender: UnitData, triangle: int, terrain_def_bonus: int) -> int:
 	var attack_power: int = attacker.get_attack_power()
-	var damage: int = attack_power + (triangle * WEAPON_TRIANGLE_DMG_BONUS)
+	var is_magic: bool = _is_magic_attack(attacker)
+	var dr: int
+	if is_magic:
+		dr = int(defender.resistance / 2.0) + terrain_def_bonus
+	else:
+		dr = int(defender.defense / 2.0) + terrain_def_bonus
+	var damage: int = attack_power - dr + (triangle * WEAPON_TRIANGLE_DMG_BONUS)
 	return max(0, damage)
 
 
@@ -153,6 +167,13 @@ static func _get_weapon_triangle(attacker: UnitData, defender: UnitData) -> int:
 		attacker.equipped_weapon.weapon_type,
 		defender.equipped_weapon.weapon_type
 	)
+
+
+## Check if a unit's attack is magical (tome weapon)
+static func _is_magic_attack(unit: UnitData) -> bool:
+	if unit.equipped_weapon and unit.equipped_weapon is ItemData:
+		return unit.equipped_weapon.weapon_type == ItemData.WeaponType.TOME
+	return false
 
 
 ## Get attack range of a unit based on equipped weapon

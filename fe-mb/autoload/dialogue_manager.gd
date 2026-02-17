@@ -247,32 +247,7 @@ func _get_filtered_choices(choices: Array) -> Array:
 # =============================================================================
 
 func _evaluate_condition(condition: Dictionary) -> bool:
-	match condition.get("type", ""):
-		"has_flag":
-			return get_flag(condition.get("flag", ""))
-		"not_flag":
-			return not get_flag(condition.get("flag", ""))
-		"has_unit_class":
-			for unit in GameManager.party:
-				if unit.get_class_name() == condition.get("class", ""):
-					return true
-			return false
-		"stat_min":
-			for unit in GameManager.party:
-				if unit.get(condition.get("stat", "strength")) >= condition.get("min_value", 0):
-					return true
-			return false
-		"has_gold":
-			return GameManager.gold >= condition.get("amount", 0)
-		"has_item":
-			for unit in GameManager.party:
-				for item in unit.inventory:
-					if item.item_name == condition.get("item_name", ""):
-						return true
-			return false
-		"quest_active", "quest_complete":
-			return false  # Will be wired when QuestManager exists
-	return true  # Unknown condition type = pass
+	return EventBus.evaluate_condition(condition)
 
 
 # =============================================================================
@@ -309,17 +284,146 @@ func _execute_effect(effect: Dictionary) -> void:
 		"clear_flag":
 			set_flag(effect.get("flag", ""), false)
 		"start_quest":
-			pass  # Will be wired when QuestManager exists
+			QuestManager.start_quest(effect.get("quest_id", ""))
 		"complete_quest":
-			pass  # Will be wired when QuestManager exists
+			QuestManager.complete_quest(effect.get("quest_id", ""))
+		"advance_quest":
+			var stage: int = effect.get("stage", -1)
+			QuestManager.advance_quest(effect.get("quest_id", ""), stage)
 		"give_item":
-			pass  # Will be implemented later
+			_give_item(effect)
 		"start_combat":
-			pass  # Will be implemented later
+			pass  # Handled by world_map via effect_executed signal
 		"recruit_unit":
-			pass  # Will be implemented later
+			_recruit_unit(effect)
 
 	effect_executed.emit(effect_type, effect)
+
+
+# =============================================================================
+# Recruit & Item Helpers
+# =============================================================================
+
+## Create a UnitData from an effect dict and add to party.
+## Effect format: { "type": "recruit_unit", "unit_name": "Kael", "unit_class": "BOUNTY_HUNTER",
+##   "level": 3, "max_hp": 24, "strength": 7, ... , "weapon": { weapon dict } }
+func _recruit_unit(effect: Dictionary) -> void:
+	var unit := UnitData.new()
+	unit.unit_name = effect.get("unit_name", "Recruit")
+	unit.is_player_unit = true
+
+	# Parse unit class from string
+	var class_str: String = effect.get("unit_class", "FIGHTER")
+	match class_str:
+		"FIGHTER": unit.unit_class = UnitData.UnitClass.FIGHTER
+		"KNIGHT": unit.unit_class = UnitData.UnitClass.KNIGHT
+		"CAVALIER": unit.unit_class = UnitData.UnitClass.CAVALIER
+		"ARCHER": unit.unit_class = UnitData.UnitClass.ARCHER
+		"MAGE": unit.unit_class = UnitData.UnitClass.MAGE
+		"CLERIC": unit.unit_class = UnitData.UnitClass.CLERIC
+		"THIEF": unit.unit_class = UnitData.UnitClass.THIEF
+		"LORD": unit.unit_class = UnitData.UnitClass.LORD
+		"BOUNTY_HUNTER": unit.unit_class = UnitData.UnitClass.BOUNTY_HUNTER
+
+	unit.level = effect.get("level", 1)
+	unit.max_hp = effect.get("max_hp", 20)
+	unit.current_hp = effect.get("current_hp", unit.max_hp)
+	unit.strength = effect.get("strength", 5)
+	unit.magic = effect.get("magic", 0)
+	unit.skill = effect.get("skill", 5)
+	unit.speed = effect.get("speed", 5)
+	unit.luck = effect.get("luck", 5)
+	unit.defense = effect.get("defense", 5)
+	unit.resistance = effect.get("resistance", 2)
+	unit.movement = effect.get("movement", 5)
+	unit.current_armor = unit.defense
+
+	# Growth rates
+	unit.hp_growth = effect.get("hp_growth", 50)
+	unit.str_growth = effect.get("str_growth", 40)
+	unit.mag_growth = effect.get("mag_growth", 0)
+	unit.skl_growth = effect.get("skl_growth", 35)
+	unit.spd_growth = effect.get("spd_growth", 35)
+	unit.lck_growth = effect.get("lck_growth", 30)
+	unit.def_growth = effect.get("def_growth", 25)
+	unit.res_growth = effect.get("res_growth", 20)
+
+	# Equip weapon if provided
+	var weapon_data: Dictionary = effect.get("weapon", {})
+	if not weapon_data.is_empty():
+		unit.equipped_weapon = ItemData.create_from_dict(weapon_data)
+
+	if GameManager.add_unit(unit):
+		EventBus.show_notification.emit("%s joined the party!" % unit.unit_name)
+		print("[DialogueManager] Recruited unit: %s (%s)" % [unit.unit_name, class_str])
+	else:
+		EventBus.show_notification.emit("Party is full! %s could not join." % unit.unit_name)
+		print("[DialogueManager] Party full, could not recruit: %s" % unit.unit_name)
+
+
+## Give an item to the first party member (or specified unit).
+## Effect format: { "type": "give_item", "item_name": "Iron Sword" } — looks up catalog
+## OR: { "type": "give_item", "item": { full item dict } } — creates from dict directly
+func _give_item(effect: Dictionary) -> void:
+	var item: ItemData = null
+
+	# Direct item dict
+	var item_dict: Dictionary = effect.get("item", {})
+	if not item_dict.is_empty():
+		item = ItemData.create_from_dict(item_dict)
+	else:
+		# Lookup from catalog by name
+		var item_name: String = effect.get("item_name", "")
+		item = _load_item_from_catalog(item_name)
+
+	if item == null:
+		print("[DialogueManager] give_item failed: could not create item")
+		return
+
+	# Give to specified unit or first party member with space
+	var target_unit_name: String = effect.get("target_unit", "")
+	for unit in GameManager.party:
+		if target_unit_name != "" and unit.unit_name != target_unit_name:
+			continue
+		unit.add_item(item)
+		EventBus.show_notification.emit("Received %s!" % item.item_name)
+		print("[DialogueManager] Gave %s to %s" % [item.item_name, unit.unit_name])
+		return
+
+	# Fallback: give to first alive unit
+	if GameManager.party.size() > 0:
+		GameManager.party[0].add_item(item)
+		EventBus.show_notification.emit("Received %s!" % item.item_name)
+		print("[DialogueManager] Gave %s to %s (fallback)" % [item.item_name, GameManager.party[0].unit_name])
+
+
+## Load an item from the item catalog JSON by name.
+func _load_item_from_catalog(item_name: String) -> ItemData:
+	var path := "res://data/items/item_catalog.json"
+	if not FileAccess.file_exists(path):
+		return null
+
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return null
+
+	var json := JSON.new()
+	if json.parse(file.get_as_text()) != OK:
+		file.close()
+		return null
+	file.close()
+
+	var data = json.data
+	if not data is Dictionary:
+		return null
+
+	var items: Array = data.get("items", [])
+	for entry in items:
+		if entry is Dictionary and entry.get("item_name", "") == item_name:
+			return ItemData.create_from_dict(entry)
+
+	print("[DialogueManager] Item not found in catalog: %s" % item_name)
+	return null
 
 
 # =============================================================================
