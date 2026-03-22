@@ -5,19 +5,19 @@ extends CanvasLayer
 
 signal town_closed
 
-# --- Palette ---
-const COLOR_PANEL_BG := Color(0.05, 0.055, 0.08, 0.95)
-const COLOR_SIDEBAR_BG := Color(0.04, 0.045, 0.065, 0.95)
-const COLOR_IRON_BORDER := Color(0.227, 0.239, 0.282)
-const COLOR_EMBER := Color(0.69, 0.44, 0.25)
-const COLOR_PARCHMENT := Color(0.832, 0.812, 0.761)
-const COLOR_WORN_STONE := Color(0.478, 0.463, 0.439)
-const COLOR_MOSS := Color(0.353, 0.541, 0.353)
-const COLOR_BLOOD := Color(0.769, 0.267, 0.267)
-const COLOR_OVERLAY := Color(0, 0, 0, 0.85)
+# --- Palette (from UIColors) ---
+const COLOR_PANEL_BG := UIColors.COLOR_PANEL_BG
+const COLOR_SIDEBAR_BG := UIColors.COLOR_SIDEBAR_BG
+const COLOR_IRON_BORDER := UIColors.COLOR_IRON_BORDER
+const COLOR_EMBER := UIColors.COLOR_EMBER
+const COLOR_PARCHMENT := UIColors.COLOR_PARCHMENT
+const COLOR_WORN_STONE := UIColors.COLOR_WORN_STONE
+const COLOR_MOSS := UIColors.COLOR_MOSS
+const COLOR_BLOOD := UIColors.COLOR_BLOOD
+const COLOR_OVERLAY := UIColors.COLOR_OVERLAY
 
 const SIDEBAR_WIDTH := 220
-const BUILDING_ORDER := ["inn", "shop", "tavern", "guild", "arena"]
+const BUILDING_ORDER := ["inn", "shop", "tavern", "blacksmith", "arena"]
 const TAVERN_TIPS := [
 	"Longer routes mean more encounter chances — but shortcuts aren't always safe.",
 	"The weapon triangle gives +15 hit and +1 damage: Sword beats Axe, Axe beats Lance, Lance beats Sword.",
@@ -36,7 +36,7 @@ const BUILDING_NAMES := {
 	"inn": "Inn",
 	"shop": "Shop",
 	"tavern": "Tavern",
-	"guild": "Guild",
+	"blacksmith": "Blacksmith",
 	"arena": "Arena"
 }
 
@@ -88,19 +88,12 @@ func _load_town_data(location_name: String) -> void:
 	var slug := location_name.to_lower().replace(" ", "_").replace("'", "")
 	var path := "res://data/towns/%s.json" % slug
 
-	if not FileAccess.file_exists(path):
-		print("[TownMenu] No town data for '%s' at %s, using defaults" % [location_name, path])
-		_town_data = _default_town_data(location_name)
-		return
-
-	var file := FileAccess.open(path, FileAccess.READ)
-	var json := JSON.new()
-	json.parse(file.get_as_text())
-	file.close()
-
-	if json.data is Dictionary:
-		_town_data = json.data
+	var data = JSONLoader.load_json(path)
+	if data is Dictionary:
+		_town_data = data
 	else:
+		if not JSONLoader.file_exists(path):
+			print("[TownMenu] No town data for '%s' at %s, using defaults" % [location_name, path])
 		_town_data = _default_town_data(location_name)
 
 
@@ -112,7 +105,7 @@ func _default_town_data(location_name: String) -> Dictionary:
 			"inn": { "heal_cost_per_unit": 10 },
 			"shop": { "stock": ["vulnerary", "food_rations"] },
 			"tavern": { "rumors": ["Nothing of note to report."] },
-			"guild": { "locked": true, "locked_text": "No guild here." },
+			"blacksmith": { "sharpen_cost_per_weapon": 15 },
 			"arena": { "locked": true, "locked_text": "No arena here." }
 		}
 	}
@@ -410,6 +403,8 @@ func _select_building(building_key: String) -> void:
 			_show_shop_panel(bdata)
 		"tavern":
 			_show_tavern_panel(bdata)
+		"blacksmith":
+			_show_blacksmith_panel(bdata)
 		_:
 			_show_locked_panel(bdata)
 
@@ -636,6 +631,31 @@ func _show_shop_panel(bdata: Dictionary) -> void:
 
 	var stock: Array = bdata.get("stock", [])
 	_shop_panel.setup(stock)
+
+
+# ============================================================
+# Blacksmith Panel
+# ============================================================
+
+func _show_blacksmith_panel(bdata: Dictionary) -> void:
+	var header := Label.new()
+	header.text = "Blacksmith  —  Sharpen & Hone"
+	header.add_theme_font_size_override("font_size", 18)
+	header.add_theme_color_override("font_color", COLOR_EMBER)
+	_content_container.add_child(header)
+
+	var sep := ColorRect.new()
+	sep.custom_minimum_size = Vector2(0, 1)
+	sep.color = Color(COLOR_IRON_BORDER, 0.4)
+	_content_container.add_child(sep)
+
+	var panel := BlacksmithPanel.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.gold_changed.connect(_update_resource_labels)
+	_content_container.add_child(panel)
+
+	panel.setup(bdata)
 
 
 # ============================================================
