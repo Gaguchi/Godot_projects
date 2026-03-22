@@ -363,18 +363,13 @@ func _give_item(effect: Dictionary) -> void:
 
 	# Give to specified unit or first party member with space
 	var target_unit_name: String = effect.get("target_unit", "")
-	for unit in GameManager.party:
-		if target_unit_name != "" and unit.unit_name != target_unit_name:
-			continue
-		unit.add_item(item)
+	var placed := GameManager.bag_auto_place(item)
+	if placed == -1:
+		EventBus.show_notification.emit("Bag full! Could not receive %s." % item.item_name)
+		print("[DialogueManager] Bag full, could not place %s" % item.item_name)
+	else:
 		EventBus.show_notification.emit("Received %s!" % item.item_name)
-		print("[DialogueManager] Gave %s to %s" % [item.item_name, unit.unit_name])
-		return
-
-	# Fallback: give to first alive unit
-	if GameManager.party.size() > 0:
-		GameManager.party[0].add_item(item)
-		EventBus.show_notification.emit("Received %s!" % item.item_name)
+		print("[DialogueManager] Placed %s in party bag" % item.item_name)
 		print("[DialogueManager] Gave %s to %s (fallback)" % [item.item_name, GameManager.party[0].unit_name])
 
 

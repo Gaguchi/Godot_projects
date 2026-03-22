@@ -139,9 +139,17 @@ func evaluate_condition(cond: Dictionary) -> bool:
 			return false
 		"has_item":
 			var item_name: String = cond.get("item_name", "")
+			# Check party bag for the item
+			for entry in GameManager.bag_items:
+				if entry["item"].item_name == item_name:
+					return true
+			# Also check equipped weapons and quick slots
 			for unit in GameManager.party:
-				for item in unit.inventory:
-					if item.item_name == item_name:
+				if unit.equipped_weapon and unit.equipped_weapon is ItemData and unit.equipped_weapon.item_name == item_name:
+					return true
+				for slot_idx in 2:
+					var qs = unit.get_quick_slot(slot_idx)
+					if qs and qs is ItemData and qs.item_name == item_name:
 						return true
 			return false
 		"quest_active":
