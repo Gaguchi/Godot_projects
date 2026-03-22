@@ -62,6 +62,7 @@ func setup(config: Dictionary) -> void:
 	_card_hand_ui.card_selected.connect(_on_card_selected)
 	_card_hand_ui.card_hovered.connect(_on_card_hovered)
 	_card_hand_ui.end_turn_pressed.connect(_on_card_end_turn)
+	_card_hand_ui.quick_slot_used.connect(_on_quick_slot_used)
 
 	# Connect BattleInput targeting signals
 	_battle_input.target_selection_cancelled.connect(_on_target_selection_cancelled)
@@ -746,6 +747,28 @@ func _on_card_end_turn() -> void:
 	turn_ended.emit()
 
 
+## Quick slot button pressed — dispatch to use item or switch weapon
+func _on_quick_slot_used(slot_index: int) -> void:
+	var active = _battlefield.active_unit
+	if not active or _battlefield.current_state != _battlefield.BattleState.PLAYER_ACTION_PHASE:
+		return
+	var unit_data: UnitData = active.get_unit_data()
+	if not unit_data:
+		return
+
+	var slot_item = unit_data.get_quick_slot(slot_index)
+	if not slot_item or not slot_item is ItemData:
+		return
+
+	if slot_item.item_type == ItemData.ItemType.WEAPON:
+		switch_weapon_from_slot(unit_data, slot_index)
+	else:
+		use_quick_slot_item(unit_data, slot_index)
+
+	# Refresh capture buttons since weapon may have changed
+	_create_capture_buttons(active)
+
+
 ## Deck reshuffled — show visual feedback
 func _on_deck_reshuffled(unit_name: String) -> void:
 	print("[Deck] %s's discard pile reshuffled into draw pile!" % unit_name)
@@ -1073,6 +1096,79 @@ func _compute_card_damage_preview(card: CardData, caster: UnitData, target: Unit
 	var damage_per_hit: int = max(0, raw_damage - dr)
 	var hits: int = int(card.damage_multiplier) if card.damage_multiplier > 1.0 else 1
 	return damage_per_hit * hits
+
+
+## Use a consumable from a quick slot. Costs 1 AP.
+func use_quick_slot_item(unit: UnitData, slot_index: int) -> void:
+	if _current_ap < 1:
+		return
+	var item = unit.get_quick_slot(slot_index)
+	if not item or not item is ItemData:
+		return
+
+	_current_ap -= 1
+
+	if item.item_name == "Vulnerary" or item.item_name == "Elixir":
+		var heal_amt: int = item.heal_amount
+		if heal_amt >= 999:
+			heal_amt = unit.max_hp - unit.current_hp
+		unit.heal(heal_amt)
+		item.current_uses -= 1
+		if item.current_uses <= 0:
+			unit.clear_quick_slot(slot_index)
+		if _combat_log:
+			_combat_log.log_system("%s used %s — healed %d HP" % [unit.unit_name, item.item_name, heal_amt])
+		print("[QuickSlot] %s used %s — healed %d HP (AP left: %d)" % [unit.unit_name, item.item_name, heal_amt, _current_ap])
+	elif item.item_name == "Whetstone":
+		if unit.equipped_weapon and unit.equipped_weapon is ItemData:
+			unit.equipped_weapon.sharpen()
+			if _combat_log:
+				_combat_log.log_system("%s used Whetstone — weapon sharpened" % unit.unit_name)
+			print("[QuickSlot] %s used Whetstone — weapon sharpened (AP left: %d)" % [unit.unit_name, _current_ap])
+		unit.clear_quick_slot(slot_index)
+	else:
+		# Generic consumable fallback
+		if _combat_log:
+			_combat_log.log_system("%s used %s" % [unit.unit_name, item.item_name])
+		print("[QuickSlot] %s used %s (AP left: %d)" % [unit.unit_name, item.item_name, _current_ap])
+
+	_card_hand_ui.update_ap(_current_ap, _max_ap)
+	_refresh_party_sidebar()
+
+	if _current_ap <= 0:
+		var active = _battlefield.active_unit
+		var dm = _deck_managers.get(active)
+		if dm and dm.hand.is_empty():
+			_on_card_end_turn()
+
+
+## Switch equipped weapon with a weapon in a quick slot. Costs 1 AP.
+func switch_weapon_from_slot(unit: UnitData, slot_index: int) -> void:
+	if _current_ap < 1:
+		return
+	var slot_item = unit.get_quick_slot(slot_index)
+	if not slot_item or not slot_item is ItemData or slot_item.item_type != ItemData.ItemType.WEAPON:
+		return
+
+	_current_ap -= 1
+	var old_weapon = unit.equipped_weapon
+	unit.equipped_weapon = slot_item
+	unit.set_quick_slot(slot_index, old_weapon)
+	if _combat_log:
+		_combat_log.log_system("%s switched to %s" % [unit.unit_name, slot_item.item_name])
+	print("[QuickSlot] %s switched to %s (AP left: %d)" % [unit.unit_name, slot_item.item_name, _current_ap])
+
+	_card_hand_ui.update_ap(_current_ap, _max_ap)
+	# Rebuild hand to reflect new weapon-card compatibility
+	var active = _battlefield.active_unit
+	var dm = _deck_managers.get(active)
+	if dm:
+		_card_hand_ui.update_hand(dm.hand)
+	_refresh_party_sidebar()
+
+	if _current_ap <= 0:
+		if dm and dm.hand.is_empty():
+			_on_card_end_turn()
 
 
 ## Check if a card is compatible with the unit's equipped weapon
