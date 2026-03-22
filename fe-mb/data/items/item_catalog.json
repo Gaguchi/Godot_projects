@@ -5,14 +5,12 @@
 		"item_type": "WEAPON",
 		"weapon_type": "SWORD",
 		"might": 5,
-		"hit": 90,
-		"crit": 0,
-		"weight": 5,
 		"range_min": 1,
 		"range_max": 1,
-		"max_uses": 46,
-		"buy_price": 460,
-		"sell_price": 230
+		"grid_width": 1,
+		"grid_height": 3,
+		"buy_price": 120,
+		"sell_price": 60
 	},
 	"steel_sword": {
 		"item_name": "Steel Sword",
@@ -20,14 +18,12 @@
 		"item_type": "WEAPON",
 		"weapon_type": "SWORD",
 		"might": 8,
-		"hit": 75,
-		"crit": 0,
-		"weight": 10,
 		"range_min": 1,
 		"range_max": 1,
-		"max_uses": 30,
-		"buy_price": 700,
-		"sell_price": 350
+		"grid_width": 1,
+		"grid_height": 3,
+		"buy_price": 280,
+		"sell_price": 140
 	},
 	"iron_lance": {
 		"item_name": "Iron Lance",
@@ -35,14 +31,12 @@
 		"item_type": "WEAPON",
 		"weapon_type": "LANCE",
 		"might": 7,
-		"hit": 80,
-		"crit": 0,
-		"weight": 8,
 		"range_min": 1,
-		"range_max": 1,
-		"max_uses": 45,
-		"buy_price": 360,
-		"sell_price": 180
+		"range_max": 2,
+		"grid_width": 1,
+		"grid_height": 4,
+		"buy_price": 150,
+		"sell_price": 75
 	},
 	"steel_lance": {
 		"item_name": "Steel Lance",
@@ -50,14 +44,12 @@
 		"item_type": "WEAPON",
 		"weapon_type": "LANCE",
 		"might": 10,
-		"hit": 70,
-		"crit": 0,
-		"weight": 13,
 		"range_min": 1,
-		"range_max": 1,
-		"max_uses": 30,
-		"buy_price": 560,
-		"sell_price": 280
+		"range_max": 2,
+		"grid_width": 1,
+		"grid_height": 4,
+		"buy_price": 320,
+		"sell_price": 160
 	},
 	"iron_axe": {
 		"item_name": "Iron Axe",
@@ -65,14 +57,12 @@
 		"item_type": "WEAPON",
 		"weapon_type": "AXE",
 		"might": 8,
-		"hit": 75,
-		"crit": 0,
-		"weight": 10,
 		"range_min": 1,
 		"range_max": 1,
-		"max_uses": 45,
-		"buy_price": 270,
-		"sell_price": 135
+		"grid_width": 2,
+		"grid_height": 2,
+		"buy_price": 100,
+		"sell_price": 50
 	},
 	"iron_bow": {
 		"item_name": "Iron Bow",
@@ -80,14 +70,25 @@
 		"item_type": "WEAPON",
 		"weapon_type": "BOW",
 		"might": 6,
-		"hit": 85,
-		"crit": 0,
-		"weight": 5,
 		"range_min": 2,
+		"range_max": 3,
+		"grid_width": 1,
+		"grid_height": 3,
+		"buy_price": 140,
+		"sell_price": 70
+	},
+	"iron_crossbow": {
+		"item_name": "Iron Crossbow",
+		"description": "A compact crossbow. Accurate at close and mid range.",
+		"item_type": "WEAPON",
+		"weapon_type": "CROSSBOW",
+		"might": 6,
+		"range_min": 1,
 		"range_max": 2,
-		"max_uses": 45,
-		"buy_price": 540,
-		"sell_price": 270
+		"grid_width": 1,
+		"grid_height": 3,
+		"buy_price": 150,
+		"sell_price": 75
 	},
 	"fire": {
 		"item_name": "Fire",
@@ -95,14 +96,12 @@
 		"item_type": "WEAPON",
 		"weapon_type": "TOME",
 		"might": 5,
-		"hit": 90,
-		"crit": 0,
-		"weight": 4,
 		"range_min": 1,
 		"range_max": 2,
-		"max_uses": 40,
-		"buy_price": 600,
-		"sell_price": 300
+		"grid_width": 1,
+		"grid_height": 2,
+		"buy_price": 130,
+		"sell_price": 65
 	},
 	"thunder": {
 		"item_name": "Thunder",
@@ -110,14 +109,12 @@
 		"item_type": "WEAPON",
 		"weapon_type": "TOME",
 		"might": 8,
-		"hit": 80,
-		"crit": 5,
-		"weight": 6,
 		"range_min": 1,
 		"range_max": 2,
-		"max_uses": 35,
-		"buy_price": 900,
-		"sell_price": 450
+		"grid_width": 1,
+		"grid_height": 2,
+		"buy_price": 300,
+		"sell_price": 150
 	},
 	"heal_staff": {
 		"item_name": "Heal",
@@ -125,15 +122,13 @@
 		"item_type": "WEAPON",
 		"weapon_type": "STAFF",
 		"might": 0,
-		"hit": 100,
-		"crit": 0,
-		"weight": 6,
 		"heal_amount": 10,
 		"range_min": 1,
-		"range_max": 1,
-		"max_uses": 30,
-		"buy_price": 600,
-		"sell_price": 300
+		"range_max": 2,
+		"grid_width": 1,
+		"grid_height": 3,
+		"buy_price": 160,
+		"sell_price": 80
 	},
 	"vulnerary": {
 		"item_name": "Vulnerary",
@@ -141,12 +136,12 @@
 		"item_type": "CONSUMABLE",
 		"weapon_type": "NONE",
 		"might": 0,
-		"hit": 0,
-		"weight": 0,
 		"heal_amount": 10,
 		"max_uses": 3,
-		"buy_price": 300,
-		"sell_price": 150
+		"grid_width": 1,
+		"grid_height": 1,
+		"buy_price": 80,
+		"sell_price": 40
 	},
 	"elixir": {
 		"item_name": "Elixir",
@@ -154,23 +149,35 @@
 		"item_type": "CONSUMABLE",
 		"weapon_type": "NONE",
 		"might": 0,
-		"hit": 0,
-		"weight": 0,
 		"heal_amount": 999,
 		"max_uses": 3,
-		"buy_price": 3000,
-		"sell_price": 1500
+		"grid_width": 1,
+		"grid_height": 1,
+		"buy_price": 500,
+		"sell_price": 250
 	},
 	"food_rations": {
 		"item_name": "Food Rations",
-		"description": "Dried provisions for the road. Restores 3 food.",
+		"description": "Dried provisions for the road. Provides 3 travel hops.",
 		"item_type": "CONSUMABLE",
 		"weapon_type": "NONE",
 		"might": 0,
-		"hit": 0,
-		"weight": 0,
+		"max_uses": 3,
+		"grid_width": 1,
+		"grid_height": 2,
+		"buy_price": 50,
+		"sell_price": 25
+	},
+	"whetstone": {
+		"item_name": "Whetstone",
+		"description": "A sharpening stone. Restores 1 tier of weapon sharpness.",
+		"item_type": "CONSUMABLE",
+		"weapon_type": "NONE",
+		"might": 0,
 		"max_uses": 1,
-		"buy_price": 200,
-		"sell_price": 100
+		"grid_width": 1,
+		"grid_height": 1,
+		"buy_price": 40,
+		"sell_price": 20
 	}
 }
