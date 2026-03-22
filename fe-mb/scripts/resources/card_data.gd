@@ -26,6 +26,7 @@ enum Rarity {
 }
 
 @export_group("Identity")
+@export var id: String = ""              # Catalog ID (e.g. "slash", "fire") — empty for legacy/uncataloged cards
 @export var card_name: String = "Card"
 @export var description: String = ""  # Use {DMG} for computed damage, {HEAL} for healing
 @export var ap_cost: int = 1
@@ -86,6 +87,7 @@ func get_description_filled(unit: UnitData) -> String:
 ## Create a duplicate of this card (for deck building)
 func duplicate_card() -> CardData:
 	var copy := CardData.new()
+	copy.id = id
 	copy.card_name = card_name
 	copy.description = description
 	copy.ap_cost = ap_cost
@@ -110,6 +112,7 @@ func duplicate_card() -> CardData:
 ## Serialize to dictionary
 func to_dict() -> Dictionary:
 	return {
+		"id": id,
 		"card_name": card_name,
 		"description": description,
 		"ap_cost": ap_cost,
@@ -133,6 +136,7 @@ func to_dict() -> Dictionary:
 
 ## Deserialize from dictionary
 func from_dict(data: Dictionary) -> void:
+	id = data.get("id", "")
 	card_name = data.get("card_name", "Card")
 	description = data.get("description", "")
 	ap_cost = data.get("ap_cost", 1)
@@ -186,6 +190,7 @@ func from_dict(data: Dictionary) -> void:
 			"BOW": weapon_type = ItemData.WeaponType.BOW
 			"TOME": weapon_type = ItemData.WeaponType.TOME
 			"STAFF": weapon_type = ItemData.WeaponType.STAFF
+			"CROSSBOW": weapon_type = ItemData.WeaponType.CROSSBOW
 			_: weapon_type = ItemData.WeaponType.NONE
 	else:
 		weapon_type = wt

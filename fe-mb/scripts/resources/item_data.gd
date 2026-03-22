@@ -15,8 +15,11 @@ enum WeaponType {
 	AXE,
 	BOW,
 	TOME,
-	STAFF
+	STAFF,
+	CROSSBOW
 }
+
+enum Sharpness { SHARP, NORMAL, DULL }
 
 @export_group("Identity")
 @export var item_name: String = "Item"
@@ -46,6 +49,14 @@ enum WeaponType {
 @export_group("Value")
 @export var buy_price: int = 100
 @export var sell_price: int = 50
+
+@export_group("Sharpness")
+@export var sharpness: Sharpness = Sharpness.SHARP
+@export var is_honed: bool = false
+
+@export_group("Grid Size")
+@export var grid_width: int = 1
+@export var grid_height: int = 1
 
 
 ## Use the item, returns true if successful
@@ -107,12 +118,44 @@ func get_weapon_type_name() -> String:
 		WeaponType.BOW: return "Bow"
 		WeaponType.TOME: return "Tome"
 		WeaponType.STAFF: return "Staff"
+		WeaponType.CROSSBOW: return "Crossbow"
 		_: return "Unknown"
 
 
 ## Check if this is a ranged weapon (range > 1)
 func is_ranged() -> bool:
 	return range_max > 1
+
+
+## Get sharpness damage bonus (+2 Sharp, 0 Normal, -2 Dull)
+func get_sharpness_bonus() -> int:
+	match sharpness:
+		Sharpness.SHARP: return 2
+		Sharpness.NORMAL: return 0
+		Sharpness.DULL: return -2
+	return 0
+
+
+## Degrade sharpness by one tier. Honed weapons consume hone instead.
+func degrade_sharpness() -> void:
+	if is_honed:
+		is_honed = false
+		return
+	match sharpness:
+		Sharpness.SHARP: sharpness = Sharpness.NORMAL
+		Sharpness.NORMAL: sharpness = Sharpness.DULL
+		# DULL stays DULL
+
+
+## Restore sharpness to Sharp tier
+func sharpen() -> void:
+	sharpness = Sharpness.SHARP
+
+
+## Blacksmith sharpening: Sharp + honed (first drop is skipped)
+func apply_honing() -> void:
+	sharpness = Sharpness.SHARP
+	is_honed = true
 
 
 ## Create an ItemData from a catalog dictionary entry
@@ -144,6 +187,7 @@ static func create_from_dict(data: Dictionary) -> ItemData:
 			"BOW": item.weapon_type = WeaponType.BOW
 			"TOME": item.weapon_type = WeaponType.TOME
 			"STAFF": item.weapon_type = WeaponType.STAFF
+			"CROSSBOW": item.weapon_type = WeaponType.CROSSBOW
 			_: item.weapon_type = WeaponType.NONE
 	else:
 		item.weapon_type = wt
@@ -162,6 +206,18 @@ static func create_from_dict(data: Dictionary) -> ItemData:
 	item.boost_amount = data.get("boost_amount", 0)
 	item.buy_price = data.get("buy_price", 0)
 	item.sell_price = data.get("sell_price", 0)
+	item.grid_width = data.get("grid_width", 1)
+	item.grid_height = data.get("grid_height", 1)
+	item.is_honed = data.get("is_honed", false)
+	var sharp = data.get("sharpness", 0)
+	if sharp is String:
+		match sharp:
+			"SHARP": item.sharpness = Sharpness.SHARP
+			"NORMAL": item.sharpness = Sharpness.NORMAL
+			"DULL": item.sharpness = Sharpness.DULL
+			_: item.sharpness = Sharpness.SHARP
+	else:
+		item.sharpness = sharp
 	return item
 
 
@@ -186,7 +242,11 @@ func to_dict() -> Dictionary:
 		"stat_boost": stat_boost,
 		"boost_amount": boost_amount,
 		"buy_price": buy_price,
-		"sell_price": sell_price
+		"sell_price": sell_price,
+		"sharpness": sharpness,
+		"is_honed": is_honed,
+		"grid_width": grid_width,
+		"grid_height": grid_height,
 	}
 
 
@@ -210,3 +270,15 @@ func from_dict(data: Dictionary) -> void:
 	boost_amount = data.get("boost_amount", 0)
 	buy_price = data.get("buy_price", 100)
 	sell_price = data.get("sell_price", 50)
+	grid_width = data.get("grid_width", 1)
+	grid_height = data.get("grid_height", 1)
+	is_honed = data.get("is_honed", false)
+	var sharp_val = data.get("sharpness", 0)
+	if sharp_val is String:
+		match sharp_val:
+			"SHARP": sharpness = Sharpness.SHARP
+			"NORMAL": sharpness = Sharpness.NORMAL
+			"DULL": sharpness = Sharpness.DULL
+			_: sharpness = Sharpness.SHARP
+	elif sharp_val is int:
+		sharpness = sharp_val
