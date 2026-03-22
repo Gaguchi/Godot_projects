@@ -52,7 +52,7 @@ enum UnitClass {
 
 @export_group("Equipment")
 @export var equipped_weapon: Resource  # ItemData
-@export var inventory: Array[Resource] = []  # Array of ItemData
+@export var quick_slots: Array[Resource] = [null, null]  # 2 quick slots for consumables or spare weapons
 
 @export_group("Card Deck")
 @export var deck: Array[Resource] = []  # Array of CardData
@@ -229,53 +229,34 @@ func get_class_name() -> String:
 	return "Unknown"
 
 
-## Add item to inventory
-func add_item(item: Resource) -> void:
-	if item is ItemData:
-		inventory.append(item)
+## Set an item in a quick slot (0 or 1). Returns the previous item (or null).
+func set_quick_slot(slot_index: int, item: Resource) -> Resource:
+	if slot_index < 0 or slot_index > 1:
+		return null
+	while quick_slots.size() < 2:
+		quick_slots.append(null)
+	var prev = quick_slots[slot_index]
+	quick_slots[slot_index] = item
+	return prev
 
 
-## Remove item from inventory by index
-func remove_item(index: int) -> Resource:
-	if index >= 0 and index < inventory.size():
-		return inventory.pop_at(index)
-	return null
+## Get item from a quick slot
+func get_quick_slot(slot_index: int) -> Resource:
+	if slot_index < 0 or slot_index > 1 or slot_index >= quick_slots.size():
+		return null
+	return quick_slots[slot_index]
 
 
-## Equip item from inventory (swaps with current weapon if applicable)
-## Returns true if successful
-func equip_item(index: int) -> bool:
-	if index < 0 or index >= inventory.size():
-		return false
-		
-	var item = inventory[index]
-	if not item is ItemData:
-		return false
-		
-	# Only weapons can be equipped
-	if item.item_type != ItemData.ItemType.WEAPON:
-		print("[UnitData] Cannot equip non-weapon item: %s" % item.item_name)
-		return false
-		
-	# Unequip current weapon first (to inventory)
-	if equipped_weapon:
-		inventory.append(equipped_weapon)
-		equipped_weapon = null
-		
-	# Equip new weapon (remove from inventory)
-	# Note: We append old weapon to end, so index might have shifted if we don't watch out.
-	# But actually, we should remove the item from inventory FIRST before adding the old one.
-	inventory.remove_at(index)
-	equipped_weapon = item
-	
-	return true
+## Clear a quick slot and return the item
+func clear_quick_slot(slot_index: int) -> Resource:
+	return set_quick_slot(slot_index, null)
 
 
-## Unequip current weapon to inventory
-func unequip_weapon() -> void:
-	if equipped_weapon:
-		inventory.append(equipped_weapon)
-		equipped_weapon = null
+## Equip a weapon directly (from bag or quick slot). Returns old weapon or null.
+func equip_weapon(weapon: Resource) -> Resource:
+	var old = equipped_weapon
+	equipped_weapon = weapon
+	return old
 
 ## Serialize to dictionary
 func to_dict() -> Dictionary:
@@ -283,10 +264,12 @@ func to_dict() -> Dictionary:
 	if equipped_weapon and equipped_weapon.has_method("to_dict"):
 		weapon_dict = equipped_weapon.to_dict()
 		
-	var inventory_list = []
-	for item in inventory:
-		if item and item.has_method("to_dict"):
-			inventory_list.append(item.to_dict())
+	var quick_slot_list = []
+	for slot in quick_slots:
+		if slot and slot.has_method("to_dict"):
+			quick_slot_list.append(slot.to_dict())
+		else:
+			quick_slot_list.append(null)
 	
 	var deck_list = []
 	for card in deck:
@@ -319,7 +302,7 @@ func to_dict() -> Dictionary:
 		"def_growth": def_growth,
 		"res_growth": res_growth,
 		"equipped_weapon": weapon_dict,
-		"inventory": inventory_list,
+		"quick_slots": quick_slot_list,
 		"deck": deck_list,
 		"max_ap": max_ap,
 		"is_capture_target": is_capture_target,
@@ -376,10 +359,20 @@ func from_dict(data: Dictionary) -> void:
 	else:
 		equipped_weapon = null
 		
-	# Deserialize Inventory
-	inventory.clear()
-	var inventory_data = data.get("inventory", [])
-	for item_dict in inventory_data:
-		var new_item = ItemData.new()
-		new_item.from_dict(item_dict)
-		inventory.append(new_item)
+	# Deserialize Quick Slots
+	quick_slots = [null, null]
+	var qs_data = data.get("quick_slots", [])
+	for i in range(min(qs_data.size(), 2)):
+		if qs_data[i] != null and qs_data[i] is Dictionary:
+			var qs_item = ItemData.new()
+			qs_item.from_dict(qs_data[i])
+			quick_slots[i] = qs_item
+
+	# Legacy: migrate old inventory to quick_slots if present
+	var legacy_inv = data.get("inventory", [])
+	if qs_data.is_empty() and not legacy_inv.is_empty():
+		for i in range(min(legacy_inv.size(), 2)):
+			if legacy_inv[i] is Dictionary:
+				var item = ItemData.new()
+				item.from_dict(legacy_inv[i])
+				quick_slots[i] = item
