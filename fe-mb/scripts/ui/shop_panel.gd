@@ -2,20 +2,21 @@ class_name ShopPanel
 extends VBoxContainer
 ## ShopPanel - Buy/Sell interface for town shops.
 ## Loads items from the item catalog, displays them, handles transactions.
+## Items go into/out of the shared party bag (GameManager.bag_items).
 
 signal gold_changed  # Emitted when a transaction occurs so parent can update
 
-# --- Palette ---
-const COLOR_PANEL_BG := Color(0.05, 0.055, 0.08, 0.95)
-const COLOR_IRON_BORDER := Color(0.227, 0.239, 0.282)
-const COLOR_EMBER := Color(0.69, 0.44, 0.25)
-const COLOR_PARCHMENT := Color(0.832, 0.812, 0.761)
-const COLOR_WORN_STONE := Color(0.478, 0.463, 0.439)
-const COLOR_MOSS := Color(0.353, 0.541, 0.353)
-const COLOR_BLOOD := Color(0.769, 0.267, 0.267)
-const COLOR_ROW_BG := Color(0.06, 0.065, 0.09, 0.9)
-const COLOR_ROW_HOVER := Color(0.08, 0.085, 0.11, 0.95)
-const COLOR_ROW_SELECTED := Color(0.1, 0.09, 0.07, 0.95)
+# --- Palette (from UIColors) ---
+const COLOR_PANEL_BG := UIColors.COLOR_PANEL_BG
+const COLOR_IRON_BORDER := UIColors.COLOR_IRON_BORDER
+const COLOR_EMBER := UIColors.COLOR_EMBER
+const COLOR_PARCHMENT := UIColors.COLOR_PARCHMENT
+const COLOR_WORN_STONE := UIColors.COLOR_WORN_STONE
+const COLOR_MOSS := UIColors.COLOR_MOSS
+const COLOR_BLOOD := UIColors.COLOR_BLOOD
+const COLOR_ROW_BG := UIColors.COLOR_ROW_BG
+const COLOR_ROW_HOVER := UIColors.COLOR_ROW_HOVER
+const COLOR_ROW_SELECTED := UIColors.COLOR_ROW_SELECTED
 
 # --- State ---
 var _catalog: Dictionary = {}
@@ -38,7 +39,6 @@ var _unit_selector: OptionButton
 var _action_btn: Button
 var _selected_item_id: String = ""
 var _selected_sell_index: int = -1
-var _selected_sell_unit: Resource = null
 
 
 func _ready() -> void:
@@ -57,15 +57,9 @@ func setup(stock: Array) -> void:
 
 func _load_catalog() -> void:
 	var path := "res://data/items/item_catalog.json"
-	if not FileAccess.file_exists(path):
-		push_error("[ShopPanel] Item catalog not found: %s" % path)
-		return
-	var file := FileAccess.open(path, FileAccess.READ)
-	var json := JSON.new()
-	json.parse(file.get_as_text())
-	file.close()
-	if json.data is Dictionary:
-		_catalog = json.data
+	var data = JSONLoader.load_json(path)
+	if data is Dictionary:
+		_catalog = data
 
 
 func _build_ui() -> void:
@@ -162,6 +156,7 @@ func _build_ui() -> void:
 	_unit_selector = OptionButton.new()
 	_unit_selector.add_theme_font_size_override("font_size", 13)
 	_unit_selector.add_theme_color_override("font_color", COLOR_PARCHMENT)
+	_unit_selector.visible = false
 	_action_area.add_child(_unit_selector)
 
 	_action_btn = _make_action_button("Buy")
@@ -272,7 +267,6 @@ func _clear_detail() -> void:
 	_action_area.visible = false
 	_selected_item_id = ""
 	_selected_sell_index = -1
-	_selected_sell_unit = null
 
 
 # ============================================================
@@ -306,77 +300,25 @@ func _populate_buy_list() -> void:
 
 
 func _populate_sell_list() -> void:
-	# Add unit selector header
-	var unit_row := HBoxContainer.new()
-	unit_row.add_theme_constant_override("separation", 8)
-	_item_list_container.add_child(unit_row)
-
-	var unit_label := Label.new()
-	unit_label.text = "Unit:"
-	unit_label.add_theme_font_size_override("font_size", 13)
-	unit_label.add_theme_color_override("font_color", COLOR_WORN_STONE)
-	unit_row.add_child(unit_label)
-
-	var sell_unit_opt := OptionButton.new()
-	sell_unit_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sell_unit_opt.add_theme_font_size_override("font_size", 13)
-	for i in range(GameManager.party.size()):
-		var unit = GameManager.party[i]
-		if unit.is_alive():
-			var inv_count: int = unit.inventory.size()
-			sell_unit_opt.add_item("%s (%d items)" % [unit.unit_name, inv_count], i)
-	unit_row.add_child(sell_unit_opt)
-
-	if sell_unit_opt.item_count > 0:
-		sell_unit_opt.item_selected.connect(func(idx: int):
-			var unit_idx: int = sell_unit_opt.get_item_id(idx)
-			_refresh_sell_items(GameManager.party[unit_idx])
-		)
-		# Show first unit's items
-		var first_idx: int = sell_unit_opt.get_item_id(0)
-		_refresh_sell_items(GameManager.party[first_idx])
-
-
-func _refresh_sell_items(unit: Resource) -> void:
-	# Remove everything after the unit selector row (index 0)
-	var children = _item_list_container.get_children()
-	for i in range(children.size() - 1, 0, -1):
-		children[i].queue_free()
-
-	_selected_sell_unit = unit
-
-	if unit.inventory.is_empty() and unit.equipped_weapon == null:
+	if GameManager.bag_items.is_empty():
 		var empty_label := Label.new()
-		empty_label.text = "  No items."
+		empty_label.text = "  Bag is empty."
 		empty_label.add_theme_font_size_override("font_size", 13)
 		empty_label.add_theme_color_override("font_color", COLOR_WORN_STONE)
 		_item_list_container.add_child(empty_label)
 		return
 
-	# Show equipped weapon
-	if unit.equipped_weapon:
-		var weap: Resource = unit.equipped_weapon
-		var row := _create_item_row(
-			weap.item_name + " (Equipped)",
-			_get_type_letter_from_item(weap),
-			"%dg" % weap.sell_price,
-			false
-		)
-		row.pressed.connect(func(): _on_sell_item_selected(unit, -1, weap))
-		_item_list_container.add_child(row)
-
-	# Show inventory items
-	for i in range(unit.inventory.size()):
-		var item: Resource = unit.inventory[i]
+	for i in range(GameManager.bag_items.size()):
+		var entry: Dictionary = GameManager.bag_items[i]
+		var item: ItemData = entry["item"]
 		var row := _create_item_row(
 			item.item_name,
 			_get_type_letter_from_item(item),
 			"%dg" % item.sell_price,
 			false
 		)
-		var captured_i: int = i
-		var captured_item: Resource = item
-		row.pressed.connect(func(): _on_sell_item_selected(unit, captured_i, captured_item))
+		var captured_idx: int = i
+		row.pressed.connect(func(): _on_sell_bag_item_selected(captured_idx))
 		_item_list_container.add_child(row)
 
 
@@ -431,15 +373,7 @@ func _on_buy_item_selected(item_id: String) -> void:
 	_detail_stats.text = _format_stats(data)
 	_detail_desc.text = data.get("description", "")
 
-	# Setup unit selector for who receives the item
-	_unit_selector.clear()
-	_unit_selector.visible = true
-	for i in range(GameManager.party.size()):
-		var unit = GameManager.party[i]
-		if unit.is_alive():
-			var inv_count: int = unit.inventory.size()
-			var suffix := " (FULL)" if inv_count >= 5 else " (%d/5)" % inv_count
-			_unit_selector.add_item(unit.unit_name + suffix, i)
+	_unit_selector.visible = false
 
 	var price: int = data.get("buy_price", 0)
 	_action_btn.text = "Buy — %dg" % price
@@ -447,21 +381,20 @@ func _on_buy_item_selected(item_id: String) -> void:
 	_action_area.visible = true
 
 
-func _on_sell_item_selected(unit: Resource, inv_index: int, item: Resource) -> void:
-	_selected_sell_unit = unit
-	_selected_sell_index = inv_index
+func _on_sell_bag_item_selected(bag_index: int) -> void:
+	if bag_index < 0 or bag_index >= GameManager.bag_items.size():
+		return
+	_selected_sell_index = bag_index
 	_selected_item_id = ""
+	var item: ItemData = GameManager.bag_items[bag_index]["item"]
 
 	_detail_name.text = item.item_name
-	if inv_index == -1:
-		_detail_name.text += " (Equipped)"
 	_detail_type.text = _get_full_type_text_from_item(item)
 	_detail_stats.text = _format_stats_from_item(item)
 	_detail_desc.text = item.description
 
 	_unit_selector.visible = false
-	var sell_price: int = item.sell_price
-	_action_btn.text = "Sell — +%dg" % sell_price
+	_action_btn.text = "Sell — +%dg" % item.sell_price
 	_action_btn.disabled = false
 	_action_area.visible = true
 
@@ -476,43 +409,24 @@ func _on_action_pressed() -> void:
 func _execute_buy() -> void:
 	if _selected_item_id.is_empty() or _selected_item_id not in _catalog:
 		return
-
 	var data: Dictionary = _catalog[_selected_item_id]
 	var price: int = data.get("buy_price", 0)
-
 	if not GameManager.spend_gold(price):
 		EventBus.show_notification.emit("Not enough gold!")
 		return
 
-	# Special: food_rations adds food directly
-	if _selected_item_id == "food_rations":
-		GameManager.food += 3
-		GameManager.resources_changed.emit()
-		EventBus.show_notification.emit("Bought Food Rations. +3 food.")
-		_update_gold_label()
-		gold_changed.emit()
-		_refresh_item_list()
-		# Re-select same item to refresh affordability
-		_on_buy_item_selected(_selected_item_id)
-		return
-
-	# Get target unit
-	if _unit_selector.item_count == 0:
-		return
-	var unit_idx: int = _unit_selector.get_item_id(_unit_selector.selected)
-	if unit_idx < 0 or unit_idx >= GameManager.party.size():
-		return
-	var unit: Resource = GameManager.party[unit_idx]
-
-	if unit.inventory.size() >= 5:
-		EventBus.show_notification.emit("%s's inventory is full!" % unit.unit_name)
-		return
-
 	var item := ItemData.create_from_dict(data)
-	unit.add_item(item)
-	GameManager.party_changed.emit()
+	# Food rations start with 3 uses (hops)
+	if _selected_item_id == "food_rations":
+		item.current_uses = 3
 
-	EventBus.show_notification.emit("Bought %s for %s." % [item.item_name, unit.unit_name])
+	var idx := GameManager.bag_auto_place(item)
+	if idx == -1:
+		GameManager.add_gold(price)
+		EventBus.show_notification.emit("Bag is full!")
+		return
+
+	EventBus.show_notification.emit("Bought %s." % item.item_name)
 	_update_gold_label()
 	gold_changed.emit()
 	_refresh_item_list()
@@ -520,31 +434,12 @@ func _execute_buy() -> void:
 
 
 func _execute_sell() -> void:
-	if _selected_sell_unit == null:
+	if _selected_sell_index < 0 or _selected_sell_index >= GameManager.bag_items.size():
 		return
-
-	var item: Resource
-	if _selected_sell_index == -1:
-		# Selling equipped weapon — remove directly (don't move to inventory)
-		item = _selected_sell_unit.equipped_weapon
-		if item == null:
-			return
-		_selected_sell_unit.equipped_weapon = null
-		# Auto-equip first weapon from inventory
-		for i in range(_selected_sell_unit.inventory.size()):
-			if _selected_sell_unit.inventory[i].item_type == ItemData.ItemType.WEAPON:
-				_selected_sell_unit.equip_item(i)
-				break
-	else:
-		if _selected_sell_index >= _selected_sell_unit.inventory.size():
-			return
-		item = _selected_sell_unit.remove_item(_selected_sell_index)
-		if item == null:
-			return
-
+	var item: ItemData = GameManager.bag_remove_item(_selected_sell_index)
+	if item == null:
+		return
 	GameManager.add_gold(item.sell_price)
-	GameManager.party_changed.emit()
-
 	EventBus.show_notification.emit("Sold %s for %dg." % [item.item_name, item.sell_price])
 	_update_gold_label()
 	gold_changed.emit()
