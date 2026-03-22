@@ -4,16 +4,17 @@ extends CanvasLayer
 ## Built entirely in code. Add as child of WorldMap and call setup() with party data.
 
 signal quest_log_requested
+signal inventory_requested
 
-# Color palette - Stone & Steel theme
-const COLOR_PANEL_BG := Color(0.05, 0.055, 0.08, 0.95)
-const COLOR_IRON_BORDER := Color(0.227, 0.239, 0.282)
-const COLOR_EMBER := Color(0.69, 0.44, 0.25)
-const COLOR_PARCHMENT := Color(0.832, 0.812, 0.761)
-const COLOR_BLOOD_RED := Color(0.769, 0.267, 0.267)
-const COLOR_MOSS_GREEN := Color(0.353, 0.541, 0.353)
-const COLOR_WORN_STONE := Color(0.478, 0.463, 0.439)
-const COLOR_BAR_BG := Color(0.15, 0.15, 0.15)
+# Color palette - Stone & Steel theme (from UIColors)
+const COLOR_PANEL_BG := UIColors.COLOR_PANEL_BG
+const COLOR_IRON_BORDER := UIColors.COLOR_IRON_BORDER
+const COLOR_EMBER := UIColors.COLOR_EMBER
+const COLOR_PARCHMENT := UIColors.COLOR_PARCHMENT
+const COLOR_BLOOD_RED := UIColors.COLOR_BLOOD_RED
+const COLOR_MOSS_GREEN := UIColors.COLOR_MOSS_GREEN
+const COLOR_WORN_STONE := UIColors.COLOR_WORN_STONE
+const COLOR_BAR_BG := UIColors.COLOR_BAR_BG
 
 # Class circle colors
 const CLASS_COLORS := {
@@ -173,6 +174,32 @@ func _build_ui() -> void:
 
 	quest_btn.pressed.connect(func(): quest_log_requested.emit())
 	location_section.add_child(quest_btn)
+
+	# Inventory button
+	var inv_btn := Button.new()
+	inv_btn.text = "Inventory"
+	inv_btn.custom_minimum_size = Vector2(100, 24)
+	inv_btn.add_theme_font_size_override("font_size", 12)
+	inv_btn.add_theme_color_override("font_color", COLOR_WORN_STONE)
+	inv_btn.add_theme_color_override("font_hover_color", COLOR_EMBER)
+	inv_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	inv_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var inv_style := StyleBoxFlat.new()
+	inv_style.bg_color = Color(0, 0, 0, 0)
+	inv_style.set_border_width_all(0)
+	inv_style.border_width_bottom = 1
+	inv_style.border_color = Color(COLOR_IRON_BORDER, 0.3)
+	inv_style.content_margin_top = 2
+	inv_style.content_margin_bottom = 2
+	inv_btn.add_theme_stylebox_override("normal", inv_style)
+
+	var inv_hover := inv_style.duplicate()
+	inv_hover.border_color = COLOR_EMBER
+	inv_btn.add_theme_stylebox_override("hover", inv_hover)
+
+	inv_btn.pressed.connect(func(): inventory_requested.emit())
+	location_section.add_child(inv_btn)
 
 	# Separator
 	var sep2 := VSeparator.new()

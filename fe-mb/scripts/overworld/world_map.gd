@@ -66,6 +66,7 @@ func _ready() -> void:
 	add_child(overworld_hud)
 	overworld_hud.setup(GameManager.party)
 	overworld_hud.quest_log_requested.connect(_open_quest_log)
+	overworld_hud.inventory_requested.connect(_open_inventory)
 
 	# Connect dialogue system for event resolution
 	DialogueManager.dialogue_finished.connect(_on_dialogue_finished)
@@ -729,6 +730,19 @@ func _open_quest_log() -> void:
 		return
 	var quest_log := QuestLogPanel.new()
 	add_child(quest_log)
+
+
+## Open the grid inventory overlay.
+func _open_inventory() -> void:
+	if is_traveling or DialogueManager.is_active():
+		return
+	var inventory := GridInventoryUI.new()
+	add_child(inventory)
+	# Refresh HUD when inventory closes (equipment may have changed)
+	inventory.closed.connect(func():
+		overworld_hud.update_party()
+		overworld_hud.update_resources()
+	)
 
 
 # --- Dynamic Quest Nodes ---
