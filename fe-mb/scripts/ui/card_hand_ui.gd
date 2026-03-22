@@ -6,18 +6,18 @@ signal card_selected(card: CardData, index: int)
 signal card_hovered(card: CardData, index: int)  # -1 index = no card hovered
 signal end_turn_pressed
 
-# Stone & Steel palette
-const COLOR_PANEL_BG := Color(0.05, 0.055, 0.08, 0.95)
-const COLOR_IRON_BORDER := Color(0.227, 0.239, 0.282)
-const COLOR_EMBER := Color(0.69, 0.44, 0.25)
-const COLOR_PARCHMENT := Color(0.832, 0.812, 0.761)
-const COLOR_WORN_STONE := Color(0.478, 0.463, 0.439)
-const COLOR_BLOOD := Color(0.769, 0.267, 0.267)
-const COLOR_MOSS := Color(0.353, 0.541, 0.353)
-const COLOR_MAGE_PURPLE := Color(0.5, 0.3, 0.65)
-const COLOR_ITEM_GREEN := Color(0.353, 0.541, 0.353)
-const COLOR_SKILL_BLUE := Color(0.353, 0.541, 0.671)
-const COLOR_CARD_DIM := Color(0.3, 0.3, 0.3, 0.7)
+# Stone & Steel palette (from UIColors)
+const COLOR_PANEL_BG := UIColors.COLOR_PANEL_BG
+const COLOR_IRON_BORDER := UIColors.COLOR_IRON_BORDER
+const COLOR_EMBER := UIColors.COLOR_EMBER
+const COLOR_PARCHMENT := UIColors.COLOR_PARCHMENT
+const COLOR_WORN_STONE := UIColors.COLOR_WORN_STONE
+const COLOR_BLOOD := UIColors.COLOR_BLOOD
+const COLOR_MOSS := UIColors.COLOR_MOSS
+const COLOR_MAGE_PURPLE := UIColors.COLOR_MAGE_PURPLE
+const COLOR_ITEM_GREEN := UIColors.COLOR_ITEM_GREEN
+const COLOR_SKILL_BLUE := UIColors.COLOR_SKILL_BLUE
+const COLOR_CARD_DIM := UIColors.COLOR_CARD_DIM
 
 const CARD_WIDTH: int = 140
 const CARD_HEIGHT: int = 180
@@ -130,7 +130,7 @@ func _build_ui() -> void:
 ## Show the hand UI for a unit
 func show_hand(unit: UnitData, hand: Array, ap: int, max_ap: int, draw_count: int, discard_count: int) -> void:
 	_current_unit = unit
-	_current_hand = hand
+	_current_hand = hand.duplicate()  # Copy to avoid mutating DeckManager's array
 	_current_ap = ap
 	_max_ap = max_ap
 	_selected_index = -1
@@ -148,7 +148,7 @@ func show_hand(unit: UnitData, hand: Array, ap: int, max_ap: int, draw_count: in
 ## Hide the hand UI
 func hide_hand() -> void:
 	_bottom_bar.visible = false
-	_current_hand.clear()
+	_current_hand = []  # Detach from dm.hand — do NOT .clear() which mutates the DeckManager's array
 	_selected_index = -1
 
 
@@ -168,7 +168,7 @@ func update_deck_info(draw_count: int, discard_count: int) -> void:
 
 ## Update hand after a card is played or drawn
 func update_hand(hand: Array) -> void:
-	_current_hand = hand
+	_current_hand = hand.duplicate()  # Copy to avoid mutating DeckManager's array
 	_selected_index = -1
 	_rebuild_cards()
 
@@ -295,7 +295,7 @@ func _on_card_gui_input(event: InputEvent, index: int) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if index < _current_hand.size():
 			var card: CardData = _current_hand[index]
-			if card.ap_cost <= _current_ap:
+			if card.ap_cost <= _current_ap and _is_card_weapon_compatible(card):
 				_selected_index = index
 				_refresh_card_selection()
 				card_selected.emit(card, index)
@@ -341,7 +341,16 @@ func _refresh_card_selection() -> void:
 		panel.add_theme_stylebox_override("panel", style)
 
 
-## Refresh which cards are playable (enough AP)
+## Check if a card is compatible with the unit's equipped weapon
+func _is_card_weapon_compatible(card: CardData) -> bool:
+	if card.weapon_type == ItemData.WeaponType.NONE:
+		return true
+	if not _current_unit or not _current_unit.equipped_weapon or not _current_unit.equipped_weapon is ItemData:
+		return false
+	return card.weapon_type == _current_unit.equipped_weapon.weapon_type
+
+
+## Refresh which cards are playable (enough AP and weapon-compatible)
 func _refresh_card_playability() -> void:
 	for i in _card_containers.size():
 		if i >= _current_hand.size():
@@ -349,6 +358,9 @@ func _refresh_card_playability() -> void:
 		var card: CardData = _current_hand[i]
 		var panel: PanelContainer = _card_containers[i]
 		var playable: bool = card.ap_cost <= _current_ap
+		# Check weapon-card compatibility
+		if not _is_card_weapon_compatible(card):
+			playable = false
 		panel.modulate = Color.WHITE if playable else COLOR_CARD_DIM
 
 

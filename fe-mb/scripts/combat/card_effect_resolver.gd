@@ -2,8 +2,6 @@ extends RefCounted
 ## CardEffectResolver - Resolves card effects (damage, healing, status effects)
 ## All damage is deterministic — no hit/crit rolls
 
-const WEAPON_TRIANGLE_DMG_BONUS: int = 1
-
 
 ## Resolve a card being played. Returns result dictionary.
 ## battle_context: { "terrain_def_bonus": int, "get_defender_weapon_type": Callable }
@@ -47,11 +45,7 @@ func _apply_damage(card: CardData, caster: UnitData, target: UnitData, context: 
 	var terrain_bonus: int = context.get("terrain_def_bonus", 0)
 	dr += terrain_bonus
 
-	# Weapon triangle bonus
-	var triangle: int = _get_triangle_bonus(card, target)
-	var triangle_dmg: int = triangle * WEAPON_TRIANGLE_DMG_BONUS
-
-	var damage_per_hit: int = max(0, raw_damage - dr + triangle_dmg)
+	var damage_per_hit: int = max(0, raw_damage - dr)
 	var total_damage: int = 0
 
 	# Handle multi-hit (damage_multiplier as hit count)
@@ -112,10 +106,3 @@ func _apply_effects(card: CardData, caster: UnitData, target: UnitData, context:
 	return applied
 
 
-## Get weapon triangle bonus for a card against a target
-func _get_triangle_bonus(card: CardData, target: UnitData) -> int:
-	if card.weapon_type == ItemData.WeaponType.NONE:
-		return 0
-	if not target.equipped_weapon or not target.equipped_weapon is ItemData:
-		return 0
-	return ItemData.get_triangle_advantage(card.weapon_type, target.equipped_weapon.weapon_type)
