@@ -42,6 +42,16 @@ var pending_post_battle_dialogue: String = ""  # Dialogue to trigger after retur
 # Capture/bounty system
 var captured_enemies: Array[Resource] = []  # Array of UnitData for bounty turn-in
 
+# --- Shared Party Bag (Grid Inventory) ---
+const BAG_WIDTH: int = 8
+const BAG_HEIGHT: int = 4
+const BAG_CELLS: int = BAG_WIDTH * BAG_HEIGHT  # 32
+var bag_grid: Array = []  # Array[32] of int (-1 = empty, else index into bag_items)
+var bag_items: Array[Dictionary] = []  # [{item: ItemData, grid_x: int, grid_y: int}]
+
+# Scouted encounters
+var scouted_hops: Array[int] = []
+
 # Party management
 var party: Array[Resource] = []  # Array of UnitData
 const MAX_PARTY_SIZE: int = 6
@@ -49,7 +59,21 @@ const STARTING_PARTY_SIZE: int = 3
 
 # Resources
 var gold: int = 0
-var food: int = 10
+
+## Food is derived from Food Rations in the bag (each ration tracks current_uses as hops remaining)
+var food: int:
+	get:
+		var count := 0
+		for entry in bag_items:
+			if entry["item"] is ItemData and entry["item"].item_name == "Food Rations":
+				count += entry["item"].current_uses
+		return count
+	set(value):
+		var current := food
+		if value > current:
+			add_food(value - current)
+		elif value < current:
+			consume_food(current - value)
 
 # Run statistics
 var battles_won: int = 0
@@ -58,7 +82,133 @@ var nodes_visited: int = 0
 
 
 func _ready() -> void:
+	_init_bag()
 	print("[GameManager] Initialized")
+
+
+func _init_bag() -> void:
+	bag_grid.clear()
+	bag_grid.resize(BAG_CELLS)
+	bag_grid.fill(-1)
+	bag_items.clear()
+
+
+## Check if an item of given size fits at position (grid_x, grid_y)
+func bag_can_place(grid_x: int, grid_y: int, width: int, height: int, ignore_index: int = -1) -> bool:
+	if grid_x < 0 or grid_y < 0 or grid_x + width > BAG_WIDTH or grid_y + height > BAG_HEIGHT:
+		return false
+	for dy in height:
+		for dx in width:
+			var cell_idx: int = (grid_y + dy) * BAG_WIDTH + (grid_x + dx)
+			if bag_grid[cell_idx] != -1 and bag_grid[cell_idx] != ignore_index:
+				return false
+	return true
+
+
+## Place an item in the bag at the given position. Returns the bag_items index.
+func bag_place_item(item: ItemData, grid_x: int, grid_y: int) -> int:
+	var w: int = item.grid_width
+	var h: int = item.grid_height
+	if not bag_can_place(grid_x, grid_y, w, h):
+		return -1
+	var idx: int = bag_items.size()
+	bag_items.append({"item": item, "grid_x": grid_x, "grid_y": grid_y})
+	for dy in h:
+		for dx in w:
+			bag_grid[(grid_y + dy) * BAG_WIDTH + (grid_x + dx)] = idx
+	return idx
+
+
+## Remove an item from the bag by its bag_items index. Returns the ItemData.
+func bag_remove_item(item_index: int) -> ItemData:
+	if item_index < 0 or item_index >= bag_items.size():
+		return null
+	var entry: Dictionary = bag_items[item_index]
+	var item: ItemData = entry["item"]
+	var gx: int = entry["grid_x"]
+	var gy: int = entry["grid_y"]
+	# Clear grid cells
+	for dy in item.grid_height:
+		for dx in item.grid_width:
+			var cell_idx: int = (gy + dy) * BAG_WIDTH + (gx + dx)
+			if cell_idx < bag_grid.size() and bag_grid[cell_idx] == item_index:
+				bag_grid[cell_idx] = -1
+	# Remove from items list and reindex grid
+	bag_items.remove_at(item_index)
+	_reindex_bag_grid()
+	return item
+
+
+## Find first empty position for an item. Returns Vector2i or (-1,-1) if no fit.
+func bag_find_slot(width: int, height: int) -> Vector2i:
+	for y in BAG_HEIGHT:
+		for x in BAG_WIDTH:
+			if bag_can_place(x, y, width, height):
+				return Vector2i(x, y)
+	return Vector2i(-1, -1)
+
+
+## Auto-place an item in the first available slot. Returns bag_items index or -1.
+func bag_auto_place(item: ItemData) -> int:
+	var pos := bag_find_slot(item.grid_width, item.grid_height)
+	if pos.x == -1:
+		return -1
+	return bag_place_item(item, pos.x, pos.y)
+
+
+## Rebuild grid indices after removing an item (indices shift down by 1)
+func _reindex_bag_grid() -> void:
+	bag_grid.fill(-1)
+	for i in bag_items.size():
+		var entry: Dictionary = bag_items[i]
+		var item: ItemData = entry["item"]
+		var gx: int = entry["grid_x"]
+		var gy: int = entry["grid_y"]
+		for dy in item.grid_height:
+			for dx in item.grid_width:
+				bag_grid[(gy + dy) * BAG_WIDTH + (gx + dx)] = i
+
+
+## Auto-sort: repack all items largest-first from top-left
+func bag_auto_sort() -> void:
+	var items_copy: Array[ItemData] = []
+	for entry in bag_items:
+		items_copy.append(entry["item"])
+	# Sort by cell count descending
+	items_copy.sort_custom(func(a, b): return (a.grid_width * a.grid_height) > (b.grid_width * b.grid_height))
+	# Clear and repack
+	_init_bag()
+	for item in items_copy:
+		bag_auto_place(item)
+
+
+## Serialize bag for save system
+func get_bag_save_data() -> Array:
+	var data: Array = []
+	for entry in bag_items:
+		data.append({
+			"item": entry["item"].to_dict(),
+			"grid_x": entry["grid_x"],
+			"grid_y": entry["grid_y"]
+		})
+	return data
+
+
+## Restore bag from save data
+func load_bag_save_data(data: Array) -> void:
+	_init_bag()
+	for entry in data:
+		var item := ItemData.new()
+		item.from_dict(entry.get("item", {}))
+		var gx: int = entry.get("grid_x", 0)
+		var gy: int = entry.get("grid_y", 0)
+		if bag_can_place(gx, gy, item.grid_width, item.grid_height):
+			bag_place_item(item, gx, gy)
+		else:
+			var placed := bag_auto_place(item)
+			if placed == -1:
+				push_warning("[GameManager] Bag overflow during load — dropped: %s" % item.item_name)
+
 
 ## Change game state
 func change_state(new_state: GameState) -> void:
@@ -79,8 +229,7 @@ func start_new_run() -> void:
 	
 	party.clear()
 	gold = 80
-	food = 15
-	
+
 	battles_won = 0
 	units_lost = 0
 	nodes_visited = 0
@@ -90,6 +239,19 @@ func start_new_run() -> void:
 	pending_travel_path.clear()
 	pending_post_battle_dialogue = ""
 	captured_enemies.clear()
+	_init_bag()
+	scouted_hops.clear()
+
+	# Starting bag: 2x Food Rations (3 hops each = 6 food), 1x Vulnerary
+	var catalog := _load_item_catalog()
+	if not catalog.is_empty():
+		for _n in 2:
+			var fr := ItemData.create_from_dict(catalog.get("food_rations", {}))
+			fr.current_uses = 3
+			bag_auto_place(fr)
+		var vuln := ItemData.create_from_dict(catalog.get("vulnerary", {}))
+		if vuln:
+			bag_auto_place(vuln)
 
 	# Reset dungeon state
 	current_dungeon_floor = 1
@@ -98,6 +260,7 @@ func start_new_run() -> void:
 
 	# Reset all subsystems
 	EventBus.clear_all_flags()
+	DialogueManager.clear_all_flags()
 	QuestManager.reset()
 	EventManager.reset()
 
@@ -140,22 +303,50 @@ func start_new_run() -> void:
 	print("[GameManager] New run started with 3 units")
 
 
+## Load the card catalog (id -> card definition). Cached after first load.
+var _card_catalog: Dictionary = {}
+
+func _load_card_catalog() -> Dictionary:
+	if not _card_catalog.is_empty():
+		return _card_catalog
+
+	var data = JSONLoader.load_json("res://data/cards/card_catalog.json")
+	if not data is Dictionary:
+		printerr("[GameManager] Failed to load card_catalog.json")
+		return {}
+
+	_card_catalog = data
+	print("[GameManager] Loaded card catalog: %d unique cards" % _card_catalog.size())
+	return _card_catalog
+
+
+## Load the item catalog (id -> item definition). Cached after first load.
+var _item_catalog: Dictionary = {}
+
+func _load_item_catalog() -> Dictionary:
+	if not _item_catalog.is_empty():
+		return _item_catalog
+	var data = JSONLoader.load_json("res://data/items/item_catalog.json")
+	if data is Dictionary:
+		_item_catalog = data
+	return _item_catalog
+
+
 ## Assign a starting deck to a unit based on their class
 func _assign_starting_deck(unit: UnitData) -> void:
+	var catalog := _load_card_catalog()
+	if catalog.is_empty():
+		printerr("[GameManager] Card catalog is empty, cannot assign deck")
+		return
+
 	var class_key: String = UnitData.UnitClass.keys()[unit.unit_class]
-	var file := FileAccess.open("res://data/cards/class_decks.json", FileAccess.READ)
-	if not file:
-		printerr("[GameManager] Failed to load class_decks.json")
+
+	var data = JSONLoader.load_json("res://data/cards/class_decks.json")
+	if not data is Dictionary:
+		push_warning("[GameManager] Failed to load class_decks.json")
 		return
 
-	var json := JSON.new()
-	var err := json.parse(file.get_as_text())
-	file.close()
-	if err != OK:
-		printerr("[GameManager] Failed to parse class_decks.json: %s" % json.get_error_message())
-		return
-
-	var all_decks: Dictionary = json.data
+	var all_decks: Dictionary = data
 	if class_key not in all_decks:
 		printerr("[GameManager] No deck found for class: %s" % class_key)
 		return
@@ -165,9 +356,20 @@ func _assign_starting_deck(unit: UnitData) -> void:
 
 	unit.deck.clear()
 	for card_entry in cards_data:
+		var card_id: String = card_entry.get("card_id", "")
 		var copies: int = card_entry.get("copies", 1)
+
+		if card_id.is_empty():
+			push_warning("[GameManager] Deck entry for %s has no card_id, skipping" % class_key)
+			continue
+
+		if card_id not in catalog:
+			push_warning("[GameManager] Card ID '%s' not found in card catalog (class: %s)" % [card_id, class_key])
+			continue
+
+		var card_def: Dictionary = catalog[card_id]
 		for i in copies:
-			var card := CardData.create_from_dict(card_entry)
+			var card := CardData.create_from_dict(card_def)
 			unit.deck.append(card)
 
 	print("[GameManager] Assigned %d-card deck to %s (%s)" % [unit.deck.size(), unit.unit_name, class_key])
@@ -201,13 +403,49 @@ func remove_unit(unit: Resource) -> void:
 		resources_changed.emit()
 
 
-## Consume food when moving to a new node. If food runs out, party takes starvation damage.
+## Consume food-hops from Food Rations in the bag. Handles spanning multiple items.
 func consume_food(amount: int = 1) -> void:
-	food -= amount
-	if food < 0:
-		var starve_dmg := 3
-		food = 0
-		_apply_starvation(starve_dmg)
+	var remaining: int = amount
+	while remaining > 0:
+		var found: bool = false
+		for i in range(bag_items.size()):
+			var item: ItemData = bag_items[i]["item"]
+			if item.item_name == "Food Rations" and item.current_uses > 0:
+				var take: int = min(remaining, item.current_uses)
+				item.current_uses -= take
+				remaining -= take
+				if item.current_uses <= 0:
+					bag_remove_item(i)
+				found = true
+				break  # Restart loop (indices may have shifted after removal)
+		if not found:
+			break
+	if remaining > 0:
+		_apply_starvation(3)
+	resources_changed.emit()
+
+
+## Add food hops by topping up existing rations then creating new ones
+func add_food(hops: int) -> void:
+	# Try to top up existing rations first (max 3 uses each)
+	for entry in bag_items:
+		if hops <= 0:
+			break
+		var item: ItemData = entry["item"]
+		if item.item_name == "Food Rations" and item.current_uses < 3:
+			var space: int = 3 - item.current_uses
+			var add_amt: int = min(space, hops)
+			item.current_uses += add_amt
+			hops -= add_amt
+	# Create new rations for remaining hops
+	while hops > 0:
+		var catalog := _load_item_catalog()
+		var fr := ItemData.create_from_dict(catalog.get("food_rations", {}))
+		fr.current_uses = min(3, hops)
+		if bag_auto_place(fr) == -1:
+			push_warning("[GameManager] Bag full, cannot add food rations")
+			break
+		hops -= fr.current_uses
 	resources_changed.emit()
 
 
