@@ -4,7 +4,7 @@
 	"buildings": {
 		"inn": { "heal_cost_per_unit": 20 },
 		"shop": {
-			"stock": ["steel_sword", "steel_lance", "iron_bow", "thunder", "heal_staff", "vulnerary", "elixir", "food_rations"]
+			"stock": ["steel_sword", "steel_lance", "iron_bow", "iron_crossbow", "thunder", "heal_staff", "vulnerary", "elixir", "food_rations", "whetstone"]
 		},
 		"tavern": {
 			"rumors": [
@@ -14,7 +14,7 @@
 				"There's talk of an ancient dungeon beneath the Stone Ruins. Treasure for the bold."
 			]
 		},
-		"guild": { "locked": true, "locked_text": "The castle guild only serves the lord's bannermen." },
+		"blacksmith": { "sharpen_cost_per_weapon": 15 },
 		"arena": { "locked": true, "locked_text": "The arena awaits the lord's tournament decree." }
 	}
 }

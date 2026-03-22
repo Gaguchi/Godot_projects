@@ -4,7 +4,7 @@
 	"buildings": {
 		"inn": { "heal_cost_per_unit": 8 },
 		"shop": {
-			"stock": ["iron_sword", "iron_lance", "vulnerary", "food_rations"]
+			"stock": ["iron_sword", "iron_lance", "vulnerary", "food_rations", "whetstone"]
 		},
 		"tavern": {
 			"rumors": [
@@ -25,7 +25,7 @@
 				}
 			]
 		},
-		"guild": { "locked": true, "locked_text": "The guild hall is boarded shut." },
+		"blacksmith": { "sharpen_cost_per_weapon": 15 },
 		"arena": { "locked": true, "locked_text": "The fighting pit lies dormant." }
 	}
 }
