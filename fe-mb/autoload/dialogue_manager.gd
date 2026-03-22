@@ -162,25 +162,7 @@ func clear_all_flags() -> void:
 
 func _load_dialogue(dialogue_id: String) -> Dictionary:
 	var path: String = "res://data/dialogue/%s.json" % dialogue_id
-	if not FileAccess.file_exists(path):
-		print("[DialogueManager] Dialogue file not found: %s" % path)
-		return {}
-
-	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		print("[DialogueManager] Failed to open: %s" % path)
-		return {}
-
-	var json_text: String = file.get_as_text()
-	file.close()
-
-	var json := JSON.new()
-	var err := json.parse(json_text)
-	if err != OK:
-		print("[DialogueManager] JSON parse error in %s: %s" % [path, json.get_error_message()])
-		return {}
-
-	var data = json.data
+	var data = JSONLoader.load_json(path)
 	if data is Dictionary:
 		return data
 	return {}
@@ -268,8 +250,7 @@ func _execute_effect(effect: Dictionary) -> void:
 		"add_gold":
 			GameManager.add_gold(effect.get("amount", 0))
 		"add_food":
-			GameManager.food += effect.get("amount", 0)
-			GameManager.resources_changed.emit()
+			GameManager.add_food(effect.get("amount", 0))
 		"heal_party":
 			var pct: float = effect.get("percent", 0.3)
 			GameManager.rest_party(pct)
@@ -400,20 +381,7 @@ func _give_item(effect: Dictionary) -> void:
 ## Load an item from the item catalog JSON by name.
 func _load_item_from_catalog(item_name: String) -> ItemData:
 	var path := "res://data/items/item_catalog.json"
-	if not FileAccess.file_exists(path):
-		return null
-
-	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		return null
-
-	var json := JSON.new()
-	if json.parse(file.get_as_text()) != OK:
-		file.close()
-		return null
-	file.close()
-
-	var data = json.data
+	var data = JSONLoader.load_json(path)
 	if not data is Dictionary:
 		return null
 

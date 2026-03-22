@@ -6,12 +6,15 @@ extends Node
 
 const SAVE_PATH_TEMPLATE = "user://save_slot_%d.json"
 
+## Tracks the version string of the save currently being loaded so migration helpers can read it.
+var _current_load_version: String = "0.4.0"
+
 func get_save_path(slot: int) -> String:
 	return SAVE_PATH_TEMPLATE % slot
 
 func save_game(slot: int) -> void:
 	var save_data = {
-		"version": "0.3.0",
+		"version": "0.4.0",
 		"timestamp": Time.get_unix_time_from_system(),
 		"date_string": Time.get_datetime_string_from_system(false, true),
 		"game_manager": _serialize_game_manager(),
@@ -32,25 +35,18 @@ func save_game(slot: int) -> void:
 
 func load_game(slot: int) -> bool:
 	var path = get_save_path(slot)
-	if not FileAccess.file_exists(path):
+	if not JSONLoader.file_exists(path):
 		print("[SaveManager] No save file found for slot %d." % slot)
 		return false
-		
-	var file = FileAccess.open(path, FileAccess.READ)
-	if not file:
-		printerr("[SaveManager] Failed to open save file for reading.")
+
+	var save_data = JSONLoader.load_json(path)
+	if not save_data is Dictionary:
+		printerr("[SaveManager] Failed to load or parse save file for slot %d." % slot)
 		return false
-		
-	var json_string = file.get_as_text()
-	var json = JSON.new()
-	var parse_result = json.parse(json_string)
-	
-	if parse_result != OK:
-		printerr("[SaveManager] JSON Parse Error: %s in %s at line %s" % [json.get_error_message(), json_string, json.get_error_line()])
-		return false
-		
-	var save_data = json.get_data()
-	
+
+	# Capture save version for migration decisions inside _deserialize_game_manager
+	_current_load_version = save_data.get("version", "0.1.0")
+
 	# Restore State
 	_deserialize_game_manager(save_data.get("game_manager", {}))
 	QuestManager.load_save_data(save_data.get("quest_manager", {}))
@@ -77,21 +73,13 @@ func delete_save(slot: int) -> void:
 ## Get metadata for a slot without loading full state
 func get_slot_metadata(slot: int) -> Dictionary:
 	var path = get_save_path(slot)
-	if not FileAccess.file_exists(path):
+	if not JSONLoader.file_exists(path):
 		return {}
-		
-	var file = FileAccess.open(path, FileAccess.READ)
-	if not file:
-		return {}
-		
-	var json_string = file.get_as_text()
-	var json = JSON.new()
-	var parse_result = json.parse(json_string)
-	
-	if parse_result != OK:
+
+	var data = JSONLoader.load_json(path)
+	if not data is Dictionary:
 		return {"error": "Corrupted"}
-		
-	var data = json.get_data()
+
 	var gm_data = data.get("game_manager", {})
 	
 	return {
@@ -124,8 +112,10 @@ func _serialize_game_manager() -> Dictionary:
 		"is_run_active": GameManager.is_run_active,
 		"current_floor": GameManager.current_floor,
 		"gold": GameManager.gold,
-		"food": GameManager.food,
+		"food": GameManager.food,  # kept for backwards compat; food is derived from bag in 0.4.0+
 		"party": party_data,
+		"party_bag": GameManager.get_bag_save_data(),
+		"scouted_hops": GameManager.scouted_hops,
 		"battles_won": GameManager.battles_won,
 		"units_lost": GameManager.units_lost,
 		"last_battle_victory": GameManager.last_battle_victory,
@@ -138,11 +128,14 @@ func _serialize_game_manager() -> Dictionary:
 func _deserialize_game_manager(data: Dictionary) -> void:
 	if data.is_empty():
 		return
-		
+
+	# Detect save version for migration (stored at top-level, passed in via load_game)
+	var save_version: String = _current_load_version
+
 	GameManager.is_run_active = data.get("is_run_active", false)
 	GameManager.current_floor = data.get("current_floor", 1)
 	GameManager.gold = data.get("gold", 0)
-	GameManager.food = data.get("food", 0)
+	# NOTE: Do NOT assign GameManager.food here — food is derived from bag contents in 0.4.0+
 	GameManager.battles_won = data.get("battles_won", 0)
 	GameManager.units_lost = data.get("units_lost", 0)
 
@@ -170,6 +163,19 @@ func _deserialize_game_manager(data: Dictionary) -> void:
 		var unit = UnitData.new()
 		unit.from_dict(unit_dict)
 		GameManager.captured_enemies.append(unit)
+
+	# Restore party bag (0.4.0+) or migrate from old food integer
+	if save_version >= "0.4.0":
+		GameManager.load_bag_save_data(data.get("party_bag", []))
+		GameManager.scouted_hops = data.get("scouted_hops", [])
+	else:
+		# Migration: old saves store food as a plain integer with no party bag
+		GameManager.load_bag_save_data([])
+		var old_food: int = data.get("food", 0)
+		if old_food > 0:
+			GameManager.add_food(old_food)
+		# Old per-unit inventory items are handled by UnitData.from_dict() legacy migration
+		print("[SaveManager] Migrated save from %s to 0.4.0" % save_version)
 
 	GameManager.party_changed.emit()
 	GameManager.resources_changed.emit()
