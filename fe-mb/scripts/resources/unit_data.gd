@@ -65,6 +65,9 @@ var equipped_weapon: Resource:
 @export var deck: Array[Resource] = []  # Array of CardData
 @export var max_ap: int = 3  # Action points per turn in card combat
 
+## Status effects active on this unit — resets each battle, NOT serialized
+var status_effects: Array = []  # [{type, value, duration, ...}, ...]
+
 const EXP_TO_LEVEL: int = 100  # EXP needed to level up
 
 

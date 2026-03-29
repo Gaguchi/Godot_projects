@@ -106,3 +106,77 @@ func _apply_effects(card: CardData, caster: UnitData, target: UnitData, context:
 	return applied
 
 
+## Apply a status effect to a unit. Deterministic, no RNG.
+func apply_status(target: Resource, effect: Dictionary) -> void:
+	var effect_type = effect.get("type", "")
+	var value = effect.get("value", 0)
+	var duration = effect.get("duration", 0)
+
+	match effect_type:
+		"poison":
+			# Poison does NOT stack — refresh with higher value
+			for i in range(target.status_effects.size()):
+				if target.status_effects[i]["type"] == "poison":
+					if value >= target.status_effects[i]["value"]:
+						target.status_effects[i]["value"] = value
+						target.status_effects[i]["duration"] = duration
+					return
+			target.status_effects.append({"type": "poison", "value": value, "duration": duration})
+
+		"burn":
+			# Burn STACKS — multiple sources add together
+			target.status_effects.append({"type": "burn", "value": value, "duration": duration})
+
+		"slow":
+			# Slow does NOT stack — refresh
+			for i in range(target.status_effects.size()):
+				if target.status_effects[i]["type"] == "slow":
+					target.status_effects[i]["value"] = value
+					target.status_effects[i]["duration"] = duration
+					return
+			target.speed -= value
+			target.status_effects.append({"type": "slow", "value": value, "duration": duration, "original_speed": target.speed + value})
+
+		"immobilize":
+			# Immobilize does NOT stack — refresh
+			for i in range(target.status_effects.size()):
+				if target.status_effects[i]["type"] == "immobilize":
+					target.status_effects[i]["duration"] = duration
+					return
+			var original_mov = target.movement
+			target.movement = 0
+			target.status_effects.append({"type": "immobilize", "value": 0, "duration": duration, "original_movement": original_mov})
+
+
+## Tick all status effects at end of unit's turn. Returns total damage dealt.
+func tick_status_effects(unit: Resource) -> int:
+	var total_damage = 0
+	var to_remove = []
+
+	for i in range(unit.status_effects.size()):
+		var se = unit.status_effects[i]
+		match se["type"]:
+			"poison":
+				unit.current_hp = max(0, unit.current_hp - se["value"])
+				total_damage += se["value"]
+			"burn":
+				unit.current_hp = max(0, unit.current_hp - se["value"])
+				total_damage += se["value"]
+
+		se["duration"] -= 1
+		if se["duration"] <= 0:
+			match se["type"]:
+				"slow":
+					unit.speed = se.get("original_speed", unit.speed)
+				"immobilize":
+					unit.movement = se.get("original_movement", unit.movement)
+			to_remove.append(i)
+
+	# Remove expired effects (reverse order to preserve indices)
+	to_remove.reverse()
+	for i in to_remove:
+		unit.status_effects.remove_at(i)
+
+	return total_damage
+
+
