@@ -52,7 +52,6 @@ enum UnitClass {
 
 @export_group("Equipment")
 @export var equipped_weapon: Resource  # ItemData
-@export var quick_slots: Array[Resource] = [null, null]  # 2 quick slots for consumables or spare weapons
 
 @export_group("Card Deck")
 @export var deck: Array[Resource] = []  # Array of CardData
@@ -229,30 +228,7 @@ func get_class_name() -> String:
 	return "Unknown"
 
 
-## Set an item in a quick slot (0 or 1). Returns the previous item (or null).
-func set_quick_slot(slot_index: int, item: Resource) -> Resource:
-	if slot_index < 0 or slot_index > 1:
-		return null
-	while quick_slots.size() < 2:
-		quick_slots.append(null)
-	var prev = quick_slots[slot_index]
-	quick_slots[slot_index] = item
-	return prev
-
-
-## Get item from a quick slot
-func get_quick_slot(slot_index: int) -> Resource:
-	if slot_index < 0 or slot_index > 1 or slot_index >= quick_slots.size():
-		return null
-	return quick_slots[slot_index]
-
-
-## Clear a quick slot and return the item
-func clear_quick_slot(slot_index: int) -> Resource:
-	return set_quick_slot(slot_index, null)
-
-
-## Equip a weapon directly (from bag or quick slot). Returns old weapon or null.
+## Equip a weapon directly (from bag). Returns old weapon or null.
 func equip_weapon(weapon: Resource) -> Resource:
 	var old = equipped_weapon
 	equipped_weapon = weapon
@@ -263,14 +239,7 @@ func to_dict() -> Dictionary:
 	var weapon_dict = {}
 	if equipped_weapon and equipped_weapon.has_method("to_dict"):
 		weapon_dict = equipped_weapon.to_dict()
-		
-	var quick_slot_list = []
-	for slot in quick_slots:
-		if slot and slot.has_method("to_dict"):
-			quick_slot_list.append(slot.to_dict())
-		else:
-			quick_slot_list.append(null)
-	
+
 	var deck_list = []
 	for card in deck:
 		if card and card.has_method("to_dict"):
@@ -302,7 +271,6 @@ func to_dict() -> Dictionary:
 		"def_growth": def_growth,
 		"res_growth": res_growth,
 		"equipped_weapon": weapon_dict,
-		"quick_slots": quick_slot_list,
 		"deck": deck_list,
 		"max_ap": max_ap,
 		"is_capture_target": is_capture_target,
@@ -359,20 +327,3 @@ func from_dict(data: Dictionary) -> void:
 	else:
 		equipped_weapon = null
 		
-	# Deserialize Quick Slots
-	quick_slots = [null, null]
-	var qs_data = data.get("quick_slots", [])
-	for i in range(min(qs_data.size(), 2)):
-		if qs_data[i] != null and qs_data[i] is Dictionary:
-			var qs_item = ItemData.new()
-			qs_item.from_dict(qs_data[i])
-			quick_slots[i] = qs_item
-
-	# Legacy: migrate old inventory to quick_slots if present
-	var legacy_inv = data.get("inventory", [])
-	if qs_data.is_empty() and not legacy_inv.is_empty():
-		for i in range(min(legacy_inv.size(), 2)):
-			if legacy_inv[i] is Dictionary:
-				var item = ItemData.new()
-				item.from_dict(legacy_inv[i])
-				quick_slots[i] = item

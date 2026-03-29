@@ -5,7 +5,6 @@ extends CanvasLayer
 signal card_selected(card: CardData, index: int)
 signal card_hovered(card: CardData, index: int)  # -1 index = no card hovered
 signal end_turn_pressed
-signal quick_slot_used(slot_index: int)
 
 # Stone & Steel palette (from UIColors)
 const COLOR_PANEL_BG := UIColors.COLOR_PANEL_BG
@@ -40,7 +39,6 @@ var _discard_label: Label
 var _end_turn_btn: Button
 var _unit_name_label: Label
 var _bottom_bar: PanelContainer
-var _quick_slot_btns: Array[Button] = []
 
 
 func _ready() -> void:
@@ -119,18 +117,6 @@ func _build_ui() -> void:
 	_ap_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	right_vbox.add_child(_ap_label)
 
-	# Quick slot buttons (2 slots)
-	_quick_slot_btns.clear()
-	for i in 2:
-		var qs_btn := Button.new()
-		qs_btn.text = "Slot %d: Empty" % (i + 1)
-		qs_btn.custom_minimum_size = Vector2(100, 26)
-		qs_btn.disabled = true
-		_style_quick_slot_btn(qs_btn)
-		qs_btn.pressed.connect(_on_quick_slot_pressed.bind(i))
-		right_vbox.add_child(qs_btn)
-		_quick_slot_btns.append(qs_btn)
-
 	_end_turn_btn = Button.new()
 	_end_turn_btn.text = "End Turn"
 	_end_turn_btn.custom_minimum_size = Vector2(100, 36)
@@ -156,7 +142,6 @@ func show_hand(unit: UnitData, hand: Array, ap: int, max_ap: int, draw_count: in
 	_discard_label.text = "Discard: %d" % discard_count
 
 	_rebuild_cards()
-	refresh_quick_slots(unit, ap)
 	_bottom_bar.visible = true
 
 
@@ -173,8 +158,6 @@ func update_ap(ap: int, max_ap: int) -> void:
 	_max_ap = max_ap
 	_update_ap_display()
 	_refresh_card_playability()
-	if _current_unit:
-		refresh_quick_slots(_current_unit, ap)
 
 
 ## Update deck/discard counts
@@ -438,27 +421,6 @@ func _get_card_type_color(ct: CardData.CardType) -> Color:
 	return COLOR_IRON_BORDER
 
 
-## Refresh quick slot button labels and enabled state based on unit's quick slots and AP
-func refresh_quick_slots(unit: UnitData, ap: int) -> void:
-	if _quick_slot_btns.is_empty():
-		return
-	for i in 2:
-		var btn: Button = _quick_slot_btns[i]
-		var slot_item = unit.get_quick_slot(i) if unit else null
-		if slot_item and slot_item is ItemData:
-			var label_text: String = slot_item.item_name
-			if slot_item.item_type == ItemData.ItemType.CONSUMABLE and slot_item.current_uses > 0:
-				label_text += " x%d" % slot_item.current_uses
-			btn.text = label_text
-			var usable: bool = slot_item.item_type == ItemData.ItemType.WEAPON or slot_item.current_uses > 0
-			btn.disabled = (ap < 1) or not usable
-			_style_quick_slot_btn_active(btn, slot_item.item_type == ItemData.ItemType.WEAPON)
-		else:
-			btn.text = "Slot %d: Empty" % (i + 1)
-			btn.disabled = true
-			_style_quick_slot_btn(btn)
-
-
 ## Expose card playability refresh (for external callers such as CardPlayController)
 func refresh_card_playability() -> void:
 	_refresh_card_playability()
@@ -497,52 +459,5 @@ func _get_card_type_name(ct: CardData.CardType) -> String:
 	return "Unknown"
 
 
-## Quick slot button pressed handler
-func _on_quick_slot_pressed(slot_index: int) -> void:
-	quick_slot_used.emit(slot_index)
-
-
-## Style a quick slot button (empty / disabled state)
-func _style_quick_slot_btn(btn: Button) -> void:
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.08, 0.08, 0.1, 0.85)
-	normal.border_color = COLOR_WORN_STONE
-	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(3)
-	normal.set_content_margin_all(4)
-	btn.add_theme_stylebox_override("normal", normal)
-	btn.add_theme_stylebox_override("hover", normal)
-	btn.add_theme_stylebox_override("pressed", normal)
-	btn.add_theme_color_override("font_color", COLOR_WORN_STONE)
-	btn.add_theme_color_override("font_hover_color", COLOR_WORN_STONE)
-	btn.add_theme_font_size_override("font_size", 11)
-
-
-## Style an active quick slot button — green tint for consumables, ember for weapons
-func _style_quick_slot_btn_active(btn: Button, is_weapon: bool) -> void:
-	var border_col: Color = COLOR_EMBER if is_weapon else COLOR_ITEM_GREEN
-	var hover_col: Color = Color(border_col.r, border_col.g, border_col.b, 1.0)
-
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.06, 0.12, 0.08, 0.9) if not is_weapon else Color(0.14, 0.08, 0.04, 0.9)
-	normal.border_color = border_col
-	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(3)
-	normal.set_content_margin_all(4)
-	btn.add_theme_stylebox_override("normal", normal)
-
-	var hover := StyleBoxFlat.new()
-	hover.bg_color = Color(0.1, 0.22, 0.12, 0.95) if not is_weapon else Color(0.22, 0.13, 0.06, 0.95)
-	hover.border_color = hover_col
-	hover.set_border_width_all(2)
-	hover.set_corner_radius_all(3)
-	hover.set_content_margin_all(4)
-	btn.add_theme_stylebox_override("hover", hover)
-	btn.add_theme_stylebox_override("pressed", normal)
-
-	var font_col: Color = COLOR_ITEM_GREEN if not is_weapon else COLOR_EMBER
-	btn.add_theme_color_override("font_color", font_col)
-	btn.add_theme_color_override("font_hover_color", hover_col)
-	btn.add_theme_font_size_override("font_size", 11)
 
 

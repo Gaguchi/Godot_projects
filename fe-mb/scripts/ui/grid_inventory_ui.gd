@@ -489,20 +489,6 @@ func _build_unit_row(unit: UnitData) -> void:
 	weapon_btn.pressed.connect(func(): _on_unit_weapon_slot_clicked(captured_unit_w))
 	vbox.add_child(weapon_btn)
 
-	# Quick slots row
-	var qs_row := HBoxContainer.new()
-	qs_row.add_theme_constant_override("separation", 6)
-	vbox.add_child(qs_row)
-
-	for si in 2:
-		var qs_item := unit.get_quick_slot(si) as ItemData if unit.get_quick_slot(si) else null
-		var qs_label: String = "Q%d: %s" % [si + 1, qs_item.item_name if qs_item else "Empty"]
-		var qs_btn := _make_slot_button(qs_label, qs_item != null)
-		qs_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var captured_unit_q: UnitData = unit
-		var captured_si: int = si
-		qs_btn.pressed.connect(func(): _on_unit_quick_slot_clicked(captured_unit_q, captured_si))
-		qs_row.add_child(qs_btn)
 
 
 func _make_slot_button(label_text: String, has_item: bool) -> Button:
@@ -674,41 +660,6 @@ func _on_unit_weapon_slot_clicked(unit: UnitData) -> void:
 		var placed := GameManager.bag_auto_place(old_weapon)
 		if placed == -1:
 			push_warning("[GridInventoryUI] Bag full — old weapon dropped on equip")
-
-	_cancel_hold()
-	_refresh_grid()
-	_refresh_unit_panels()
-
-
-func _on_unit_quick_slot_clicked(unit: UnitData, slot_idx: int) -> void:
-	if _held_item_index < 0:
-		# Nothing held — unassign quick slot item to bag
-		var qs_item := unit.get_quick_slot(slot_idx) as ItemData
-		if not qs_item:
-			_show_info_text("Empty slot", "No item in quick slot %d." % (slot_idx + 1))
-			return
-		unit.clear_quick_slot(slot_idx)
-		var placed := GameManager.bag_auto_place(qs_item)
-		if placed < 0:
-			unit.set_quick_slot(slot_idx, qs_item)
-			_show_info_text("Bag is full!", "Cannot unassign — no room in bag.")
-			return
-		_pick_up_from_bag(placed)
-		return
-
-	# Holding an item — assign it to this quick slot
-	var held_entry: Dictionary = GameManager.bag_items[_held_item_index]
-	var held_item: ItemData = held_entry["item"] as ItemData
-
-	var removed: ItemData = GameManager.bag_remove_item(_held_item_index)
-	if not removed:
-		return
-
-	var old_qs := unit.set_quick_slot(slot_idx, removed) as ItemData
-	if old_qs:
-		var placed := GameManager.bag_auto_place(old_qs)
-		if placed == -1:
-			push_warning("[GridInventoryUI] Bag full — previous quick-slot item dropped")
 
 	_cancel_hold()
 	_refresh_grid()
