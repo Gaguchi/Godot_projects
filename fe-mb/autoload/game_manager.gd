@@ -267,6 +267,8 @@ func start_new_run() -> void:
 	run_started.emit()
 	
 	# Add starter units — Roy (LORD), Marcus (KNIGHT), Lilina (MAGE)
+	var gear_data := _load_gear_cards()
+
 	var u1 = UnitData.new()
 	u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.is_player_unit = true
 	u1.level = 1; u1.max_hp = 22; u1.current_hp = 22
@@ -274,8 +276,9 @@ func start_new_run() -> void:
 	u1.defense = 5; u1.resistance = 2; u1.movement = 5; u1.current_armor = u1.defense
 	u1.hp_growth = 80; u1.str_growth = 50; u1.mag_growth = 5; u1.skl_growth = 50
 	u1.spd_growth = 45; u1.lck_growth = 60; u1.def_growth = 30; u1.res_growth = 25
-	var i1 = ItemData.new(); i1.item_name = "Iron Sword"; i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; i1.weight = 5; u1.equipped_weapon = i1
-	_assign_starting_deck(u1)
+	var i1 = ItemData.new(); i1.item_name = "Iron Sword"; i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; i1.weight = 5
+	i1.gear_cards = gear_data.get("iron_sword", [])
+	u1.hand_left = i1
 	add_unit(u1)
 
 	var u2 = UnitData.new()
@@ -285,8 +288,12 @@ func start_new_run() -> void:
 	u2.defense = 10; u2.resistance = 1; u2.movement = 5; u2.current_armor = u2.defense
 	u2.hp_growth = 70; u2.str_growth = 45; u2.mag_growth = 0; u2.skl_growth = 40
 	u2.spd_growth = 25; u2.lck_growth = 20; u2.def_growth = 50; u2.res_growth = 15
-	var i2 = ItemData.new(); i2.item_name = "Iron Lance"; i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; i2.weight = 8; u2.equipped_weapon = i2
-	_assign_starting_deck(u2)
+	var i2 = ItemData.new(); i2.item_name = "Iron Lance"; i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; i2.weight = 8
+	i2.gear_cards = gear_data.get("iron_lance", [])
+	u2.hand_left = i2
+	var i2r = ItemData.new(); i2r.item_name = "Iron Buckler"; i2r.weapon_type = ItemData.WeaponType.NONE
+	i2r.gear_cards = gear_data.get("iron_buckler", [])
+	u2.hand_right = i2r
 	add_unit(u2)
 
 	var u3 = UnitData.new()
@@ -296,8 +303,9 @@ func start_new_run() -> void:
 	u3.defense = 3; u3.resistance = 7; u3.movement = 5; u3.current_armor = 0  # Mages have no armor
 	u3.hp_growth = 55; u3.str_growth = 5; u3.mag_growth = 65; u3.skl_growth = 40
 	u3.spd_growth = 40; u3.lck_growth = 45; u3.def_growth = 15; u3.res_growth = 50
-	var i3 = ItemData.new(); i3.item_name = "Fire"; i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 5; i3.hit = 90; i3.weight = 4; i3.range_max = 2; u3.equipped_weapon = i3
-	_assign_starting_deck(u3)
+	var i3 = ItemData.new(); i3.item_name = "Fire"; i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 5; i3.hit = 90; i3.weight = 4; i3.range_max = 2
+	i3.gear_cards = gear_data.get("fire", [])
+	u3.hand_left = i3
 	add_unit(u3)
 
 	print("[GameManager] New run started with 3 units")
@@ -332,47 +340,35 @@ func _load_item_catalog() -> Dictionary:
 	return _item_catalog
 
 
-## Assign a starting deck to a unit based on their class
-func _assign_starting_deck(unit: UnitData) -> void:
-	var catalog := _load_card_catalog()
-	if catalog.is_empty():
-		printerr("[GameManager] Card catalog is empty, cannot assign deck")
-		return
+## Load innate deck definitions. Cached after first load.
+var _innate_decks_cache: Dictionary = {}
 
-	var class_key: String = UnitData.UnitClass.keys()[unit.unit_class]
+func get_innate_deck(unit_class: int) -> Array:
+	if _innate_decks_cache.is_empty():
+		_innate_decks_cache = _load_innate_decks()
+	var class_name_str: String = UnitData.UnitClass.keys()[unit_class]
+	return _innate_decks_cache.get(class_name_str, {}).get("innate_cards", [])
 
-	var data = JSONLoader.load_json("res://data/cards/class_decks.json")
+func _load_innate_decks() -> Dictionary:
+	var data = JSONLoader.load_json("res://data/cards/innate_decks.json")
 	if not data is Dictionary:
-		push_warning("[GameManager] Failed to load class_decks.json")
-		return
+		printerr("[GameManager] Failed to load innate_decks.json")
+		return {}
+	return data
 
-	var all_decks: Dictionary = data
-	if class_key not in all_decks:
-		printerr("[GameManager] No deck found for class: %s" % class_key)
-		return
 
-	var deck_def: Dictionary = all_decks[class_key]
-	var cards_data: Array = deck_def.get("cards", [])
+## Load gear card definitions. Cached after first load.
+var _gear_cards_cache: Dictionary = {}
 
-	unit.deck.clear()
-	for card_entry in cards_data:
-		var card_id: String = card_entry.get("card_id", "")
-		var copies: int = card_entry.get("copies", 1)
-
-		if card_id.is_empty():
-			push_warning("[GameManager] Deck entry for %s has no card_id, skipping" % class_key)
-			continue
-
-		if card_id not in catalog:
-			push_warning("[GameManager] Card ID '%s' not found in card catalog (class: %s)" % [card_id, class_key])
-			continue
-
-		var card_def: Dictionary = catalog[card_id]
-		for i in copies:
-			var card := CardData.create_from_dict(card_def)
-			unit.deck.append(card)
-
-	print("[GameManager] Assigned %d-card deck to %s (%s)" % [unit.deck.size(), unit.unit_name, class_key])
+func _load_gear_cards() -> Dictionary:
+	if not _gear_cards_cache.is_empty():
+		return _gear_cards_cache
+	var data = JSONLoader.load_json("res://data/cards/gear_cards.json")
+	if not data is Dictionary:
+		printerr("[GameManager] Failed to load gear_cards.json")
+		return {}
+	_gear_cards_cache = data
+	return _gear_cards_cache
 
 
 ## End the current run
@@ -566,18 +562,19 @@ func ensure_party() -> void:
 		return
 		
 	print("[GameManager] Party empty, adding debug units...")
+	var gear_data2 := _load_gear_cards()
 	var u1 = UnitData.new(); u1.unit_name = "Roy"; u1.unit_class = UnitData.UnitClass.LORD; u1.current_hp = 22; u1.max_hp = 22; u1.strength = 6; u1.speed = 7; u1.skill = 6; u1.luck = 7; u1.defense = 5; u1.resistance = 2; u1.current_armor = u1.defense
-	var i1 = ItemData.new(); i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; i1.weight = 5; u1.equipped_weapon = i1;
-	_assign_starting_deck(u1)
+	var i1 = ItemData.new(); i1.weapon_type = ItemData.WeaponType.SWORD; i1.might = 5; i1.hit = 90; i1.weight = 5
+	i1.gear_cards = gear_data2.get("iron_sword", []); u1.hand_left = i1
 	add_unit(u1)
 
 	var u2 = UnitData.new(); u2.unit_name = "Marcus"; u2.unit_class = UnitData.UnitClass.KNIGHT; u2.current_hp = 28; u2.max_hp = 28; u2.strength = 8; u2.speed = 4; u2.skill = 7; u2.luck = 4; u2.defense = 10; u2.resistance = 1; u2.current_armor = u2.defense
-	var i2 = ItemData.new(); i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; i2.weight = 8; u2.equipped_weapon = i2;
-	_assign_starting_deck(u2)
+	var i2 = ItemData.new(); i2.weapon_type = ItemData.WeaponType.LANCE; i2.might = 7; i2.hit = 80; i2.weight = 8
+	i2.gear_cards = gear_data2.get("iron_lance", []); u2.hand_left = i2
 	add_unit(u2)
 
 	var u3 = UnitData.new(); u3.unit_name = "Lilina"; u3.unit_class = UnitData.UnitClass.MAGE; u3.current_hp = 18; u3.max_hp = 18; u3.magic = 8; u3.speed = 6; u3.skill = 5; u3.luck = 6; u3.defense = 3; u3.resistance = 7; u3.current_armor = 0
-	var i3 = ItemData.new(); i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 5; i3.hit = 90; i3.weight = 4; i3.range_max = 2; u3.equipped_weapon = i3;
-	_assign_starting_deck(u3)
+	var i3 = ItemData.new(); i3.weapon_type = ItemData.WeaponType.TOME; i3.might = 5; i3.hit = 90; i3.weight = 4; i3.range_max = 2
+	i3.gear_cards = gear_data2.get("fire", []); u3.hand_left = i3
 	add_unit(u3)
 

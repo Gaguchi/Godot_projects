@@ -212,9 +212,19 @@ func _add_party_unit(uname: String, uclass: UnitData.UnitClass, stats: Dictionar
 	w.weight = 5
 	if wtype == ItemData.WeaponType.TOME or wtype == ItemData.WeaponType.BOW:
 		w.range_max = 2
-	u.equipped_weapon = w
-
-	GameManager._assign_starting_deck(u)
+	# Attach gear cards based on weapon type
+	var gear_data := GameManager._load_gear_cards()
+	var gear_key := ""
+	match wtype:
+		ItemData.WeaponType.SWORD: gear_key = "iron_sword"
+		ItemData.WeaponType.LANCE: gear_key = "iron_lance"
+		ItemData.WeaponType.AXE: gear_key = "iron_axe"
+		ItemData.WeaponType.BOW: gear_key = "iron_bow"
+		ItemData.WeaponType.TOME: gear_key = "fire"
+		ItemData.WeaponType.CROSSBOW: gear_key = "iron_crossbow"
+	if not gear_key.is_empty():
+		w.gear_cards = gear_data.get(gear_key, [])
+	u.hand_left = w
 	GameManager.add_unit(u)
 
 

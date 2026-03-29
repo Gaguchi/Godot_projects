@@ -73,19 +73,35 @@ func setup(config: Dictionary) -> void:
 
 
 ## Initialize deck managers for player units at battle start.
+## Builds decks from innate class cards + gear cards (hand slots).
 func init_decks(player_units: Array) -> void:
 	_deck_managers.clear()
 	for unit in player_units:
 		var data: UnitData = unit.get_unit_data()
-		if data and not data.deck.is_empty():
-			var dm_script = load("res://scripts/combat/deck_manager.gd")
-			var dm = RefCounted.new()
-			dm.set_script(dm_script)
-			dm.init_deck(data.deck)
-			dm.deck_shuffled.connect(_on_deck_reshuffled.bind(data.unit_name))
-			_deck_managers[unit] = dm
-			if DEBUG_COMBAT:
-				print("[Deck] %s: initialized %d cards" % [data.unit_name, dm.get_draw_count()])
+		if not data:
+			continue
+		var dm_script = load("res://scripts/combat/deck_manager.gd")
+		var dm = RefCounted.new()
+		dm.set_script(dm_script)
+
+		# Load innate cards for this class, then build full deck from innate + gear
+		var innate := _load_innate_cards(data)
+		var all_cards := dm.build_deck_from_gear(innate, data)
+		dm.init_deck(all_cards)
+		dm.deck_shuffled.connect(_on_deck_reshuffled.bind(data.unit_name))
+		_deck_managers[unit] = dm
+		if DEBUG_COMBAT:
+			print("[Deck] %s: initialized %d cards (innate:%d + gear)" % [data.unit_name, dm.get_draw_count(), innate.size()])
+
+
+## Load innate cards for a unit's class from innate_decks.json via GameManager.
+func _load_innate_cards(unit_data: UnitData) -> Array:
+	var innate_data: Array = GameManager.get_innate_deck(unit_data.unit_class)
+	var cards: Array = []
+	for card_def in innate_data:
+		var card := CardData.create_from_dict(card_def)
+		cards.append(card)
+	return cards
 
 
 ## Get the deck_managers dictionary (battlefield needs read access for enemy turn cleanup etc.)
@@ -198,9 +214,6 @@ func _on_card_selected(card: CardData, index: int) -> void:
 
 	var active = _battlefield.active_unit
 	var active_data: UnitData = active.get_unit_data() if active else null
-	if active_data and not _is_card_weapon_compatible(card, active_data):
-		print("[Action] Card '%s' incompatible with equipped weapon" % card.card_name)
-		return
 	_pending_card = card
 	_pending_card_index = index
 	print("[Action] Card selected: '%s' (AP:%d, Target:%s)" % [card.card_name, card.ap_cost, CardData.TargetType.keys()[card.target_type]])
@@ -1077,16 +1090,6 @@ func _compute_card_damage_preview(card: CardData, caster: UnitData, target: Unit
 
 
 
-## Check if a card is compatible with the unit's equipped weapon
-func _is_card_weapon_compatible(card: CardData, unit: UnitData) -> bool:
-	# Cards with weapon_type NONE (skills, spells) are always playable
-	if card.weapon_type == ItemData.WeaponType.NONE:
-		return true
-	# No weapon equipped — only NONE-type cards work
-	if not unit.equipped_weapon or not unit.equipped_weapon is ItemData:
-		return false
-	# Must match equipped weapon type
-	return card.weapon_type == unit.equipped_weapon.weapon_type
 
 
 # ============================================================

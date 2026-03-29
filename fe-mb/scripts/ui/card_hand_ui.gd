@@ -295,7 +295,7 @@ func _on_card_gui_input(event: InputEvent, index: int) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if index < _current_hand.size():
 			var card: CardData = _current_hand[index]
-			if card.ap_cost <= _current_ap and _is_card_weapon_compatible(card):
+			if card.ap_cost <= _current_ap:
 				_selected_index = index
 				_refresh_card_selection()
 				card_selected.emit(card, index)
@@ -341,16 +341,7 @@ func _refresh_card_selection() -> void:
 		panel.add_theme_stylebox_override("panel", style)
 
 
-## Check if a card is compatible with the unit's equipped weapon
-func _is_card_weapon_compatible(card: CardData) -> bool:
-	if card.weapon_type == ItemData.WeaponType.NONE:
-		return true
-	if not _current_unit or not _current_unit.equipped_weapon or not _current_unit.equipped_weapon is ItemData:
-		return false
-	return card.weapon_type == _current_unit.equipped_weapon.weapon_type
-
-
-## Refresh which cards are playable (enough AP and weapon-compatible)
+## Refresh which cards are playable (enough AP)
 func _refresh_card_playability() -> void:
 	for i in _card_containers.size():
 		if i >= _current_hand.size():
@@ -358,9 +349,6 @@ func _refresh_card_playability() -> void:
 		var card: CardData = _current_hand[i]
 		var panel: PanelContainer = _card_containers[i]
 		var playable: bool = card.ap_cost <= _current_ap
-		# Check weapon-card compatibility
-		if not _is_card_weapon_compatible(card):
-			playable = false
 		panel.modulate = Color.WHITE if playable else COLOR_CARD_DIM
 
 
