@@ -58,17 +58,16 @@ var source: String = "innate"  # "innate", "hand_left", "hand_right"
 @export var is_consumable: bool = false      # Removed from deck after use
 
 
-## Get computed damage for a specific unit (base + stat scaling + weapon might)
+## Get computed damage for a specific unit (base + stat scaling only)
+## Weapon might is baked into gear cards' damage_base — not added here.
 func get_computed_damage(unit: UnitData) -> int:
-	var total: int = damage_base
-	match damage_stat:
-		"str": total += unit.strength
-		"mag": total += unit.magic
-		"skl": total += unit.skill
-	# Add weapon might
-	if unit.equipped_weapon and unit.equipped_weapon is ItemData:
-		total += unit.equipped_weapon.might
-	return max(0, total)
+	var base: float = damage_base
+	if damage_stat != "" and unit:
+		match damage_stat:
+			"str": base += unit.strength
+			"mag": base += unit.magic
+			"skl": base += unit.skill
+	return int(base * damage_multiplier)
 
 
 ## Get computed healing for a specific unit
