@@ -25,6 +25,9 @@ enum Rarity {
 	RARE
 }
 
+## Source tracking — set at deck build time, not persisted
+var source: String = "innate"  # "innate", "hand_left", "hand_right"
+
 @export_group("Identity")
 @export var id: String = ""              # Catalog ID (e.g. "slash", "fire") — empty for legacy/uncataloged cards
 @export var card_name: String = "Card"
@@ -109,6 +112,7 @@ func duplicate_card() -> CardData:
 	copy.aoe_radius = aoe_radius
 	copy.effects = effects.duplicate(true)
 	copy.is_consumable = is_consumable
+	copy.source = source
 	return copy
 
 

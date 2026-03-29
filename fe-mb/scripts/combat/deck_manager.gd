@@ -103,6 +103,34 @@ func get_discard_count() -> int:
 	return discard_pile.size()
 
 
+## Build a complete deck from innate cards + gear in hand slots.
+## Returns Array[CardData] ready to pass to init_deck().
+func build_deck_from_gear(innate_cards: Array, unit: Resource) -> Array:
+	var deck: Array = []
+
+	# Add innate cards (duplicated so each battle gets fresh copies)
+	for card in innate_cards:
+		var c = card.duplicate_card()
+		c.source = "innate"
+		deck.append(c)
+
+	# Add left hand gear cards
+	if unit.hand_left and unit.hand_left is ItemData and unit.hand_left.gear_cards.size() > 0:
+		for card_def in unit.hand_left.gear_cards:
+			var c = CardData.create_from_dict(card_def)
+			c.source = "hand_left"
+			deck.append(c)
+
+	# Add right hand gear cards (skip if right hand is locked by 2H weapon)
+	if not unit.is_right_hand_locked() and unit.hand_right and unit.hand_right is ItemData and unit.hand_right.gear_cards.size() > 0:
+		for card_def in unit.hand_right.gear_cards:
+			var c = CardData.create_from_dict(card_def)
+			c.source = "hand_right"
+			deck.append(c)
+
+	return deck
+
+
 ## Validate that no cards have been lost (debug)
 func validate(context: String = "") -> void:
 	var total: int = get_total_count()
