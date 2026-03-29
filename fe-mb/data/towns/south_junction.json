@@ -4,7 +4,7 @@
 	"buildings": {
 		"inn": { "heal_cost_per_unit": 6 },
 		"shop": {
-			"stock": ["iron_axe", "iron_bow", "vulnerary", "food_rations", "whetstone"]
+			"stock": ["iron_axe", "iron_bow", "vulnerary", "food_rations"]
 		},
 		"tavern": {
 			"rumors": [
@@ -13,7 +13,6 @@
 				"Some fool tried to challenge the warlord's men. Didn't end well."
 			]
 		},
-		"blacksmith": { "sharpen_cost_per_weapon": 15 },
 		"arena": { "locked": true, "locked_text": "The locals prefer settling scores in the alley." }
 	}
 }

@@ -167,17 +167,5 @@
 		"grid_height": 2,
 		"buy_price": 50,
 		"sell_price": 25
-	},
-	"whetstone": {
-		"item_name": "Whetstone",
-		"description": "A sharpening stone. Restores 1 tier of weapon sharpness.",
-		"item_type": "CONSUMABLE",
-		"weapon_type": "NONE",
-		"might": 0,
-		"max_uses": 1,
-		"grid_width": 1,
-		"grid_height": 1,
-		"buy_price": 40,
-		"sell_price": 20
 	}
 }

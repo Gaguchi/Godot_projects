@@ -55,17 +55,16 @@ enum Rarity {
 @export var is_consumable: bool = false      # Removed from deck after use
 
 
-## Get computed damage for a specific unit (base + stat scaling + weapon might + sharpness)
+## Get computed damage for a specific unit (base + stat scaling + weapon might)
 func get_computed_damage(unit: UnitData) -> int:
 	var total: int = damage_base
 	match damage_stat:
 		"str": total += unit.strength
 		"mag": total += unit.magic
 		"skl": total += unit.skill
-	# Add weapon might and sharpness bonus
+	# Add weapon might
 	if unit.equipped_weapon and unit.equipped_weapon is ItemData:
 		total += unit.equipped_weapon.might
-		total += unit.equipped_weapon.get_sharpness_bonus()
 	return max(0, total)
 
 

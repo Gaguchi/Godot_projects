@@ -17,7 +17,7 @@ const COLOR_BLOOD := UIColors.COLOR_BLOOD
 const COLOR_OVERLAY := UIColors.COLOR_OVERLAY
 
 const SIDEBAR_WIDTH := 220
-const BUILDING_ORDER := ["inn", "shop", "tavern", "blacksmith", "arena"]
+const BUILDING_ORDER := ["inn", "shop", "tavern", "arena"]
 const TAVERN_TIPS := [
 	"Longer routes mean more encounter chances — but shortcuts aren't always safe.",
 	"The weapon triangle gives +15 hit and +1 damage: Sword beats Axe, Axe beats Lance, Lance beats Sword.",
@@ -36,7 +36,6 @@ const BUILDING_NAMES := {
 	"inn": "Inn",
 	"shop": "Shop",
 	"tavern": "Tavern",
-	"blacksmith": "Blacksmith",
 	"arena": "Arena"
 }
 
@@ -105,7 +104,6 @@ func _default_town_data(location_name: String) -> Dictionary:
 			"inn": { "heal_cost_per_unit": 10 },
 			"shop": { "stock": ["vulnerary", "food_rations"] },
 			"tavern": { "rumors": ["Nothing of note to report."] },
-			"blacksmith": { "sharpen_cost_per_weapon": 15 },
 			"arena": { "locked": true, "locked_text": "No arena here." }
 		}
 	}
@@ -403,8 +401,6 @@ func _select_building(building_key: String) -> void:
 			_show_shop_panel(bdata)
 		"tavern":
 			_show_tavern_panel(bdata)
-		"blacksmith":
-			_show_blacksmith_panel(bdata)
 		_:
 			_show_locked_panel(bdata)
 
@@ -631,31 +627,6 @@ func _show_shop_panel(bdata: Dictionary) -> void:
 
 	var stock: Array = bdata.get("stock", [])
 	_shop_panel.setup(stock)
-
-
-# ============================================================
-# Blacksmith Panel
-# ============================================================
-
-func _show_blacksmith_panel(bdata: Dictionary) -> void:
-	var header := Label.new()
-	header.text = "Blacksmith  —  Sharpen & Hone"
-	header.add_theme_font_size_override("font_size", 18)
-	header.add_theme_color_override("font_color", COLOR_EMBER)
-	_content_container.add_child(header)
-
-	var sep := ColorRect.new()
-	sep.custom_minimum_size = Vector2(0, 1)
-	sep.color = Color(COLOR_IRON_BORDER, 0.4)
-	_content_container.add_child(sep)
-
-	var panel := BlacksmithPanel.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panel.gold_changed.connect(_update_resource_labels)
-	_content_container.add_child(panel)
-
-	panel.setup(bdata)
 
 
 # ============================================================

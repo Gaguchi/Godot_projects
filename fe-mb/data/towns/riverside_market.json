@@ -4,7 +4,7 @@
 	"buildings": {
 		"inn": { "heal_cost_per_unit": 12 },
 		"shop": {
-			"stock": ["iron_sword", "iron_lance", "iron_axe", "iron_bow", "iron_crossbow", "fire", "vulnerary", "elixir", "food_rations", "whetstone"]
+			"stock": ["iron_sword", "iron_lance", "iron_axe", "iron_bow", "iron_crossbow", "fire", "vulnerary", "elixir", "food_rations"]
 		},
 		"tavern": {
 			"rumors": [
@@ -14,7 +14,6 @@
 				"A traveling healer passed through last week. Sold potions at a fair price."
 			]
 		},
-		"blacksmith": { "sharpen_cost_per_weapon": 15 },
 		"arena": { "locked": true, "locked_text": "The arena is closed for repairs." }
 	}
 }

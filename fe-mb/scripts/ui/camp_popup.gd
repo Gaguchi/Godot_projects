@@ -1,7 +1,7 @@
 class_name CampPopup
 extends CanvasLayer
 ## CampPopup - Camp action popup shown at CAMP locations.
-## Offers Rest, Sharpen, Scout, and Leave actions.
+## Offers Rest, Scout, and Leave actions.
 
 signal popup_closed
 
@@ -20,11 +20,9 @@ var _panel: PanelContainer
 var _title_label: Label
 var _vbox: VBoxContainer
 var _rest_btn: Button
-var _sharpen_btn: Button
 var _scout_btn: Button
 var _leave_btn: Button
 var _camp_name: String = ""
-var _sharpen_selector: VBoxContainer = null
 
 
 func _ready() -> void:
@@ -45,31 +43,6 @@ func open(camp_name: String) -> void:
 	else:
 		_rest_btn.disabled = true
 		_rest_btn.text = "Rest\nHeal 20% HP (No food)"
-
-	# Sharpen button — disabled if no food or all weapons already Sharp
-	var can_sharpen: bool = has_food and _has_dull_weapons()
-	if not has_food:
-		_sharpen_btn.disabled = true
-		_sharpen_btn.text = "Sharpen\nSharpen a weapon (No food)"
-	elif not can_sharpen:
-		_sharpen_btn.disabled = true
-		_sharpen_btn.text = "Sharpen\nAll weapons are sharp"
-	else:
-		_sharpen_btn.disabled = false
-		_sharpen_btn.text = "Sharpen\nSharpen a weapon (1 food)"
-
-	# Clear any previous sharpen selector
-	if _sharpen_selector:
-		_sharpen_selector.queue_free()
-		_sharpen_selector = null
-
-
-func _has_dull_weapons() -> bool:
-	for unit in GameManager.party:
-		if unit.is_alive() and unit.equipped_weapon and unit.equipped_weapon is ItemData:
-			if unit.equipped_weapon.sharpness != ItemData.Sharpness.SHARP:
-				return true
-	return false
 
 
 func _build_ui() -> void:
@@ -132,10 +105,6 @@ func _build_ui() -> void:
 	_rest_btn.pressed.connect(_on_rest_pressed)
 	_vbox.add_child(_rest_btn)
 
-	_sharpen_btn = _create_button("Sharpen\nSharpen a weapon (1 food)", COLOR_EMBER)
-	_sharpen_btn.pressed.connect(_on_sharpen_pressed)
-	_vbox.add_child(_sharpen_btn)
-
 	_scout_btn = _create_button("Scout\nScout the road ahead", COLOR_SKILL_BLUE)
 	_scout_btn.pressed.connect(_on_scout_pressed)
 	_vbox.add_child(_scout_btn)
@@ -188,63 +157,6 @@ func _on_rest_pressed() -> void:
 	GameManager.rest_party(0.2)
 	EventBus.show_notification.emit("Rested at %s. Party healed 20%%." % _camp_name)
 	_close()
-
-
-func _on_sharpen_pressed() -> void:
-	# Collect units with non-Sharp weapons
-	var candidates: Array = []
-	for unit in GameManager.party:
-		if unit.is_alive() and unit.equipped_weapon and unit.equipped_weapon is ItemData:
-			if unit.equipped_weapon.sharpness != ItemData.Sharpness.SHARP:
-				candidates.append(unit)
-	if candidates.is_empty():
-		EventBus.show_notification.emit("All weapons are already sharp!")
-		return
-	if candidates.size() == 1:
-		# Only one candidate — sharpen directly
-		GameManager.consume_food(1)
-		candidates[0].equipped_weapon.sharpen()
-		EventBus.show_notification.emit("%s's %s sharpened!" % [candidates[0].unit_name, candidates[0].equipped_weapon.item_name])
-		_close()
-	else:
-		# Show unit selector for player to choose
-		_show_sharpen_selector(candidates)
-
-
-func _show_sharpen_selector(candidates: Array) -> void:
-	if _sharpen_selector:
-		_sharpen_selector.queue_free()
-	_sharpen_selector = VBoxContainer.new()
-	_sharpen_selector.add_theme_constant_override("separation", 6)
-
-	var label := Label.new()
-	label.text = "Choose weapon to sharpen:"
-	label.add_theme_font_size_override("font_size", 13)
-	label.add_theme_color_override("font_color", COLOR_PARCHMENT)
-	_sharpen_selector.add_child(label)
-
-	var opt := OptionButton.new()
-	opt.add_theme_font_size_override("font_size", 13)
-	for unit in candidates:
-		var sharp_name: String = ["Sharp", "Normal", "Dull"][unit.equipped_weapon.sharpness]
-		opt.add_item("%s — %s (%s)" % [unit.unit_name, unit.equipped_weapon.item_name, sharp_name])
-	_sharpen_selector.add_child(opt)
-	if opt.item_count > 0:
-		opt.select(0)
-
-	var confirm := _create_button("Sharpen", COLOR_EMBER)
-	confirm.pressed.connect(func():
-		var idx: int = opt.selected
-		if idx >= 0 and idx < candidates.size():
-			GameManager.consume_food(1)
-			candidates[idx].equipped_weapon.sharpen()
-			EventBus.show_notification.emit("%s's %s sharpened!" % [candidates[idx].unit_name, candidates[idx].equipped_weapon.item_name])
-			_close()
-	)
-	_sharpen_selector.add_child(confirm)
-
-	# Add selector below the existing buttons
-	_vbox.add_child(_sharpen_selector)
 
 
 func _on_scout_pressed() -> void:

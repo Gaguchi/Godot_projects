@@ -1119,19 +1119,6 @@ func use_quick_slot_item(unit: UnitData, slot_index: int) -> void:
 		if _combat_log:
 			_combat_log.log_system("%s used %s — healed %d HP" % [unit.unit_name, item.item_name, heal_amt])
 		print("[QuickSlot] %s used %s — healed %d HP (AP left: %d)" % [unit.unit_name, item.item_name, heal_amt, _current_ap])
-	elif item.item_name == "Whetstone":
-		if unit.equipped_weapon and unit.equipped_weapon is ItemData:
-			unit.equipped_weapon.sharpen()
-			unit.clear_quick_slot(slot_index)
-			if _combat_log:
-				_combat_log.log_system("%s used Whetstone — weapon sharpened" % unit.unit_name)
-			print("[QuickSlot] %s used Whetstone — weapon sharpened (AP left: %d)" % [unit.unit_name, _current_ap])
-		else:
-			# No weapon equipped — refund AP, don't consume whetstone
-			_current_ap += 1
-			if _combat_log:
-				_combat_log.log_system("%s has no weapon to sharpen" % unit.unit_name)
-			print("[QuickSlot] %s has no weapon — Whetstone not consumed" % unit.unit_name)
 	else:
 		# Generic consumable fallback
 		item.current_uses -= 1

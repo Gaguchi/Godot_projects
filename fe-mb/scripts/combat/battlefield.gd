@@ -794,11 +794,6 @@ func _end_battle(victory: bool) -> void:
 				if ct.has("killed_flag"):
 					EventBus.set_flag(ct.killed_flag, true)
 
-		# Degrade weapon sharpness for all living player units
-		for unit in GameManager.party:
-			if unit.is_alive() and unit.equipped_weapon and unit.equipped_weapon is ItemData:
-				unit.equipped_weapon.degrade_sharpness()
-
 	GameManager.last_battle_victory = victory
 
 	EventBus.battle_ended.emit(victory)

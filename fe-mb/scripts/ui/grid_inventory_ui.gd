@@ -483,8 +483,7 @@ func _build_unit_row(unit: UnitData) -> void:
 	var weapon_item := unit.equipped_weapon as ItemData if unit.equipped_weapon else null
 	var weapon_label: String = "Weapon: %s" % (weapon_item.item_name if weapon_item else "None")
 	if weapon_item:
-		var sharp_symbol := "+" if weapon_item.sharpness == ItemData.Sharpness.SHARP else ("~" if weapon_item.sharpness == ItemData.Sharpness.NORMAL else "-")
-		weapon_label = "Wep: %s [%s]" % [weapon_item.item_name, sharp_symbol]
+		weapon_label = "Wep: %s" % weapon_item.item_name
 	var weapon_btn := _make_slot_button(weapon_label, weapon_item != null)
 	var captured_unit_w: UnitData = unit
 	weapon_btn.pressed.connect(func(): _on_unit_weapon_slot_clicked(captured_unit_w))
@@ -741,14 +740,7 @@ func _show_info(item: ItemData) -> void:
 
 	match item.item_type:
 		ItemData.ItemType.WEAPON:
-			var sharp_str := ""
-			match item.sharpness:
-				ItemData.Sharpness.SHARP:  sharp_str = "Sharp (+2)"
-				ItemData.Sharpness.NORMAL: sharp_str = "Normal"
-				ItemData.Sharpness.DULL:   sharp_str = "Dull (-2)"
-			if item.is_honed:
-				sharp_str += " [Honed]"
-			detail = "%s  |  Might: %d  |  %s" % [item.get_weapon_type_name(), item.might, sharp_str]
+			detail = "%s  |  Might: %d" % [item.get_weapon_type_name(), item.might]
 			if item.range_max > 1:
 				detail += "  |  Range %d-%d" % [item.range_min, item.range_max]
 		ItemData.ItemType.CONSUMABLE:
