@@ -51,7 +51,15 @@ enum UnitClass {
 @export_range(0, 100) var res_growth: int = 20
 
 @export_group("Equipment")
-@export var equipped_weapon: Resource  # ItemData
+@export var hand_left: Resource  # ItemData or null
+@export var hand_right: Resource  # ItemData or null (locked if hand_left.is_two_handed)
+
+## Backward-compatible alias so existing code that reads equipped_weapon still works
+var equipped_weapon: Resource:
+	get:
+		return hand_left
+	set(value):
+		hand_left = value
 
 @export_group("Card Deck")
 @export var deck: Array[Resource] = []  # Array of CardData
@@ -228,17 +236,48 @@ func get_class_name() -> String:
 	return "Unknown"
 
 
+## Check if right hand is locked (2H weapon equipped in left hand)
+func is_right_hand_locked() -> bool:
+	return hand_left != null and hand_left is ItemData and hand_left.is_two_handed
+
+
+## Equip a two-handed weapon in left hand, clearing right hand.
+## Returns array [old_left, old_right].
+func equip_two_handed(weapon: Resource) -> Array:
+	var old_left = hand_left
+	var old_right = hand_right
+	hand_left = weapon
+	hand_right = null
+	return [old_left, old_right]
+
+
+## Unequip a hand slot ("left" or "right"). Returns old item or null.
+func unequip_hand(which: String) -> Resource:
+	var old: Resource = null
+	if which == "left":
+		old = hand_left
+		hand_left = null
+	elif which == "right":
+		old = hand_right
+		hand_right = null
+	return old
+
+
 ## Equip a weapon directly (from bag). Returns old weapon or null.
+## Backward-compatible wrapper — equips to left hand.
 func equip_weapon(weapon: Resource) -> Resource:
-	var old = equipped_weapon
-	equipped_weapon = weapon
+	var old = hand_left
+	hand_left = weapon
 	return old
 
 ## Serialize to dictionary
 func to_dict() -> Dictionary:
-	var weapon_dict = {}
-	if equipped_weapon and equipped_weapon.has_method("to_dict"):
-		weapon_dict = equipped_weapon.to_dict()
+	var hand_left_dict = {}
+	if hand_left and hand_left is ItemData:
+		hand_left_dict = hand_left.to_dict()
+	var hand_right_dict = {}
+	if hand_right and hand_right is ItemData:
+		hand_right_dict = hand_right.to_dict()
 
 	var deck_list = []
 	for card in deck:
@@ -270,7 +309,8 @@ func to_dict() -> Dictionary:
 		"lck_growth": lck_growth,
 		"def_growth": def_growth,
 		"res_growth": res_growth,
-		"equipped_weapon": weapon_dict,
+		"hand_left": hand_left_dict,
+		"hand_right": hand_right_dict,
 		"deck": deck_list,
 		"max_ap": max_ap,
 		"is_capture_target": is_capture_target,
@@ -318,12 +358,20 @@ func from_dict(data: Dictionary) -> void:
 		new_card.from_dict(card_dict)
 		deck.append(new_card)
 
-	# Deserialize Weapon
-	var weapon_data = data.get("equipped_weapon", {})
-	if not weapon_data.is_empty():
-		var new_weapon = ItemData.new()
-		new_weapon.from_dict(weapon_data)
-		equipped_weapon = new_weapon
+	# Deserialize Hand Slots (new format) with migration from old equipped_weapon
+	if "hand_left" in data and data["hand_left"] is Dictionary and not data["hand_left"].is_empty():
+		hand_left = ItemData.new()
+		hand_left.from_dict(data["hand_left"])
+	elif "equipped_weapon" in data and data["equipped_weapon"] is Dictionary and not data["equipped_weapon"].is_empty():
+		# Migration from old format: weapon goes to left hand
+		hand_left = ItemData.new()
+		hand_left.from_dict(data["equipped_weapon"])
 	else:
-		equipped_weapon = null
+		hand_left = null
+
+	if "hand_right" in data and data["hand_right"] is Dictionary and not data["hand_right"].is_empty():
+		hand_right = ItemData.new()
+		hand_right.from_dict(data["hand_right"])
+	else:
+		hand_right = null
 		
