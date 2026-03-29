@@ -479,15 +479,27 @@ func _build_unit_row(unit: UnitData) -> void:
 	name_lbl.add_theme_color_override("font_color", COLOR_PARCHMENT)
 	vbox.add_child(name_lbl)
 
-	# Equipped weapon slot
-	var weapon_item := unit.equipped_weapon as ItemData if unit.equipped_weapon else null
-	var weapon_label: String = "Weapon: %s" % (weapon_item.item_name if weapon_item else "None")
-	if weapon_item:
-		weapon_label = "Wep: %s" % weapon_item.item_name
-	var weapon_btn := _make_slot_button(weapon_label, weapon_item != null)
-	var captured_unit_w: UnitData = unit
-	weapon_btn.pressed.connect(func(): _on_unit_weapon_slot_clicked(captured_unit_w))
-	vbox.add_child(weapon_btn)
+	# Left Hand slot
+	var left_item := unit.hand_left as ItemData if unit.hand_left else null
+	var left_label: String = "L Hand: %s" % (left_item.item_name if left_item else "Empty")
+	var left_btn := _make_slot_button(left_label, left_item != null)
+	var captured_unit_l: UnitData = unit
+	left_btn.pressed.connect(func(): _on_unit_left_slot_clicked(captured_unit_l))
+	vbox.add_child(left_btn)
+
+	# Right Hand slot — greyed out if locked by a 2H weapon
+	var right_item := unit.hand_right as ItemData if unit.hand_right else null
+	if unit.is_right_hand_locked():
+		var locked_btn := _make_slot_button("[2H weapon]", false)
+		locked_btn.disabled = true
+		locked_btn.add_theme_color_override("font_color", COLOR_WORN_STONE)
+		vbox.add_child(locked_btn)
+	else:
+		var right_label: String = "R Hand: %s" % (right_item.item_name if right_item else "Empty")
+		var right_btn := _make_slot_button(right_label, right_item != null)
+		var captured_unit_r: UnitData = unit
+		right_btn.pressed.connect(func(): _on_unit_right_slot_clicked(captured_unit_r))
+		vbox.add_child(right_btn)
 
 
 
@@ -626,24 +638,31 @@ func _on_bag_item_clicked(bag_idx: int) -> void:
 #  INTERACTION — UNIT SLOTS
 # ---------------------------------------------------------------------------
 
-func _on_unit_weapon_slot_clicked(unit: UnitData) -> void:
+func _on_unit_left_slot_clicked(unit: UnitData) -> void:
 	if _held_item_index < 0:
-		# Nothing held — unequip weapon to bag
-		var weapon := unit.equipped_weapon as ItemData
-		if not weapon:
-			_show_info_text("Empty slot", "No weapon equipped.")
+		# Nothing held — unequip left hand to bag
+		var item := unit.hand_left as ItemData
+		if not item:
+			_show_info_text("Empty slot", "No item in left hand.")
 			return
-		unit.equip_weapon(null)
-		var placed := GameManager.bag_auto_place(weapon)
+		# If it's a 2H weapon, also clear right hand (though it should already be null)
+		var old_right := unit.hand_right as ItemData
+		unit.unequip_hand("left")
+		var placed := GameManager.bag_auto_place(item)
 		if placed < 0:
 			# Bag full — put it back
-			unit.equip_weapon(weapon)
+			unit.hand_left = item
 			_show_info_text("Bag is full!", "Cannot unequip — no room in bag.")
 			return
+		if old_right:
+			var placed_right := GameManager.bag_auto_place(old_right)
+			if placed_right == -1:
+				push_warning("[GridInventoryUI] Bag full — old right hand item dropped on unequip")
 		_pick_up_from_bag(placed)
+		_refresh_unit_panels()
 		return
 
-	# Holding an item — equip it
+	# Holding an item — equip to left hand
 	var held_entry: Dictionary = GameManager.bag_items[_held_item_index]
 	var held_item: ItemData = held_entry["item"] as ItemData
 
@@ -655,11 +674,70 @@ func _on_unit_weapon_slot_clicked(unit: UnitData) -> void:
 	if not removed:
 		return
 
-	var old_weapon: ItemData = unit.equip_weapon(removed) as ItemData
-	if old_weapon:
-		var placed := GameManager.bag_auto_place(old_weapon)
+	if removed.is_two_handed:
+		var displaced: Array = unit.equip_two_handed(removed)
+		for displaced_item in displaced:
+			if displaced_item and displaced_item is ItemData:
+				var p := GameManager.bag_auto_place(displaced_item as ItemData)
+				if p == -1:
+					push_warning("[GridInventoryUI] Bag full — displaced item lost on 2H equip")
+	else:
+		var old_left: ItemData = unit.unequip_hand("left") as ItemData
+		unit.hand_left = removed
+		if old_left:
+			var placed := GameManager.bag_auto_place(old_left)
+			if placed == -1:
+				push_warning("[GridInventoryUI] Bag full — old left hand item dropped on equip")
+
+	_cancel_hold()
+	_refresh_grid()
+	_refresh_unit_panels()
+
+
+func _on_unit_right_slot_clicked(unit: UnitData) -> void:
+	# Right hand should never be clicked when locked — but guard anyway
+	if unit.is_right_hand_locked():
+		_show_info_text("Locked", "Right hand locked by two-handed weapon.")
+		return
+
+	if _held_item_index < 0:
+		# Nothing held — unequip right hand to bag
+		var item := unit.hand_right as ItemData
+		if not item:
+			_show_info_text("Empty slot", "No item in right hand.")
+			return
+		unit.unequip_hand("right")
+		var placed := GameManager.bag_auto_place(item)
+		if placed < 0:
+			unit.hand_right = item
+			_show_info_text("Bag is full!", "Cannot unequip — no room in bag.")
+			return
+		_pick_up_from_bag(placed)
+		_refresh_unit_panels()
+		return
+
+	# Holding an item — equip to right hand
+	var held_entry: Dictionary = GameManager.bag_items[_held_item_index]
+	var held_item: ItemData = held_entry["item"] as ItemData
+
+	if held_item.item_type != ItemData.ItemType.WEAPON:
+		_show_info_text("Can't equip", "%s is not a weapon." % held_item.item_name)
+		return
+
+	if held_item.is_two_handed:
+		_show_info_text("Can't equip here", "Two-handed weapons go in the left hand.")
+		return
+
+	var removed: ItemData = GameManager.bag_remove_item(_held_item_index)
+	if not removed:
+		return
+
+	var old_right: ItemData = unit.unequip_hand("right") as ItemData
+	unit.hand_right = removed
+	if old_right:
+		var placed := GameManager.bag_auto_place(old_right)
 		if placed == -1:
-			push_warning("[GridInventoryUI] Bag full — old weapon dropped on equip")
+			push_warning("[GridInventoryUI] Bag full — old right hand item dropped on equip")
 
 	_cancel_hold()
 	_refresh_grid()
