@@ -19,6 +19,14 @@ enum WeaponType {
 	CROSSBOW
 }
 
+enum Rarity {
+	COMMON,
+	UNCOMMON,
+	RARE,
+	EPIC,
+	LEGENDARY
+}
+
 @export_group("Identity")
 @export var item_name: String = "Item"
 @export var description: String = ""
@@ -47,6 +55,7 @@ enum WeaponType {
 @export_group("Value")
 @export var buy_price: int = 100
 @export var sell_price: int = 50
+@export var rarity: Rarity = Rarity.COMMON
 
 @export_group("Grid Size")
 @export var grid_width: int = 1
@@ -171,6 +180,20 @@ static func create_from_dict(data: Dictionary) -> ItemData:
 	item.sell_price = data.get("sell_price", 0)
 	item.grid_width = data.get("grid_width", 1)
 	item.grid_height = data.get("grid_height", 1)
+
+	# Handle string or int rarity
+	var rarity_val = data.get("rarity", 0)
+	if rarity_val is String:
+		match rarity_val:
+			"COMMON": item.rarity = Rarity.COMMON
+			"UNCOMMON": item.rarity = Rarity.UNCOMMON
+			"RARE": item.rarity = Rarity.RARE
+			"EPIC": item.rarity = Rarity.EPIC
+			"LEGENDARY": item.rarity = Rarity.LEGENDARY
+			_: item.rarity = Rarity.COMMON
+	else:
+		item.rarity = rarity_val
+
 	return item
 
 
@@ -198,6 +221,7 @@ func to_dict() -> Dictionary:
 		"sell_price": sell_price,
 		"grid_width": grid_width,
 		"grid_height": grid_height,
+		"rarity": rarity,
 	}
 
 
@@ -223,3 +247,4 @@ func from_dict(data: Dictionary) -> void:
 	sell_price = data.get("sell_price", 50)
 	grid_width = data.get("grid_width", 1)
 	grid_height = data.get("grid_height", 1)
+	rarity = data.get("rarity", 0)
