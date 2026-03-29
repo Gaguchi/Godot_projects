@@ -1,0 +1,74 @@
+{
+    "LORD": {
+        "innate_cards": [
+            {"card_name": "Rally", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Rallying cry! Draw 2 cards.", "effects": [{"type": "draw", "amount": 2}]},
+            {"card_name": "Inspiring Strike", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 3, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "An inspiring blow! Deals {DMG} damage and gain 1 AP.", "effects": [{"type": "ap", "amount": 1}]},
+            {"card_name": "Nobility", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Steel yourself. Gain 4 temporary armor.", "effects": [{"type": "temp_armor", "amount": 4}]},
+            {"card_name": "Lord's Command", "ap_cost": 1, "card_type": "SKILL", "target_type": "ALLY", "range_min": 1, "range_max": 1, "description": "Command an ally. Their next attack deals +3 damage.", "effects": [{"type": "buff_ally_damage", "amount": 3}]}
+        ]
+    },
+    "KNIGHT": {
+        "innate_cards": [
+            {"card_name": "Fortify", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Brace for impact. Gain 5 armor.", "effects": [{"type": "temp_armor", "amount": 5}]},
+            {"card_name": "Bulwark", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Become a bulwark. Enemies must target you next turn.", "effects": [{"type": "taunt", "duration": 1}]},
+            {"card_name": "Hold the Line", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Hold the line! You and adjacent allies gain 2 armor.", "effects": [{"type": "temp_armor", "amount": 2}, {"type": "aoe_ally_armor", "amount": 2}]},
+            {"card_name": "Shield Expertise", "ap_cost": 0, "card_type": "SKILL", "target_type": "SELF", "description": "Your next Block card this turn has +3 effect.", "effects": [{"type": "boost_next_block", "amount": 3}]}
+        ]
+    },
+    "CAVALIER": {
+        "innate_cards": [
+            {"card_name": "Gallop", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Spur your mount! Move again this turn.", "effects": [{"type": "extra_move"}]},
+            {"card_name": "Charge", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 6, "damage_stat": "str", "range_min": 1, "range_max": 3, "description": "Charge toward an enemy. Deals {DMG} damage.", "effects": [{"type": "move_to_target"}]},
+            {"card_name": "Trample", "ap_cost": 2, "card_type": "SKILL", "target_type": "SELF", "description": "Trample enemies! Deal 3 damage to each enemy you move through.", "effects": [{"type": "trample", "damage": 3}]},
+            {"card_name": "Swift Strike", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 4, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "A swift attack! Deals {DMG} damage and gain 1 AP.", "effects": [{"type": "ap", "amount": 1}]}
+        ]
+    },
+    "FIGHTER": {
+        "innate_cards": [
+            {"card_name": "Battle Cry", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Let loose a battle cry! Draw 2 cards.", "effects": [{"type": "draw", "amount": 2}]},
+            {"card_name": "Reckless Blow", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 12, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "A devastating but reckless strike! Deals {DMG} damage. Take 3 damage.", "effects": [{"type": "self_damage", "amount": 3}]},
+            {"card_name": "Axe Mastery", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Channel your fury. Your next attack this turn deals +4 damage.", "effects": [{"type": "boost_next_attack", "amount": 4}]},
+            {"card_name": "Berserker Rage", "ap_cost": 0, "card_type": "SKILL", "target_type": "SELF", "description": "When below 50% HP, gain 2 AP.", "effects": [{"type": "conditional_ap", "condition": "below_half_hp", "amount": 2}]}
+        ]
+    },
+    "ARCHER": {
+        "innate_cards": [
+            {"card_name": "Take Aim", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Focus your aim. Your next ranged attack deals +5 damage.", "effects": [{"type": "boost_next_attack", "amount": 5}]},
+            {"card_name": "Pin Down", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 2, "damage_stat": "str", "range_min": 2, "range_max": 3, "description": "Pin the target! Deals {DMG} damage and immobilizes for 1 turn.", "effects": [{"type": "immobilize", "duration": 1}]},
+            {"card_name": "Evasion", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Dodge! The next attack against you deals 0 damage.", "effects": [{"type": "dodge_next"}]},
+            {"card_name": "Quick Reflexes", "ap_cost": 0, "card_type": "SKILL", "target_type": "SELF", "description": "Quick reflexes! Draw 1 card.", "effects": [{"type": "draw", "amount": 1}]}
+        ]
+    },
+    "MAGE": {
+        "innate_cards": [
+            {"card_name": "Focus", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Deep focus. Draw 2 cards and gain 1 AP.", "effects": [{"type": "draw", "amount": 2}, {"type": "ap", "amount": 1}]},
+            {"card_name": "Arcane Burst", "ap_cost": 2, "card_type": "SPELL", "target_type": "GROUND", "damage_base": 5, "damage_stat": "mag", "is_magic": true, "range_min": 1, "range_max": 2, "aoe_radius": 2, "description": "Arcane explosion! Deals {DMG} magic damage in a 2-tile radius."},
+            {"card_name": "Barrier", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "A magical barrier. Gain 4 armor.", "effects": [{"type": "temp_armor", "amount": 4}]},
+            {"card_name": "Elemental Mastery", "ap_cost": 0, "card_type": "SKILL", "target_type": "SELF", "description": "Master the elements. Your next spell this turn costs 0 AP.", "effects": [{"type": "next_spell_free"}]}
+        ]
+    },
+    "CLERIC": {
+        "innate_cards": [
+            {"card_name": "Prayer", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "A quiet prayer. Draw 2 cards.", "effects": [{"type": "draw", "amount": 2}]},
+            {"card_name": "Mass Heal", "ap_cost": 2, "card_type": "SPELL", "target_type": "ALL_ALLIES", "heal_base": 5, "heal_stat": "mag", "description": "Heal all allies for {HEAL} HP."},
+            {"card_name": "Divine Shield", "ap_cost": 1, "card_type": "SKILL", "target_type": "ALLY", "range_min": 1, "range_max": 2, "description": "Grant divine protection. Ally gains 5 armor.", "effects": [{"type": "temp_armor", "amount": 5}]},
+            {"card_name": "Sanctuary", "ap_cost": 2, "card_type": "SKILL", "target_type": "ALLY", "range_min": 1, "range_max": 2, "description": "Sanctuary! Ally takes no damage next enemy turn.", "effects": [{"type": "invulnerable", "duration": 1}]}
+        ]
+    },
+    "THIEF": {
+        "innate_cards": [
+            {"card_name": "Smoke Bomb", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Vanish in smoke! Become untargetable for 1 turn.", "effects": [{"type": "untargetable", "duration": 1}]},
+            {"card_name": "Dodge", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Dodge! The next attack against you deals 0 damage.", "effects": [{"type": "dodge_next"}]},
+            {"card_name": "Steal", "ap_cost": 1, "card_type": "SKILL", "target_type": "ENEMY", "range_min": 1, "range_max": 1, "description": "Steal 10 gold from the enemy.", "effects": [{"type": "steal_gold", "amount": 10}]},
+            {"card_name": "Flurry", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "A burst of speed! Your next 2 cards this turn cost 0 AP.", "effects": [{"type": "next_n_free", "count": 2}]}
+        ]
+    },
+    "BOUNTY_HUNTER": {
+        "innate_cards": [
+            {"card_name": "Track Prey", "ap_cost": 1, "card_type": "SKILL", "target_type": "ENEMY", "range_min": 1, "range_max": 3, "description": "Mark your prey! Target takes +3 damage from all sources for 2 turns.", "effects": [{"type": "mark", "bonus_damage": 3, "duration": 2}]},
+            {"card_name": "Net Throw", "ap_cost": 1, "card_type": "SKILL", "target_type": "ENEMY", "range_min": 1, "range_max": 2, "description": "Throw a net! Immobilize target for 1 turn.", "effects": [{"type": "immobilize", "duration": 1}]},
+            {"card_name": "Capture", "ap_cost": 2, "card_type": "SKILL", "target_type": "ENEMY", "range_min": 1, "range_max": 1, "description": "Attempt to capture. Target must be below 50% HP.", "effects": [{"type": "subdue"}]},
+            {"card_name": "Bounty Knowledge", "ap_cost": 0, "card_type": "SKILL", "target_type": "SELF", "description": "Study your quarry. If a marked enemy is on the field, draw 2 cards.", "effects": [{"type": "conditional_draw", "condition": "marked_enemy_exists", "amount": 2}]}
+        ]
+    }
+}
