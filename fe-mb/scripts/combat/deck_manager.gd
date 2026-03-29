@@ -128,7 +128,27 @@ func build_deck_from_gear(innate_cards: Array, unit: Resource) -> Array:
 			c.source = "hand_right"
 			deck.append(c)
 
+	# Apply quiver modifier to bow cards (if applicable)
+	if not unit.is_right_hand_locked() and unit.hand_right and unit.hand_right is ItemData:
+		var qm = unit.hand_right.quiver_modifier
+		if not qm.is_empty() and unit.hand_left and unit.hand_left is ItemData:
+			if unit.hand_left.weapon_type == ItemData.WeaponType.BOW:
+				_apply_quiver_modifier(deck, qm)
+
 	return deck
+
+
+## Apply quiver modifier to all hand_left-sourced attack cards
+func _apply_quiver_modifier(deck: Array, modifier: Dictionary) -> void:
+	var effect_type = modifier.get("effect", "")
+	if effect_type == "":
+		return
+	for card in deck:
+		if card.source == "hand_left" and card.damage_base > 0:
+			var eff = {"type": effect_type, "value": modifier.get("value", 0), "duration": modifier.get("duration", 0)}
+			if not card.effects is Array:
+				card.effects = []
+			card.effects.append(eff)
 
 
 ## Validate that no cards have been lost (debug)
