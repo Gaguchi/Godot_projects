@@ -3,16 +3,16 @@ extends PanelContainer
 ## PartySidebar - Vertical panel showing player party status during combat
 ## Displays unit names, HP bars, weapon info, and active/fallen states
 
-# Stone & Steel color palette
-const COLOR_PANEL_BG := Color(0.05, 0.055, 0.08, 0.95)
-const COLOR_IRON_BORDER := Color(0.227, 0.239, 0.282)
-const COLOR_EMBER := Color(0.69, 0.44, 0.25)
-const COLOR_PARCHMENT := Color(0.832, 0.812, 0.761)
-const COLOR_BLOOD_RED := Color(0.769, 0.267, 0.267)
-const COLOR_MOSS_GREEN := Color(0.353, 0.541, 0.353)
-const COLOR_WORN_STONE := Color(0.478, 0.463, 0.439)
-const COLOR_HP_BAR_BG := Color(0.15, 0.15, 0.15)
-const COLOR_ACTIVE_BG := Color(0.07, 0.075, 0.1, 0.95)
+# Stone & Steel color palette (from UIColors)
+const COLOR_PANEL_BG := UIColors.COLOR_PANEL_BG
+const COLOR_IRON_BORDER := UIColors.COLOR_IRON_BORDER
+const COLOR_EMBER := UIColors.COLOR_EMBER
+const COLOR_PARCHMENT := UIColors.COLOR_PARCHMENT
+const COLOR_BLOOD_RED := UIColors.COLOR_BLOOD_RED
+const COLOR_MOSS_GREEN := UIColors.COLOR_MOSS_GREEN
+const COLOR_WORN_STONE := UIColors.COLOR_WORN_STONE
+const COLOR_HP_BAR_BG := UIColors.COLOR_HP_BAR_BG
+const COLOR_ACTIVE_BG := UIColors.COLOR_ACTIVE_BG
 
 # Per-unit UI references keyed by unit_name
 var _unit_slots: Dictionary = {}  # unit_name -> Dictionary of UI nodes

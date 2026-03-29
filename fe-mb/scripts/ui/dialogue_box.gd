@@ -7,13 +7,13 @@ extends CanvasLayer
 signal advance_requested
 signal choice_selected(index: int)
 
-# --- Color Palette ---
-const COLOR_PANEL_BG := Color(0.05, 0.055, 0.08, 0.95)
-const COLOR_IRON_BORDER := Color(0.227, 0.239, 0.282)
-const COLOR_EMBER := Color(0.69, 0.44, 0.25)
-const COLOR_PARCHMENT := Color(0.832, 0.812, 0.761)
-const COLOR_WORN_STONE := Color(0.478, 0.463, 0.439)
-const COLOR_CHOICE_BG := Color(0.08, 0.085, 0.11, 0.95)
+# --- Color Palette (from UIColors) ---
+const COLOR_PANEL_BG := UIColors.COLOR_PANEL_BG
+const COLOR_IRON_BORDER := UIColors.COLOR_IRON_BORDER
+const COLOR_EMBER := UIColors.COLOR_EMBER
+const COLOR_PARCHMENT := UIColors.COLOR_PARCHMENT
+const COLOR_WORN_STONE := UIColors.COLOR_WORN_STONE
+const COLOR_CHOICE_BG := UIColors.COLOR_CHOICE_BG
 
 # --- Typewriter ---
 const TYPEWRITER_SPEED: float = 0.03  # Seconds per character

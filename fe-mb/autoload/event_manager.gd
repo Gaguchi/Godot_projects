@@ -30,27 +30,17 @@ func _ready() -> void:
 # =============================================================================
 
 func _load_travel_events() -> void:
-	var file = FileAccess.open(EVENTS_PATH, FileAccess.READ)
-	if not file:
-		push_warning("[EventManager] No travel events file at: " + EVENTS_PATH)
+	var data = JSONLoader.load_json(EVENTS_PATH)
+	if data == null:
 		return
-	var json = JSON.new()
-	if json.parse(file.get_as_text()) != OK:
-		push_error("[EventManager] Failed to parse travel events: " + json.get_error_message())
-		return
-	_travel_events = json.data if json.data is Array else []
+	_travel_events = data if data is Array else []
 
 
 func _load_enemy_groups() -> void:
-	var file = FileAccess.open(ENEMY_GROUPS_PATH, FileAccess.READ)
-	if not file:
-		push_warning("[EventManager] No enemy groups file at: " + ENEMY_GROUPS_PATH)
+	var data = JSONLoader.load_json(ENEMY_GROUPS_PATH)
+	if data == null:
 		return
-	var json = JSON.new()
-	if json.parse(file.get_as_text()) != OK:
-		push_error("[EventManager] Failed to parse enemy groups: " + json.get_error_message())
-		return
-	_enemy_groups = json.data if json.data is Dictionary else {}
+	_enemy_groups = data if data is Dictionary else {}
 
 
 # =============================================================================

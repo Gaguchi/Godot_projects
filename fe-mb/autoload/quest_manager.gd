@@ -178,23 +178,10 @@ func reset() -> void:
 
 func _load_definitions() -> void:
 	var path := "res://data/quests/quest_definitions.json"
-	if not FileAccess.file_exists(path):
-		print("[QuestManager] No quest definitions file found at %s" % path)
+	var data = JSONLoader.load_json(path)
+	if data == null:
 		return
 
-	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		print("[QuestManager] Failed to open quest definitions")
-		return
-
-	var json := JSON.new()
-	var err := json.parse(file.get_as_text())
-	file.close()
-	if err != OK:
-		print("[QuestManager] JSON parse error: %s" % json.get_error_message())
-		return
-
-	var data = json.data
 	if data is Dictionary:
 		var quests_array: Array = data.get("quests", [])
 		for quest in quests_array:

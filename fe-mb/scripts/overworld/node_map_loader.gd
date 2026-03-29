@@ -8,22 +8,9 @@ const MAP_DIR = "res://data/maps/"
 ## Load and parse a node map JSON file, returning a dictionary with nodes and edges
 static func load_map(map_name: String) -> Dictionary:
 	var path = MAP_DIR + map_name + ".json"
-	var file = FileAccess.open(path, FileAccess.READ)
-	if not file:
-		push_error("[NodeMapLoader] Could not open map file: " + path)
-		return {}
-
-	var json = JSON.new()
-	var error = json.parse(file.get_as_text())
-	file.close()
-
-	if error != OK:
-		push_error("[NodeMapLoader] JSON parse error in %s: %s" % [path, json.get_error_message()])
-		return {}
-
-	var data = json.data
+	var data = JSONLoader.load_json(path)
 	if not data is Dictionary:
-		push_error("[NodeMapLoader] Map file root must be a dictionary")
+		push_error("[NodeMapLoader] Failed to load map or root is not a dictionary: " + path)
 		return {}
 
 	return data

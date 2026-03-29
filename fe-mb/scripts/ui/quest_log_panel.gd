@@ -6,14 +6,14 @@ extends CanvasLayer
 
 signal closed
 
-const COLOR_PANEL_BG := Color(0.05, 0.055, 0.08, 0.95)
-const COLOR_SIDEBAR_BG := Color(0.04, 0.045, 0.065, 0.95)
-const COLOR_IRON_BORDER := Color(0.227, 0.239, 0.282)
-const COLOR_EMBER := Color(0.69, 0.44, 0.25)
-const COLOR_PARCHMENT := Color(0.832, 0.812, 0.761)
-const COLOR_WORN_STONE := Color(0.478, 0.463, 0.439)
-const COLOR_MOSS := Color(0.353, 0.541, 0.353)
-const COLOR_OVERLAY := Color(0, 0, 0, 0.8)
+const COLOR_PANEL_BG := UIColors.COLOR_PANEL_BG
+const COLOR_SIDEBAR_BG := UIColors.COLOR_SIDEBAR_BG
+const COLOR_IRON_BORDER := UIColors.COLOR_IRON_BORDER
+const COLOR_EMBER := UIColors.COLOR_EMBER
+const COLOR_PARCHMENT := UIColors.COLOR_PARCHMENT
+const COLOR_WORN_STONE := UIColors.COLOR_WORN_STONE
+const COLOR_MOSS := UIColors.COLOR_MOSS
+const COLOR_OVERLAY := UIColors.COLOR_OVERLAY_MEDIUM
 
 var _quest_buttons: Dictionary = {}  # quest_id -> Button
 var _selected_quest_id: String = ""
@@ -88,7 +88,7 @@ func _build_ui() -> void:
 	close_btn.custom_minimum_size = Vector2(32, 32)
 	close_btn.add_theme_font_size_override("font_size", 16)
 	close_btn.add_theme_color_override("font_color", COLOR_PARCHMENT)
-	close_btn.add_theme_color_override("font_hover_color", Color(0.769, 0.267, 0.267))
+	close_btn.add_theme_color_override("font_hover_color", UIColors.COLOR_BLOOD)
 	var close_style := StyleBoxFlat.new()
 	close_style.bg_color = Color(0, 0, 0, 0)
 	close_btn.add_theme_stylebox_override("normal", close_style)

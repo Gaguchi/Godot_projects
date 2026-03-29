@@ -17,23 +17,15 @@ static var tile_size: int = 64
 static func load_catalog() -> bool:
 	if not _catalog.is_empty():
 		return true
-	
-	var file = FileAccess.open(CATALOG_PATH, FileAccess.READ)
-	if not file:
-		push_error("[OverworldMapLoader] Failed to open catalog: " + CATALOG_PATH)
+
+	var data = JSONLoader.load_json(CATALOG_PATH)
+	if not data is Dictionary:
+		push_error("[OverworldMapLoader] Failed to load catalog: " + CATALOG_PATH)
 		return false
-	
-	var json = JSON.new()
-	var error = json.parse(file.get_as_text())
-	file.close()
-	
-	if error != OK:
-		push_error("[OverworldMapLoader] JSON parse error: " + json.get_error_message())
-		return false
-	
-	_catalog = json.data
+
+	_catalog = data
 	tile_size = _catalog.get("tile_size", 64)
-	
+
 	print("[OverworldMapLoader] Loaded catalog with tile_size: %d" % tile_size)
 	return true
 
@@ -41,22 +33,13 @@ static func load_catalog() -> bool:
 ## Load a map JSON file and return parsed data
 static func load_map_data(map_name: String) -> Dictionary:
 	var map_path = MAPS_PATH + map_name + ".json"
-	
-	var file = FileAccess.open(map_path, FileAccess.READ)
-	if not file:
-		push_error("[OverworldMapLoader] Failed to open map: " + map_path)
+	var data = JSONLoader.load_json(map_path)
+	if not data is Dictionary:
+		push_error("[OverworldMapLoader] Failed to load map: " + map_path)
 		return {}
-	
-	var json = JSON.new()
-	var error = json.parse(file.get_as_text())
-	file.close()
-	
-	if error != OK:
-		push_error("[OverworldMapLoader] JSON parse error in map: " + json.get_error_message())
-		return {}
-	
-	print("[OverworldMapLoader] Loaded map: %s (%dx%d)" % [json.data.get("name", map_name), json.data.get("width", 0), json.data.get("height", 0)])
-	return json.data
+
+	print("[OverworldMapLoader] Loaded map: %s (%dx%d)" % [data.get("name", map_name), data.get("width", 0), data.get("height", 0)])
+	return data
 
 
 ## Get the full texture path for a tile name

@@ -345,8 +345,8 @@ func _show_combat_forecast(attacker: Node2D, defender: Node2D) -> void:
 		battle_grid.get_terrain_avoid_bonus(def_pos)
 	)
 
-	var blood_red := Color(0.769, 0.267, 0.267)
-	var parchment := Color(0.832, 0.812, 0.761)
+	var blood_red := UIColors.COLOR_BLOOD_RED
+	var parchment := UIColors.COLOR_PARCHMENT
 
 	var atk_panel: VBoxContainer = combat_forecast_panel.get_node("VBox/HBox/AttackerPanel")
 	atk_panel.get_node("AttackerName").text = atk_data.unit_name

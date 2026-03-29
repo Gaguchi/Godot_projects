@@ -229,6 +229,8 @@ func _show_sharpen_selector(candidates: Array) -> void:
 		var sharp_name: String = ["Sharp", "Normal", "Dull"][unit.equipped_weapon.sharpness]
 		opt.add_item("%s — %s (%s)" % [unit.unit_name, unit.equipped_weapon.item_name, sharp_name])
 	_sharpen_selector.add_child(opt)
+	if opt.item_count > 0:
+		opt.select(0)
 
 	var confirm := _create_button("Sharpen", COLOR_EMBER)
 	confirm.pressed.connect(func():

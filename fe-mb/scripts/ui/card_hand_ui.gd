@@ -450,7 +450,8 @@ func refresh_quick_slots(unit: UnitData, ap: int) -> void:
 			if slot_item.item_type == ItemData.ItemType.CONSUMABLE and slot_item.current_uses > 0:
 				label_text += " x%d" % slot_item.current_uses
 			btn.text = label_text
-			btn.disabled = (ap < 1)
+			var usable: bool = slot_item.item_type == ItemData.ItemType.WEAPON or slot_item.current_uses > 0
+			btn.disabled = (ap < 1) or not usable
 			_style_quick_slot_btn_active(btn, slot_item.item_type == ItemData.ItemType.WEAPON)
 		else:
 			btn.text = "Slot %d: Empty" % (i + 1)

@@ -3,18 +3,18 @@ extends RefCounted
 ## UIFactory - Shared Stone & Steel UI helpers and palette constants.
 ## Used across party_screen, inventory_screen, and other menus.
 
-# ---- Stone & Steel Palette ----
-const COLOR_PANEL_BG := Color(0.05, 0.055, 0.08, 0.95)
-const COLOR_IRON_BORDER := Color(0.227, 0.239, 0.282)
-const COLOR_EMBER := Color(0.69, 0.44, 0.25)
-const COLOR_PARCHMENT := Color(0.832, 0.812, 0.761)
-const COLOR_WORN_STONE := Color(0.478, 0.463, 0.439)
-const COLOR_MOSS := Color(0.353, 0.541, 0.353)
-const COLOR_BLOOD := Color(0.769, 0.267, 0.267)
-const COLOR_ROW_BG := Color(0.06, 0.065, 0.09, 0.9)
-const COLOR_ROW_HOVER := Color(0.08, 0.085, 0.11, 0.95)
-const COLOR_ROW_SELECTED := Color(0.1, 0.09, 0.07, 0.95)
-const COLOR_BAR_BG := Color(0.15, 0.15, 0.15)
+# ---- Stone & Steel Palette (from UIColors) ----
+const COLOR_PANEL_BG := UIColors.COLOR_PANEL_BG
+const COLOR_IRON_BORDER := UIColors.COLOR_IRON_BORDER
+const COLOR_EMBER := UIColors.COLOR_EMBER
+const COLOR_PARCHMENT := UIColors.COLOR_PARCHMENT
+const COLOR_WORN_STONE := UIColors.COLOR_WORN_STONE
+const COLOR_MOSS := UIColors.COLOR_MOSS
+const COLOR_BLOOD := UIColors.COLOR_BLOOD
+const COLOR_ROW_BG := UIColors.COLOR_ROW_BG
+const COLOR_ROW_HOVER := UIColors.COLOR_ROW_HOVER
+const COLOR_ROW_SELECTED := UIColors.COLOR_ROW_SELECTED
+const COLOR_BAR_BG := UIColors.COLOR_BAR_BG
 
 # ---- Class Colors & Initials ----
 const CLASS_COLORS := {

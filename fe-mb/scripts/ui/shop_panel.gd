@@ -458,6 +458,7 @@ func _get_type_letter(data: Dictionary) -> String:
 		"LANCE": return "L"
 		"AXE": return "A"
 		"BOW": return "B"
+		"CROSSBOW": return "Xb"
 		"TOME": return "T"
 		"STAFF": return "St"
 		_:
@@ -473,6 +474,7 @@ func _get_type_letter_from_item(item: Resource) -> String:
 		ItemData.WeaponType.LANCE: return "L"
 		ItemData.WeaponType.AXE: return "A"
 		ItemData.WeaponType.BOW: return "B"
+		ItemData.WeaponType.CROSSBOW: return "Xb"
 		ItemData.WeaponType.TOME: return "T"
 		ItemData.WeaponType.STAFF: return "St"
 		_:

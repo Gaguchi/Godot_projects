@@ -10,6 +10,7 @@ var hand: Array = []          # Current hand (max 5)
 var discard_pile: Array = []  # Used cards
 
 var max_hand_size: int = 5
+var _expected_total: int = 0  # Total card count for validation
 
 
 ## Initialize the deck from a unit's card list — copies and shuffles
@@ -20,14 +21,17 @@ func init_deck(cards: Array) -> void:
 	for card in cards:
 		if card is CardData:
 			draw_pile.append(card.duplicate_card())
+	_expected_total = draw_pile.size()
 	shuffle_deck()
 
 
 ## Draw cards from the draw pile into hand
-func draw_cards(count: int) -> Array:
+## cap_at_max: if true, stops drawing at max_hand_size (used for start-of-turn draw)
+##             if false, draws all requested cards regardless of hand size (effect draws)
+func draw_cards(count: int, cap_at_max: bool = false) -> Array:
 	var drawn: Array = []
 	for i in count:
-		if hand.size() >= max_hand_size:
+		if cap_at_max and hand.size() >= max_hand_size:
 			break
 		if draw_pile.is_empty():
 			_reshuffle_discard()
@@ -79,6 +83,11 @@ func _reshuffle_discard() -> void:
 	deck_shuffled.emit()
 
 
+## Get total cards across all piles
+func get_total_count() -> int:
+	return draw_pile.size() + hand.size() + discard_pile.size()
+
+
 ## Get total cards remaining (draw + discard, not counting hand)
 func get_cards_remaining() -> int:
 	return draw_pile.size() + discard_pile.size()
@@ -92,3 +101,12 @@ func get_draw_count() -> int:
 ## Get discard pile size
 func get_discard_count() -> int:
 	return discard_pile.size()
+
+
+## Validate that no cards have been lost (debug)
+func validate(context: String = "") -> void:
+	var total: int = get_total_count()
+	if total != _expected_total:
+		printerr("[DeckManager] CARD LOSS! %s — expected %d, got %d (draw=%d hand=%d discard=%d)" % [
+			context, _expected_total, total, draw_pile.size(), hand.size(), discard_pile.size()
+		])

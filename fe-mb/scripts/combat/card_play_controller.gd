@@ -1122,12 +1122,21 @@ func use_quick_slot_item(unit: UnitData, slot_index: int) -> void:
 	elif item.item_name == "Whetstone":
 		if unit.equipped_weapon and unit.equipped_weapon is ItemData:
 			unit.equipped_weapon.sharpen()
+			unit.clear_quick_slot(slot_index)
 			if _combat_log:
 				_combat_log.log_system("%s used Whetstone — weapon sharpened" % unit.unit_name)
 			print("[QuickSlot] %s used Whetstone — weapon sharpened (AP left: %d)" % [unit.unit_name, _current_ap])
-		unit.clear_quick_slot(slot_index)
+		else:
+			# No weapon equipped — refund AP, don't consume whetstone
+			_current_ap += 1
+			if _combat_log:
+				_combat_log.log_system("%s has no weapon to sharpen" % unit.unit_name)
+			print("[QuickSlot] %s has no weapon — Whetstone not consumed" % unit.unit_name)
 	else:
 		# Generic consumable fallback
+		item.current_uses -= 1
+		if item.current_uses <= 0:
+			unit.clear_quick_slot(slot_index)
 		if _combat_log:
 			_combat_log.log_system("%s used %s" % [unit.unit_name, item.item_name])
 		print("[QuickSlot] %s used %s (AP left: %d)" % [unit.unit_name, item.item_name, _current_ap])
@@ -1136,10 +1145,7 @@ func use_quick_slot_item(unit: UnitData, slot_index: int) -> void:
 	_refresh_party_sidebar()
 
 	if _current_ap <= 0:
-		var active = _battlefield.active_unit
-		var dm = _deck_managers.get(active)
-		if dm and dm.hand.is_empty():
-			_on_card_end_turn()
+		_on_card_end_turn()
 
 
 ## Switch equipped weapon with a weapon in a quick slot. Costs 1 AP.
@@ -1167,8 +1173,7 @@ func switch_weapon_from_slot(unit: UnitData, slot_index: int) -> void:
 	_refresh_party_sidebar()
 
 	if _current_ap <= 0:
-		if dm and dm.hand.is_empty():
-			_on_card_end_turn()
+		_on_card_end_turn()
 
 
 ## Check if a card is compatible with the unit's equipped weapon

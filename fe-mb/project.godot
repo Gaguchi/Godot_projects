@@ -21,6 +21,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+DataRegistry="*res://autoload/data_registry.gd"
 GameManager="*res://autoload/game_manager.gd"
 EventBus="*res://autoload/event_bus.gd"
 SaveManager="*res://autoload/save_manager.gd"

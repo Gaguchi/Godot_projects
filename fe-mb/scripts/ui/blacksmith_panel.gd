@@ -121,10 +121,6 @@ func _build_ui() -> void:
 
 
 func _build_weapon_row(parent: VBoxContainer, unit: Resource, weapon: Resource) -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	parent.add_child(row)
-
 	# Row background panel
 	var row_panel := PanelContainer.new()
 	row_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
