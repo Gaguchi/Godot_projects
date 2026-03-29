@@ -7,14 +7,14 @@ extends Node
 const SAVE_PATH_TEMPLATE = "user://save_slot_%d.json"
 
 ## Tracks the version string of the save currently being loaded so migration helpers can read it.
-var _current_load_version: String = "0.4.0"
+var _current_load_version: String = "0.5.0"
 
 func get_save_path(slot: int) -> String:
 	return SAVE_PATH_TEMPLATE % slot
 
 func save_game(slot: int) -> void:
 	var save_data = {
-		"version": "0.4.0",
+		"version": "0.5.0",
 		"timestamp": Time.get_unix_time_from_system(),
 		"date_string": Time.get_datetime_string_from_system(false, true),
 		"game_manager": _serialize_game_manager(),
@@ -163,6 +163,28 @@ func _deserialize_game_manager(data: Dictionary) -> void:
 		var unit = UnitData.new()
 		unit.from_dict(unit_dict)
 		GameManager.captured_enemies.append(unit)
+
+	# Migration: 0.4.0 → 0.5.0
+	if save_version < "0.5.0":
+		# Migrate equipped_weapon -> hand_left, remove quick_slots and sharpness
+		if "party" in data:
+			for unit_dict in data["party"]:
+				if "equipped_weapon" in unit_dict:
+					unit_dict["hand_left"] = unit_dict["equipped_weapon"]
+					unit_dict.erase("equipped_weapon")
+				if "quick_slots" in unit_dict:
+					unit_dict.erase("quick_slots")
+				for key in ["hand_left", "hand_right"]:
+					if key in unit_dict and unit_dict[key] is Dictionary:
+						unit_dict[key].erase("sharpness")
+						unit_dict[key].erase("is_honed")
+		if "party_bag" in data:
+			var filtered = []
+			for entry in data["party_bag"]:
+				if entry.get("item", {}).get("item_name", "") != "Whetstone":
+					filtered.append(entry)
+			data["party_bag"] = filtered
+		print("[SaveManager] Migrated save from %s to 0.5.0" % save_version)
 
 	# Restore party bag (0.4.0+) or migrate from old food integer
 	if save_version >= "0.4.0":
