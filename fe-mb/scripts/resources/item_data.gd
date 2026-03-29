@@ -64,6 +64,10 @@ enum Rarity {
 @export_group("Hand Slots")
 @export var is_two_handed: bool = false
 
+@export_group("Gear Cards")
+@export var gear_cards: Array = []  # Array of card definition Dictionaries
+@export var quiver_modifier: Dictionary = {}  # {"effect": "poison", "value": 2, "duration": 2}
+
 
 ## Use the item, returns true if successful
 func use() -> bool:
@@ -184,6 +188,8 @@ static func create_from_dict(data: Dictionary) -> ItemData:
 	item.grid_width = data.get("grid_width", 1)
 	item.grid_height = data.get("grid_height", 1)
 	item.is_two_handed = data.get("is_two_handed", false)
+	item.gear_cards = data.get("gear_cards", [])
+	item.quiver_modifier = data.get("quiver_modifier", {})
 
 	# Handle string or int rarity
 	var rarity_val = data.get("rarity", 0)
@@ -203,7 +209,7 @@ static func create_from_dict(data: Dictionary) -> ItemData:
 
 ## Serialize to dictionary
 func to_dict() -> Dictionary:
-	return {
+	var d := {
 		"item_name": item_name,
 		"description": description,
 		"item_type": item_type,
@@ -227,7 +233,11 @@ func to_dict() -> Dictionary:
 		"grid_height": grid_height,
 		"rarity": rarity,
 		"is_two_handed": is_two_handed,
+		"gear_cards": gear_cards,
 	}
+	if not quiver_modifier.is_empty():
+		d["quiver_modifier"] = quiver_modifier
+	return d
 
 
 ## Deserialize from dictionary
@@ -254,3 +264,5 @@ func from_dict(data: Dictionary) -> void:
 	grid_height = data.get("grid_height", 1)
 	rarity = data.get("rarity", 0)
 	is_two_handed = data.get("is_two_handed", false)
+	gear_cards = data.get("gear_cards", [])
+	quiver_modifier = data.get("quiver_modifier", {})

@@ -10,7 +10,9 @@
 		"grid_width": 1,
 		"grid_height": 3,
 		"buy_price": 120,
-		"sell_price": 60
+		"sell_price": 60,
+		"rarity": "COMMON",
+		"is_two_handed": false
 	},
 	"steel_sword": {
 		"item_name": "Steel Sword",
@@ -23,7 +25,9 @@
 		"grid_width": 1,
 		"grid_height": 3,
 		"buy_price": 280,
-		"sell_price": 140
+		"sell_price": 140,
+		"rarity": "UNCOMMON",
+		"is_two_handed": false
 	},
 	"iron_lance": {
 		"item_name": "Iron Lance",
@@ -36,7 +40,9 @@
 		"grid_width": 1,
 		"grid_height": 4,
 		"buy_price": 150,
-		"sell_price": 75
+		"sell_price": 75,
+		"rarity": "COMMON",
+		"is_two_handed": false
 	},
 	"steel_lance": {
 		"item_name": "Steel Lance",
@@ -49,7 +55,9 @@
 		"grid_width": 1,
 		"grid_height": 4,
 		"buy_price": 320,
-		"sell_price": 160
+		"sell_price": 160,
+		"rarity": "UNCOMMON",
+		"is_two_handed": false
 	},
 	"iron_axe": {
 		"item_name": "Iron Axe",
@@ -62,7 +70,9 @@
 		"grid_width": 2,
 		"grid_height": 2,
 		"buy_price": 100,
-		"sell_price": 50
+		"sell_price": 50,
+		"rarity": "COMMON",
+		"is_two_handed": false
 	},
 	"iron_bow": {
 		"item_name": "Iron Bow",
@@ -75,7 +85,9 @@
 		"grid_width": 1,
 		"grid_height": 3,
 		"buy_price": 140,
-		"sell_price": 70
+		"sell_price": 70,
+		"rarity": "COMMON",
+		"is_two_handed": false
 	},
 	"iron_crossbow": {
 		"item_name": "Iron Crossbow",
@@ -88,7 +100,9 @@
 		"grid_width": 1,
 		"grid_height": 3,
 		"buy_price": 150,
-		"sell_price": 75
+		"sell_price": 75,
+		"rarity": "COMMON",
+		"is_two_handed": false
 	},
 	"fire": {
 		"item_name": "Fire",
@@ -101,7 +115,9 @@
 		"grid_width": 1,
 		"grid_height": 2,
 		"buy_price": 130,
-		"sell_price": 65
+		"sell_price": 65,
+		"rarity": "COMMON",
+		"is_two_handed": false
 	},
 	"thunder": {
 		"item_name": "Thunder",
@@ -114,7 +130,9 @@
 		"grid_width": 1,
 		"grid_height": 2,
 		"buy_price": 300,
-		"sell_price": 150
+		"sell_price": 150,
+		"rarity": "UNCOMMON",
+		"is_two_handed": false
 	},
 	"heal_staff": {
 		"item_name": "Heal",
@@ -128,7 +146,9 @@
 		"grid_width": 1,
 		"grid_height": 3,
 		"buy_price": 160,
-		"sell_price": 80
+		"sell_price": 80,
+		"rarity": "COMMON",
+		"is_two_handed": false
 	},
 	"vulnerary": {
 		"item_name": "Vulnerary",
@@ -141,7 +161,9 @@
 		"grid_width": 1,
 		"grid_height": 1,
 		"buy_price": 80,
-		"sell_price": 40
+		"sell_price": 40,
+		"rarity": "COMMON",
+		"is_two_handed": false
 	},
 	"elixir": {
 		"item_name": "Elixir",
@@ -154,7 +176,9 @@
 		"grid_width": 1,
 		"grid_height": 1,
 		"buy_price": 500,
-		"sell_price": 250
+		"sell_price": 250,
+		"rarity": "UNCOMMON",
+		"is_two_handed": false
 	},
 	"food_rations": {
 		"item_name": "Food Rations",
@@ -166,6 +190,101 @@
 		"grid_width": 1,
 		"grid_height": 2,
 		"buy_price": 50,
-		"sell_price": 25
+		"sell_price": 25,
+		"rarity": "COMMON",
+		"is_two_handed": false
+	},
+	"iron_buckler": {
+		"item_name": "Iron Buckler",
+		"item_type": "WEAPON",
+		"weapon_type": "NONE",
+		"might": 0,
+		"range_min": 0,
+		"range_max": 0,
+		"grid_width": 2,
+		"grid_height": 2,
+		"buy_price": 80,
+		"sell_price": 40,
+		"rarity": "COMMON",
+		"is_two_handed": false
+	},
+	"iron_tower_shield": {
+		"item_name": "Iron Tower Shield",
+		"item_type": "WEAPON",
+		"weapon_type": "NONE",
+		"might": 0,
+		"range_min": 0,
+		"range_max": 0,
+		"grid_width": 2,
+		"grid_height": 3,
+		"buy_price": 100,
+		"sell_price": 50,
+		"rarity": "COMMON",
+		"is_two_handed": false
+	},
+	"standard_quiver": {
+		"item_name": "Standard Quiver",
+		"item_type": "WEAPON",
+		"weapon_type": "NONE",
+		"might": 0,
+		"grid_width": 1,
+		"grid_height": 2,
+		"buy_price": 30,
+		"sell_price": 15,
+		"rarity": "COMMON",
+		"is_two_handed": false,
+		"quiver_modifier": {}
+	},
+	"poison_quiver": {
+		"item_name": "Poison Quiver",
+		"item_type": "WEAPON",
+		"weapon_type": "NONE",
+		"might": 0,
+		"grid_width": 1,
+		"grid_height": 2,
+		"buy_price": 180,
+		"sell_price": 90,
+		"rarity": "UNCOMMON",
+		"is_two_handed": false,
+		"quiver_modifier": {"effect": "poison", "value": 2, "duration": 2}
+	},
+	"thunder_quiver": {
+		"item_name": "Thunder Quiver",
+		"item_type": "WEAPON",
+		"weapon_type": "NONE",
+		"might": 0,
+		"grid_width": 1,
+		"grid_height": 2,
+		"buy_price": 200,
+		"sell_price": 100,
+		"rarity": "UNCOMMON",
+		"is_two_handed": false,
+		"quiver_modifier": {"effect": "thunder", "value": 3, "duration": 0}
+	},
+	"ice_quiver": {
+		"item_name": "Ice Quiver",
+		"item_type": "WEAPON",
+		"weapon_type": "NONE",
+		"might": 0,
+		"grid_width": 1,
+		"grid_height": 2,
+		"buy_price": 180,
+		"sell_price": 90,
+		"rarity": "UNCOMMON",
+		"is_two_handed": false,
+		"quiver_modifier": {"effect": "slow", "value": 2, "duration": 1}
+	},
+	"explosive_quiver": {
+		"item_name": "Explosive Quiver",
+		"item_type": "WEAPON",
+		"weapon_type": "NONE",
+		"might": 0,
+		"grid_width": 1,
+		"grid_height": 2,
+		"buy_price": 350,
+		"sell_price": 175,
+		"rarity": "RARE",
+		"is_two_handed": false,
+		"quiver_modifier": {"effect": "explosive", "value": 3, "duration": 0}
 	}
 }

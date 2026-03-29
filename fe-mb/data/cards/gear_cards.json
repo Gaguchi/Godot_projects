@@ -1,0 +1,67 @@
+{
+	"iron_sword": [
+		{"card_name": "Slash", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 4, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "A swift sword strike. Deals {DMG} damage."},
+		{"card_name": "Thrust", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 8, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "A powerful thrust. Deals {DMG} damage."},
+		{"card_name": "Guard Break", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 3, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "Shatters armor. Deals {DMG} damage and removes 2 armor.", "effects": [{"type": "destroy_armor", "amount": 2}]}
+	],
+	"steel_sword": [
+		{"card_name": "Slash", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 6, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "A swift sword strike. Deals {DMG} damage."},
+		{"card_name": "Thrust", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 11, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "A powerful thrust. Deals {DMG} damage."},
+		{"card_name": "Guard Break", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 5, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "Shatters armor. Deals {DMG} damage and removes 3 armor.", "effects": [{"type": "destroy_armor", "amount": 3}]}
+	],
+	"iron_lance": [
+		{"card_name": "Jab", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 5, "damage_stat": "str", "range_min": 1, "range_max": 2, "description": "A quick lance jab. Deals {DMG} damage. Range 1-2."},
+		{"card_name": "Impale", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 10, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "Drive the lance deep. Deals {DMG} damage."},
+		{"card_name": "Brace", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 4, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "Defensive strike. Deals {DMG} damage and gain 2 armor.", "effects": [{"type": "temp_armor", "amount": 2}]}
+	],
+	"steel_lance": [
+		{"card_name": "Jab", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 7, "damage_stat": "str", "range_min": 1, "range_max": 2, "description": "A quick lance jab. Deals {DMG} damage. Range 1-2."},
+		{"card_name": "Impale", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 14, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "Drive the lance deep. Deals {DMG} damage."},
+		{"card_name": "Brace", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 6, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "Defensive strike. Deals {DMG} damage and gain 3 armor.", "effects": [{"type": "temp_armor", "amount": 3}]}
+	],
+	"iron_axe": [
+		{"card_name": "Chop", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 5, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "A heavy chop. Deals {DMG} damage."},
+		{"card_name": "Wild Swing", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 4, "damage_stat": "str", "range_min": 1, "range_max": 1, "aoe_radius": 1, "description": "Swing wildly! Deals {DMG} damage to target and adjacent enemies."},
+		{"card_name": "Rend", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 3, "damage_stat": "str", "range_min": 1, "range_max": 1, "description": "Tear through armor. Deals {DMG} damage and destroys 3 armor.", "effects": [{"type": "destroy_armor", "amount": 3}]}
+	],
+	"iron_bow": [
+		{"card_name": "Quick Shot", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 4, "damage_stat": "str", "range_min": 2, "range_max": 3, "description": "A quick arrow. Deals {DMG} damage. Range 2-3."},
+		{"card_name": "Aimed Shot", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 9, "damage_stat": "str", "range_min": 2, "range_max": 3, "description": "Carefully aimed shot. Deals {DMG} damage. Range 2-3."},
+		{"card_name": "Volley", "ap_cost": 3, "card_type": "ATTACK", "target_type": "GROUND", "damage_base": 3, "damage_stat": "str", "range_min": 2, "range_max": 3, "aoe_radius": 1, "description": "Rain of arrows in a 3x3 area. Deals {DMG} damage. Range 2-3."}
+	],
+	"fire": [
+		{"card_name": "Fire", "ap_cost": 1, "card_type": "SPELL", "target_type": "ENEMY", "damage_base": 4, "damage_stat": "mag", "is_magic": true, "range_min": 1, "range_max": 2, "description": "A bolt of flame. Deals {DMG} magic damage. Range 1-2."},
+		{"card_name": "Blaze", "ap_cost": 2, "card_type": "SPELL", "target_type": "ENEMY", "damage_base": 8, "damage_stat": "mag", "is_magic": true, "range_min": 1, "range_max": 2, "description": "An intense blaze. Deals {DMG} magic damage. Range 1-2."},
+		{"card_name": "Flame Burst", "ap_cost": 2, "card_type": "SPELL", "target_type": "GROUND", "damage_base": 4, "damage_stat": "mag", "is_magic": true, "range_min": 1, "range_max": 2, "aoe_radius": 2, "description": "Burst of fire in a wide area. Deals {DMG} magic damage."}
+	],
+	"thunder": [
+		{"card_name": "Thunder", "ap_cost": 1, "card_type": "SPELL", "target_type": "ENEMY", "damage_base": 6, "damage_stat": "mag", "is_magic": true, "range_min": 1, "range_max": 2, "description": "A bolt of lightning. Deals {DMG} magic damage. Range 1-2."},
+		{"card_name": "Thoron", "ap_cost": 2, "card_type": "SPELL", "target_type": "ENEMY", "damage_base": 11, "damage_stat": "mag", "is_magic": true, "range_min": 1, "range_max": 2, "description": "Powerful lightning. Deals {DMG} magic damage. Range 1-2."},
+		{"card_name": "Lightning", "ap_cost": 2, "card_type": "SPELL", "target_type": "GROUND", "damage_base": 5, "damage_stat": "mag", "is_magic": true, "range_min": 1, "range_max": 2, "aoe_radius": 2, "description": "Lightning storm in a wide area. Deals {DMG} magic damage."}
+	],
+	"heal_staff": [
+		{"card_name": "Heal", "ap_cost": 1, "card_type": "SPELL", "target_type": "ALLY", "heal_base": 8, "heal_stat": "mag", "range_min": 1, "range_max": 2, "description": "Restore {HEAL} HP to an ally. Range 1-2."},
+		{"card_name": "Restore", "ap_cost": 2, "card_type": "SPELL", "target_type": "ALLY", "heal_base": 15, "heal_stat": "mag", "range_min": 1, "range_max": 2, "description": "A powerful heal. Restore {HEAL} HP. Range 1-2."},
+		{"card_name": "Purify", "ap_cost": 1, "card_type": "SKILL", "target_type": "ALLY", "range_min": 1, "range_max": 2, "description": "Remove all debuffs from an ally. Range 1-2.", "effects": [{"type": "purify"}]}
+	],
+	"iron_crossbow": [
+		{"card_name": "Crossbow Bolt", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 5, "damage_stat": "str", "range_min": 1, "range_max": 2, "description": "A crossbow bolt. Deals {DMG} damage. Range 1-2."},
+		{"card_name": "Heavy Bolt", "ap_cost": 2, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 10, "damage_stat": "str", "range_min": 1, "range_max": 2, "description": "Punches through armor. Deals {DMG} damage, removes 2 armor. Range 1-2.", "effects": [{"type": "destroy_armor", "amount": 2}]},
+		{"card_name": "Pinning Shot", "ap_cost": 1, "card_type": "ATTACK", "target_type": "ENEMY", "damage_base": 3, "damage_stat": "str", "range_min": 1, "range_max": 2, "description": "Pin in place. Deals {DMG} damage, immobilize 1 turn. Range 1-2.", "effects": [{"type": "immobilize", "duration": 1}]}
+	],
+	"iron_buckler": [
+		{"card_name": "Block", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Raise your shield. Gain 4 armor.", "effects": [{"type": "temp_armor", "amount": 4}]},
+		{"card_name": "Parry", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Parry the next attack. Gain 3 armor, deal 2 damage to next melee attacker.", "effects": [{"type": "temp_armor", "amount": 3}, {"type": "thorns", "amount": 2}]},
+		{"card_name": "Deflect", "ap_cost": 0, "card_type": "SKILL", "target_type": "SELF", "description": "Quick deflection. Gain 2 armor.", "effects": [{"type": "temp_armor", "amount": 2}]}
+	],
+	"iron_tower_shield": [
+		{"card_name": "Fortress", "ap_cost": 2, "card_type": "SKILL", "target_type": "SELF", "description": "Hunker behind your shield. Gain 8 armor.", "effects": [{"type": "temp_armor", "amount": 8}]},
+		{"card_name": "Shield Wall", "ap_cost": 1, "card_type": "SKILL", "target_type": "SELF", "description": "Shield wall! Gain 4 armor. Adjacent allies gain 2 armor.", "effects": [{"type": "temp_armor", "amount": 4}, {"type": "aoe_ally_armor", "amount": 2}]},
+		{"card_name": "Cover", "ap_cost": 1, "card_type": "SKILL", "target_type": "ALLY", "range_min": 1, "range_max": 1, "description": "Redirect the next attack on this ally to you.", "effects": [{"type": "cover"}]}
+	],
+	"standard_quiver": [],
+	"poison_quiver": [],
+	"thunder_quiver": [],
+	"ice_quiver": [],
+	"explosive_quiver": []
+}
