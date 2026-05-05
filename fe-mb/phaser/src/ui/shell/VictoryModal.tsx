@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCombatStore } from '../../state/combatStore';
 
-export function VictoryModal(): JSX.Element | null {
+export function VictoryModal(): React.JSX.Element | null {
   const phase = useCombatStore(s => s.phase);
   if (phase !== 'VICTORY') return null;
 

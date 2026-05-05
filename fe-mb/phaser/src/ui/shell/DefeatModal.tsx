@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCombatStore } from '../../state/combatStore';
 
-export function DefeatModal(): JSX.Element | null {
+export function DefeatModal(): React.JSX.Element | null {
   const phase = useCombatStore(s => s.phase);
   if (phase !== 'DEFEAT') return null;
 

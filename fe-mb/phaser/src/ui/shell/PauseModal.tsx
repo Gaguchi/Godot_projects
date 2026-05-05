@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-export function PauseModal(): JSX.Element | null {
+export function PauseModal(): React.JSX.Element | null {
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
