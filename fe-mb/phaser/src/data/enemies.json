@@ -1,0 +1,28 @@
+{
+  "enemies": [
+    {
+      "id": "bandit",
+      "name": "Bandit",
+      "level": 1,
+      "stats": { "hp": 18, "str": 5, "mag": 0, "skl": 4, "spd": 4, "lck": 2, "def": 3, "res": 1, "mov": 4 },
+      "attack": { "damage": 5, "range": { "min": 1, "max": 1 }, "type": "physical" },
+      "ai": "closest_target"
+    },
+    {
+      "id": "mage_bandit",
+      "name": "Mage Bandit",
+      "level": 1,
+      "stats": { "hp": 14, "str": 2, "mag": 6, "skl": 4, "spd": 5, "lck": 2, "def": 1, "res": 4, "mov": 4 },
+      "attack": { "damage": 6, "range": { "min": 2, "max": 3 }, "type": "magical" },
+      "ai": "closest_target"
+    },
+    {
+      "id": "bandit_captain",
+      "name": "Bandit Captain",
+      "level": 2,
+      "stats": { "hp": 26, "str": 7, "mag": 0, "skl": 5, "spd": 4, "lck": 3, "def": 5, "res": 2, "mov": 4 },
+      "attack": { "damage": 7, "range": { "min": 1, "max": 1 }, "type": "physical" },
+      "ai": "closest_target"
+    }
+  ]
+}
