@@ -43,7 +43,8 @@ fe-mb/
 │   ├── overworld/      # World map, map loader, input handling
 │   ├── resources/      # Resource classes (LocationData, RegionData, etc.)
 │   └── units/          # Unit stats, classes
-└── themes/             # UI themes
+├── themes/             # UI themes
+└── phaser/             # Combat sandbox (TypeScript + Phaser 4 + React + Vite). Ships v0.1, validated AI iteration loop. See phaser/README.md.
 ```
 
 ## Key Systems
