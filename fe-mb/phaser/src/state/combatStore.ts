@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import type { UnitInstance } from '../game/entities/Unit';
+import type { EnemyInstance } from '../game/entities/Enemy';
 
 export type CombatPhase = 'BOOT' | 'DEPLOY' | 'COMBAT' | 'VICTORY' | 'DEFEAT';
 export type SubPhase = 'IDLE' | 'SELECTING_CARD' | 'SELECTING_TARGET' | 'RESOLVING';
@@ -14,6 +16,8 @@ interface CombatState {
   selectedCardId: string | null;
   hoveredTile: GridCoord | null;
   ap: number;
+  party: UnitInstance[];
+  enemies: EnemyInstance[];
   setPhase: (p: CombatPhase) => void;
   setSubPhase: (p: SubPhase) => void;
   selectCard: (cardId: string) => void;
@@ -21,6 +25,7 @@ interface CombatState {
   setHoveredTile: (tile: GridCoord | null) => void;
   setAP: (n: number) => void;
   spendAP: (n: number) => void;
+  setBattle: (party: UnitInstance[], enemies: EnemyInstance[]) => void;
   reset: () => void;
 }
 
@@ -30,6 +35,8 @@ const initial = {
   selectedCardId: null,
   hoveredTile: null,
   ap: 0,
+  party: [] as UnitInstance[],
+  enemies: [] as EnemyInstance[],
 };
 
 export const useCombatStore = create<CombatState>((set) => ({
@@ -41,5 +48,6 @@ export const useCombatStore = create<CombatState>((set) => ({
   setHoveredTile: (hoveredTile) => set({ hoveredTile }),
   setAP: (ap) => set({ ap }),
   spendAP: (n) => set((s) => ({ ap: Math.max(0, s.ap - n) })),
+  setBattle: (party, enemies) => set({ party, enemies }),
   reset: () => set(initial),
 }));
