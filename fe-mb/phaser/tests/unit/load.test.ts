@@ -4,7 +4,7 @@ import { loadGameData } from '../../src/data/load';
 describe('loadGameData', () => {
   it('loads and validates all data files', () => {
     const data = loadGameData();
-    expect(data.cards).toHaveLength(5);
+    expect(data.cards).toHaveLength(9);
     expect(data.units).toHaveLength(3);
     expect(data.enemies).toHaveLength(3);
     expect(data.cards.find(c => c.id === 'iron_strike')).toBeDefined();

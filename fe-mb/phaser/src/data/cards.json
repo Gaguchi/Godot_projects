@@ -54,6 +54,50 @@
       "range": { "min": 0, "max": 0 },
       "aoe": { "shape": "single", "radius": 0 },
       "description": "Halve incoming damage until next turn."
+    },
+    {
+      "id": "lance_thrust",
+      "name": "Lance Thrust",
+      "cost": 1,
+      "damage_base": 5,
+      "stat": "STR",
+      "target": "ENEMY",
+      "range": { "min": 1, "max": 2 },
+      "aoe": { "shape": "single", "radius": 0 },
+      "description": "Reach 2 tiles. STR scaling."
+    },
+    {
+      "id": "javelin",
+      "name": "Javelin",
+      "cost": 2,
+      "damage_base": 4,
+      "stat": "STR",
+      "target": "ENEMY",
+      "range": { "min": 2, "max": 3 },
+      "aoe": { "shape": "single", "radius": 0 },
+      "description": "Thrown spear, longer range."
+    },
+    {
+      "id": "bolt",
+      "name": "Bolt",
+      "cost": 1,
+      "damage_base": 3,
+      "stat": "MAG",
+      "target": "ENEMY",
+      "range": { "min": 2, "max": 3 },
+      "aoe": { "shape": "single", "radius": 0 },
+      "description": "Single-target lightning."
+    },
+    {
+      "id": "frostbite",
+      "name": "Frostbite",
+      "cost": 2,
+      "damage_base": 3,
+      "stat": "MAG",
+      "target": "ENEMY",
+      "range": { "min": 2, "max": 3 },
+      "aoe": { "shape": "single", "radius": 0 },
+      "description": "Slows target on hit."
     }
   ]
 }

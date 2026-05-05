@@ -6,7 +6,7 @@
       "class": "LORD",
       "level": 1,
       "stats": { "hp": 22, "str": 6, "mag": 0, "skl": 6, "spd": 7, "lck": 7, "def": 5, "res": 2, "mov": 5 },
-      "deck": ["iron_strike", "iron_strike", "iron_strike", "iron_strike", "shield_bash", "shield_bash", "shield_bash", "guard", "guard", "guard", "heal", "heal"]
+      "deck": ["iron_strike", "iron_strike", "iron_strike", "iron_strike", "shield_bash", "shield_bash", "guard", "guard", "heal", "heal", "heal", "heal"]
     },
     {
       "id": "marcus",
@@ -14,7 +14,7 @@
       "class": "KNIGHT",
       "level": 1,
       "stats": { "hp": 28, "str": 8, "mag": 0, "skl": 5, "spd": 3, "lck": 5, "def": 10, "res": 2, "mov": 4 },
-      "deck": ["iron_strike", "iron_strike", "iron_strike", "iron_strike", "iron_strike", "iron_strike", "shield_bash", "shield_bash", "shield_bash", "shield_bash", "guard", "guard"]
+      "deck": ["iron_strike", "iron_strike", "iron_strike", "lance_thrust", "lance_thrust", "lance_thrust", "javelin", "javelin", "shield_bash", "shield_bash", "guard", "guard"]
     },
     {
       "id": "lilina",
@@ -22,7 +22,7 @@
       "class": "MAGE",
       "level": 1,
       "stats": { "hp": 16, "str": 2, "mag": 8, "skl": 5, "spd": 4, "lck": 6, "def": 2, "res": 6, "mov": 4 },
-      "deck": ["fireball", "fireball", "fireball", "fireball", "fireball", "fireball", "heal", "heal", "heal", "heal", "guard", "guard"]
+      "deck": ["fireball", "fireball", "fireball", "fireball", "bolt", "bolt", "bolt", "frostbite", "frostbite", "heal", "heal", "guard"]
     }
   ]
 }
