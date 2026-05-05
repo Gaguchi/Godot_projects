@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { loadGameData } from '../../data/load';
+import { initAudio } from '../audio';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,6 +8,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    initAudio();
     try {
       const data = loadGameData();
       this.registry.set('gameData', data);

@@ -12,6 +12,7 @@ import { resolveCard } from '../systems/combatResolver';
 import { drawCards } from '../systems/deckManager';
 import { spawnDamageNumber } from '../render/damageNumber';
 import { decideEnemyAction } from '../systems/enemyAI';
+import { play } from '../audio';
 
 export class CombatScene extends Phaser.Scene {
   private hand: CardSprite[] = [];
@@ -124,6 +125,8 @@ export class CombatScene extends Phaser.Scene {
       if (result.targets.some(t => t.killed)) {
         this.cameras.main.shake(220, 0.008);
       }
+      if (totalDamage > 0) play('hit');
+      else play('miss');
       this.actors.forEach(refreshActor);
       useCombatStore.getState().cancelSelection();
       this.overlay.clear();
@@ -170,8 +173,10 @@ export class CombatScene extends Phaser.Scene {
     const partyAlive = party.some(p => p.alive);
 
     if (!enemiesAlive) {
+      play('victory');
       useCombatStore.getState().setPhase('VICTORY');
     } else if (!partyAlive) {
+      play('defeat');
       useCombatStore.getState().setPhase('DEFEAT');
     }
   }
