@@ -7,7 +7,7 @@ import { useCombatStore } from '../../state/combatStore';
 import type { GameData } from '../../data/load';
 import { createUnit, applyDamage } from '../entities/Unit';
 import { createEnemy } from '../entities/Enemy';
-import { renderActor, refreshActor, type ActorSprite } from '../render/unitSprites';
+import { renderActor, refreshActor, hitFlash, deathFade, type ActorSprite } from '../render/unitSprites';
 import { resolveCard } from '../systems/combatResolver';
 import { drawCards } from '../systems/deckManager';
 import { spawnDamageNumber } from '../render/damageNumber';
@@ -109,7 +109,14 @@ export class CombatScene extends Phaser.Scene {
       if (targets.length === 0 && card.target !== 'GROUND') return;
 
       const result = resolveCard(card, roy, targets);
-      result.targets.forEach(t => spawnDamageNumber(this, t.target.pos, t.damage));
+      result.targets.forEach(t => {
+        spawnDamageNumber(this, t.target.pos, t.damage);
+        const sprite = this.actors.find(a => a.ref === t.target);
+        if (sprite) {
+          if (t.killed) deathFade(this, sprite);
+          else hitFlash(this, sprite);
+        }
+      });
       this.actors.forEach(refreshActor);
       useCombatStore.getState().cancelSelection();
       this.overlay.clear();

@@ -38,3 +38,21 @@ export function refreshActor(sprite: ActorSprite): void {
     sprite.hpText.setText('x');
   }
 }
+
+export function hitFlash(scene: Phaser.Scene, sprite: ActorSprite): void {
+  scene.tweens.add({
+    targets: sprite.graphics,
+    alpha: { from: 1, to: 0.3 },
+    duration: 80,
+    yoyo: true,
+  });
+}
+
+export function deathFade(scene: Phaser.Scene, sprite: ActorSprite): void {
+  scene.tweens.add({
+    targets: [sprite.graphics, sprite.hpText],
+    alpha: 0.2,
+    duration: 400,
+    ease: 'Quad.easeOut',
+  });
+}
