@@ -117,6 +117,13 @@ export class CombatScene extends Phaser.Scene {
           else hitFlash(this, sprite);
         }
       });
+      const totalDamage = result.targets.reduce((s, t) => s + Math.max(0, t.damage), 0);
+      if (totalDamage >= 10) {
+        this.cameras.main.shake(150, 0.005);
+      }
+      if (result.targets.some(t => t.killed)) {
+        this.cameras.main.shake(220, 0.008);
+      }
       this.actors.forEach(refreshActor);
       useCombatStore.getState().cancelSelection();
       this.overlay.clear();
