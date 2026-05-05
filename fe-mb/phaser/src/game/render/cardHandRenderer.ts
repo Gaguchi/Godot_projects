@@ -97,3 +97,41 @@ export function setCardHovered(sprite: CardSprite, hovered: boolean): void {
   const bg = sprite.container.getData('bg') as Phaser.GameObjects.Graphics;
   drawCardBackground(bg, hovered);
 }
+
+const HOVER_LIFT = 30;
+
+export function attachCardInput(
+  scene: Phaser.Scene,
+  sprite: CardSprite,
+  onClick: (card: Card) => void,
+): void {
+  const { container, baseX, baseY, baseAngle } = sprite;
+
+  container.on('pointerover', () => {
+    setCardHovered(sprite, true);
+    scene.tweens.add({
+      targets: container,
+      y: baseY - HOVER_LIFT,
+      rotation: 0,
+      scale: 1.1,
+      duration: 120,
+      ease: 'Quad.easeOut',
+    });
+    container.setDepth(100);
+  });
+
+  container.on('pointerout', () => {
+    setCardHovered(sprite, false);
+    scene.tweens.add({
+      targets: container,
+      y: baseY,
+      rotation: baseAngle,
+      scale: 1,
+      duration: 120,
+      ease: 'Quad.easeOut',
+    });
+    container.setDepth(0);
+  });
+
+  container.on('pointerdown', () => onClick(sprite.card));
+}

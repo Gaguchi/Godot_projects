@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { drawGrid } from '../render/gridRenderer';
-import { renderHand, type CardSprite } from '../render/cardHandRenderer';
+import { renderHand, attachCardInput, type CardSprite } from '../render/cardHandRenderer';
+import { useCombatStore } from '../../state/combatStore';
 import type { GameData } from '../../data/load';
 
 export class CombatScene extends Phaser.Scene {
@@ -20,5 +21,12 @@ export class CombatScene extends Phaser.Scene {
     const royDeck = data.unitById('roy')!.deck;
     const handCards = royDeck.slice(0, 5).map(id => data.cardById(id)!);
     this.hand = renderHand(this, handCards);
+    this.hand.forEach(sprite => {
+      attachCardInput(this, sprite, (card) => {
+        useCombatStore.getState().selectCard(card.id);
+      });
+    });
+
+    useCombatStore.getState().setPhase('COMBAT');
   }
 }
