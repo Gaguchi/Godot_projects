@@ -11,7 +11,7 @@ const ROY_TILE = { x: 3, y: 5 };
 export class CombatScene extends Phaser.Scene {
   private hand: CardSprite[] = [];
   private overlay!: TargetingOverlay;
-  private data!: GameData;
+  private gameData!: GameData;
   private royMarker!: Phaser.GameObjects.Graphics;
 
   constructor() {
@@ -22,7 +22,7 @@ export class CombatScene extends Phaser.Scene {
     drawGrid(this);
     this.add.text(640, 40, 'Combat Sandbox', { color: '#e8d8c0', fontSize: '20px' }).setOrigin(0.5);
 
-    this.data = this.registry.get('gameData') as GameData;
+    this.gameData = this.registry.get('gameData') as GameData;
     this.overlay = new TargetingOverlay(this);
 
     // Placeholder marker for Roy
@@ -31,8 +31,8 @@ export class CombatScene extends Phaser.Scene {
     this.royMarker.fillStyle(0x4488ff, 1);
     this.royMarker.fillCircle(royPos.x, royPos.y, 16);
 
-    const royDeck = this.data.unitById('roy')!.deck;
-    const handCards = royDeck.slice(0, 5).map(id => this.data.cardById(id)!);
+    const royDeck = this.gameData.unitById('roy')!.deck;
+    const handCards = royDeck.slice(0, 5).map(id => this.gameData.cardById(id)!);
     this.hand = renderHand(this, handCards);
     this.hand.forEach(sprite => {
       attachCardInput(this, sprite, (card) => {
@@ -47,10 +47,22 @@ export class CombatScene extends Phaser.Scene {
       if (!selectedCardId) return;
       const tile = worldToTile({ x: pointer.worldX, y: pointer.worldY });
       if (!tile) { this.overlay.showAoe([]); return; }
-      const card = this.data.cardById(selectedCardId)!;
+      const card = this.gameData.cardById(selectedCardId)!;
       const valid = validTilesForCard(card, ROY_TILE);
       const onValid = valid.some(t => t.x === tile.x && t.y === tile.y);
       this.overlay.showAoe(onValid ? aoeTilesAt(card, tile) : []);
+    });
+
+    this.input.keyboard?.on('keydown-ESC', () => {
+      useCombatStore.getState().cancelSelection();
+      this.overlay.clear();
+    });
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.rightButtonDown()) {
+        useCombatStore.getState().cancelSelection();
+        this.overlay.clear();
+      }
     });
 
     useCombatStore.getState().setPhase('COMBAT');

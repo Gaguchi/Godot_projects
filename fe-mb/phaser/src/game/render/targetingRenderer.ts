@@ -5,7 +5,7 @@ export class TargetingOverlay {
   private validG: Phaser.GameObjects.Graphics;
   private aoeG: Phaser.GameObjects.Graphics;
 
-  constructor(private scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene) {
     this.validG = scene.add.graphics();
     this.aoeG = scene.add.graphics();
   }

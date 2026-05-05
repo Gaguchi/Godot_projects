@@ -105,7 +105,7 @@ export function attachCardInput(
   sprite: CardSprite,
   onClick: (card: Card) => void,
 ): void {
-  const { container, baseX, baseY, baseAngle } = sprite;
+  const { container, baseY, baseAngle } = sprite;
 
   container.on('pointerover', () => {
     setCardHovered(sprite, true);
