@@ -10,6 +10,7 @@ import { createEnemy } from '../entities/Enemy';
 import { renderActor, refreshActor, type ActorSprite } from '../render/unitSprites';
 import { resolveCard } from '../systems/combatResolver';
 import { drawCards } from '../systems/deckManager';
+import { spawnDamageNumber } from '../render/damageNumber';
 
 export class CombatScene extends Phaser.Scene {
   private hand: CardSprite[] = [];
@@ -107,10 +108,7 @@ export class CombatScene extends Phaser.Scene {
       if (targets.length === 0 && card.target !== 'GROUND') return;
 
       const result = resolveCard(card, roy, targets);
-      result.targets.forEach(t => {
-        // Spawn damage number — imported and used in Task 20
-        void t;
-      });
+      result.targets.forEach(t => spawnDamageNumber(this, t.target.pos, t.damage));
       this.actors.forEach(refreshActor);
       useCombatStore.getState().cancelSelection();
       this.overlay.clear();
