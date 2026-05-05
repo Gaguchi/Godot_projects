@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { loadGameData } from '../../data/load';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -6,10 +7,14 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale.gameSize;
-    this.add.text(width / 2, height / 2, 'Phaser ready', {
-      color: '#e8d8c0',
-      fontSize: '24px',
-    }).setOrigin(0.5);
+    try {
+      const data = loadGameData();
+      this.registry.set('gameData', data);
+      this.scene.start('CombatScene');
+    } catch (err) {
+      this.add.text(40, 40, `BOOT FAILED:\n${(err as Error).message}`, {
+        color: '#ff6b6b', fontSize: '14px', wordWrap: { width: 1200 },
+      });
+    }
   }
 }
