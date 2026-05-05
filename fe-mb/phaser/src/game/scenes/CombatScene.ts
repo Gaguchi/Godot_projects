@@ -1,16 +1,17 @@
 import Phaser from 'phaser';
-import { drawGrid, worldToTile } from '../render/gridRenderer';
+import { drawGrid, worldToTile, tileToWorld, TILE_SIZE } from '../render/gridRenderer';
 import { renderHand, attachCardInput, type CardSprite } from '../render/cardHandRenderer';
 import { TargetingOverlay } from '../render/targetingRenderer';
 import { validTilesForCard, aoeTilesAt } from '../systems/targeting';
 import { useCombatStore } from '../../state/combatStore';
 import type { GameData } from '../../data/load';
-import { createUnit } from '../entities/Unit';
+import { createUnit, applyDamage } from '../entities/Unit';
 import { createEnemy } from '../entities/Enemy';
 import { renderActor, refreshActor, type ActorSprite } from '../render/unitSprites';
 import { resolveCard } from '../systems/combatResolver';
 import { drawCards } from '../systems/deckManager';
 import { spawnDamageNumber } from '../render/damageNumber';
+import { decideEnemyAction } from '../systems/enemyAI';
 
 export class CombatScene extends Phaser.Scene {
   private hand: CardSprite[] = [];
@@ -115,5 +116,49 @@ export class CombatScene extends Phaser.Scene {
     });
 
     useCombatStore.getState().setPhase('COMBAT');
+
+    const endTurnBtn = this.add.text(1150, 680, '[End Turn]', {
+      color: '#ffb366', fontSize: '16px', backgroundColor: '#2a1c14', padding: { x: 10, y: 6 },
+    }).setOrigin(0.5).setInteractive();
+
+    endTurnBtn.on('pointerdown', () => this.endPlayerTurn());
+  }
+
+  private endPlayerTurn(): void {
+    const { party, enemies } = useCombatStore.getState();
+
+    for (const enemy of enemies) {
+      if (!enemy.alive) continue;
+      const action = decideEnemyAction(enemy, party);
+      if (action.kind === 'attack') {
+        applyDamage(action.target, enemy.data.attack.damage);
+        spawnDamageNumber(this, action.target.pos, enemy.data.attack.damage);
+      } else if (action.kind === 'move') {
+        enemy.pos = action.to;
+        const sprite = this.actors.find(a => a.ref === enemy);
+        if (sprite) {
+          const w = tileToWorld(enemy.pos);
+          sprite.graphics.clear();
+          sprite.graphics.fillStyle(0xc04444, 1).fillCircle(w.x, w.y, TILE_SIZE / 2 - 6);
+          sprite.graphics.lineStyle(2, 0x000000, 0.5).strokeCircle(w.x, w.y, TILE_SIZE / 2 - 6);
+          sprite.hpText.setPosition(w.x, w.y + TILE_SIZE / 2 - 10);
+        }
+      }
+    }
+
+    this.actors.forEach(refreshActor);
+    this.checkWinLose();
+  }
+
+  private checkWinLose(): void {
+    const { party, enemies } = useCombatStore.getState();
+    const enemiesAlive = enemies.some(e => e.alive);
+    const partyAlive = party.some(p => p.alive);
+
+    if (!enemiesAlive) {
+      useCombatStore.getState().setPhase('VICTORY');
+    } else if (!partyAlive) {
+      useCombatStore.getState().setPhase('DEFEAT');
+    }
   }
 }

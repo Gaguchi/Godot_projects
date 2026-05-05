@@ -10,7 +10,7 @@ export function canAttemptCapture(u: UnitInstance, e: EnemyInstance): boolean {
 }
 
 export function captureChance(
-  attacker: UnitInstance,
+  _attacker: UnitInstance,
   enemy: EnemyInstance,
   adjacentAllies: UnitInstance[],
 ): number {
@@ -28,5 +28,6 @@ export function attemptCapture(
   adjacentAllies: UnitInstance[],
 ): boolean {
   const chance = captureChance(attacker, enemy, adjacentAllies);
+  // attacker is passed through for future stat-based modifiers
   return Math.random() < chance;
 }
