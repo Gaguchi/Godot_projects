@@ -137,22 +137,22 @@ type DomainEvent =
   | { type: 'QuestStageAdvanced'; payload: { questId; from; to } }
 ```
 
-## 8. Schema Index (≤15 lines) `[STUB — fills in Week 1]`
+## 8. Schema Index (≤15 lines)
 
-Zod schemas in `src/data/schemas/` mirror `src/domain/` types.
+Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept plain `string` for IDs; branding is restored via code-side `as*()` helpers when domain types are constructed. Barrel: `data/schemas/index.ts`.
 
-- `domain/ids.ts` — branded ID types (UnitId, ItemId, CardId, ClassId, StatusEffectId, FlagKey, QuestId, StageId, DialogueId, DialogueNodeId, MapId, NodeId, DungeonId, EncounterId, EncounterTableId, EnemyGroupId, TileId) + `as*()` cast helpers. **Active.**
-- `domain/rng.ts` — `RngState`, `RNG` interface (state/next/nextInt/pick/shuffle). Impl in `systems/rng.ts` (Mulberry32 + `deriveRng(parent, label)`). **Active.**
-- `card.ts` ↔ `Card`
-- `unit.ts` ↔ `Unit`
-- `item.ts` ↔ `Item`
-- `class.ts` ↔ `ClassDef`
-- `statusEffect.ts` ↔ `StatusEffectDef`
-- `map.ts` ↔ `WorldMap | BattleMap | DungeonGraph`
-- `quest.ts` ↔ `QuestDef`
-- `dialogue.ts` ↔ `DialogueTree`
-- `predicate.ts` ↔ `Predicate`
-- `saveFile.ts` ↔ `SaveFile`
+- `domain/ids.ts` — 17 branded ID types + `as*()` casts. **Active.**
+- `domain/rng.ts` — `RngState`, `RNG` interface. Impl in `systems/rng.ts` (Mulberry32 + `deriveRng`). **Active.**
+- `data/schemas/card.ts` ↔ `Card` (`CardSchema`, `WeaponTypeSchema`). **Active.**
+- `data/schemas/unit.ts` ↔ `Unit` (`UnitSchema`, `UnitStatsSchema`). **Active.**
+- `data/schemas/item.ts` ↔ `Item` (`ItemSchema`). **Active.**
+- `data/schemas/class.ts` ↔ `ClassDef` (`ClassSchema`). **Active.**
+- `data/schemas/statusEffect.ts` ↔ `StatusEffectDef` (`StatusEffectDataSchema` — JSON-shape only; function hooks live in code registry). **Active.**
+- `data/schemas/map.ts` ↔ `WorldMap | BattleMap` (DungeonGraph schema TBD with generator). **Active.**
+- `data/schemas/quest.ts` ↔ `QuestDef` (`QuestSchema`, `QuestStageSchema`, `QuestEffectSchema`). **Active.**
+- `data/schemas/dialogue.ts` ↔ `DialogueTree`. **Active.**
+- `data/schemas/predicate.ts` ↔ `Predicate` (recursive via `z.lazy`). **Active.**
+- `saveFile.ts` ↔ `SaveFile` `[STUB]` (lands with persistence layer).
 
 ## 9. File Map (≤25 lines)
 
