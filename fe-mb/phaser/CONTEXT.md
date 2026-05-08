@@ -139,6 +139,7 @@ type DomainEvent =
 Zod schemas in `src/data/schemas/` mirror `src/domain/` types.
 
 - `domain/ids.ts` — branded ID types (UnitId, ItemId, CardId, ClassId, StatusEffectId, FlagKey, QuestId, StageId, DialogueId, DialogueNodeId, MapId, NodeId, DungeonId, EncounterId, EncounterTableId, EnemyGroupId, TileId) + `as*()` cast helpers. **Active.**
+- `domain/rng.ts` — `RngState`, `RNG` interface (state/next/nextInt/pick/shuffle). Impl in `systems/rng.ts` (Mulberry32 + `deriveRng(parent, label)`). **Active.**
 - `card.ts` ↔ `Card`
 - `unit.ts` ↔ `Unit`
 - `item.ts` ↔ `Item`
