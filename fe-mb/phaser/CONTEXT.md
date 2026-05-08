@@ -202,6 +202,7 @@ phaser/src/
 - **Predicates round-trip through save.** They MUST be declarative JSON, not function references.
 - **`CombatEvent` ≠ `DomainEvent` ≠ `QuestListener.on`.** Three different "event-shaped" patterns. Don't confuse.
 - **Effect pipeline middleware ordering:** stages 1=source-mod, 2=target-mod, 3=terrain, 4=card-specific, 5=armor, 6=clamp. Lower stages run first; each can spawn/absorb effects.
+- **`combatReducer` team detection** uses `classId.includes('bandit'|'mage')` as a foundation heuristic — replace with explicit `team` field on Unit (or spawn payload) when starter content lands.
 
 ## 12. Open Questions (≤30 lines) `[STUB — populated as decisions arise]`
 
