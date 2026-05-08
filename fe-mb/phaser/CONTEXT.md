@@ -47,17 +47,18 @@
 - `startNewRun`
 - `recordRunCompleted { won }`
 
-**`runStore` actions** (full list TBD; expected at least these):
+**`runStore` actions** (15 total — `RunAction` union in `state/runStore.ts`):
 - `recruitUnit { unit }`
-- `fallenUnit { unitId, cause }`
+- `fallenUnit { unitId, cause, turn }`
 - `equipHand { unitId, slot, itemId }`
 - `moveItemInBag { itemId, x, y }`
 - `addGold { amount }`
 - `arriveAtNode { nodeId }`
 - `startTravelPath { path }`
 - `consumeTravelHop { hopIndex }`
-- `enterDungeon { dungeonId }`
+- `enterDungeon { dungeonId, graph }`
 - `advanceDungeonRoom { roomId }`
+- `exitDungeon`
 - `setFlag { key, value, scope? }`
 - `clearFlagsByScope { scope }`
 - `advanceQuestStage { questId, toStage }`
