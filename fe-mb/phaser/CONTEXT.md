@@ -75,9 +75,9 @@
 - `capture { targetId, attackerIds }`
 - `animationsCompleted`
 
-## 4. Cross-System Contracts (≤30 lines) `[STUB — fills in Week 2]`
+## 4. Cross-System Contracts (≤30 lines)
 
-All in `src/contracts/`. Compiler-enforced.
+All in `src/contracts/`. Compiler-enforced. Barrel export: `src/contracts/index.ts`.
 
 - **`BattleResult`** — see `crossStoreActions.ts`. Battle-end output: outcome, survivors, fallen, xpAwards, capturedEnemies, loot, goldEarned, consumedTravelHop, emittedEvents.
 - **`RecruitmentResult`** — unit, goldCost, source ('tavern' | 'event' | 'quest'), emittedEvents.
@@ -122,7 +122,7 @@ type Predicate =
 
 Single evaluator: `evaluatePredicate(pred: Predicate, state: PredicateState): boolean` in `systems/predicates.ts`. `PredicateState` is the minimal shape needed (flags, questStates, party.units, inventory.items, gold, visitedNodes, clearedEncounters); `runStore.RunState` satisfies it. Quest-completion sentinel: `QUEST_COMPLETE = '__complete__'` (use as `currentStage` value).
 
-## 7. Domain Event Catalog (≤20 lines) `[STUB — fills in Week 2]`
+## 7. Domain Event Catalog (≤20 lines)
 
 ```ts
 type DomainEvent =
