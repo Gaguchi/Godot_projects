@@ -1,10 +1,13 @@
 # Phaser Foundations — Design Spec
 
+> **SUPERSEDED 2026-05-08 by [`2026-05-08-phaser-foundations-v2-design.md`](2026-05-08-phaser-foundations-v2-design.md).** A second council-of-five review the same day surfaced critical full-GDLC gaps in this spec (no `runStore`, no `MapRegistry`, flat RNG, no quest engine, no integration contracts, no living doc, dialogue absent). The v2 spec keeps every architectural decision below intact and layers the missing systems on top. This v1 spec is preserved for historical record of round-1 council reasoning.
+
 > Foundations-first redesign of the FE_MB phaser migration. Replaces the feature-first sandbox plan (`2026-05-05-phaser-sandbox.md`) which built generic 12-card class decks divorced from the game's actual equipment-card design. This spec scopes a foundation milestone whose load-bearing center is the equipment-card systems from `2026-03-29-ship-plan-design.md` — built fresh in TypeScript with discipline informed by a council-of-five review.
 
-**Status:** Draft 2026-05-08
+**Status:** Superseded 2026-05-08 by v2
 **Author:** Project owner + Claude Code (brainstorming + council-of-five)
 **Supersedes:** `2026-05-05-phaser-sandbox.md` (sandbox plan abandoned). Migration spec `2026-05-05-phaser-migration-design.md` remains in force for stack-level decisions.
+**Superseded by:** `2026-05-08-phaser-foundations-v2-design.md`
 
 ---
 
