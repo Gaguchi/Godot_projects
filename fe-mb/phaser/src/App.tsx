@@ -1,6 +1,6 @@
-import './App.css'
+import React from 'react'
 
-export function App() {
+export function App(): React.JSX.Element {
   return (
     <div id="app-root">
       <div id="game-canvas-container" />
