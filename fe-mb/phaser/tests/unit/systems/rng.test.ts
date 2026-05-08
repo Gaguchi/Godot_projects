@@ -54,4 +54,40 @@ describe('rng', () => {
     const b = deriveRng(parent, 'dungeon')
     expect(a.next()).not.toBe(b.next())
   })
+
+  it('resume from saved counter reproduces continuation of the original sequence', () => {
+    const orig = createRng({ seed: 42, counter: 0 })
+    orig.next() // v0
+    orig.next() // v1
+    orig.next() // v2
+    orig.next() // v3
+    orig.next() // v4_original — would be the value resumed RNG must reproduce
+
+    // Simulate save+reload after 4 next() calls
+    const saved = orig.state()
+    expect(saved).toEqual({ seed: 42, counter: 5 })   // 4 next + 1 next = 5 advances when v4 read
+    // Actually we read 5 values above, so after the 5th next() counter is 5.
+    // Let's restart and stop at counter=4 to compare cleanly.
+
+    const fresh = createRng({ seed: 42, counter: 0 })
+    fresh.next(); fresh.next(); fresh.next(); fresh.next()
+    expect(fresh.state().counter).toBe(4)
+
+    const resumed = createRng({ seed: 42, counter: 4 })
+    expect(resumed.state().counter).toBe(4)
+    expect(resumed.next()).toBe(fresh.next())   // both produce the 5th value identically
+  })
+
+  it('deriveRng resumes correctly from saved counter', () => {
+    const parent = createRng({ seed: 100, counter: 0 })
+    const a = deriveRng(parent, 'world')
+    a.next(); a.next(); a.next()
+    const savedCounter = a.state().counter
+
+    const resumed = deriveRng(parent, 'world')
+    // Manually fast-forward the resumed RNG to the saved counter
+    const resumedAt = createRng({ ...resumed.state(), counter: savedCounter })
+    // Both should produce the same next value
+    expect(resumedAt.next()).toBe(a.next())
+  })
 })

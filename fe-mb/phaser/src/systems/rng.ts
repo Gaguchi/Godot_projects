@@ -23,7 +23,11 @@ function hashLabel(parentSeed: number, label: string): number {
 
 export function createRng(initial: RngState): RNG {
   const state: RngState = { ...initial }
-  const gen = mulberry32(state.seed + state.counter)
+  const gen = mulberry32(state.seed)
+  // Fast-forward the generator to the saved counter position so save/resume
+  // produces a continuation of the original sequence, not a fresh stream from
+  // a shifted seed. See foundations v2 spec §9 (rngState replay determinism).
+  for (let i = 0; i < state.counter; i++) gen()
   return {
     state: () => ({ ...state }),
     next: () => {
