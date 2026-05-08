@@ -18,5 +18,15 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'Math',
+          property: 'random',
+          message: 'Use RNG parameter; Math.random is forbidden. See CONTEXT.md §1.',
+        },
+      ],
+    },
   },
 ])
