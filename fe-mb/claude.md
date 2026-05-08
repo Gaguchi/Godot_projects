@@ -1,5 +1,19 @@
 # FE_MB - AI Context File
 
+> ⚠️ **THIS FILE DESCRIBES THE LEGACY GODOT CODEBASE.** ⚠️
+>
+> The project is migrating to TypeScript + Phaser 4 + React 19 + Vite + Zustand + Zod, in `phaser/`. Active development happens there.
+>
+> **For phaser work (the current focus), read instead:**
+> 1. `phaser/CONTEXT.md` — living architectural reference (current truth)
+> 2. `phaser/.claude/CLAUDE.md` — phaser-specific conventions and required reading
+> 3. `docs/superpowers/specs/2026-05-08-phaser-foundations-v2-design.md` — current foundation working spec
+> 4. `docs/superpowers/specs/2026-03-29-ship-plan-design.md` — game design (authoritative for both codebases)
+>
+> The sections below describe the Godot codebase. Some entries are STALE relative to the current Godot state (e.g., `BATTLE`/`EVENT` location types were removed in Wave 2; combat is card-based not hit/avoid/crit; food is now grid-inventory not 1-per-hop). Do not trust this file as source-of-truth for either codebase. For Godot-state questions, read the actual code; for phaser-state questions, read `phaser/CONTEXT.md`.
+
+---
+
 > This file helps AI assistants understand the project structure and game mechanics.
 
 ## Project Overview
