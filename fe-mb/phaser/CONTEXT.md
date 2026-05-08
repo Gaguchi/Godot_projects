@@ -63,14 +63,17 @@
 - `advanceQuestStage { questId, toStage }`
 - `applyBattleResult { result: BattleResult }`
 
-**`combatStore` events** (dispatched as reducer events):
-- `startBattle { ... }`
+**`combatStore` events** (`CombatEvent` union, see `domain/combatState.ts`):
+- `startBattle { units, grid, rngSeed }`
 - `startTurn { unitId }`
+- `selectCard { cardId }`
+- `cancelSelection`
 - `playCard { cardId, srcId, targets }`
+- `moveUnit { unitId, tileId }`
 - `endTurn`
 - `tickStatus`
 - `capture { targetId, attackerIds }`
-- `waitForAnimationsComplete`
+- `animationsCompleted`
 
 ## 4. Cross-System Contracts (≤30 lines) `[STUB — fills in Week 2]`
 
