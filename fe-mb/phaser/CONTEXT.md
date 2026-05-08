@@ -98,7 +98,7 @@ runSeed (chosen on new game)
 
 **Rule:** every random call threads through `RNG` parameter. `Math.random()` lint-banned. Sub-RNG derivation is deterministic per `(parent, label)` — replaying actions reproduces state.
 
-## 6. Predicate Vocabulary (≤25 lines) `[STUB — fills in Week 1]`
+## 6. Predicate Vocabulary (≤25 lines)
 
 `Predicate` is a discriminated union AST. Used by quest transitions, map node visibility, dialogue choice gating, shop entries.
 
@@ -120,7 +120,7 @@ type Predicate =
   | { kind: 'not'; pred }
 ```
 
-Single evaluator: `evaluatePredicate(pred: Predicate, runState: RunState): boolean`.
+Single evaluator: `evaluatePredicate(pred: Predicate, state: PredicateState): boolean` in `systems/predicates.ts`. `PredicateState` is the minimal shape needed (flags, questStates, party.units, inventory.items, gold, visitedNodes, clearedEncounters); `runStore.RunState` satisfies it. Quest-completion sentinel: `QUEST_COMPLETE = '__complete__'` (use as `currentStage` value).
 
 ## 7. Domain Event Catalog (≤20 lines) `[STUB — fills in Week 2]`
 
