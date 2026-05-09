@@ -24,7 +24,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 - [x] **UI-T5** `Dialog` wrapper (ModalOverlay + Modal + RACDialog). ✅ Focus trap, ESC dismiss (verified in test), backdrop click dismisses when isDismissable (default true). Stone-950 panel with amber border. 169 tests pass.
 - [x] **UI-T6** `Menu` + `MenuItem` wrappers. ✅ 172 tests pass. Click + arrow-key + Enter all fire onAction. RAC handles type-to-search and roving tabindex internally.
 - [x] **UI-T7** `ListBox` + `ListBoxItem` wrappers. ✅ 175 tests pass. Click + arrow-key + selection state via data-[selected]. Used by shop and save-slot UIs.
-- [ ] **UI-T8** `Tooltip` wrapper. 500ms delay default, hover + focus trigger, OverlayArrow.
+- [x] **UI-T8** `Tooltip` wrapper. ✅ 177 tests pass. TooltipTrigger + RACTooltip + OverlayArrow with stone/amber styling. 500ms hover delay default; isOpen prop for forced display (used in tests + always-on cases).
 - [ ] **UI-T9** `Heading` wrapper + barrel `index.ts` + ESLint guard forbidding raw `react-aria-components` imports outside `src/ui/components/`.
 
 ## Phase 2 — Migrate non-combat scenes
