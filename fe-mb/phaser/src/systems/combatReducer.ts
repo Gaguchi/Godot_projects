@@ -148,13 +148,156 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
         effects: [],
       }
 
-    case 'playCard':
+    case 'playCard': {
+      const { srcId, targets, card, cardId } = event.payload
+      const src = state.units[srcId as unknown as string]
+      if (!src || !card) {
+        // Legacy path or invalid src — no-op stub for backwards compatibility.
+        return { state, effects: [{ kind: 'WaitForAnimations' }] }
+      }
+      // Insufficient AP — refuse to play
+      if (src.ap < card.apCost) {
+        return { state, effects: [] }
+      }
+
+      const newUnits: Record<string, Unit> = { ...state.units }
+      const effects: CombatEffect[] = []
+
+      // Find a target unit at each target tile (if any)
+      const targetUnits: Unit[] = []
+      for (const tile of targets) {
+        const tileStr = tile as unknown as string
+        const u = Object.values(newUnits).find(
+          (cand) => cand.position && (cand.position as unknown as string) === tileStr,
+        )
+        if (u) targetUnits.push(u)
+      }
+
+      // Resolve each effect against each target
+      for (const eff of card.effects) {
+        const params = eff.params
+        if (eff.kind === 'Damage') {
+          const base = (params.base as number | undefined) ?? 0
+          const damageType = (params.damageType as string | undefined) ?? 'physical'
+          const stat = card.damageStat
+          let statBonus = 0
+          if (stat === 'str') statBonus = src.stats.str
+          else if (stat === 'mag') statBonus = src.stats.mag
+          else if (stat === 'skl') statBonus = src.stats.skl
+          for (const target of targetUnits) {
+            const dr = damageType === 'magic'
+              ? Math.floor(target.stats.res / 2)
+              : Math.floor(target.stats.def / 2)
+            const dmg = Math.max(0, base + statBonus - dr)
+            const newCurrent = Math.max(0, target.hp.current - dmg)
+            const tStr = target.id as unknown as string
+            const updated: Unit = { ...target, hp: { ...target.hp, current: newCurrent } }
+            newUnits[tStr] = updated
+            effects.push({
+              kind: 'FloatDamage',
+              tile: target.position!,
+              amount: dmg,
+              damageKind: damageType === 'magic' ? 'magic' : 'physical',
+            })
+            effects.push({
+              kind: 'HitFlash',
+              sprite: { id: tStr },
+              durationMs: 80,
+            })
+          }
+        } else if (eff.kind === 'Heal') {
+          const amount = (params.amount as number | undefined) ?? 0
+          for (const target of targetUnits) {
+            const newCurrent = Math.min(target.hp.max, target.hp.current + amount)
+            const tStr = target.id as unknown as string
+            const updated: Unit = { ...target, hp: { ...target.hp, current: newCurrent } }
+            newUnits[tStr] = updated
+            effects.push({
+              kind: 'FloatDamage',
+              tile: target.position!,
+              amount,
+              damageKind: 'heal',
+            })
+          }
+        } else if (eff.kind === 'GrantArmor') {
+          const amount = (params.amount as number | undefined) ?? 0
+          // Self-target if no targetUnits (e.g. self cards)
+          const recipients = targetUnits.length > 0 ? targetUnits : [src]
+          for (const target of recipients) {
+            const tStr = target.id as unknown as string
+            const updated: Unit = { ...target, armor: target.armor + amount }
+            newUnits[tStr] = updated
+          }
+        } else if (eff.kind === 'GainAp') {
+          const amount = (params.amount as number | undefined) ?? 0
+          const tStr = (src.id as unknown as string)
+          const updatedSrc = newUnits[tStr] ?? src
+          newUnits[tStr] = { ...updatedSrc, ap: updatedSrc.ap + amount }
+        }
+      }
+
+      // Decrement source AP and discard the played card
+      const srcStr = srcId as unknown as string
+      const updatedSrc = newUnits[srcStr] ?? src
+      newUnits[srcStr] = { ...updatedSrc, ap: Math.max(0, updatedSrc.ap - card.apCost) }
+
+      const newDecks = { ...state.decks }
+      const srcDeck = newDecks[srcStr]
+      if (srcDeck) {
+        const handIdx = srcDeck.hand.findIndex((c) => (c as unknown as string) === (cardId as unknown as string))
+        if (handIdx !== -1) {
+          const newHand = srcDeck.hand.slice()
+          const removed = newHand.splice(handIdx, 1)
+          newDecks[srcStr] = {
+            ...srcDeck,
+            hand: newHand,
+            discard: [...srcDeck.discard, ...removed],
+          }
+        }
+      }
+
+      // Tween source toward first target tile, if any
+      if (targets.length > 0) {
+        effects.push({
+          kind: 'PlayTween',
+          sprite: { id: srcStr },
+          props: { targetTile: targets[0] as unknown as string },
+          durationMs: 250,
+        })
+      }
+      // Camera shake on big hits
+      const totalDmg = effects
+        .filter((e) => e.kind === 'FloatDamage' && e.damageKind !== 'heal')
+        .reduce((sum, e) => sum + (e.kind === 'FloatDamage' ? e.amount : 0), 0)
+      if (totalDmg >= 10) {
+        effects.push({ kind: 'ShakeCamera', intensity: 0.005, durationMs: 200 })
+      }
+      effects.push({ kind: 'WaitForAnimations' })
+
+      // Check end conditions after damage applied
+      const stateAfter: CombatState = {
+        ...state,
+        units: newUnits,
+        decks: newDecks,
+        subPhase: 'RESOLVING',
+        selectedCardId: null,
+      }
+      const phase = checkEnd(stateAfter)
+      const finalState: CombatState = phase !== 'COMBAT' ? { ...stateAfter, phase } : stateAfter
+
+      return { state: finalState, effects }
+    }
+
+    case 'animationsCompleted':
+      // Resolution finished; back to IDLE so player can pick another card
+      return {
+        state: { ...state, subPhase: 'IDLE' },
+        effects: [],
+      }
+
     case 'moveUnit':
     case 'capture':
-    case 'animationsCompleted':
-      // Rich implementations land in next milestone (combat scene rendering).
-      // Foundation no-op: emit a WaitForAnimations as a synchronization placeholder
-      // so subscribers know "something happened" — useful for the Phaser firewall test.
+      // Rich implementations land in later features.
       return { state, effects: [{ kind: 'WaitForAnimations' }] }
   }
 }

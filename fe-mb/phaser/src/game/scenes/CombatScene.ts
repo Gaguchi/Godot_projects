@@ -69,6 +69,9 @@ export class CombatScene extends Phaser.Scene {
   private tileRects = new Map<string, Phaser.GameObjects.Rectangle>()
   private aoePreview: Phaser.GameObjects.Graphics | null = null
   private damagePreview: Phaser.GameObjects.Text | null = null
+  private apText: Phaser.GameObjects.Text | null = null
+  private endTurnBtn: Phaser.GameObjects.Container | null = null
+  private pendingAnimations = 0
 
   constructor() { super('combat') }
 
@@ -91,6 +94,8 @@ export class CombatScene extends Phaser.Scene {
     this.renderUnits()
     this.renderCardHand()
     this.renderTargeting()
+    this.drawApIndicator()
+    this.drawEndTurnButton()
 
     // ESC cancels card selection
     this.input.keyboard?.on('keydown-ESC', () => {
@@ -116,6 +121,7 @@ export class CombatScene extends Phaser.Scene {
       this.renderUnits()
       this.renderCardHand()
       this.renderTargeting()
+      this.updateApIndicator()
     })
 
     // Drain effects on lastEffectId change
@@ -283,14 +289,65 @@ export class CombatScene extends Phaser.Scene {
     const validSet = new Set(valid.map((t) => t as unknown as string))
     if (!validSet.has(tileId)) return
 
+    const cardPayload: {
+      apCost: number
+      damageStat?: 'str' | 'mag' | 'skl'
+      effects: Array<{ kind: string; params: Record<string, unknown> }>
+    } = {
+      apCost: card.apCost,
+      effects: card.effects,
+    }
+    if (card.damageStat) cardPayload.damageStat = card.damageStat as 'str' | 'mag' | 'skl'
+
     cs.dispatch({
       type: 'playCard',
       payload: {
         cardId: asCardId(cardIdStr),
         srcId: activeUnit.id,
         targets: [asTileId(tileId)],
+        card: cardPayload,
       },
     }, createRng(state.rng))
+  }
+
+  private drawApIndicator(): void {
+    this.apText = this.add.text(this.scale.width - 20, 20, '', {
+      fontFamily: 'monospace', fontSize: '16px', color: '#a0d0ff',
+    }).setOrigin(1, 0)
+    this.updateApIndicator()
+  }
+
+  private updateApIndicator(): void {
+    if (!this.apText) return
+    const state = useCombatStore.getState().state
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+    if (!activeId) {
+      this.apText.setText('')
+      return
+    }
+    const u = state.units[activeId]
+    if (!u) return
+    this.apText.setText(`${u.name}  AP ${u.ap}/3`)
+  }
+
+  private drawEndTurnButton(): void {
+    const x = this.scale.width - 110
+    const y = this.scale.height - 60
+    const container = this.add.container(x, y)
+    const bg = this.add.rectangle(0, 0, 180, 40, 0x1a1410).setStrokeStyle(1, 0x4a3a20)
+    const text = this.add.text(0, 0, 'End Turn', {
+      fontFamily: 'monospace', fontSize: '14px', color: '#e0d0a0',
+    }).setOrigin(0.5)
+    container.add([bg, text])
+    container.setSize(180, 40)
+    container.setInteractive(new Phaser.Geom.Rectangle(-90, -20, 180, 40), Phaser.Geom.Rectangle.Contains)
+    container.on('pointerover', () => { bg.setStrokeStyle(2, 0xa07a40) })
+    container.on('pointerout', () => { bg.setStrokeStyle(1, 0x4a3a20) })
+    container.on('pointerdown', () => {
+      const cs = useCombatStore.getState()
+      cs.dispatch({ type: 'endTurn' }, createRng(cs.state.rng))
+    })
+    this.endTurnBtn = container
   }
 
   private renderUnits(): void {
@@ -464,9 +521,73 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private handleEffect(e: CombatEffect): void {
-    // Foundation: log only. Real animation handling lands in F-06.
-    // eslint-disable-next-line no-console
-    console.debug('[CombatScene] effect:', e.kind)
+    if (e.kind === 'PlayTween') {
+      const view = this.unitViews.get(e.sprite.id)
+      if (!view) return
+      const targetTile = (e.props as { targetTile?: string }).targetTile
+      if (!targetTile) return
+      const dest = tileToWorld(targetTile)
+      const orig = { x: view.container.x, y: view.container.y }
+      this.pendingAnimations++
+      this.tweens.add({
+        targets: view.container,
+        x: dest.x, y: dest.y,
+        duration: e.durationMs / 2,
+        yoyo: true,
+        ease: 'Quad.easeOut',
+        onComplete: () => {
+          view.container.setPosition(orig.x, orig.y)
+          this.pendingAnimations--
+          this.maybeAnimationsComplete()
+        },
+      })
+    } else if (e.kind === 'HitFlash') {
+      const view = this.unitViews.get(e.sprite.id)
+      if (!view) return
+      const origColor = view.body.fillColor
+      view.body.setFillStyle(0xffffff)
+      this.pendingAnimations++
+      this.time.delayedCall(e.durationMs, () => {
+        view.body.setFillStyle(origColor)
+        this.pendingAnimations--
+        this.maybeAnimationsComplete()
+      })
+    } else if (e.kind === 'FloatDamage') {
+      const tileStr = e.tile as unknown as string
+      const { x, y } = tileToWorld(tileStr)
+      const color = e.damageKind === 'heal' ? '#44dd66'
+        : e.damageKind === 'magic' ? '#88aaff'
+        : '#ff6644'
+      const sign = e.damageKind === 'heal' ? '+' : '-'
+      const txt = this.add.text(x, y - 10, `${sign}${e.amount}`, {
+        fontFamily: 'monospace', fontSize: '20px', color, stroke: '#000', strokeThickness: 3,
+      }).setOrigin(0.5)
+      this.pendingAnimations++
+      this.tweens.add({
+        targets: txt,
+        y: y - 50,
+        alpha: 0,
+        duration: 600,
+        ease: 'Quad.easeOut',
+        onComplete: () => {
+          txt.destroy()
+          this.pendingAnimations--
+          this.maybeAnimationsComplete()
+        },
+      })
+    } else if (e.kind === 'ShakeCamera') {
+      this.cameras.main.shake(e.durationMs, e.intensity)
+    } else if (e.kind === 'WaitForAnimations') {
+      this.maybeAnimationsComplete()
+    }
+  }
+
+  private maybeAnimationsComplete(): void {
+    if (this.pendingAnimations > 0) return
+    const cs = useCombatStore.getState()
+    if (cs.state.subPhase === 'RESOLVING') {
+      cs.dispatch({ type: 'animationsCompleted' }, createRng(cs.state.rng))
+    }
   }
 
   shutdown(): void {
@@ -481,5 +602,7 @@ export class CombatScene extends Phaser.Scene {
     this.tileRects.clear()
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
+    if (this.apText) { this.apText.destroy(); this.apText = null }
+    if (this.endTurnBtn) { this.endTurnBtn.destroy(); this.endTurnBtn = null }
   }
 }

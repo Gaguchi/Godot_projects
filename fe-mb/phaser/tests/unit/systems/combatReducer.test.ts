@@ -105,6 +105,68 @@ describe('combatReducer (core)', () => {
     expect(s.selectedCardId).toBe('slash')
   })
 
+  it('playCard with damage applies HP loss + AP cost + discards card', () => {
+    const rng = createRng({ seed: 0, counter: 0 })
+    const roy = mk('roy', 5, 'lord')
+    roy.position = '1,4' as never
+    roy.stats.str = 5
+    const bandit = mk('bandit_a', 4, 'bandit')
+    bandit.position = '2,4' as never
+    bandit.hp.max = 20
+    bandit.hp.current = 20
+    bandit.stats.def = 4
+
+    let s = reduce(initialCombatState(), {
+      type: 'startBattle',
+      payload: {
+        units: [roy, bandit],
+        grid: { width: 14, height: 10, obstacles: new Set() },
+        rngSeed: { seed: 0, counter: 0 },
+        decks: {
+          roy: { draw: [], hand: ['slash' as never], discard: [] },
+          bandit_a: { draw: [], hand: [], discard: [] },
+        },
+      },
+    }, rng).state
+
+    const r = reduce(s, {
+      type: 'playCard',
+      payload: {
+        cardId: 'slash' as never,
+        srcId: roy.id,
+        targets: ['2,4' as never],
+        card: {
+          apCost: 1,
+          damageStat: 'str',
+          effects: [{ kind: 'Damage', params: { base: 4 } }],
+        },
+      },
+    }, rng)
+
+    // Damage = base 4 + str 5 - floor(def 4 / 2) = 7
+    const updatedBandit = r.state.units['bandit_a']!
+    expect(updatedBandit.hp.current).toBe(13)
+
+    // Roy AP decremented from 3 → 2
+    const updatedRoy = r.state.units['roy']!
+    expect(updatedRoy.ap).toBe(2)
+
+    // Card moved hand → discard
+    const royDeck = r.state.decks['roy']!
+    expect(royDeck.hand).not.toContain('slash')
+    expect(royDeck.discard).toContain('slash')
+
+    // Effects emitted: FloatDamage, HitFlash, PlayTween, WaitForAnimations
+    const kinds = r.effects.map(e => e.kind).sort()
+    expect(kinds).toContain('FloatDamage')
+    expect(kinds).toContain('HitFlash')
+    expect(kinds).toContain('PlayTween')
+    expect(kinds).toContain('WaitForAnimations')
+
+    // subPhase transitioned to RESOLVING
+    expect(r.state.subPhase).toBe('RESOLVING')
+  })
+
   it('cancelSelection returns to IDLE', () => {
     const rng = createRng({ seed: 0, counter: 0 })
     let s = reduce(initialCombatState(), {

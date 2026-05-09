@@ -43,7 +43,22 @@ export type CombatEvent =
   | { type: 'startTurn'; payload: { unitId: UnitId } }
   | { type: 'selectCard'; payload: { cardId: CardId } }
   | { type: 'cancelSelection' }
-  | { type: 'playCard'; payload: { cardId: CardId; srcId: UnitId; targets: TileId[] } }
+  | {
+      type: 'playCard'
+      payload: {
+        cardId: CardId
+        srcId: UnitId
+        targets: TileId[]
+        // Optional inline card definition for full resolution. If absent, reducer
+        // emits a WaitForAnimations stub (legacy/test path). Production callers
+        // (CombatScene) supply this so the reducer can apply damage + AP cost.
+        card?: {
+          apCost: number
+          damageStat?: 'str' | 'mag' | 'skl'
+          effects: Array<{ kind: string; params: Record<string, unknown> }>
+        }
+      }
+    }
   | { type: 'moveUnit'; payload: { unitId: UnitId; tileId: TileId } }
   | { type: 'endTurn' }
   | { type: 'tickStatus' }
