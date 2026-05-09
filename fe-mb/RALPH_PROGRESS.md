@@ -23,7 +23,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 - [x] **UI-T4** `Card` wrapper with AP-cost guard + Framer Motion lift. ✅ 165 tests pass. Click hits the RAC `<Button>`; lift via Framer Motion `whileHover` / `whileTap` (skipped under `prefers-reduced-motion`). Disabled when `apCost > availableAp`; reason exposed via `data-disabled-reason` attribute (Tooltip in T8 will render it visually). RAC strips arbitrary HTML attributes (title) so we use a data-attribute instead.
 - [x] **UI-T5** `Dialog` wrapper (ModalOverlay + Modal + RACDialog). ✅ Focus trap, ESC dismiss (verified in test), backdrop click dismisses when isDismissable (default true). Stone-950 panel with amber border. 169 tests pass.
 - [x] **UI-T6** `Menu` + `MenuItem` wrappers. ✅ 172 tests pass. Click + arrow-key + Enter all fire onAction. RAC handles type-to-search and roving tabindex internally.
-- [ ] **UI-T7** `ListBox` + `ListBoxItem` wrappers. Single-select with arrow-key navigation.
+- [x] **UI-T7** `ListBox` + `ListBoxItem` wrappers. ✅ 175 tests pass. Click + arrow-key + selection state via data-[selected]. Used by shop and save-slot UIs.
 - [ ] **UI-T8** `Tooltip` wrapper. 500ms delay default, hover + focus trigger, OverlayArrow.
 - [ ] **UI-T9** `Heading` wrapper + barrel `index.ts` + ESLint guard forbidding raw `react-aria-components` imports outside `src/ui/components/`.
 
