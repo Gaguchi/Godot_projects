@@ -20,3 +20,12 @@ test('new game click → combat view → canvas mounts', async ({ page }) => {
   // metaStore action log entry shown in DevHud (totalRuns increments)
   await expect(page.locator('text=Dev HUD')).toBeVisible()
 })
+
+test('load game click → modal opens with empty state → close', async ({ page }) => {
+  await page.goto('/')
+  await page.locator('#title-load-game').click()
+  await expect(page.locator('#load-game-modal')).toBeVisible({ timeout: 2000 })
+  await expect(page.locator('#load-game-empty')).toContainText('No saved games')
+  await page.locator('#load-game-close').click()
+  await expect(page.locator('#load-game-modal')).toHaveCount(0)
+})

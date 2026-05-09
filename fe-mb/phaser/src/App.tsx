@@ -3,6 +3,7 @@ import { ErrorBoundary } from './ui/ErrorBoundary'
 import { DevHud } from './ui/DevHud'
 import { ViewContext, type View } from './ui/view'
 import { TitleScreen } from './ui/screens/TitleScreen'
+import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { createErrorBus } from './state/errorBus'
 import { createEventBus } from './state/eventBus'
 import { createActionLog } from './state/actionLog'
@@ -16,6 +17,7 @@ export const __busRefs = { errorBus, eventBus, actionLog }
 
 export function App(): React.JSX.Element {
   const [view, setView] = useState<View>('title')
+  const [loadModalOpen, setLoadModalOpen] = useState(false)
   const dispatchMeta = useMetaStore((s) => s.dispatch)
 
   const onNewGame = useCallback(() => {
@@ -25,6 +27,15 @@ export function App(): React.JSX.Element {
     // combatStore which is still in initial BOOT state until then).
   }, [dispatchMeta])
 
+  const onLoadGame = useCallback(() => {
+    setLoadModalOpen(true)
+  }, [])
+
+  // P1-04: empty list for now. Real save slots are read from localStorage
+  // once the save UX lands in a later milestone. The persistence layer
+  // (loadFromString, atomic hydration) already exists in src/persistence/.
+  const saveSlots: SaveSlot[] = []
+
   return (
     <ViewContext.Provider value={{ view, setView }}>
       <ErrorBoundary errorBus={errorBus}>
@@ -32,7 +43,7 @@ export function App(): React.JSX.Element {
           {view === 'title' ? (
             <TitleScreen
               onNewGame={onNewGame}
-              onLoadGame={() => { /* wired in P1-04 */ }}
+              onLoadGame={onLoadGame}
               onQuit={() => { /* wired in P1-05 */ }}
             />
           ) : (
@@ -42,6 +53,15 @@ export function App(): React.JSX.Element {
             </>
           )}
           <DevHud errorBus={errorBus} eventBus={eventBus} actionLog={actionLog} />
+          <LoadGameModal
+            open={loadModalOpen}
+            slots={saveSlots}
+            onClose={() => setLoadModalOpen(false)}
+            onSelect={(_slotId) => {
+              // Real load lands later. For foundation: just close the modal.
+              setLoadModalOpen(false)
+            }}
+          />
         </div>
       </ErrorBoundary>
     </ViewContext.Provider>

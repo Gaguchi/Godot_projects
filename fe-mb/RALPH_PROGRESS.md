@@ -19,7 +19,7 @@ Read this file each iteration. Pick the next unchecked item under the active pha
 - [x] **P1-01** Add a `view` state slice to App.tsx ('title' | 'combat' | 'overworld' | 'town' | 'dungeon') so React can switch top-level scene — `00eee7e` 2026-05-09
 - [x] **P1-02** Create `phaser/src/ui/screens/TitleScreen.tsx` — full-viewport React component with game title text and three buttons — `f32ea57` 2026-05-09
 - [x] **P1-03** New Game button: dispatches `metaStore.startNewRun`, sets view to 'combat', triggers a stub battle boot — `30c1c6f` 2026-05-09
-- [ ] **P1-04** Load Game button: opens a placeholder modal listing localStorage saves (empty list shown for now)
+- [x] **P1-04** Load Game button: opens a placeholder modal listing localStorage saves (empty list shown for now) — pending-sha 2026-05-09
 - [ ] **P1-05** Quit button: closes the window via `window.close()` (or shows a "thanks for playing" modal in dev)
 - [ ] **P1-06** Title screen styling — Tailwind dark fantasy theme (stone-900 bg, amber accents, monospace logo). Match foundation v2 spec §5 visual language
 - [ ] **P1-07** Visual snapshot baseline for title screen via Playwright
