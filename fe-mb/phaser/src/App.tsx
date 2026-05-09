@@ -9,6 +9,7 @@ import { DungeonScene } from './ui/screens/DungeonScene'
 import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { QuitModal } from './ui/modals/QuitModal'
 import { BattleEndModal } from './ui/modals/BattleEndModal'
+import { QuestLog } from './ui/overlays/QuestLog'
 import { useCombatStore } from './state/combatStore'
 import { useRunStore } from './state/runStore'
 import { asNodeId } from './domain/ids'
@@ -27,7 +28,19 @@ export function App(): React.JSX.Element {
   const [view, setView] = useState<View>('title')
   const [loadModalOpen, setLoadModalOpen] = useState(false)
   const [quitModalOpen, setQuitModalOpen] = useState(false)
+  const [questLogOpen, setQuestLogOpen] = useState(false)
   const dispatchMeta = useMetaStore((s) => s.dispatch)
+
+  // Q key opens quest log when in overworld/town/dungeon
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key.toLowerCase() === 'q' && (view === 'overworld' || view === 'town' || view === 'dungeon')) {
+        setQuestLogOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [view])
 
   // F-26: Permadeath sync. When combat phase becomes VICTORY/DEFEAT, walk
   // the units and record fallen party members in runStore.deathLog. On
@@ -163,6 +176,13 @@ export function App(): React.JSX.Element {
             onReturnToTitle={onReturnToTitle}
             onContinueToOverworld={onContinueToOverworld}
           />
+          <QuestLog open={questLogOpen} onClose={() => setQuestLogOpen(false)} />
+          {/* Quest log key hint */}
+          {(view === 'overworld' || view === 'town' || view === 'dungeon') && !questLogOpen && (
+            <div style={{ position: 'fixed', bottom: 8, left: 8, fontSize: 10, color: '#5a4a30', fontFamily: 'monospace', zIndex: 100 }}>
+              [Q] Quest Log
+            </div>
+          )}
         </div>
       </ErrorBoundary>
     </ViewContext.Provider>

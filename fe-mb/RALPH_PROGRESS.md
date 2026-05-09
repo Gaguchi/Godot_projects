@@ -41,7 +41,7 @@ Read this file each iteration. Pick the next unchecked item. Build the entire fe
 
 - [ ] **F-19** Blood Ties content port: read existing Godot `data/quests/quest_definitions.json` + `data/dialogue/sq_blood_ties_*.json` files; translate to TS schemas (`QuestDef`, `DialogueTree`); land in `phaser/src/data/content/quests/blood_ties.json` + `phaser/src/data/content/dialogue/blood_ties_*.json`. Wire `gameStore` to load quests from validated content at boot.
 - [ ] **F-20** Dialogue UI React component: text box + speaker label + choice buttons (gated by `visibleIf` / `enabledIf` predicates via `evaluatePredicate`); fires `QuestEffect[]` on selection through `gameStore.dispatch`. Mounted as overlay above whichever scene is active.
-- [ ] **F-21** Quest log overlay: open with Q key or button on overworld/town HUD, lists active quests from `runStore.questStates`, current stage description, predicate-based completion check; closeable.
+- [x] **F-21** Quest log overlay: open with Q key or button on overworld/town HUD, lists active quests from `runStore.questStates`, current stage description, predicate-based completion check; closeable. — pending-sha 2026-05-09
 - [x] **F-22** Capture-target plumbing: `combatStore` `capture` event resolves via `captureChance`, success appends to `runStore.party.captured` (new array on RunState), emits `EnemyCaptured` DomainEvent which questRunner sees and may advance Blood Ties. Tavern bounty board shows captured list with turn-in (gold reward, dispatch `runStore.addGold` + clear from captured). [foundation: capture event reduces hp to 0 on success; full bounty board lands with F-27] — pending-sha 2026-05-09
 
 ## E. Dungeon Layer
