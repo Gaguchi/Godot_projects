@@ -82,13 +82,8 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
     if (room.type === 'combat' || room.type === 'elite' || room.type === 'boss') {
       onCombatRoom()
     } else if (room.type === 'rest') {
-      const party = useRunStore.getState().party.units
-      for (const u of Object.values(party)) {
-        const newHp = Math.min(u.hp.max, u.hp.current + Math.floor(u.hp.max * 0.3))
-        useRunStore.setState((s) => ({
-          party: { ...s.party, units: { ...s.party.units, [u.id as unknown as string]: { ...u, hp: { ...u.hp, current: newHp } } } },
-        }))
-      }
+      // GP-F3: dispatch restParty instead of bypassing the chokepoint with setState
+      dispatchRun({ type: 'restParty', payload: { percent: 0.3 } })
     } else if (room.type === 'treasure') {
       dispatchRun({ type: 'addGold', payload: { amount: 50 } })
     } else if (room.type === 'event') {

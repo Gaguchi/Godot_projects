@@ -52,6 +52,7 @@ export type RunAction =
   | { type: 'markEncounterFired'; payload: { encounterId: string } }
   | { type: 'consumeFoodPerHop' }
   | { type: 'enterMap'; payload: { mapId: MapId; nodeId: NodeId } }
+  | { type: 'restParty'; payload: { percent: number } }
 
 interface RunStateWithDispatch extends RunState {
   dispatch(action: RunAction): void
@@ -340,6 +341,18 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
           }
         })
         return
+      case 'restParty': {
+        const percent = action.payload.percent
+        set(s => {
+          const newUnits: Record<string, Unit> = {}
+          for (const [id, u] of Object.entries(s.party.units)) {
+            const heal = Math.floor(u.hp.max * percent)
+            newUnits[id] = { ...u, hp: { ...u.hp, current: Math.min(u.hp.max, u.hp.current + heal) } }
+          }
+          return { party: { ...s.party, units: newUnits } }
+        })
+        return
+      }
       case 'consumeFoodPerHop': {
         // Find the first food_rations item in the bag; remove one. If no
         // food remains, deal starvationDamagePerHop HP to each living party

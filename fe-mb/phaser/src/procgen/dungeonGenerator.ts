@@ -7,10 +7,15 @@ export interface DungeonGenerateParams {
   fogOfWar?: DungeonGraph['fogOfWar']
 }
 
-const ROOM_WEIGHTS: { type: DungeonRoom['type']; weight: number }[] = [
-  { type: 'combat', weight: 60 },
-  { type: 'event', weight: 25 },
-  { type: 'rest', weight: 10 },
+// GP-F2: row-band aware weights — early rows bias to combat (no rest/elite),
+// mid rows include treasure + shop, late rows force rest just before boss.
+// Mirrors Godot dungeon_generator.gd's distribution.
+const MID_ROW_WEIGHTS: { type: DungeonRoom['type']; weight: number }[] = [
+  { type: 'combat', weight: 45 },
+  { type: 'event', weight: 20 },
+  { type: 'treasure', weight: 15 },
+  { type: 'shop', weight: 10 },
+  { type: 'rest', weight: 5 },
   { type: 'elite', weight: 5 },
 ]
 
@@ -95,11 +100,12 @@ export function generateDungeon(rng: RNG, params: DungeonGenerateParams): Dungeo
     } else if (rowIdx === lastDataRow) {
       room.type = 'rest'
     } else {
-      // Weighted random
-      const totalWeight = ROOM_WEIGHTS.reduce((s, w) => s + w.weight, 0)
+      // Weighted random over the mid-row palette (combat / event / treasure /
+      // shop / rest / elite).
+      const totalWeight = MID_ROW_WEIGHTS.reduce((s, w) => s + w.weight, 0)
       let roll = rng.nextInt(0, totalWeight - 1)
       let chosen: DungeonRoom['type'] = 'combat'
-      for (const w of ROOM_WEIGHTS) {
+      for (const w of MID_ROW_WEIGHTS) {
         if (roll < w.weight) { chosen = w.type; break }
         roll -= w.weight
       }

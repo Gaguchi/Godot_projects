@@ -1,0 +1,10 @@
+{
+  "id": "smugglers_cave",
+  "name": "Smuggler's Cave",
+  "regionId": "borderlands",
+  "floors": 3,
+  "theme": "rocky-cave",
+  "combatEnemyGroupId": "bandits_small",
+  "eliteEnemyGroupId": "brigands",
+  "bossEnemyGroupId": "darens_gang"
+}

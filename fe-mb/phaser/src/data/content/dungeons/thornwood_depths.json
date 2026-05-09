@@ -1,0 +1,10 @@
+{
+  "id": "thornwood_depths",
+  "name": "Thornwood Depths",
+  "regionId": "thornwood",
+  "floors": 3,
+  "theme": "dark-forest",
+  "combatEnemyGroupId": "wolves",
+  "eliteEnemyGroupId": "wolves",
+  "bossEnemyGroupId": "brigands"
+}

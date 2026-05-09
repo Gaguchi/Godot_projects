@@ -1,0 +1,10 @@
+{
+  "id": "ancient_ruins",
+  "name": "Ancient Ruins",
+  "regionId": "thornwood",
+  "floors": 3,
+  "theme": "stone-ruins",
+  "combatEnemyGroupId": "wolves",
+  "eliteEnemyGroupId": "brigands",
+  "bossEnemyGroupId": "brigands"
+}

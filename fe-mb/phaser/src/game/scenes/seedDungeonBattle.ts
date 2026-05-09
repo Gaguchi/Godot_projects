@@ -1,0 +1,103 @@
+import classesJson from '../../data/content/classes.json'
+import smugglers from '../../data/content/dungeons/smugglers_cave.json'
+import ancient from '../../data/content/dungeons/ancient_ruins.json'
+import depths from '../../data/content/dungeons/thornwood_depths.json'
+import iron from '../../data/content/dungeons/iron_mine.json'
+import obsidian from '../../data/content/dungeons/obsidian_cavern.json'
+import bandits from '../../data/content/enemyGroups/bandits.json'
+import wolves from '../../data/content/enemyGroups/wolves.json'
+import brigands from '../../data/content/enemyGroups/brigands.json'
+import darens from '../../data/content/enemyGroups/darens_gang.json'
+import { asUnitId, asClassId, asCardId, asTileId } from '../../domain/ids'
+import type { Unit } from '../../domain/unit'
+import type { CombatEvent, CombatGrid, DeckState } from '../../domain/combatState'
+import type { RngState } from '../../domain/rng'
+import type { DungeonDef } from '../../domain/dungeon'
+import type { EnemyGroup } from '../../domain/encounter'
+
+const DUNGEONS: Record<string, DungeonDef> = {
+  smugglers_cave: smugglers as DungeonDef,
+  ancient_ruins: ancient as DungeonDef,
+  thornwood_depths: depths as DungeonDef,
+  iron_mine: iron as DungeonDef,
+  obsidian_cavern: obsidian as DungeonDef,
+}
+
+const GROUPS: Record<string, EnemyGroup> = {
+  bandits_small: bandits as EnemyGroup,
+  wolves: wolves as EnemyGroup,
+  brigands: brigands as EnemyGroup,
+  darens_gang: darens as EnemyGroup,
+}
+
+/**
+ * GP-F4: Seed a dungeon battle. Looks up the DungeonDef by id, picks the
+ * appropriate enemy group based on room type (combat / elite / boss), and
+ * expands the EnemyGroup members into Unit instances on the right side of
+ * the grid. Party units are seeded by the caller (overworld / boot).
+ */
+export function seedDungeonBattle(
+  dungeonId: string,
+  roomType: 'combat' | 'elite' | 'boss',
+  rngSeed: RngState,
+  party: Unit[],
+): Extract<CombatEvent, { type: 'startBattle' }> {
+  const dungeon = DUNGEONS[dungeonId]
+  if (!dungeon) throw new Error(`seedDungeonBattle: unknown dungeon ${dungeonId}`)
+
+  const groupId = roomType === 'boss' ? dungeon.bossEnemyGroupId
+    : roomType === 'elite' ? dungeon.eliteEnemyGroupId
+    : dungeon.combatEnemyGroupId
+
+  const group = GROUPS[groupId]
+  if (!group) throw new Error(`seedDungeonBattle: unknown enemy group ${groupId}`)
+
+  const classMap = new Map(classesJson.map((c) => [c.id, c]))
+
+  const enemies: Unit[] = []
+  let enemyIdx = 0
+  for (const member of group.members) {
+    const cls = classMap.get(member.classId)
+    if (!cls) continue
+    for (let i = 0; i < member.count; i++) {
+      const x = 12 + (enemyIdx % 2)
+      const y = 4 + Math.floor(enemyIdx / 2)
+      enemies.push({
+        id: asUnitId(`${groupId}_${enemyIdx}`),
+        name: member.name,
+        classId: asClassId(cls.id),
+        level: member.level,
+        hp: { current: cls.startingHp, max: cls.startingHp },
+        stats: { ...cls.baseStats },
+        position: asTileId(`${x},${y}`),
+        ap: 3,
+        armor: 0,
+        statuses: [],
+      })
+      enemyIdx++
+    }
+  }
+
+  const decks: Record<string, DeckState> = {}
+  for (const u of [...party, ...enemies]) {
+    const cls = classMap.get(u.classId as unknown as string)
+    if (!cls) continue
+    const cardIds = cls.innateCardIds.map(id => asCardId(id))
+    decks[u.id as unknown as string] = {
+      draw: [...cardIds],
+      hand: [...cardIds],
+      discard: [],
+    }
+  }
+
+  const grid: CombatGrid = {
+    width: 14,
+    height: 10,
+    obstacles: new Set(),
+  }
+
+  return {
+    type: 'startBattle',
+    payload: { units: [...party, ...enemies], grid, rngSeed, decks },
+  }
+}

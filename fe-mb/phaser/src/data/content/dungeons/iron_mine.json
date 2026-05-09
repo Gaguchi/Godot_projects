@@ -1,0 +1,10 @@
+{
+  "id": "iron_mine",
+  "name": "Iron Mine",
+  "regionId": "ashfall",
+  "floors": 3,
+  "theme": "industrial",
+  "combatEnemyGroupId": "brigands",
+  "eliteEnemyGroupId": "brigands",
+  "bossEnemyGroupId": "brigands"
+}

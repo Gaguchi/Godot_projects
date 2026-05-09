@@ -1,0 +1,10 @@
+{
+  "id": "obsidian_cavern",
+  "name": "Obsidian Cavern",
+  "regionId": "ashfall",
+  "floors": 3,
+  "theme": "volcanic",
+  "combatEnemyGroupId": "brigands",
+  "eliteEnemyGroupId": "brigands",
+  "bossEnemyGroupId": "brigands"
+}
