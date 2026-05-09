@@ -61,7 +61,6 @@ export function resolveBattle(input: ResolveBattleInput): BattleResult {
     fallen,
     xpAwards,
     capturedEnemies: [],   // populated when capture event fires (next milestone)
-    loot: [],              // populated by loot table in next milestone
     goldEarned,
     consumedTravelHop,
     emittedEvents,

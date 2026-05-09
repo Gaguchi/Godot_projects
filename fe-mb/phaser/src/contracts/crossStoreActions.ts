@@ -1,4 +1,4 @@
-import type { UnitId, ItemId, ClassId } from '../domain/ids'
+import type { UnitId, ClassId } from '../domain/ids'
 import type { Unit } from '../domain/unit'
 import type { DomainEvent } from './domainEvents'
 
@@ -9,7 +9,6 @@ export interface BattleResult {
   fallen: UnitId[]
   xpAwards: Record<string, number>     // keyed by UnitId-as-string
   capturedEnemies: { id: UnitId; classId: ClassId; level: number }[]
-  loot: { itemId: ItemId }[]
   goldEarned: number
   consumedTravelHop: number | null
   emittedEvents: DomainEvent[]

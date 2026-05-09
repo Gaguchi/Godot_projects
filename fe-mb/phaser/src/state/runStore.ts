@@ -172,12 +172,6 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
             ...s.deathLog,
             ...r.fallen.map(unitId => ({ unitId, cause: 'battle', turn: 0 })),
           ],
-          inventory: {
-            items: [
-              ...s.inventory.items,
-              ...r.loot.map((l, idx) => ({ itemId: l.itemId, gridX: idx % 8, gridY: Math.floor(idx / 8) })),
-            ],
-          },
         }))
         return
       }
