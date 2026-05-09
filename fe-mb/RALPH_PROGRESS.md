@@ -20,7 +20,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 - [x] **UI-T1** Install `react-aria-components` + `framer-motion`. Record bundle baseline. No code consumers yet. ✅ Bundle baseline: 432.67 KB gzipped (ceiling 507.67 KB). Versions: react-aria-components ^1.17.0, framer-motion ^12.38.0, react-aria ^3.48.0.
 - [x] **UI-T2** `Button` wrapper + 4 unit tests. ✅ 158 tests pass. Variants: primary/secondary/ghost/danger with full data-[hovered/pressed/focus-visible/disabled]: Tailwind classes. Testing infrastructure also added: jsdom env, @testing-library/react, tests/setup.ts with auto-cleanup.
 - [x] **UI-T3** `Pressable` wrapper for non-button clickables. ✅ Renders `<div role="button">` with full `usePress`/`useHover`/`useFocusRing` semantics. tabIndex toggles 0/-1 on disabled. Same data-[pressed/hovered/focus-visible/disabled] attribute surface as `<Button>`. 161 tests pass.
-- [ ] **UI-T4** `Card` wrapper with AP-cost guard + Framer Motion lift. Disabled = `aria-disabled=true` + `aria-description="needs N AP, you have M"`.
+- [x] **UI-T4** `Card` wrapper with AP-cost guard + Framer Motion lift. ✅ 165 tests pass. Click hits the RAC `<Button>`; lift via Framer Motion `whileHover` / `whileTap` (skipped under `prefers-reduced-motion`). Disabled when `apCost > availableAp`; reason exposed via `data-disabled-reason` attribute (Tooltip in T8 will render it visually). RAC strips arbitrary HTML attributes (title) so we use a data-attribute instead.
 - [ ] **UI-T5** `Dialog` wrapper (ModalOverlay + Modal + Dialog). Focus trap, ESC dismiss, dismissable layer.
 - [ ] **UI-T6** `Menu` + `MenuItem` wrappers. Arrow-key nav, type-to-search.
 - [ ] **UI-T7** `ListBox` + `ListBoxItem` wrappers. Single-select with arrow-key navigation.
