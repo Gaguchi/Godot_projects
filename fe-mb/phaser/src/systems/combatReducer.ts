@@ -295,9 +295,25 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
         effects: [],
       }
 
-    case 'moveUnit':
+    case 'moveUnit': {
+      const { unitId, tileId } = event.payload
+      const u = state.units[unitId as unknown as string]
+      if (!u) return { state, effects: [] }
+      const newUnits: Record<string, Unit> = {
+        ...state.units,
+        [unitId as unknown as string]: { ...u, position: tileId, ap: Math.max(0, u.ap - 1) },
+      }
+      return {
+        state: { ...state, units: newUnits },
+        effects: [
+          { kind: 'PlayTween', sprite: { id: unitId as unknown as string }, props: { targetTile: tileId as unknown as string }, durationMs: 200 },
+          { kind: 'WaitForAnimations' },
+        ],
+      }
+    }
+
     case 'capture':
-      // Rich implementations land in later features.
+      // Rich implementation lands with capture+recruitment feature.
       return { state, effects: [{ kind: 'WaitForAnimations' }] }
   }
 }

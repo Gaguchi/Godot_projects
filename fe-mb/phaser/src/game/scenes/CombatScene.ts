@@ -5,7 +5,8 @@ import { CombatRuntime } from '../runtime/CombatRuntime'
 import { createRng } from '../../systems/rng'
 import { seedStubBattle } from './seedStubBattle'
 import { tilesInRange, tilesInAoe } from '../../systems/targeting'
-import type { CombatEffect } from '../../domain/combatState'
+import { planTurn } from '../../systems/enemyAI'
+import type { CombatEffect, CombatEvent } from '../../domain/combatState'
 import cardsJson from '../../data/content/cards.json'
 import { asCardId, asTileId } from '../../domain/ids'
 
@@ -72,6 +73,8 @@ export class CombatScene extends Phaser.Scene {
   private apText: Phaser.GameObjects.Text | null = null
   private endTurnBtn: Phaser.GameObjects.Container | null = null
   private pendingAnimations = 0
+  private enemyTurnQueue: CombatEvent[] = []
+  private enemyTurnRunning = false
 
   constructor() { super('combat') }
 
@@ -122,6 +125,7 @@ export class CombatScene extends Phaser.Scene {
       this.renderCardHand()
       this.renderTargeting()
       this.updateApIndicator()
+      this.maybeRunEnemyTurn()
     })
 
     // Drain effects on lastEffectId change
@@ -587,6 +591,39 @@ export class CombatScene extends Phaser.Scene {
     const cs = useCombatStore.getState()
     if (cs.state.subPhase === 'RESOLVING') {
       cs.dispatch({ type: 'animationsCompleted' }, createRng(cs.state.rng))
+    }
+    // Continue enemy turn queue if any
+    if (this.enemyTurnRunning) {
+      this.time.delayedCall(300, () => this.dispatchNextEnemyEvent())
+    }
+  }
+
+  private maybeRunEnemyTurn(): void {
+    if (this.enemyTurnRunning) return
+    const cs = useCombatStore.getState()
+    const state = cs.state
+    if (state.phase !== 'COMBAT') return
+    if (state.subPhase !== 'IDLE') return
+    if (state.turn.team !== 'enemy') return
+    if (state.turn.unitId === null) return
+
+    // Plan enemy turn
+    this.enemyTurnQueue = planTurn(state, createRng(state.rng), state.turn.unitId)
+    this.enemyTurnRunning = true
+    this.time.delayedCall(500, () => this.dispatchNextEnemyEvent())
+  }
+
+  private dispatchNextEnemyEvent(): void {
+    const cs = useCombatStore.getState()
+    if (this.enemyTurnQueue.length === 0) {
+      this.enemyTurnRunning = false
+      return
+    }
+    const next = this.enemyTurnQueue.shift()!
+    cs.dispatch(next, createRng(cs.state.rng))
+    // After endTurn, the queue is drained; clear flag
+    if (next.type === 'endTurn') {
+      this.enemyTurnRunning = false
     }
   }
 
