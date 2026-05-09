@@ -10,6 +10,7 @@ export interface CombatStoreState {
   lastEffectId: number
   dispatch(event: CombatEvent, rng: RNG): void
   drainEffects(): CombatEffect[]
+  reset(): void
   __resetForTest(): void
 }
 
@@ -30,6 +31,9 @@ export const useCombatStore = create<CombatStoreState>()(
       const out = get().effectQueue
       set({ effectQueue: [] })
       return out
+    },
+    reset() {
+      set({ state: initialCombatState(), effectQueue: [], lastEffectId: 0 })
     },
     __resetForTest() {
       set({ state: initialCombatState(), effectQueue: [], lastEffectId: 0 })

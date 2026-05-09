@@ -5,6 +5,8 @@ import { ViewContext, type View } from './ui/view'
 import { TitleScreen } from './ui/screens/TitleScreen'
 import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { QuitModal } from './ui/modals/QuitModal'
+import { BattleEndModal } from './ui/modals/BattleEndModal'
+import { useCombatStore } from './state/combatStore'
 import { createErrorBus } from './state/errorBus'
 import { createEventBus } from './state/eventBus'
 import { createActionLog } from './state/actionLog'
@@ -41,6 +43,18 @@ export function App(): React.JSX.Element {
     setQuitModalOpen(true)
   }, [])
 
+  const onBattleRestart = useCallback(() => {
+    useCombatStore.getState().reset()
+    // Trigger view re-flip so CombatScene's create() runs again and reseeds
+    setView('title')
+    setTimeout(() => setView('combat'), 50)
+  }, [])
+
+  const onReturnToTitle = useCallback(() => {
+    useCombatStore.getState().reset()
+    setView('title')
+  }, [])
+
   // P1-04: empty list for now. Real save slots are read from localStorage
   // once the save UX lands in a later milestone. The persistence layer
   // (loadFromString, atomic hydration) already exists in src/persistence/.
@@ -73,6 +87,7 @@ export function App(): React.JSX.Element {
             }}
           />
           <QuitModal open={quitModalOpen} onClose={() => setQuitModalOpen(false)} />
+          <BattleEndModal onRestart={onBattleRestart} onReturnToTitle={onReturnToTitle} />
         </div>
       </ErrorBoundary>
     </ViewContext.Provider>
