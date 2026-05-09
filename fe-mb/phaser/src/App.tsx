@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { ErrorBoundary } from './ui/ErrorBoundary'
 import { DevHud } from './ui/DevHud'
 import { ViewContext, type View } from './ui/view'
+import { TitleScreen } from './ui/screens/TitleScreen'
 import { createErrorBus } from './state/errorBus'
 import { createEventBus } from './state/eventBus'
 import { createActionLog } from './state/actionLog'
@@ -19,13 +20,11 @@ export function App(): React.JSX.Element {
       <ErrorBoundary errorBus={errorBus}>
         <div id="app-root">
           {view === 'title' ? (
-            <div id="title-placeholder" style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              height: '100vh', width: '100vw', background: '#0a0a0f',
-              color: '#e0d0a0', fontFamily: 'monospace', fontSize: 32,
-            }}>
-              FE_MB — Title (P1-02)
-            </div>
+            <TitleScreen
+              onNewGame={() => { /* wired in P1-03 */ }}
+              onLoadGame={() => { /* wired in P1-04 */ }}
+              onQuit={() => { /* wired in P1-05 */ }}
+            />
           ) : (
             <>
               <div id="game-canvas-container" />
