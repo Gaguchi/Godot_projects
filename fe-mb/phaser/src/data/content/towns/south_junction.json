@@ -1,0 +1,20 @@
+{
+  "id": "south_junction",
+  "name": "South Junction",
+  "description": "A rough waystation where southern trade routes converge.",
+  "regionId": "borderlands",
+  "innHealCostPerUnit": 6,
+  "shopStockIds": [
+    "healing_potion",
+    "food_rations"
+  ],
+  "rumors": [
+    "The southern pass is crawling with deserters turned bandit.",
+    "If you're headed east, stock up on provisions. The land grows harsh.",
+    "Some fool tried to challenge the warlord's men. Didn't end well."
+  ],
+  "tavernQuests": [],
+  "blacksmithEnabled": true,
+  "arenaLocked": true,
+  "arenaLockedText": "The locals prefer settling scores in the alley."
+}

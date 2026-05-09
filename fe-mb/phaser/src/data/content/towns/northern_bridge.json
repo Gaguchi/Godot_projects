@@ -1,0 +1,20 @@
+{
+  "id": "northern_bridge",
+  "name": "Northern Bridge",
+  "description": "A small settlement built around the only bridge spanning the northern gorge.",
+  "regionId": "thornwood",
+  "innHealCostPerUnit": 10,
+  "shopStockIds": [
+    "healing_potion",
+    "food_rations"
+  ],
+  "rumors": [
+    "The bridge toll keeps going up. The mayor's getting greedy.",
+    "Mountain folk say they've seen strange lights in the gorge at night.",
+    "A company of knights rode north last month. Haven't been seen since."
+  ],
+  "tavernQuests": [],
+  "blacksmithEnabled": true,
+  "arenaLocked": true,
+  "arenaLockedText": "No arena here. Try Borderkeep."
+}

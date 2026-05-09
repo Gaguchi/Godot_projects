@@ -1,0 +1,40 @@
+{
+  "id": "pine_crossing",
+  "name": "Pine Crossing",
+  "description": "A quiet crossroads settlement nestled among the pines.",
+  "regionId": "borderlands",
+  "innHealCostPerUnit": 8,
+  "shopStockIds": [
+    "healing_potion",
+    "food_rations"
+  ],
+  "rumors": [
+    "Wolves have grown bold on the northern roads. Travel in numbers.",
+    "A merchant caravan went missing near the Thornwood. Bandits, most like.",
+    "They say the old Stone Ruins are cursed. No one who enters comes out the same."
+  ],
+  "tavernQuests": [
+    {
+      "questId": "sq_blood_ties",
+      "npcName": "Kael",
+      "npcDescription": "A hooded bounty hunter nursing a drink alone.",
+      "dialogueId": "sq_blood_ties_accept",
+      "visibleIf": {
+        "kind": "allOf",
+        "preds": [
+          {
+            "kind": "notFlag",
+            "key": "sq_blood_ties_active"
+          },
+          {
+            "kind": "notFlag",
+            "key": "sq_blood_ties_complete"
+          }
+        ]
+      }
+    }
+  ],
+  "blacksmithEnabled": true,
+  "arenaLocked": true,
+  "arenaLockedText": "The fighting pit lies dormant."
+}

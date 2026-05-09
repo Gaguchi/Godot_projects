@@ -1,0 +1,21 @@
+{
+  "id": "borderkeep_castle",
+  "name": "Borderkeep Castle",
+  "description": "A fortified stronghold guarding the eastern frontier. Well-stocked but expensive.",
+  "regionId": "thornwood",
+  "innHealCostPerUnit": 20,
+  "shopStockIds": [
+    "healing_potion",
+    "food_rations"
+  ],
+  "rumors": [
+    "The lord has been hiring sellswords. War is coming, mark my words.",
+    "Beyond the eastern gate lies the scorched lands. Only the desperate go there.",
+    "Steel weapons from the castle forge are the finest you'll find this side of the mountains.",
+    "There's talk of an ancient dungeon beneath the Stone Ruins. Treasure for the bold."
+  ],
+  "tavernQuests": [],
+  "blacksmithEnabled": true,
+  "arenaLocked": true,
+  "arenaLockedText": "The arena awaits the lord's tournament decree."
+}
