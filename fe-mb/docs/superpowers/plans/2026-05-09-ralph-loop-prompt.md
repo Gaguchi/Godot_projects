@@ -1,79 +1,68 @@
-# Ralph Loop Prompt — FE_MB Polish & Interactivity Pass
+# Ralph Loop Prompt — FE_MB UI Input Overhaul
 
-> Same prompt fed every iteration. Vertical slice was tagged at `phaser-vertical-slice`. This pass: fix interactivity bugs and polish UI to game-feel quality using design skills.
+> Same prompt fed every iteration. Vertical slice was tagged at `phaser-vertical-slice`. This loop fixes the UI input/click/hover unreliability via DOM-first react-aria + Phaser-grid-only architecture.
 
-You are polishing the FE_MB phaser game to "actually playable" quality. Each iteration completes ONE item from `RALPH_PROGRESS.md` end-to-end.
+You are migrating the FE_MB phaser game's UI from hand-rolled inline-styled buttons to a robust react-aria-based component library. Each iteration completes ONE task from `RALPH_PROGRESS.md` end-to-end.
 
 ## Required reading every iteration
 
 1. `phaser/CONTEXT.md` — architecture invariants, store ownership, contracts
-2. `RALPH_PROGRESS.md` — find next unchecked item
-3. `phaser/README.md` — vertical slice scope reminder
-4. `git log --oneline -15` — sanity-check recent commits
+2. `RALPH_PROGRESS.md` — find next unchecked task
+3. `docs/superpowers/plans/2026-05-09-ui-input-overhaul-plan.md` — TDD steps for the current task
+4. `docs/superpowers/specs/2026-05-09-ui-input-overhaul-design.md` — design constraints
+5. `git log --oneline -15` — sanity-check recent commits
 
 ## Per-iteration job
 
-### For UI-XX items (design + implementation)
+### TDD discipline (required for every UI-TX task)
 
-1. **Invoke a design Skill FIRST.** Each UI item names which skill to use (e.g. `frontend-design`, `refactoring-ui`, `bolder`, `colorize`, `polish`, `godot-battle-ui`, `creating-dashboards`). Use `Skill` tool to invoke. Read the skill's guidance.
-2. Apply the skill's recommendations to the relevant React component or Phaser scene.
-3. Verify with Playwright MCP screenshot that the scene now looks game-feel quality (not bare DOM forms).
-4. Run all gates.
-5. Commit with message: `feat(phaser): [UI-XX] <component> polished via <skill>`.
-6. Update RALPH_PROGRESS.md with `[x]` and SHA.
-
-### For B-XX bugs (TDD)
-
-1. Reproduce the bug (write a failing test or describe the broken interaction).
-2. Implement the fix.
-3. Verify the test passes / interaction works in browser via Playwright MCP.
-4. Run all gates.
-5. Commit `fix(phaser): [B-XX] <description>`.
-
-### For F-XX functional gaps
-
-1. Read the relevant spec section (often `docs/superpowers/specs/2026-03-29-ship-plan-design.md`).
-2. TDD on pure systems; visual snapshot on UI.
-3. Multi-commit allowed within an iteration.
-4. Verify gates + visual.
-5. Commit.
+1. Read the task in the plan. Note the exact files to create/modify.
+2. **Write the failing test first.** Run it. Confirm it fails for the expected reason.
+3. **Write the minimal implementation.** Run the test. Confirm it passes.
+4. Run all five gates: `typecheck`, `npm test -- --run`, `check-context-doc`, `test:e2e`, `build`. ALL must pass.
+5. For Phase 2/3 tasks: verify visually via Playwright MCP — click the button, hover it, observe 4-state styling (idle/hover/pressed/disabled).
+6. Commit with the message format from the plan (`feat(phaser): [UI-TX] <description>`).
+7. Update `RALPH_PROGRESS.md` with `[x]` and the commit SHA.
 
 ## Verify before check-off
 
 ```
 cd phaser && npm run typecheck    # must pass
-cd phaser && npm test              # must pass
+cd phaser && npm test -- --run    # must pass
 cd phaser && npm run check-context-doc  # must pass
-cd phaser && npm run test:e2e      # must pass
-cd phaser && npm run build         # must pass
+cd phaser && npm run test:e2e     # must pass
+cd phaser && npm run build        # must pass
 ```
 
-If any gate fails: mark `🚧 BLOCKED: <reason>` and pick next non-blocked item.
+If any gate fails: investigate root cause; do NOT bypass with `--no-verify`. If genuinely stuck, mark `🚧 BLOCKED: <reason>` and pick the next non-blocked item.
 
 ## Drift safeguards — emit `<promise>NEEDS_HUMAN_REVIEW</promise>` if any
 
 - **3+ consecutive `🚧 BLOCKED:` markers**
 - **Tests fail on HEAD at iteration start** (previous iteration committed broken code)
-- **You skip the design skill on a UI-XX item** — that's the whole point. If a UI skill genuinely doesn't fit, mark `⏸ NEEDS-CONTEXT: <which skill alternative>`
-- **Visual screenshot shows scene unchanged** after UI iteration — the skill output didn't land in code
+- **Performance gate exceeded by >50%** (spec ceiling +75 KB gzipped; if you breach by >37 KB, stop)
+- **You're tempted to add a button or menu to Phaser canvas** — that violates the spec's architectural fence
 
-## Architecture rules (from CONTEXT.md)
+## Architecture rules (from CONTEXT.md + new spec)
 
-- **Combat = Phaser canvas only.** Everything else = React DOM with Tailwind/inline-styles
+- **All UI is React DOM** with react-aria-components, Tailwind data-[*]: variants, Framer Motion. No buttons in canvas.
+- **Phaser is `BoardScene` only** — tiles, units, animations, camera, terrain, in-world floating numbers. Spatial pickers (tile click, unit click) stay on canvas; UI buttons do not.
 - **Three Zustand stores** with single dispatch each
 - **Pure systems** in `src/systems/` and `src/procgen/` — no Phaser, no React, no I/O
 - **Combat is a reducer** over `CombatEvent` discriminated union
 - **`Math.random()` lint-banned** — use `RNG` parameters
 - **Cross-system writes** via `src/contracts/` types
-
-## On the canvas-vs-DOM debate
-
-The user previously suggested moving everything to canvas. The architecture stays as-is (combat=canvas, rest=React) because canvas-only menus are 10× the implementation cost for marginal feel gains. The fix is to make React+Tailwind LOOK game-feel via design skills. If a specific scene genuinely needs canvas (e.g. animated background particles overlay), add a Phaser overlay scene without replacing React for the layout.
+- **Forbidden imports**: raw `react-aria-components` and `react-aria` outside `src/ui/components/` (lint-enforced after T9)
 
 ## Final reminders
 
 - Same prompt every iteration. Memory = files + git
-- Iteration = one item, multiple commits OK
-- UI items REQUIRE a design skill invocation before code
+- Iteration = one task; multiple commits OK if a task has multiple steps
+- TDD: failing test first, then implementation
 - All five gates pass before check-off
-- Promise = `<promise>GAME-POLISHED</promise>` when checklist drained + visual playthrough verified
+- Promise = `<promise>UI-INPUT-FIXED</promise>` when:
+  - All UI-T1 through UI-T29 are checked off
+  - All 4 user-visible criteria from the spec pass (4-state UI, keyboard nav, no click lost mid-tween, touch parity)
+  - All performance gates green
+  - Tag `phaser-ui-input-fixed` pushed
+  - Visual playthrough recorded

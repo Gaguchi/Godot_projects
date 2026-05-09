@@ -1,51 +1,68 @@
-# Ship Progress — Polish & Interactivity Pass
+# UI Input Overhaul Progress
 
-> Vertical slice tagged at `phaser-vertical-slice`. This pass: fix the interactivity bugs (movement, button clicks), polish each scene's UI to game-feel quality using design skills (frontend-design / refactoring-ui / bolder / colorize / polish / godot-battle-ui), and fill remaining functional gaps.
->
-> **Spec:** `docs/superpowers/specs/2026-05-09-ralph-ship-plan-design.md` (foundational)
-> **Loop prompt:** `docs/superpowers/plans/2026-05-09-ralph-loop-prompt.md` (updated for design-skill workflow)
-> **Completion promise:** `<promise>GAME-POLISHED</promise>` when:
->   - All bug-fix items are checked + verified working in browser
->   - All UI items have invoked the relevant design skill before commit
->   - Visual playthrough records each scene rendering at game-feel quality
->   - All five gates pass
+> **Spec:** `docs/superpowers/specs/2026-05-09-ui-input-overhaul-design.md`
+> **Plan:** `docs/superpowers/plans/2026-05-09-ui-input-overhaul-plan.md`
+> **Loop prompt:** `docs/superpowers/plans/2026-05-09-ralph-loop-prompt.md`
+> **Completion promise:** `<promise>UI-INPUT-FIXED</promise>` — emit ONLY when:
+>   - All 4 user-visible criteria pass (4-state UI, keyboard nav, no click lost mid-tween, touch parity verified)
+>   - All performance gates green (bundle ≤ +75 KB gzipped, hover p95 < 8ms, mount < 50ms)
+>   - All five build gates green (typecheck, unit, e2e, check-context-doc, build)
+>   - `CombatScene.ts` renamed to `BoardScene.ts`; HUD code deleted
+>   - Tag `phaser-ui-input-fixed` pushed
+>   - Visual playthrough recorded (title → overworld → combat → win)
 
-Each iteration is **one feature**. Use TWO Skill invocations on UI items: a design skill (e.g. `frontend-design`) FIRST, then implementation. Skills surface concrete design choices; without them you ship bare-bones React.
+Each iteration completes ONE task end-to-end (test → impl → run → gates → commit). All 5 gates pass before check-off. Skip items prefixed `🚧 BLOCKED:`.
 
 ---
 
-## A. Critical bugs
+## Phase 1 — Component library
 
-- [x] **B-01** Player unit movement in combat. ✅ Fixed at d3f5067+next commit. Click party unit → enters `SELECTING_MOVE` subPhase → reachable tiles within `class.startingMov` highlight cyan (BFS, blocked by obstacles + occupied tiles) → click valid tile dispatches `moveUnit`. Free move per turn via new `Unit.hasMovedThisTurn` flag, reset on `endTurn`. ESC + right-click + Cancel Move button all cancel. New "Move" button next to End Turn. New E2E test `combat-movement.spec.ts` exercises the full UI path with simulated MouseEvents (Phaser doesn't respond to PointerEvent dispatch but does to MouseEvent). Dev-only `?view=combat` URL fast-path added for E2E testing. Dev-only `window.__debug` exposes stores.
-- [x] **B-02** Phaser button interactivity verified via E2E. ✅ New `combat-buttons.spec.ts` covers: End Turn button (advances active unit), card click (transitions to SELECTING_TARGET), Move button (toggles SELECTING_MOVE on/off). All using simulated MouseEvent dispatch through the canvas — Phaser doesn't fire on PointerEvent dispatch but does fire on MouseEvent, which is what real user clicks dispatch. Discovery confirms the user's "buttons aren't clickable" complaint was caused by trying to verify with the wrong synthetic event in earlier sessions; real mouse input works in production. Refactored common helpers (`fireMouse`, `bootCombat`, `CombatStateShape`) into `tests/e2e/helpers.ts`.
+- [ ] **UI-T1** Install `react-aria-components` + `framer-motion`. Record bundle baseline. No code consumers yet.
+- [ ] **UI-T2** `Button` wrapper + 4 unit tests (click, disabled, keyboard, data-attrs). Variants: primary/secondary/ghost/danger. Tailwind `data-[*]:` styling.
+- [ ] **UI-T3** `Pressable` wrapper for non-button clickables (round map nodes). Wraps `usePress`/`useHover`/`useFocusRing`; renders `div[role=button]`.
+- [ ] **UI-T4** `Card` wrapper with AP-cost guard + Framer Motion lift. Disabled = `aria-disabled=true` + `aria-description="needs N AP, you have M"`.
+- [ ] **UI-T5** `Dialog` wrapper (ModalOverlay + Modal + Dialog). Focus trap, ESC dismiss, dismissable layer.
+- [ ] **UI-T6** `Menu` + `MenuItem` wrappers. Arrow-key nav, type-to-search.
+- [ ] **UI-T7** `ListBox` + `ListBoxItem` wrappers. Single-select with arrow-key navigation.
+- [ ] **UI-T8** `Tooltip` wrapper. 500ms delay default, hover + focus trigger, OverlayArrow.
+- [ ] **UI-T9** `Heading` wrapper + barrel `index.ts` + ESLint guard forbidding raw `react-aria-components` imports outside `src/ui/components/`.
 
-## B. Scene-by-scene UI polish (each requires Skill invocation)
+## Phase 2 — Migrate non-combat scenes
 
-- [ ] **UI-01** Title screen polish. Skills: `frontend-design`, `bolder`, `colorize`. Atmospheric background (CSS gradient or particle canvas overlay), animated logo with subtle breathing/pulse, distinctive button hover states (border glow, slight skew, audio-cue placeholder). Match dark fantasy theme — stone-900 base, ember accents, parchment text.
-- [ ] **UI-02** Overworld polish. Skills: `frontend-design`, `refactoring-ui`. Replace the bare radial gradient with a proper map background (placeholder topographic SVG). Each location node gets a frame/banner styling per type (stone arch for town, tent silhouette for camp, cave mouth for dungeon, gate for exit). Path lines styled as faded roads. Add a top HUD: party portraits + HP, gold + food, current quest summary. Include a clickable "Open Quest Log" button instead of relying on Q key.
-- [ ] **UI-03** Combat scene polish. Skills: `godot-battle-ui`, `polish`. Better card design (frame/border per rarity, type icon, gradient bg). Unit nameplates with class icon. Status effect icons over units. Active-turn glow more dramatic. End Turn button with engraved styling. AP indicator with pip dots not text. Initiative tracker bar at top showing turn order.
-- [ ] **UI-04** Town menu polish. Skills: `frontend-design`, `bolder`, `colorize`. Tavern panel with wood-grain bg, inn with hearth/fire flicker (CSS animation), shop with item-card visual. Sidebar buttons get banner styling. Top-left town name as a sign. Item cards (in shop) get rarity color borders (Common gray / Uncommon green / Rare blue / Epic purple / Legendary gold).
-- [ ] **UI-05** Dungeon scene polish. Skills: `frontend-design`, `creating-dashboards`. Cave/dungeon background. Room icons more distinctive — combat=crossed swords, elite=skull, rest=campfire, treasure=chest, boss=throne. Path lines drawn as cave passages. Current room glow/pulse. "Retreat" button styled as a back arrow.
-- [ ] **UI-06** Modal polish (BattleEnd, LoadGame, Quit). Skills: `polish`, `frontend-design`. Victory modal celebratory (gold particles or shimmer), Defeat modal grim (cracked-glass overlay), Load Game modal with save slot mockups for empty state, Quit modal with farewell message centered.
+- [ ] **UI-T10** Migrate `TitleScreen.tsx` → `<Button>`. 3 buttons. E2E `boot.spec.ts` selectors must still pass.
+- [ ] **UI-T11** Migrate `QuitModal.tsx` → `<Dialog>` + `<Button>`.
+- [ ] **UI-T12** Migrate `BattleEndModal.tsx` → `<Dialog>` + `<Button>` (Continue / Restart / Return).
+- [ ] **UI-T13** Migrate `LoadGameModal.tsx` → `<Dialog>` + `<ListBox>`.
+- [ ] **UI-T14** Migrate `QuestLog.tsx` → `<Dialog>`.
+- [ ] **UI-T15** Migrate `OverworldScene.tsx` → `<Pressable>` for round map nodes + `<Button>` for HUD buttons. Keep SVG edge layer with `pointer-events: none`.
+- [ ] **UI-T16** Migrate `TownScene.tsx` → `<Button>` sidebar + `<ListBox>` shop items + `<Tooltip>` for disabled-with-reason on Inn heal.
+- [ ] **UI-T17** Migrate `DungeonScene.tsx` → `<Pressable>` rooms + `<Button variant=danger>` Retreat.
 
-## C. Functional gaps
+## Phase 3 — Combat HUD migration + BoardScene reduction
 
-- [ ] **F-DRAG** Grid inventory drag-drop (was F-17). Install `@dnd-kit/core`. 8×4 cell grid in shop panel. Items occupy `gridSize.width × gridSize.height` cells. Drag to move/equip. Drag onto unit portrait → equipHand. "Bag full" overlay when no fit. "Organize" auto-pack button.
-- [ ] **F-CAPTURE-UI** Capture button on adjacent low-HP enemies in combat. When player's turn and enemy adjacent with HP < 50%, show "Capture" button near unit. Click → dispatch `capture` event. Capture chance % shown in tooltip.
-- [ ] **F-DIALOGUE** Dialogue UI React modal (was F-20). Predicate-gated choices. Fires QuestEffect[] on selection. Used by Blood Ties + travel events.
-- [ ] **F-BLOODTIES** Blood Ties full content port (was F-19). Read Godot `data/quests/quest_definitions.json` + `data/dialogue/sq_blood_ties_*.json`. Translate to TS. Wire Pine Crossing tavern accept → spawn Daren encounter → resolve via dialogue → reward.
-- [ ] **F-RECRUIT** Tavern recruitment UI (was F-27). Pay 100g, choose from 3 random class options, unit joins party at level 1.
+- [ ] **UI-T18** Build `CombatHud.tsx` shell + `TopBar.tsx` (turn / active unit / HP / AP). Subscribes to combatStore via Zustand selectors.
+- [ ] **UI-T19** Build `ModeLabel.tsx` with Framer Motion `<AnimatePresence>`. Shows banner during SELECTING_MOVE / SELECTING_TARGET.
+- [ ] **UI-T20** Build `EndTurnBtn.tsx`. Uses `<Button variant="primary">`. Disabled when not party turn / RESOLVING.
+- [ ] **UI-T21** Build `MoveBtn.tsx`. Toggles enterMoveMode / cancelSelection. Disabled when hasMovedThisTurn.
+- [ ] **UI-T22** Build `CardHand.tsx` (fan layout, 5 cards, `<Card>` with AP guard + `<Tooltip>` on disabled).
+- [ ] **UI-T23** Build `CaptureBtn.tsx` (shown when adjacent to low-HP enemy on player turn).
+- [ ] **UI-T24** Wire `<CombatHud />` into `App.tsx` for `view === 'combat'`. Pointer-events overlay over canvas.
+- [ ] **UI-T25** Strip HUD code from `CombatScene.ts`; rename to `BoardScene.ts`. Delete: card hand, end-turn, move, AP indicator, mode label, all button containers. Keep: grid, units, animations, tile/unit click (spatial pickers), enemy turn loop. Net ~370 LoC removed.
+- [ ] **UI-T26** Update E2E tests: `combat-buttons.spec.ts` now targets DOM buttons; `combat-movement.spec.ts` keeps canvas tile click; new `keyboard-nav.spec.ts` exercises Tab/Enter flow.
 
-## D. Final gate
+## Phase 4 — Cross-cutting polish
 
-- [ ] **FINAL** Visual playthrough recording: title → overworld → town (visit each panel) → travel encounter → combat (move + play card + end turn + win) → dungeon (clear at least 3 rooms + boss) → exit. Each scene shows polished UI matching the design-skill outputs. README updated. CONTEXT.md drift check passes. Tag `phaser-polished`. Emit `<promise>GAME-POLISHED</promise>`.
+- [ ] **UI-T27** Respect `prefers-reduced-motion` in Card lift + ModeLabel transitions (Framer Motion `useReducedMotion` hook).
+- [ ] **UI-T28** Add `scripts/measure-bundle.mjs` + `npm run perf-gates` (asserts gzipped size ≤ baseline + 75 KB). Wire into CI gate.
+- [ ] **UI-T29** Update `phaser/CONTEXT.md` (BoardScene rename, UI components section, new architecture invariant). Final visual playthrough via Playwright MCP. Tag `phaser-ui-input-fixed`. Emit `<promise>UI-INPUT-FIXED</promise>`.
 
 ---
 
 ## Notes for the loop
 
-- **Each UI item REQUIRES invoking a design Skill first.** The skill's output (concrete design choices, palette, layout) drives the implementation. Don't skip the skill — that's how we got bare-bones UI last time.
-- **Bug fixes do NOT require design skills** — go straight to implementation with TDD.
-- **All five gates pass before check-off.** typecheck + test + test:e2e + check-context-doc + build.
-- **Manual visual verify** after each UI item using Playwright MCP screenshots.
-- Skip items prefixed `🚧 BLOCKED:`.
+- **TDD per task**: write the failing test first, run it, then implement, run again, commit. Each test+impl+commit = one iteration.
+- **All 5 build gates pass before check-off**: `typecheck`, `npm test -- --run`, `check-context-doc`, `test:e2e`, `build`.
+- **Do not skip the test step.** A wrapper without tests is a wrapper without proof of working hover/click/keyboard semantics.
+- **Visual sanity check** every Phase 2/3 task using Playwright MCP — load the scene, verify button is clickable AND hover-able AND disabled state visible.
+- **Drift safeguards**: emit `<promise>NEEDS_HUMAN_REVIEW</promise>` if 3+ consecutive `🚧 BLOCKED:` items, OR tests fail on HEAD at iteration start, OR perf gate exceeded by >50%.
+- **Cutoff**: if anything tempts adding a button/menu to Phaser canvas, stop. Spec rule: UI is DOM, board is canvas.
