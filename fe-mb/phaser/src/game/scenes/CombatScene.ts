@@ -1,6 +1,9 @@
 import Phaser from 'phaser'
 import { useCombatStore } from '../../state/combatStore'
+import { useRunStore } from '../../state/runStore'
 import { CombatRuntime } from '../runtime/CombatRuntime'
+import { createRng } from '../../systems/rng'
+import { seedStubBattle } from './seedStubBattle'
 import type { CombatEffect } from '../../domain/combatState'
 
 export class CombatScene extends Phaser.Scene {
@@ -12,7 +15,15 @@ export class CombatScene extends Phaser.Scene {
   create(): void {
     this.runtime = new CombatRuntime()
 
-    this.add.text(20, 20, 'CombatScene shell — placeholder grid', {
+    // F-02: seed stub battle if combatStore hasn't started one yet.
+    const cs = useCombatStore.getState()
+    if (cs.state.phase === 'BOOT') {
+      const runRng = useRunStore.getState().rngState
+      const event = seedStubBattle(runRng)
+      cs.dispatch(event, createRng(runRng))
+    }
+
+    this.add.text(20, 20, 'CombatScene — units seeded', {
       fontFamily: 'monospace', fontSize: '14px', color: '#a0a0c0',
     })
 
