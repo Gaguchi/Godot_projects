@@ -9,6 +9,7 @@ import { DungeonScene } from './ui/screens/DungeonScene'
 import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { QuitModal } from './ui/modals/QuitModal'
 import { BattleEndModal } from './ui/modals/BattleEndModal'
+import { DialogueModal } from './ui/modals/DialogueModal'
 import { QuestLog } from './ui/overlays/QuestLog'
 import { CombatHud } from './ui/scenes/combat/CombatHud'
 import { useCombatStore } from './state/combatStore'
@@ -199,6 +200,7 @@ export function App(): React.JSX.Element {
             onContinueToOverworld={onContinueToOverworld}
           />
           <QuestLog open={questLogOpen} onClose={() => setQuestLogOpen(false)} />
+          <DialogueModal />
           {/* Quest log key hint */}
           {(view === 'overworld' || view === 'town' || view === 'dungeon') && !questLogOpen && (
             <div style={{ position: 'fixed', bottom: 8, left: 8, fontSize: 10, color: '#5a4a30', fontFamily: 'monospace', zIndex: 100 }}>
