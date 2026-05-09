@@ -12,6 +12,7 @@ import { BattleEndModal } from './ui/modals/BattleEndModal'
 import { DialogueModal } from './ui/modals/DialogueModal'
 import { QuestLog } from './ui/overlays/QuestLog'
 import { CombatHud } from './ui/scenes/combat/CombatHud'
+import { bootstrapDialogues } from './state/dialogueBootstrap'
 import { useCombatStore } from './state/combatStore'
 import { useRunStore } from './state/runStore'
 import { asNodeId } from './domain/ids'
@@ -25,6 +26,9 @@ const eventBus = createEventBus()
 const actionLog = createActionLog()
 
 export const __busRefs = { errorBus, eventBus, actionLog }
+
+// One-shot dialogue registry bootstrap so DialogueModal can find trees by id.
+bootstrapDialogues()
 
 // Dev-only debug surface so E2E + manual testing can read store state and
 // dispatch events from the browser console. Tree-shaken in production.

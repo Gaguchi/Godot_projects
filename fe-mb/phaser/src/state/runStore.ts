@@ -25,6 +25,10 @@ export interface RunState {
   deathLog: { unitId: UnitId; cause: string; turn: number }[]
   /** GP-B3: when set, the DialogueModal renders with the current dialogue tree + node. */
   pendingDialogue: { dialogueId: DialogueId; nodeId: string } | null
+  /** GP-C5: ids of one-shot encounter entries already fired (excluded from future rolls). */
+  oneShotsFired: Set<string>
+  /** GP-C6: HP damage applied to whole party when food = 0 on a hop. */
+  starvationDamagePerHop: number
 }
 
 export type RunAction =
@@ -45,6 +49,8 @@ export type RunAction =
   | { type: 'applyQuestEffects'; payload: { effects: QuestEffect[] } }
   | { type: 'startDialogue'; payload: { dialogueId: DialogueId; nodeId: string } }
   | { type: 'endDialogue' }
+  | { type: 'markEncounterFired'; payload: { encounterId: string } }
+  | { type: 'consumeFoodPerHop' }
 
 interface RunStateWithDispatch extends RunState {
   dispatch(action: RunAction): void
@@ -174,6 +180,8 @@ function freshState(): RunState {
     rngState: { seed: 0, counter: 0 },
     deathLog: [],
     pendingDialogue: null,
+    oneShotsFired: new Set<string>(),
+    starvationDamagePerHop: 3,
   }
 }
 
@@ -316,6 +324,34 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
       case 'endDialogue':
         set({ pendingDialogue: null })
         return
+      case 'markEncounterFired':
+        set(s => {
+          const next = new Set(s.oneShotsFired); next.add(action.payload.encounterId)
+          return { oneShotsFired: next }
+        })
+        return
+      case 'consumeFoodPerHop': {
+        // Find the first food_rations item in the bag; remove one. If no
+        // food remains, deal starvationDamagePerHop HP to each living party
+        // member (mirrors Godot starvation rule).
+        const state = get()
+        const idx = state.inventory.items.findIndex(i => (i.itemId as unknown as string) === 'food_rations')
+        if (idx >= 0) {
+          set(s => ({
+            inventory: { items: s.inventory.items.filter((_, i) => i !== idx) },
+          }))
+        } else {
+          set(s => {
+            const newUnits: Record<string, Unit> = {}
+            for (const [id, u] of Object.entries(s.party.units)) {
+              if (u.hp.current <= 0) { newUnits[id] = u; continue }
+              newUnits[id] = { ...u, hp: { ...u.hp, current: Math.max(0, u.hp.current - s.starvationDamagePerHop) } }
+            }
+            return { party: { ...s.party, units: newUnits } }
+          })
+        }
+        return
+      }
     }
   },
   __resetForTest() { set(freshState()) },

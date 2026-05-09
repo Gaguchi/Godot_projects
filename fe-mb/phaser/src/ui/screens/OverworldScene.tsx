@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react'
 import overworldJson from '../../data/content/overworld/pine_borderlands.json'
-import { useRunStore } from '../../state/runStore'
-import { asNodeId, asMapId } from '../../domain/ids'
+import borderlandsRoad from '../../data/content/encounters/borderlands_road.json'
+import { useRunStore, predicateStateFromRun } from '../../state/runStore'
+import { asNodeId, asMapId, asDialogueId } from '../../domain/ids'
 import type { NodeId } from '../../domain/ids'
 import { createRng, deriveRng } from '../../systems/rng'
+import { rollEncounter } from '../../systems/encounterRoller'
+import type { EncounterTable } from '../../domain/encounter'
 import { Pressable } from '../components'
 
 const NODE_TYPE_ICON: Record<string, string> = {
@@ -68,21 +71,56 @@ export function OverworldScene({
     const rngState = useRunStore.getState().rngState
     const parent = createRng(rngState)
     const hopRng = deriveRng(parent, `hop:${currentNodeId}->${nodeId}`)
-    const roll = hopRng.next()
 
-    if (roll < rollChance && type !== 'town' && type !== 'dungeon' && type !== 'exit') {
-      dispatchRun({
-        type: 'startTravelPath',
-        payload: {
-          path: {
-            remainingNodeIds: [asNodeId(nodeId)],
-            totalHopsThisLeg: 1,
-            rngBranch: rngState,
-          },
-        },
-      })
-      _onTravelToCombat(asNodeId(nodeId))
-      return
+    // GP-C6: every hop costs food (or HP if starving).
+    dispatchRun({ type: 'consumeFoodPerHop' })
+
+    // GP-C5: if the edge tier rolls into encounter range, ask the encounter
+    // roller to pick a dialogue or battle outcome (filtered by predicates +
+    // one-shots-fired). Towns/dungeons/exits never trigger travel encounters.
+    const shouldRoll = hopRng.next() < rollChance
+      && type !== 'town' && type !== 'dungeon' && type !== 'exit'
+
+    if (shouldRoll) {
+      const encounterRng = deriveRng(parent, `encounter:${currentNodeId}->${nodeId}`)
+      const oneShots = useRunStore.getState().oneShotsFired
+      const result = rollEncounter(
+        borderlandsRoad as EncounterTable,
+        predicateStateFromRun(useRunStore.getState()),
+        oneShots,
+        encounterRng,
+      )
+      if (result) {
+        if (result.oneShot) {
+          dispatchRun({ type: 'markEncounterFired', payload: { encounterId: result.entryId } })
+        }
+        if (result.outcome.kind === 'dialogue') {
+          // Open the dialogue modal. Travel resumes after the modal closes
+          // (the OverworldScene re-renders without the modal and the player
+          // can pick the same destination again, but pendingDialogue blocks
+          // further node clicks via the modal's pointer-events overlay).
+          dispatchRun({
+            type: 'startDialogue',
+            payload: { dialogueId: asDialogueId(result.outcome.dialogueId), nodeId: 'start' },
+          })
+          return
+        }
+        if (result.outcome.kind === 'battle') {
+          dispatchRun({
+            type: 'startTravelPath',
+            payload: {
+              path: {
+                remainingNodeIds: [asNodeId(nodeId)],
+                totalHopsThisLeg: 1,
+                rngBranch: rngState,
+              },
+            },
+          })
+          _onTravelToCombat(asNodeId(nodeId))
+          return
+        }
+      }
+      // Roller returned null (no eligible entries) — fall through to normal arrival.
     }
 
     dispatchRun({ type: 'arriveAtNode', payload: { nodeId: asNodeId(nodeId) } })

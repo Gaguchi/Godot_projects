@@ -70,7 +70,7 @@ Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, 
 
 Helper: `predicateStateFromRun(s)` reifies a `RunState` into the `PredicateState` shape questRunner / dialogueRunner expect.
 
-Dialogue registry (`state/dialogueRegistry.ts`): in-memory `DialogueTree` registry — `registerDialogue`, `getDialogue`, `clearDialogues`, `listDialogueIds`. Populated from `data/content/dialogue/*.json` in GP-B5.
+Dialogue registry (`state/dialogueRegistry.ts`): in-memory `DialogueTree` registry — `registerDialogue`, `getDialogue`, `clearDialogues`, `listDialogueIds`. `state/dialogueBootstrap.ts` exports `bootstrapDialogues()` which loads the 8 ported trees on App boot.
 
 **`combatStore` events** (`CombatEvent` union, see `domain/combatState.ts`):
 - `startBattle { units, grid, rngSeed }`
