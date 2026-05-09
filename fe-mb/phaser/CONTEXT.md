@@ -223,6 +223,9 @@ phaser/src/
 | OQ-5 | Save migration ladder activation point — when does player count justify it? | project owner | post-foundation |
 | OQ-6 | Audio engine: Phaser built-in vs Howler vs Web Audio API direct | TBD | polish milestone |
 | OQ-7 | Mobile/Steam Deck targeting — affects bag size / save quotas | TBD | v1.0 planning |
+| OQ-8 | `QuestEffect.spawnNode` payload shape — inline `MapNodeDef` vs registry-by-id? Godot inlines `{x,y,connections,battle}` per quest_node. (research #3) | TBD | Quest system implementation (Week 2) |
+| OQ-9 | `QuestEffect.recruitUnit` — extend with `{statOverrides, weaponItemId}` for Godot parity, OR require `UnitTemplateDef` registry lookup by class+level? (research #3) | TBD | Recruitment milestone |
+| OQ-10 | Capture-target resolution shape — add `'UnitCaptured' \| 'UnitKilled'` to `QuestListenerEvent` + `unitCaptured` predicate, vs separate `BattleEncounterDef.captureTargets[]`? (research #3) | TBD | Quest system implementation (Week 2) |
 
 ---
 
