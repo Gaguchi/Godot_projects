@@ -36,7 +36,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 - [x] **UI-T14** Migrate `QuestLog.tsx` → `<Dialog>` + `<Button>` + `<Heading>`. ✅ Bundle 471.96 KB.
 - [x] **UI-T15** Migrate `OverworldScene.tsx` → `<Pressable>` for round map nodes. ✅ All inline `onMouseEnter`/`onMouseLeave` and `useState(hoverNodeId)` deleted; data-[hovered]: variants drive the scale-up + glow. `id` prop added to Pressable to keep e2e selector compatibility (`#node-pine_crossing`). Bundle 472.19 KB.
 - [x] **UI-T16** Migrate `TownScene.tsx` → `<Button>` sidebar + buy/sell + tavern accept. ✅ Active panel = primary variant; others = secondary. Inn heal uses isDisabled + on-button label conveys gold need ("Need 24g"). Bundle 471.99 KB.
-- [ ] **UI-T17** Migrate `DungeonScene.tsx` → `<Pressable>` rooms + `<Button variant=danger>` Retreat.
+- [x] **UI-T17** Migrate `DungeonScene.tsx` → `<Pressable>` rooms + `<Button variant=danger>` Retreat. ✅ Phase 2 complete. All 8 non-combat scenes/modals now use the wrapper layer. Bundle 471.69 KB.
 
 ## Phase 3 — Combat HUD migration + BoardScene reduction
 
