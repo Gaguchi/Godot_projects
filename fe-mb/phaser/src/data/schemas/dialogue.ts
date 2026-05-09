@@ -2,13 +2,21 @@ import { z } from 'zod'
 import { PredicateSchema } from './predicate'
 import { QuestEffectSchema } from './quest'
 
+export const DialogueBranchSchema = z.object({
+  kind: z.literal('statCheck'),
+  stat: z.enum(['str', 'mag', 'skl', 'spd', 'def', 'res', 'lck']),
+  threshold: z.number().int(),
+  successNext: z.union([z.string(), z.literal('end')]),
+  failNext: z.union([z.string(), z.literal('end')]),
+})
+
 export const DialogueChoiceSchema = z.object({
   id: z.string(),
   text: z.string(),
   visibleIf: PredicateSchema.optional(),
   enabledIf: PredicateSchema.optional(),
   effects: z.array(QuestEffectSchema),
-  next: z.union([z.string(), z.literal('end')]),
+  next: z.union([z.string(), z.literal('end'), DialogueBranchSchema]),
 })
 
 export const DialogueNodeSchema = z.object({

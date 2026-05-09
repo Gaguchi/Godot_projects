@@ -1,0 +1,66 @@
+{
+  "id": "blood_ties_daren_killed",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "...He's dead, then.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "payment"
+        }
+      ],
+      "speaker": "Kael"
+    },
+    "payment": {
+      "id": "payment",
+      "text": "I asked you to bring him back alive. But... the bandits gave you no choice. I understand.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "gold"
+        }
+      ],
+      "speaker": "Kael"
+    },
+    "gold": {
+      "id": "gold",
+      "text": "Here's 80 gold for dealing with the gang. I need some time alone.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Kael",
+      "onEnter": [
+        {
+          "kind": "addGold",
+          "amount": 80
+        },
+        {
+          "kind": "advanceQuestStage",
+          "questId": "sq_blood_ties",
+          "toStage": "daren_resolved"
+        },
+        {
+          "kind": "completeQuest",
+          "questId": "sq_blood_ties"
+        },
+        {
+          "kind": "setFlag",
+          "key": "sq_blood_ties_daren_killed",
+          "value": true,
+          "scope": "permanent"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "id": "wounded_traveler",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "Please... help me. Bandits took everything. I just need some food to make it to the next town.",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "Give food (2 rations)",
+          "effects": [
+            {
+              "kind": "addFood",
+              "amount": -2
+            },
+            {
+              "kind": "setFlag",
+              "key": "helped_traveler",
+              "value": true,
+              "scope": "permanent"
+            }
+          ],
+          "next": "give_food"
+        },
+        {
+          "id": "c1",
+          "text": "Give gold (5 gold)",
+          "effects": [
+            {
+              "kind": "addGold",
+              "amount": -5
+            },
+            {
+              "kind": "setFlag",
+              "key": "helped_traveler",
+              "value": true,
+              "scope": "permanent"
+            }
+          ],
+          "next": "give_gold",
+          "visibleIf": {
+            "kind": "goldAtLeast",
+            "amount": 5
+          }
+        },
+        {
+          "id": "c2",
+          "text": "Sorry, we can't spare anything.",
+          "effects": [],
+          "next": "refuse"
+        }
+      ],
+      "speaker": "Wounded Traveler"
+    },
+    "give_food": {
+      "id": "give_food",
+      "text": "Bless you. Take this — it's all I have left, but you need it more than me now.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Wounded Traveler",
+      "onEnter": [
+        {
+          "kind": "addGold",
+          "amount": 8
+        }
+      ]
+    },
+    "give_gold": {
+      "id": "give_gold",
+      "text": "Thank you, kind souls. I heard there's a hidden cache near the old ruins. Maybe it'll help you.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Wounded Traveler",
+      "onEnter": [
+        {
+          "kind": "addFood",
+          "amount": 1
+        }
+      ]
+    },
+    "refuse": {
+      "id": "refuse",
+      "text": "I... I understand. The road is hard on everyone.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Wounded Traveler"
+    }
+  }
+}

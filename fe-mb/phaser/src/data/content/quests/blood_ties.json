@@ -1,0 +1,88 @@
+{
+  "id": "sq_blood_ties",
+  "name": "Blood Ties",
+  "initialStage": "find_daren",
+  "stages": {
+    "find_daren": {
+      "id": "find_daren",
+      "onEnter": [
+        {
+          "kind": "spawnNode",
+          "ref": {
+            "mapKind": "overworld",
+            "mapId": "borderlands",
+            "nodeId": "darens_camp"
+          }
+        }
+      ],
+      "listeners": [
+        {
+          "on": "FlagSet",
+          "predicate": { "kind": "flag", "key": "daren_captured", "equals": true },
+          "emit": [
+            { "kind": "advanceQuestStage", "questId": "sq_blood_ties", "toStage": "daren_resolved" }
+          ]
+        },
+        {
+          "on": "FlagSet",
+          "predicate": { "kind": "flag", "key": "daren_killed", "equals": true },
+          "emit": [
+            { "kind": "advanceQuestStage", "questId": "sq_blood_ties", "toStage": "daren_resolved" }
+          ]
+        }
+      ],
+      "transitions": [
+        {
+          "when": {
+            "kind": "anyOf",
+            "preds": [
+              { "kind": "flag", "key": "daren_captured", "equals": true },
+              { "kind": "flag", "key": "daren_killed", "equals": true }
+            ]
+          },
+          "to": "daren_resolved"
+        }
+      ],
+      "onExit": []
+    },
+    "daren_resolved": {
+      "id": "daren_resolved",
+      "onEnter": [
+        {
+          "kind": "unlockNode",
+          "ref": {
+            "mapKind": "overworld",
+            "mapId": "borderlands",
+            "nodeId": "darens_camp"
+          }
+        }
+      ],
+      "listeners": [],
+      "transitions": [
+        {
+          "when": {
+            "kind": "allOf",
+            "preds": [
+              { "kind": "questStage", "questId": "sq_blood_ties", "stage": "daren_resolved" },
+              {
+                "kind": "anyOf",
+                "preds": [
+                  { "kind": "flag", "key": "blood_ties_reward_claimed", "equals": true }
+                ]
+              }
+            ]
+          },
+          "to": "__complete__"
+        }
+      ],
+      "onExit": []
+    },
+    "__complete__": {
+      "id": "__complete__",
+      "onEnter": [],
+      "listeners": [],
+      "transitions": [],
+      "onExit": []
+    }
+  }
+}

@@ -132,6 +132,28 @@ function applyQuestEffect(
       for (const sub of branch) applyQuestEffect(sub, get, set)
       return
     }
+    case 'advanceQuestStage':
+      set(s => ({
+        questStates: {
+          ...s.questStates,
+          [effect.questId as unknown as string]: {
+            currentStage: effect.toStage as unknown as string,
+            metadata: s.questStates[effect.questId as unknown as string]?.metadata ?? {},
+          },
+        },
+      }))
+      return
+    case 'startCombat':
+      // Combat seeding from a dialogue effect lands in GP-C5 when the encounter
+      // roller wires combat boots through the runStore. For now, set a flag so
+      // the next overworld arrival or test can react.
+      get().flags.set(
+        ('pending_combat_group:' + effect.enemyGroupId) as never,
+        true as unknown,
+        'run',
+      )
+      set({})
+      return
   }
 }
 

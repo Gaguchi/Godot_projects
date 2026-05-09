@@ -1,0 +1,83 @@
+{
+  "id": "road_merchant",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "Hail, travelers! I've got wares if you've got coin. Some fresh supplies, perhaps?",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "Buy food (10 gold)",
+          "effects": [
+            {
+              "kind": "addGold",
+              "amount": -10
+            },
+            {
+              "kind": "addFood",
+              "amount": 3
+            }
+          ],
+          "next": "buy_food",
+          "visibleIf": {
+            "kind": "goldAtLeast",
+            "amount": 10
+          }
+        },
+        {
+          "id": "c1",
+          "text": "Ask about the road ahead",
+          "effects": [],
+          "next": "road_info"
+        },
+        {
+          "id": "c2",
+          "text": "No thanks. Safe travels.",
+          "effects": [],
+          "next": "decline"
+        }
+      ],
+      "speaker": "Traveling Merchant"
+    },
+    "buy_food": {
+      "id": "buy_food",
+      "text": "Three days' rations, packed and ready. You won't regret it on the long road ahead.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Traveling Merchant"
+    },
+    "road_info": {
+      "id": "road_info",
+      "text": "Watch yourself out there. I saw brigands camped near the southern crossroads. Nasty lot.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Traveling Merchant"
+    },
+    "decline": {
+      "id": "decline",
+      "text": "Suit yourself. The road is long and lonely — may fortune favor you.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Traveling Merchant"
+    }
+  }
+}

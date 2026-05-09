@@ -1,0 +1,80 @@
+{
+  "id": "blood_ties_daren_captured",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "You did it. You actually brought him back alive.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "daren_speaks"
+        }
+      ],
+      "speaker": "Kael"
+    },
+    "daren_speaks": {
+      "id": "daren_speaks",
+      "text": "Kael...? I thought you'd given up on me.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "kael_response"
+        }
+      ],
+      "speaker": "Daren"
+    },
+    "kael_response": {
+      "id": "kael_response",
+      "text": "Never. But you're done running with bandits. I'll sort you out myself.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "join"
+        }
+      ],
+      "speaker": "Kael"
+    },
+    "join": {
+      "id": "join",
+      "text": "A deal's a deal. You've earned my bow and my skills. Where you go, I go.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Kael",
+      "onEnter": [
+        {
+          "kind": "recruitUnit",
+          "classId": "bounty_hunter",
+          "level": 3
+        },
+        {
+          "kind": "advanceQuestStage",
+          "questId": "sq_blood_ties",
+          "toStage": "daren_resolved"
+        },
+        {
+          "kind": "completeQuest",
+          "questId": "sq_blood_ties"
+        },
+        {
+          "kind": "setFlag",
+          "key": "sq_blood_ties_daren_captured",
+          "value": true,
+          "scope": "permanent"
+        }
+      ]
+    }
+  }
+}

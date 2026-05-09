@@ -23,6 +23,8 @@ export const QuestEffectSchema: z.ZodType<unknown> = z.lazy(() =>
       successEffects: z.array(QuestEffectSchema),
       failEffects: z.array(QuestEffectSchema),
     }),
+    z.object({ kind: z.literal('advanceQuestStage'), questId: z.string(), toStage: z.string() }),
+    z.object({ kind: z.literal('startCombat'), enemyGroupId: z.string() }),
   ])
 )
 

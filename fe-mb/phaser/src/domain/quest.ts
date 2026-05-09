@@ -1,4 +1,5 @@
 import type { QuestId, StageId, FlagKey, ClassId, DialogueId } from './ids'
+// QuestId, StageId already imported above; both referenced by advanceQuestStage
 import type { Predicate } from './predicate'
 import type { MapNodeRef } from './map'
 
@@ -23,6 +24,8 @@ export type QuestEffect =
   | { kind: 'damageParty'; amount: number }
   | { kind: 'healParty'; percent: number }
   | { kind: 'statCheck'; stat: StatKind; threshold: number; successEffects: QuestEffect[]; failEffects: QuestEffect[] }
+  | { kind: 'advanceQuestStage'; questId: QuestId; toStage: StageId }
+  | { kind: 'startCombat'; enemyGroupId: string }
 
 export type QuestListenerEvent = 'BattleVictory' | 'LocationArrived' | 'FlagSet'
 

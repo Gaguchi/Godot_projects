@@ -1,0 +1,89 @@
+{
+  "id": "prologue",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "The borderlands grow restless. Bandits prey on travelers, and darker things stir in the forgotten places of the realm.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "intro_2"
+        }
+      ]
+    },
+    "intro_2": {
+      "id": "intro_2",
+      "text": "Your small company — three souls bound by duty — has been charged with crossing the frontier before winter seals the mountain passes.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "intro_3"
+        }
+      ]
+    },
+    "intro_3": {
+      "id": "intro_3",
+      "text": "We'll need to stock up on food and supplies before heading out. Towns have shops and inns, and camps along the road offer a place to rest.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "intro_4"
+        }
+      ],
+      "speaker": "Roy"
+    },
+    "intro_4": {
+      "id": "intro_4",
+      "text": "Stay alert on the roads between settlements. Brigands and beasts can ambush us at any time. The longer the route, the more likely we run into trouble.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "intro_5"
+        }
+      ],
+      "speaker": "Marcus"
+    },
+    "intro_5": {
+      "id": "intro_5",
+      "text": "We should check the taverns when we reach a town. Rumors and travelers with useful information tend to gather there.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "intro_6"
+        }
+      ],
+      "speaker": "Lilina"
+    },
+    "intro_6": {
+      "id": "intro_6",
+      "text": "Click a connected location on the map to travel there. Each hop costs food and may trigger encounters. Choose your path wisely, commander.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "onEnter": [
+        {
+          "kind": "setFlag",
+          "key": "prologue_seen",
+          "value": true,
+          "scope": "permanent"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "id": "test_event_crossroads",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "A massive fallen tree blocks the path ahead. The wood is thick and heavy.",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "Try to move it",
+          "effects": [],
+          "next": {
+            "kind": "statCheck",
+            "stat": "str",
+            "threshold": 15,
+            "successNext": "moved_tree",
+            "failNext": "failed_move"
+          }
+        },
+        {
+          "id": "c1",
+          "text": "Look for another way around",
+          "effects": [],
+          "next": "detour"
+        },
+        {
+          "id": "c2",
+          "text": "Search the area while here",
+          "effects": [],
+          "next": "search"
+        }
+      ],
+      "speaker": "Narrator"
+    },
+    "moved_tree": {
+      "id": "moved_tree",
+      "text": "With great effort, the tree is pushed aside! You find a pouch of gold underneath.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Narrator",
+      "onEnter": [
+        {
+          "kind": "addGold",
+          "amount": 25
+        },
+        {
+          "kind": "setFlag",
+          "key": "crossroads_cleared",
+          "value": true,
+          "scope": "permanent"
+        }
+      ]
+    },
+    "failed_move": {
+      "id": "failed_move",
+      "text": "The tree won't budge. Your party is bruised from the effort.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "detour_forced"
+        }
+      ],
+      "speaker": "Narrator",
+      "onEnter": [
+        {
+          "kind": "damageParty",
+          "amount": 3
+        }
+      ]
+    },
+    "detour": {
+      "id": "detour",
+      "text": "You take a longer path through the brush. It costs extra supplies but you arrive safely.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Narrator",
+      "onEnter": [
+        {
+          "kind": "addFood",
+          "amount": -1
+        }
+      ]
+    },
+    "detour_forced": {
+      "id": "detour_forced",
+      "text": "You'll have to go the long way around. The detour costs extra supplies.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Narrator",
+      "onEnter": [
+        {
+          "kind": "addFood",
+          "amount": -1
+        }
+      ]
+    },
+    "search": {
+      "id": "search",
+      "text": "While searching, you find some supplies someone stashed nearby. Useful!",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Narrator",
+      "onEnter": [
+        {
+          "kind": "addFood",
+          "amount": 2
+        }
+      ]
+    }
+  }
+}

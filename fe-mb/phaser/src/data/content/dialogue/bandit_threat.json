@@ -1,0 +1,108 @@
+{
+  "id": "bandit_threat",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "Hold it right there! This road has a toll now. Pay up or draw steel.",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "Pay the toll (15 gold)",
+          "effects": [
+            {
+              "kind": "addGold",
+              "amount": -15
+            }
+          ],
+          "next": "pay",
+          "visibleIf": {
+            "kind": "goldAtLeast",
+            "amount": 15
+          }
+        },
+        {
+          "id": "c1",
+          "text": "Intimidate them (STR check)",
+          "effects": [],
+          "next": {
+            "kind": "statCheck",
+            "stat": "str",
+            "threshold": 12,
+            "successNext": "intimidate_success",
+            "failNext": "intimidate_fail"
+          }
+        },
+        {
+          "id": "c2",
+          "text": "Fight them!",
+          "effects": [
+            {
+              "kind": "startCombat",
+              "enemyGroupId": "bandits_small"
+            }
+          ],
+          "next": "fight"
+        }
+      ],
+      "speaker": "Bandit Leader"
+    },
+    "pay": {
+      "id": "pay",
+      "text": "Smart choice. You can pass. This time.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Bandit Leader"
+    },
+    "intimidate_success": {
+      "id": "intimidate_success",
+      "text": "Whoa, easy now! We don't want trouble. Go on through, no charge.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Bandit Leader"
+    },
+    "intimidate_fail": {
+      "id": "intimidate_fail",
+      "text": "Ha! Nice try. But you don't scare us. Get 'em, boys!",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Bandit Leader",
+      "onEnter": [
+        {
+          "kind": "startCombat",
+          "enemyGroupId": "bandits_small"
+        }
+      ]
+    },
+    "fight": {
+      "id": "fight",
+      "text": "The bandits draw their weapons!",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    }
+  }
+}

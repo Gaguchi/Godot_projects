@@ -1,8 +1,12 @@
-import type { DialogueTree, DialogueChoice } from '../domain/dialogue'
+import type { DialogueTree, DialogueChoice, DialogueBranch } from '../domain/dialogue'
 import type { DialogueNodeId } from '../domain/ids'
 import type { QuestEffect } from '../domain/quest'
 import type { PredicateState } from './predicates'
 import { evaluatePredicate } from './predicates'
+
+function isBranch(next: DialogueChoice['next']): next is DialogueBranch {
+  return typeof next === 'object' && next !== null && 'kind' in next
+}
 
 export interface StepResult {
   nextNodeId: DialogueNodeId | 'end'
@@ -25,11 +29,31 @@ export function isChoiceEnabled(choice: DialogueChoice, state: PredicateState): 
   return !choice.enabledIf || evaluatePredicate(choice.enabledIf, state)
 }
 
+export interface ResolveBranchPartyState {
+  /** Sum the stat across the active party. */
+  partyStatTotal(stat: 'str' | 'mag' | 'skl' | 'spd' | 'def' | 'res' | 'lck'): number
+}
+
+export function resolveNext(
+  next: DialogueChoice['next'],
+  party: ResolveBranchPartyState,
+): DialogueNodeId | 'end' {
+  if (isBranch(next)) {
+    if (next.kind === 'statCheck') {
+      // 'lck' folded to 0 if party stats don't include it
+      const total = party.partyStatTotal(next.stat)
+      return total >= next.threshold ? next.successNext : next.failNext
+    }
+  }
+  return next as DialogueNodeId | 'end'
+}
+
 export function step(
   tree: DialogueTree,
   currentNodeId: DialogueNodeId,
   choiceId: string,
   state: PredicateState,
+  party?: ResolveBranchPartyState,
 ): StepResult {
   const node = tree.nodes[currentNodeId as unknown as string]
   if (!node) throw new Error(`dialogueRunner: unknown node ${currentNodeId as unknown as string}`)
@@ -41,5 +65,8 @@ export function step(
   if (choice.enabledIf && !evaluatePredicate(choice.enabledIf, state)) {
     throw new Error(`dialogueRunner: choice ${choiceId} not enabled`)
   }
-  return { nextNodeId: choice.next, effects: choice.effects }
+  // For statCheck-branch choices, party must be supplied; if missing, the
+  // branch falls back to failNext (treat as a failed check).
+  const effectiveParty: ResolveBranchPartyState = party ?? { partyStatTotal: () => 0 }
+  return { nextNodeId: resolveNext(choice.next, effectiveParty), effects: choice.effects }
 }
