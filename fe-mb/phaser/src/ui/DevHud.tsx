@@ -15,7 +15,9 @@ export function DevHud({ errorBus, eventBus, actionLog }: Props): React.JSX.Elem
   const [errors, setErrors] = useState<ErrorEntry[]>([])
   const [events, setEvents] = useState<DomainEvent[]>([])
   const [actions, setActions] = useState<ActionLogEntry[]>([])
-  const [open, setOpen] = useState(true)
+  // Default to closed so the panel doesn't intercept clicks on the bottom-right
+  // CombatHud buttons in dev. Toggle with the small "Dev HUD" launcher.
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     if (!isDev) return

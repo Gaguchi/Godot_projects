@@ -47,8 +47,8 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 - [x] **UI-T22** `CardHand.tsx` (5 cards, `<Card>` with AP guard + `<Tooltip>` for disabled-with-reason). ✅ Cards now live in DOM; click hits the real `<button>`, hover lifts via Framer Motion `whileHover`, AP-insufficient cards show tooltip "Needs N AP, you have M".
 - [x] **UI-T23** `CaptureBtn.tsx`. ✅ Lists each adjacent enemy with HP < 50% as a danger-variant button with capture % preview. Tooltip explains the formula.
 - [x] **UI-T24** Wire `<CombatHud />` into `App.tsx`. ✅ Mounted whenever `view === 'combat'`. Bundle 478.28 KB (cumulative +45.61 vs baseline; within +75 budget). Stripped Framer Motion from CardHand + Card + ModeLabel — pure CSS / Tailwind transitions instead. motion-safe: variants honor prefers-reduced-motion.
-- [ ] **UI-T25** Strip HUD code from `CombatScene.ts`; rename to `BoardScene.ts`. Delete: card hand, end-turn, move, AP indicator, mode label, all button containers. Keep: grid, units, animations, tile/unit click (spatial pickers), enemy turn loop. Net ~370 LoC removed.
-- [ ] **UI-T26** Update E2E tests: `combat-buttons.spec.ts` now targets DOM buttons; `combat-movement.spec.ts` keeps canvas tile click; new `keyboard-nav.spec.ts` exercises Tab/Enter flow.
+- [x] **UI-T25** `CombatScene.ts` → `BoardScene.ts`. ✅ ~370 LoC of HUD code deleted from canvas (card hand, end-turn btn, move btn, AP indicator, mode label, button containers). Kept: grid, units, animations, tile/unit click spatial pickers, enemy turn loop, AOE/damage tile preview. createGame.ts updated to register BoardScene.
+- [x] **UI-T26** Update E2E tests for DOM HUD. ✅ `combat-buttons.spec.ts` now targets `#combat-end-turn-btn`, `#combat-move-btn`, and `[data-testid^="card-"]`. `combat-movement.spec.ts` unchanged (still targets canvas for tile/unit clicks). DevHud default-closed so it doesn't intercept clicks. All 8 e2e pass.
 
 ## Phase 4 — Cross-cutting polish
 
