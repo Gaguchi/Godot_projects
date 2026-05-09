@@ -216,7 +216,7 @@ phaser/src/
 
 | # | Question | Owner | Decision deadline |
 |---|---|---|---|
-| OQ-1 | Dungeon fog-of-war: full reveal / lookahead-1 / reveal-on-enter? | research deliverable #1 | Week 6 (foundation end) |
+| ~~OQ-1~~ | ~~Dungeon fog-of-war~~ → **CLOSED 2026-05-09**: full reveal at dungeon entry; Event node *contents* hidden until entered. See `docs/research/sts-procgen.md`. |
 | OQ-2 | Overworld procgen vs hand-authoring (Godot has hand-authored JSON; TS can do either) | TBD | next milestone |
 | OQ-3 | Recruitment cost formula for tavern recruits | TBD | recruitment milestone |
 | OQ-4 | Animation timing as data — `card.effects[].durationMs` granularity | TBD | combat-rendering milestone |
