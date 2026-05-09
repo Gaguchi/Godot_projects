@@ -26,8 +26,8 @@ Read this file each iteration. Pick the next unchecked item. Build the entire fe
 ## B. Overworld Layer (React DOM scene)
 
 - [x] **F-11** Overworld scene React component: tile-based map render reading from MapRegistry's stub overworld + a real `pine_borderlands.json` map (5 locations: Pine Crossing TOWN, Frontier Camp CAMP, North Watch CAMP, Smuggler's Cave DUNGEON, Iron Throne EXIT, with edges and terrain). Pawn icon at `runStore.worldPosition.nodeId`. View transition `'combat' → 'overworld'` on victory; `'title' → 'overworld'` on New Game (skip the stub combat boot once overworld lands). — `4182f67` 2026-05-09
-- [x] **F-12** Travel + per-hop encounter rolls: clicking a connected node animates pawn along the path, fires `runStore.consumeTravelHop` per step, rolls encounter via `deriveRng(runRng, 'hop:N')` against `WorldEdge.encounterTableId`. On combat encounter: build `CombatBootRequest` with `returnTo = { sceneId: 'overworld', resumeWith: pendingTravelPath }`, dispatch `combatStore.startBattle`, set view to 'combat'. Return-to-overworld on victory consumes path. — pending-sha 2026-05-09
-- [x] **F-13** Visited / cleared node indicators on overworld map; current pawn position highlighted; node-type icons (TOWN ⌂, CAMP ⛺, DUNGEON ⚔, EXIT ▶); quest indicator `!` driven by active quest `location_indicators` (real wiring in F-19). — pending-sha 2026-05-09
+- [x] **F-12** Travel + per-hop encounter rolls: clicking a connected node animates pawn along the path, fires `runStore.consumeTravelHop` per step, rolls encounter via `deriveRng(runRng, 'hop:N')` against `WorldEdge.encounterTableId`. On combat encounter: build `CombatBootRequest` with `returnTo = { sceneId: 'overworld', resumeWith: pendingTravelPath }`, dispatch `combatStore.startBattle`, set view to 'combat'. Return-to-overworld on victory consumes path. — `076e3b0` 2026-05-09
+- [x] **F-13** Visited / cleared node indicators on overworld map; current pawn position highlighted; node-type icons (TOWN ⌂, CAMP ⛺, DUNGEON ⚔, EXIT ▶); quest indicator `!` driven by active quest `location_indicators` (real wiring in F-19). — `076e3b0` 2026-05-09
 
 ## C. Town Layer (React DOM)
 
