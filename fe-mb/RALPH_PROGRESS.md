@@ -16,7 +16,7 @@ Each iteration completes ONE task end-to-end (TDD: failing test → implementati
 - [x] **GP-A3** Delete `systems/deckBuilder.ts` + dead test (no callers). ✅ Combined with A1 since A1's typecheck depended on A3's deletion (deckBuilder consumed `Item.gearCards`).
 - [x] **GP-A4** Drop `ItemAcquired` event, `grantItem` quest effect, `hasItem` predicate. ✅ equipHand was already gone in A2. Domain types + Zod schemas + questRunner table + predicate eval all updated. 179 tests pass (was 180; -1 from hasItem test).
 - [x] **GP-A5** Drop `loot` field from `BattleResult`. ✅ contracts/crossStoreActions.ts, battleResolver.ts (drop loot:[]), runStore.applyBattleResult (drop r.loot.map block) all clean. ItemId import dropped from contracts.
-- [ ] **GP-A6** Bump `SAVE_VERSION` to `'0.6.0-cards-only'`. Drop `hand`/`loot` from save schema. Drop `itemId` alias.
+- [x] **GP-A6** SAVE_VERSION bumped to '0.6.0-cards-only'. ✅ partyUnits is z.array(z.unknown()) so no schema change needed for unit.hand removal — Zod just accepts whatever shape. inventoryItems retained for consumables. itemId alias kept (still resolves food_rations/healing_potion/power_elixir). Phase A (equipment removal) complete.
 
 ## Phase B — Quest engine + dialogue infrastructure
 
