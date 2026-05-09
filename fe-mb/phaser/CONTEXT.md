@@ -10,11 +10,11 @@
 
 ## 1. Architecture Invariants (≤25 lines)
 
-1. **Combat = Phaser canvas only.** Everything else (overworld, town, shop, inventory, deck preview, dialogue, modals) = React DOM with Tailwind.
+1. **Phaser is BOARD only.** `BoardScene` renders tiles, units, in-world animations, terrain. ALL UI (cards, hand, HUD, end-turn, AP, menus, shop, inventory, dialog, tooltips, modals) is React DOM via `src/ui/components/` wrappers over `react-aria-components`. Spatial pickers (tile click, unit click) stay on canvas because they're geometric selection, not UI buttons. Adding a button or menu to canvas reopens the rex-ui-clone trap — render in HUD instead. See `2026-05-09-ui-input-overhaul-design.md`.
 2. **Three Zustand stores, single dispatch each:** `metaStore` (cross-run unlocks), `runStore` (current run), `combatStore` (current battle, ephemeral). Mutation only via `dispatch(action)`.
 3. **Pure systems** in `src/systems/` and `src/procgen/` — no Phaser, no React, no I/O. Take state in, return new state + effects out.
 4. **Combat is a reducer** over a discriminated `CombatEvent` union. `reduce(state, event, rng) → { state, effects }`. Effects are intents to render, not state.
-5. **Phaser firewall:** `CombatScene` owns a mutable `CombatRuntime` POJO (sprite refs, tween handles). Subscribes to `combatStore` event-shaped channel (`subscribeWithSelector` on `lastEffectId`). NEVER reads state per frame.
+5. **Phaser firewall:** `BoardScene` (`game/scenes/BoardScene.ts`) owns a mutable `CombatRuntime` POJO (sprite refs, tween handles). Subscribes to `combatStore` event-shaped channel (`subscribeWithSelector` on `lastEffectId`). NEVER reads state per frame. The React `CombatHud` (`src/ui/scenes/combat/CombatHud.tsx`) is an absolute overlay on top of the canvas; it subscribes to the same `combatStore` via Zustand selectors and dispatches the same events.
 6. **`Math.random()` is forbidden.** All randomness flows through `RNG` parameters. Hierarchical: `deriveRng(parent, label)` per subsystem.
 7. **Cross-system writes go through `src/contracts/` types.** `BattleResult`, `RecruitmentResult`, `PendingTravelPath`, `CombatBootRequest`, `DomainEvent`. Compiler enforces integration boundaries.
 8. **Predicates are declarative AST**, not function references. Round-trips through save. One evaluator (`systems/predicates.ts`) used by quest transitions, map gates, dialogue gates, shop gates.

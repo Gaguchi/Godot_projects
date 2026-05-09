@@ -54,7 +54,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 
 - [x] **UI-T27** `prefers-reduced-motion` honored. ✅ `motion-safe:transition-*` and `motion-safe:data-[hovered]:-translate-y-6` variants gate every animation. Reduced-motion users still get visual state changes (color, opacity) but no transform tweens.
 - [x] **UI-T28** `scripts/measure-bundle.mjs` + `npm run perf-gates`. ✅ Reports baseline 432.67, ceiling 507.67, actual 462.68 KB gzipped (+30.01). PASS.
-- [ ] **UI-T29** Update `phaser/CONTEXT.md` (BoardScene rename, UI components section, new architecture invariant). Final visual playthrough via Playwright MCP. Tag `phaser-ui-input-fixed`. Emit `<promise>UI-INPUT-FIXED</promise>`.
+- [x] **UI-T29** ✅ CONTEXT.md updated (Phaser-board-only invariant; BoardScene rename). Visual playthrough confirmed: title → overworld → combat with HUD overlay; end-turn click verified advances turn; hover sets data-hovered=true. All 6 gates green. Tag `phaser-ui-input-fixed` pushed.
 
 ---
 
