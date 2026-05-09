@@ -10,8 +10,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 )
 
-// Phaser game mounts after React shell renders.
-queueMicrotask(() => {
+// Phaser game mounts after React shell commits its DOM. React 19's concurrent
+// renderer doesn't synchronously commit on render(), so we wait until the
+// canvas container actually exists in the document before creating the game.
+function mountPhaserWhenReady(): void {
   const parent = document.getElementById('game-canvas-container')
-  if (parent) createGame(parent)
-})
+  if (parent) {
+    createGame(parent)
+    return
+  }
+  requestAnimationFrame(mountPhaserWhenReady)
+}
+requestAnimationFrame(mountPhaserWhenReady)
