@@ -4,7 +4,7 @@ import type { CardEffect } from './card'
 import type { RngState } from './rng'
 
 export type CombatPhase = 'BOOT' | 'DEPLOY' | 'COMBAT' | 'VICTORY' | 'DEFEAT'
-export type CombatSubPhase = 'IDLE' | 'SELECTING_CARD' | 'SELECTING_TARGET' | 'RESOLVING'
+export type CombatSubPhase = 'IDLE' | 'SELECTING_CARD' | 'SELECTING_TARGET' | 'SELECTING_MOVE' | 'RESOLVING'
 
 export interface DeckState {
   draw: CardId[]
@@ -59,6 +59,7 @@ export type CombatEvent =
         }
       }
     }
+  | { type: 'enterMoveMode'; payload: { unitId: UnitId } }
   | { type: 'moveUnit'; payload: { unitId: UnitId; tileId: TileId } }
   | { type: 'endTurn' }
   | { type: 'tickStatus' }

@@ -106,6 +106,13 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       const phase = checkEnd(state)
       if (phase !== 'COMBAT') return { state: { ...state, phase }, effects: [] }
 
+      // Reset hasMovedThisTurn for the unit whose turn is starting so they can
+      // use their free move again.
+      const nextKey = nextId as unknown as string
+      const newUnits = { ...state.units }
+      const nextUnit = newUnits[nextKey]
+      if (nextUnit) newUnits[nextKey] = { ...nextUnit, hasMovedThisTurn: false }
+
       return {
         state: {
           ...state,
@@ -116,6 +123,7 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
             unitId: nextId,
             team,
           },
+          units: newUnits,
         },
         effects: [],
       }
@@ -145,6 +153,12 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
     case 'cancelSelection':
       return {
         state: { ...state, selectedCardId: null, subPhase: 'IDLE' },
+        effects: [],
+      }
+
+    case 'enterMoveMode':
+      return {
+        state: { ...state, subPhase: 'SELECTING_MOVE', selectedCardId: null },
         effects: [],
       }
 
@@ -299,12 +313,14 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       const { unitId, tileId } = event.payload
       const u = state.units[unitId as unknown as string]
       if (!u) return { state, effects: [] }
+      // Free move per turn: refuse if already used.
+      if (u.hasMovedThisTurn) return { state, effects: [] }
       const newUnits: Record<string, Unit> = {
         ...state.units,
-        [unitId as unknown as string]: { ...u, position: tileId, ap: Math.max(0, u.ap - 1) },
+        [unitId as unknown as string]: { ...u, position: tileId, hasMovedThisTurn: true },
       }
       return {
-        state: { ...state, units: newUnits },
+        state: { ...state, units: newUnits, subPhase: 'RESOLVING' },
         effects: [
           { kind: 'PlayTween', sprite: { id: unitId as unknown as string }, props: { targetTile: tileId as unknown as string }, durationMs: 200 },
           { kind: 'WaitForAnimations' },

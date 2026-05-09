@@ -179,3 +179,77 @@ describe('combatReducer (core)', () => {
     expect(s.selectedCardId).toBeNull()
   })
 })
+
+describe('combatReducer (movement)', () => {
+  const setupForMove = (): { state: ReturnType<typeof initialCombatState>; rng: ReturnType<typeof createRng> } => {
+    const rng = createRng({ seed: 0, counter: 0 })
+    const roy = mk('roy', 5, 'lord')
+    roy.position = '1,4' as never
+    const r = reduce(initialCombatState(), {
+      type: 'startBattle',
+      payload: {
+        units: [roy, mk('bandit', 4, 'bandit')],
+        grid: { width: 14, height: 10, obstacles: new Set() },
+        rngSeed: { seed: 0, counter: 0 },
+      },
+    }, rng)
+    return { state: r.state, rng }
+  }
+
+  it('enterMoveMode transitions subPhase to SELECTING_MOVE', () => {
+    const { state, rng } = setupForMove()
+    const r = reduce(state, { type: 'enterMoveMode', payload: { unitId: asUnitId('roy') } }, rng)
+    expect(r.state.subPhase).toBe('SELECTING_MOVE')
+  })
+
+  it('moveUnit with hasMovedThisTurn=false moves unit and marks moved without AP cost', () => {
+    const { state, rng } = setupForMove()
+    const apBefore = state.units['roy']!.ap
+    const r = reduce(state, {
+      type: 'moveUnit',
+      payload: { unitId: asUnitId('roy'), tileId: '3,4' as never },
+    }, rng)
+    const royAfter = r.state.units['roy']!
+    expect(royAfter.position).toBe('3,4')
+    expect(royAfter.hasMovedThisTurn).toBe(true)
+    expect(royAfter.ap).toBe(apBefore) // AP unchanged
+    expect(r.state.subPhase).toBe('RESOLVING')
+  })
+
+  it('moveUnit when hasMovedThisTurn=true is a no-op', () => {
+    const { state, rng } = setupForMove()
+    let s = reduce(state, {
+      type: 'moveUnit',
+      payload: { unitId: asUnitId('roy'), tileId: '3,4' as never },
+    }, rng).state
+    s = reduce(s, { type: 'animationsCompleted' }, rng).state
+    const positionAfterFirst = s.units['roy']!.position
+    // Second move should not change position
+    const r = reduce(s, {
+      type: 'moveUnit',
+      payload: { unitId: asUnitId('roy'), tileId: '5,4' as never },
+    }, rng)
+    expect(r.state.units['roy']!.position).toBe(positionAfterFirst)
+    expect(r.effects).toEqual([])
+  })
+
+  it('endTurn resets hasMovedThisTurn for the next active unit', () => {
+    const { state, rng } = setupForMove()
+    let s = reduce(state, {
+      type: 'moveUnit',
+      payload: { unitId: asUnitId('roy'), tileId: '3,4' as never },
+    }, rng).state
+    s = reduce(s, { type: 'animationsCompleted' }, rng).state
+    expect(s.units['roy']!.hasMovedThisTurn).toBe(true)
+    s = reduce(s, { type: 'endTurn' }, rng).state // → bandit
+    s = reduce(s, { type: 'endTurn' }, rng).state // → roy again
+    expect(s.units['roy']!.hasMovedThisTurn).toBe(false)
+  })
+
+  it('cancelSelection from SELECTING_MOVE returns to IDLE', () => {
+    const { state, rng } = setupForMove()
+    let s = reduce(state, { type: 'enterMoveMode', payload: { unitId: asUnitId('roy') } }, rng).state
+    s = reduce(s, { type: 'cancelSelection' }, rng).state
+    expect(s.subPhase).toBe('IDLE')
+  })
+})

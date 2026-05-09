@@ -31,4 +31,9 @@ export interface Unit {
   ap: number
   armor: number
   statuses: ActiveStatus[]
+  // Set when the unit consumes its free move this turn. Reset to false when
+  // the unit's next turn starts. Optional so older saves and lightweight test
+  // fixtures (which omit it) round-trip safely; reducer treats undefined as
+  // "has not moved".
+  hasMovedThisTurn?: boolean
 }

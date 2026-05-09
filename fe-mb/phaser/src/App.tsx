@@ -24,8 +24,28 @@ const actionLog = createActionLog()
 
 export const __busRefs = { errorBus, eventBus, actionLog }
 
+// Dev-only debug surface so E2E + manual testing can read store state and
+// dispatch events from the browser console. Tree-shaken in production.
+if (import.meta.env.DEV) {
+  ;(window as unknown as { __debug?: Record<string, unknown> }).__debug = {
+    combatStore: useCombatStore,
+    runStore: useRunStore,
+    metaStore: useMetaStore,
+    busRefs: { errorBus, eventBus, actionLog },
+  }
+}
+
 export function App(): React.JSX.Element {
-  const [view, setView] = useState<View>('title')
+  // Dev-only fast-path: ?view=combat URL param skips title and jumps straight
+  // into a stub battle. Used by E2E tests that exercise combat interactions.
+  const initialView: View = (() => {
+    if (!import.meta.env.DEV) return 'title'
+    const params = new URLSearchParams(window.location.search)
+    const v = params.get('view')
+    if (v === 'combat' || v === 'overworld' || v === 'town' || v === 'dungeon') return v
+    return 'title'
+  })()
+  const [view, setView] = useState<View>(initialView)
   const [loadModalOpen, setLoadModalOpen] = useState(false)
   const [quitModalOpen, setQuitModalOpen] = useState(false)
   const [questLogOpen, setQuestLogOpen] = useState(false)

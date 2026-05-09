@@ -43,3 +43,46 @@ export function tilesInAoe(center: TileId, radius: number, state: TargetingState
 export function validTargets(card: Card, source: TileId, state: TargetingState): TileId[] {
   return tilesInRange(source, card.range.min, card.range.max, state)
 }
+
+/**
+ * BFS on the grid from `origin` outward, returning all tiles the unit can
+ * reach within `maxSteps` (4-directional). Obstacles and `blocked` tiles
+ * (typically tiles occupied by other units) are impassable.
+ *
+ * The origin itself is not included in the result.
+ */
+export function tilesReachable(
+  origin: TileId,
+  maxSteps: number,
+  state: TargetingState,
+  blocked: Set<string>,
+): TileId[] {
+  if (maxSteps <= 0) return []
+  const [ox, oy] = tileToXY(origin)
+  const visited = new Map<string, number>()
+  const originKey = `${ox},${oy}`
+  visited.set(originKey, 0)
+  const queue: Array<[number, number, number]> = [[ox, oy, 0]]
+  const out: TileId[] = []
+
+  while (queue.length > 0) {
+    const [x, y, dist] = queue.shift()!
+    if (dist >= maxSteps) continue
+    const neighbors: Array<[number, number]> = [
+      [x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1],
+    ]
+    for (const [nx, ny] of neighbors) {
+      if (nx < 0 || ny < 0 || nx >= state.width || ny >= state.height) continue
+      const nKey = `${nx},${ny}`
+      if (visited.has(nKey)) continue
+      const nTile = xyToTile(nx, ny)
+      if (state.obstacles.has(nTile)) continue
+      if (blocked.has(nKey)) continue
+      visited.set(nKey, dist + 1)
+      out.push(nTile)
+      queue.push([nx, ny, dist + 1])
+    }
+  }
+
+  return out
+}

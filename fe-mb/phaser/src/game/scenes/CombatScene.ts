@@ -4,11 +4,17 @@ import { useRunStore } from '../../state/runStore'
 import { CombatRuntime } from '../runtime/CombatRuntime'
 import { createRng } from '../../systems/rng'
 import { seedStubBattle } from './seedStubBattle'
-import { tilesInRange, tilesInAoe } from '../../systems/targeting'
+import { tilesInRange, tilesInAoe, tilesReachable } from '../../systems/targeting'
 import { planTurn } from '../../systems/enemyAI'
 import type { CombatEffect, CombatEvent } from '../../domain/combatState'
 import cardsJson from '../../data/content/cards.json'
-import { asCardId, asTileId } from '../../domain/ids'
+import classesJson from '../../data/content/classes.json'
+import { asCardId, asTileId, asUnitId } from '../../domain/ids'
+
+const classMovMap = new Map<string, number>(classesJson.map((c) => [c.id, c.startingMov]))
+function movementRangeForClass(classId: string): number {
+  return classMovMap.get(classId) ?? 4
+}
 
 const TILE = 48
 const GRID_OFFSET_X = 240
@@ -72,6 +78,10 @@ export class CombatScene extends Phaser.Scene {
   private damagePreview: Phaser.GameObjects.Text | null = null
   private apText: Phaser.GameObjects.Text | null = null
   private endTurnBtn: Phaser.GameObjects.Container | null = null
+  private moveBtn: Phaser.GameObjects.Container | null = null
+  private moveBtnBg: Phaser.GameObjects.Rectangle | null = null
+  private moveBtnText: Phaser.GameObjects.Text | null = null
+  private modeLabel: Phaser.GameObjects.Text | null = null
   private pendingAnimations = 0
   private enemyTurnQueue: CombatEvent[] = []
   private enemyTurnRunning = false
@@ -98,6 +108,8 @@ export class CombatScene extends Phaser.Scene {
     this.renderCardHand()
     this.renderTargeting()
     this.drawApIndicator()
+    this.drawModeLabel()
+    this.drawMoveButton()
     this.drawEndTurnButton()
 
     // ESC cancels card selection
@@ -125,6 +137,8 @@ export class CombatScene extends Phaser.Scene {
       this.renderCardHand()
       this.renderTargeting()
       this.updateApIndicator()
+      this.updateModeLabel()
+      this.updateMoveButton()
       this.maybeRunEnemyTurn()
     })
 
@@ -175,6 +189,34 @@ export class CombatScene extends Phaser.Scene {
     if (this.damagePreview) {
       this.damagePreview.destroy()
       this.damagePreview = null
+    }
+
+    if (state.subPhase === 'SELECTING_MOVE') {
+      const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+      if (!activeId) return
+      const activeUnit = state.units[activeId]
+      if (!activeUnit?.position) return
+      if (activeUnit.hasMovedThisTurn) return
+      const sourceTileId = activeUnit.position as unknown as string
+      const range = movementRangeForClass(activeUnit.classId as unknown as string)
+      const blocked = new Set<string>()
+      for (const u of Object.values(state.units)) {
+        if (u.hp.current <= 0 || !u.position) continue
+        if ((u.id as unknown as string) === activeId) continue
+        blocked.add(u.position as unknown as string)
+      }
+      const targetState = {
+        width: state.grid.width,
+        height: state.grid.height,
+        obstacles: state.grid.obstacles,
+      }
+      const valid = tilesReachable(asTileId(sourceTileId), range, targetState, blocked)
+      for (const t of valid) {
+        const tileStr = t as unknown as string
+        const rect = this.tileRects.get(tileStr)
+        if (rect) rect.setFillStyle(0x1f4a5a) // teal/cyan for move-targeting
+      }
+      return
     }
 
     if (state.subPhase !== 'SELECTING_TARGET' || state.selectedCardId === null) return
@@ -271,9 +313,57 @@ export class CombatScene extends Phaser.Scene {
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
   }
 
+  private onUnitClick(unitIdStr: string): void {
+    const cs = useCombatStore.getState()
+    const state = cs.state
+    if (state.phase !== 'COMBAT') return
+    if (state.turn.team !== 'party') return
+    if (state.subPhase === 'RESOLVING') return
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+    if (activeId !== unitIdStr) return
+    const unit = state.units[unitIdStr]
+    if (!unit || unit.hp.current <= 0) return
+    if (unit.hasMovedThisTurn) return
+    if (state.subPhase === 'SELECTING_MOVE') {
+      cs.dispatch({ type: 'cancelSelection' }, createRng(state.rng))
+      return
+    }
+    cs.dispatch({ type: 'enterMoveMode', payload: { unitId: unit.id } }, createRng(state.rng))
+  }
+
   private onTileClick(tileId: string): void {
     const cs = useCombatStore.getState()
     const state = cs.state
+
+    if (state.subPhase === 'SELECTING_MOVE') {
+      const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+      if (!activeId) return
+      const activeUnit = state.units[activeId]
+      if (!activeUnit?.position || activeUnit.hasMovedThisTurn) return
+      // Validate destination is in reachable set
+      const sourceTileId = activeUnit.position as unknown as string
+      const range = movementRangeForClass(activeUnit.classId as unknown as string)
+      const blocked = new Set<string>()
+      for (const u of Object.values(state.units)) {
+        if (u.hp.current <= 0 || !u.position) continue
+        if ((u.id as unknown as string) === activeId) continue
+        blocked.add(u.position as unknown as string)
+      }
+      const targetState = {
+        width: state.grid.width,
+        height: state.grid.height,
+        obstacles: state.grid.obstacles,
+      }
+      const valid = tilesReachable(asTileId(sourceTileId), range, targetState, blocked)
+      const validSet = new Set(valid.map((t) => t as unknown as string))
+      if (!validSet.has(tileId)) return
+      cs.dispatch({
+        type: 'moveUnit',
+        payload: { unitId: asUnitId(activeId), tileId: asTileId(tileId) },
+      }, createRng(state.rng))
+      return
+    }
+
     if (state.subPhase !== 'SELECTING_TARGET' || state.selectedCardId === null) return
     const cardIdStr = state.selectedCardId as unknown as string
     const card = cardsMap.get(cardIdStr)
@@ -354,6 +444,93 @@ export class CombatScene extends Phaser.Scene {
     this.endTurnBtn = container
   }
 
+  private drawMoveButton(): void {
+    const x = this.scale.width - 310
+    const y = this.scale.height - 60
+    const container = this.add.container(x, y)
+    const bg = this.add.rectangle(0, 0, 180, 40, 0x1a1410).setStrokeStyle(1, 0x4a3a20)
+    const text = this.add.text(0, 0, 'Move', {
+      fontFamily: 'monospace', fontSize: '14px', color: '#e0d0a0',
+    }).setOrigin(0.5)
+    container.add([bg, text])
+    container.setSize(180, 40)
+    container.setInteractive(new Phaser.Geom.Rectangle(-90, -20, 180, 40), Phaser.Geom.Rectangle.Contains)
+    container.on('pointerover', () => {
+      const state = useCombatStore.getState().state
+      const enabled = this.isMoveButtonEnabled(state)
+      if (enabled) bg.setStrokeStyle(2, 0xa07a40)
+    })
+    container.on('pointerout', () => {
+      const state = useCombatStore.getState().state
+      bg.setStrokeStyle(state.subPhase === 'SELECTING_MOVE' ? 2 : 1,
+        state.subPhase === 'SELECTING_MOVE' ? 0xfacc15 : 0x4a3a20)
+    })
+    container.on('pointerdown', () => {
+      const cs = useCombatStore.getState()
+      const state = cs.state
+      if (state.subPhase === 'SELECTING_MOVE') {
+        cs.dispatch({ type: 'cancelSelection' }, createRng(state.rng))
+        return
+      }
+      if (!this.isMoveButtonEnabled(state)) return
+      const activeId = state.turn.unitId
+      if (activeId === null) return
+      cs.dispatch({ type: 'enterMoveMode', payload: { unitId: activeId } }, createRng(state.rng))
+    })
+    this.moveBtn = container
+    this.moveBtnBg = bg
+    this.moveBtnText = text
+    this.updateMoveButton()
+  }
+
+  private isMoveButtonEnabled(state: ReturnType<typeof useCombatStore.getState>['state']): boolean {
+    if (state.phase !== 'COMBAT') return false
+    if (state.turn.team !== 'party') return false
+    if (state.subPhase === 'RESOLVING') return false
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+    if (!activeId) return false
+    const u = state.units[activeId]
+    if (!u || u.hp.current <= 0) return false
+    if (u.hasMovedThisTurn) return false
+    return true
+  }
+
+  private updateMoveButton(): void {
+    if (!this.moveBtn || !this.moveBtnBg || !this.moveBtnText) return
+    const state = useCombatStore.getState().state
+    const enabled = this.isMoveButtonEnabled(state)
+    const selecting = state.subPhase === 'SELECTING_MOVE'
+    if (selecting) {
+      this.moveBtnText.setText('Cancel Move')
+      this.moveBtnBg.setStrokeStyle(2, 0xfacc15)
+      this.moveBtn.setAlpha(1)
+    } else {
+      this.moveBtnText.setText('Move')
+      this.moveBtnBg.setStrokeStyle(1, 0x4a3a20)
+      this.moveBtn.setAlpha(enabled ? 1 : 0.45)
+    }
+  }
+
+  private drawModeLabel(): void {
+    this.modeLabel = this.add.text(this.scale.width / 2, 60, '', {
+      fontFamily: 'monospace', fontSize: '14px', color: '#facc15',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5)
+    this.updateModeLabel()
+  }
+
+  private updateModeLabel(): void {
+    if (!this.modeLabel) return
+    const state = useCombatStore.getState().state
+    if (state.subPhase === 'SELECTING_MOVE') {
+      this.modeLabel.setText('Click a highlighted tile to move (ESC to cancel)')
+    } else if (state.subPhase === 'SELECTING_TARGET') {
+      this.modeLabel.setText('Click a target (ESC or right-click to cancel)')
+    } else {
+      this.modeLabel.setText('')
+    }
+  }
+
   private renderUnits(): void {
     const state = useCombatStore.getState().state
     const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
@@ -376,6 +553,12 @@ export class CombatScene extends Phaser.Scene {
         const hpBarBg = this.add.rectangle(0, 22, 34, 5, 0x222222)
         const hpBar = this.add.rectangle(-16, 22, 32, 3, 0x44cc44).setOrigin(0, 0.5)
         container.add([body, nameText, hpBarBg, hpBar])
+        // Make body clickable: clicking own active unit enters move mode.
+        body.setInteractive({ useHandCursor: true })
+        body.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          if (pointer.rightButtonDown()) return
+          this.onUnitClick(idStr)
+        })
         view = { container, body, hpBar, glow: null }
         this.unitViews.set(idStr, view)
       }
@@ -641,5 +824,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
     if (this.apText) { this.apText.destroy(); this.apText = null }
     if (this.endTurnBtn) { this.endTurnBtn.destroy(); this.endTurnBtn = null }
+    if (this.moveBtn) { this.moveBtn.destroy(); this.moveBtn = null; this.moveBtnBg = null; this.moveBtnText = null }
+    if (this.modeLabel) { this.modeLabel.destroy(); this.modeLabel = null }
   }
 }

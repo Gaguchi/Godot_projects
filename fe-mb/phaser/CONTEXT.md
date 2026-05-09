@@ -72,7 +72,8 @@ Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, 
 - `selectCard { cardId }`
 - `cancelSelection`
 - `playCard { cardId, srcId, targets }`
-- `moveUnit { unitId, tileId }`
+- `enterMoveMode { unitId }` — subPhase → `SELECTING_MOVE`
+- `moveUnit { unitId, tileId }` — free move per turn (no AP cost), refused if `hasMovedThisTurn`
 - `endTurn`
 - `tickStatus`
 - `capture { targetId, attackerIds }`
