@@ -12,15 +12,21 @@ export const TerrainTileSchema = z.object({
 
 export const WorldMapSchema = z.object({
   id: z.string(),
+  /** GP-D1: maps belong to a Region (driving encounter difficulty + UI tint). */
+  regionId: z.string().optional(),
+  name: z.string().optional(),
   width: z.number().int().min(1),
   height: z.number().int().min(1),
-  tileSize: z.number().int().min(1),
-  terrainGrid: z.array(z.array(TerrainTileSchema)),
+  tileSize: z.number().int().min(1).optional(),
+  terrainGrid: z.array(z.array(TerrainTileSchema)).optional(),
   nodes: z.array(z.object({
     id: z.string(),
+    name: z.string().optional(),
     type: z.enum(['town','camp','dungeon','exit']),
     position: z.object({ x: z.number().int(), y: z.number().int() }),
-    visiblePredicate: PredicateSchema,
+    spawnPoint: z.boolean().optional(),
+    encounterTableId: z.string().optional(),
+    visiblePredicate: PredicateSchema.optional(),
   })),
   edges: z.array(z.object({
     from: z.string(),
@@ -28,6 +34,14 @@ export const WorldMapSchema = z.object({
     encounterTableId: z.string(),
     rollChance: z.number().min(0).max(1),
   })),
+  /** GP-D4: edges that cross region boundaries. fromMapId/toMapId reference world map ids. */
+  regionEdges: z.array(z.object({
+    fromMapId: z.string(),
+    fromNodeId: z.string(),
+    toMapId: z.string(),
+    toNodeId: z.string(),
+    rollChance: z.number().min(0).max(1),
+  })).optional(),
 })
 
 export const BattleMapSchema = z.object({

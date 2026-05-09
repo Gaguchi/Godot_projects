@@ -1,0 +1,326 @@
+{
+  "id": "thornwood",
+  "regionId": "thornwood",
+  "name": "Thornwood Wilds",
+  "width": 2120,
+  "height": 700,
+  "nodes": [
+    {
+      "id": "thornwood_gate",
+      "name": "Thornwood Gate",
+      "type": "camp",
+      "position": {
+        "x": 840,
+        "y": 240
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "southern_trail",
+      "name": "Southern Trail",
+      "type": "camp",
+      "position": {
+        "x": 830,
+        "y": 480
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "thornwood_chapel",
+      "name": "Thornwood Chapel",
+      "type": "town",
+      "position": {
+        "x": 960,
+        "y": 180
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "dark_hollow",
+      "name": "Dark Hollow",
+      "type": "camp",
+      "position": {
+        "x": 960,
+        "y": 340
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "cursed_clearing",
+      "name": "Cursed Clearing",
+      "type": "camp",
+      "position": {
+        "x": 960,
+        "y": 500
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "hermits_tower",
+      "name": "Hermit's Tower",
+      "type": "camp",
+      "position": {
+        "x": 1100,
+        "y": 200
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "wolf_den",
+      "name": "Wolf Den",
+      "type": "camp",
+      "position": {
+        "x": 1100,
+        "y": 360
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "witchs_hut",
+      "name": "Witch's Hut",
+      "type": "camp",
+      "position": {
+        "x": 1100,
+        "y": 520
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "ancient_ruins",
+      "name": "Ancient Ruins",
+      "type": "dungeon",
+      "position": {
+        "x": 1260,
+        "y": 280
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "morganas_grove",
+      "name": "Morgana's Grove",
+      "type": "camp",
+      "position": {
+        "x": 1260,
+        "y": 440
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "foggy_marsh",
+      "name": "Foggy Marsh",
+      "type": "camp",
+      "position": {
+        "x": 900,
+        "y": 290
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "spiders_nest",
+      "name": "Spider's Nest",
+      "type": "camp",
+      "position": {
+        "x": 900,
+        "y": 560
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "druids_circle",
+      "name": "Druid's Circle",
+      "type": "camp",
+      "position": {
+        "x": 1030,
+        "y": 110
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "moonlit_glade",
+      "name": "Moonlit Glade",
+      "type": "camp",
+      "position": {
+        "x": 1180,
+        "y": 140
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "id": "thornwood_depths",
+      "name": "Thornwood Depths",
+      "type": "dungeon",
+      "position": {
+        "x": 1180,
+        "y": 580
+      },
+      "spawnPoint": false,
+      "encounterTableId": "thornwood_road"
+    }
+  ],
+  "edges": [
+    {
+      "from": "thornwood_gate",
+      "to": "thornwood_chapel",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "thornwood_gate",
+      "to": "dark_hollow",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "thornwood_gate",
+      "to": "foggy_marsh",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "southern_trail",
+      "to": "cursed_clearing",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "southern_trail",
+      "to": "spiders_nest",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "thornwood_chapel",
+      "to": "hermits_tower",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "thornwood_chapel",
+      "to": "druids_circle",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "dark_hollow",
+      "to": "cursed_clearing",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "dark_hollow",
+      "to": "wolf_den",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "dark_hollow",
+      "to": "foggy_marsh",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "cursed_clearing",
+      "to": "witchs_hut",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "cursed_clearing",
+      "to": "spiders_nest",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "hermits_tower",
+      "to": "ancient_ruins",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "hermits_tower",
+      "to": "moonlit_glade",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "wolf_den",
+      "to": "ancient_ruins",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "wolf_den",
+      "to": "morganas_grove",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "witchs_hut",
+      "to": "morganas_grove",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "witchs_hut",
+      "to": "thornwood_depths",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "ancient_ruins",
+      "to": "moonlit_glade",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "morganas_grove",
+      "to": "thornwood_depths",
+      "rollChance": 0.35,
+      "encounterTableId": "thornwood_road"
+    }
+  ],
+  "regionEdges": [
+    {
+      "fromMapId": "borderlands",
+      "fromNodeId": "border_fortress",
+      "toMapId": "thornwood",
+      "toNodeId": "thornwood_gate",
+      "rollChance": 0.4
+    },
+    {
+      "fromMapId": "borderlands",
+      "fromNodeId": "rodericks_camp",
+      "toMapId": "thornwood",
+      "toNodeId": "southern_trail",
+      "rollChance": 0.4
+    },
+    {
+      "fromMapId": "thornwood",
+      "fromNodeId": "ancient_ruins",
+      "toMapId": "ashfall",
+      "toNodeId": "mountain_pass",
+      "rollChance": 0.4
+    },
+    {
+      "fromMapId": "thornwood",
+      "fromNodeId": "morganas_grove",
+      "toMapId": "ashfall",
+      "toNodeId": "ashfall_trail",
+      "rollChance": 0.4
+    }
+  ]
+}

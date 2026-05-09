@@ -1,0 +1,312 @@
+{
+  "id": "borderlands",
+  "regionId": "borderlands",
+  "name": "The Borderlands",
+  "width": 2120,
+  "height": 700,
+  "nodes": [
+    {
+      "id": "frontier_camp",
+      "name": "Frontier Camp",
+      "type": "camp",
+      "position": {
+        "x": 100,
+        "y": 400
+      },
+      "spawnPoint": true,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "riverside_market",
+      "name": "Riverside Market",
+      "type": "town",
+      "position": {
+        "x": 250,
+        "y": 320
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "south_road_ambush",
+      "name": "South Road Ambush",
+      "type": "camp",
+      "position": {
+        "x": 240,
+        "y": 510
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "old_mill_crossing",
+      "name": "Old Mill Crossing",
+      "type": "camp",
+      "position": {
+        "x": 400,
+        "y": 260
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "bandit_hideout",
+      "name": "Bandit Hideout",
+      "type": "camp",
+      "position": {
+        "x": 380,
+        "y": 400
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "south_junction",
+      "name": "South Junction",
+      "type": "town",
+      "position": {
+        "x": 380,
+        "y": 540
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "watchtower_ridge",
+      "name": "Watchtower Ridge",
+      "type": "camp",
+      "position": {
+        "x": 540,
+        "y": 200
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "pine_crossing",
+      "name": "Pine Crossing",
+      "type": "town",
+      "position": {
+        "x": 540,
+        "y": 360
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "smugglers_cave",
+      "name": "Smuggler's Cave",
+      "type": "dungeon",
+      "position": {
+        "x": 520,
+        "y": 540
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "border_fortress",
+      "name": "Border Fortress",
+      "type": "camp",
+      "position": {
+        "x": 680,
+        "y": 280
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "rodericks_camp",
+      "name": "Roderick's Camp",
+      "type": "camp",
+      "position": {
+        "x": 680,
+        "y": 440
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "traders_rest",
+      "name": "Trader's Rest",
+      "type": "camp",
+      "position": {
+        "x": 160,
+        "y": 280
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "north_ridge_path",
+      "name": "North Ridge Path",
+      "type": "camp",
+      "position": {
+        "x": 470,
+        "y": 150
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "broken_bridge",
+      "name": "Broken Bridge",
+      "type": "camp",
+      "position": {
+        "x": 460,
+        "y": 620
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "id": "borderland_shrine",
+      "name": "Borderland Shrine",
+      "type": "camp",
+      "position": {
+        "x": 760,
+        "y": 180
+      },
+      "spawnPoint": false,
+      "encounterTableId": "borderlands_road"
+    }
+  ],
+  "edges": [
+    {
+      "from": "frontier_camp",
+      "to": "riverside_market",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "frontier_camp",
+      "to": "south_road_ambush",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "frontier_camp",
+      "to": "traders_rest",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "riverside_market",
+      "to": "old_mill_crossing",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "riverside_market",
+      "to": "bandit_hideout",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "south_road_ambush",
+      "to": "south_junction",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_mill_crossing",
+      "to": "watchtower_ridge",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_mill_crossing",
+      "to": "pine_crossing",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_mill_crossing",
+      "to": "north_ridge_path",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "bandit_hideout",
+      "to": "south_junction",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "bandit_hideout",
+      "to": "pine_crossing",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "south_junction",
+      "to": "smugglers_cave",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "south_junction",
+      "to": "broken_bridge",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "watchtower_ridge",
+      "to": "border_fortress",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "watchtower_ridge",
+      "to": "north_ridge_path",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "pine_crossing",
+      "to": "border_fortress",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "pine_crossing",
+      "to": "rodericks_camp",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "smugglers_cave",
+      "to": "rodericks_camp",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "smugglers_cave",
+      "to": "broken_bridge",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "border_fortress",
+      "to": "borderland_shrine",
+      "rollChance": 0.35,
+      "encounterTableId": "borderlands_road"
+    }
+  ],
+  "regionEdges": [
+    {
+      "fromMapId": "borderlands",
+      "fromNodeId": "border_fortress",
+      "toMapId": "thornwood",
+      "toNodeId": "thornwood_gate",
+      "rollChance": 0.4
+    },
+    {
+      "fromMapId": "borderlands",
+      "fromNodeId": "rodericks_camp",
+      "toMapId": "thornwood",
+      "toNodeId": "southern_trail",
+      "rollChance": 0.4
+    }
+  ]
+}

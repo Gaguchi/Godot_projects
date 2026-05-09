@@ -1,0 +1,335 @@
+{
+  "id": "ashfall",
+  "regionId": "ashfall",
+  "name": "Ashfall Peaks",
+  "width": 2120,
+  "height": 700,
+  "nodes": [
+    {
+      "id": "mountain_pass",
+      "name": "Mountain Pass",
+      "type": "camp",
+      "position": {
+        "x": 1420,
+        "y": 240
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "ashfall_trail",
+      "name": "Ashfall Trail",
+      "type": "camp",
+      "position": {
+        "x": 1420,
+        "y": 460
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "ashfall_outpost",
+      "name": "Ashfall Outpost",
+      "type": "town",
+      "position": {
+        "x": 1560,
+        "y": 180
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "lava_fields",
+      "name": "Lava Fields",
+      "type": "camp",
+      "position": {
+        "x": 1560,
+        "y": 340
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "scorched_village",
+      "name": "Scorched Village",
+      "type": "camp",
+      "position": {
+        "x": 1560,
+        "y": 500
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "dragons_lookout",
+      "name": "Dragon's Lookout",
+      "type": "camp",
+      "position": {
+        "x": 1700,
+        "y": 200
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "iron_mine",
+      "name": "Iron Mine",
+      "type": "dungeon",
+      "position": {
+        "x": 1700,
+        "y": 360
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "sulfur_springs",
+      "name": "Sulfur Springs",
+      "type": "camp",
+      "position": {
+        "x": 1700,
+        "y": 520
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "cragmaw_fortress",
+      "name": "Cragmaw Fortress",
+      "type": "camp",
+      "position": {
+        "x": 1860,
+        "y": 280
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "final_approach",
+      "name": "Final Approach",
+      "type": "camp",
+      "position": {
+        "x": 1860,
+        "y": 440
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "the_iron_throne",
+      "name": "The Iron Throne",
+      "type": "exit",
+      "position": {
+        "x": 2060,
+        "y": 360
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "ember_creek",
+      "name": "Ember Creek",
+      "type": "camp",
+      "position": {
+        "x": 1490,
+        "y": 290
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "ruined_chapel",
+      "name": "Ruined Chapel",
+      "type": "camp",
+      "position": {
+        "x": 1490,
+        "y": 560
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "obsidian_cavern",
+      "name": "Obsidian Cavern",
+      "type": "dungeon",
+      "position": {
+        "x": 1780,
+        "y": 140
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "warlords_camp",
+      "name": "Warlord's Camp",
+      "type": "camp",
+      "position": {
+        "x": 1780,
+        "y": 580
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "id": "ashen_gate",
+      "name": "Ashen Gate",
+      "type": "camp",
+      "position": {
+        "x": 1950,
+        "y": 360
+      },
+      "spawnPoint": false,
+      "encounterTableId": "ashfall_road"
+    }
+  ],
+  "edges": [
+    {
+      "from": "mountain_pass",
+      "to": "ashfall_outpost",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "mountain_pass",
+      "to": "lava_fields",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "mountain_pass",
+      "to": "ember_creek",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ashfall_trail",
+      "to": "scorched_village",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ashfall_trail",
+      "to": "ruined_chapel",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ashfall_outpost",
+      "to": "dragons_lookout",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lava_fields",
+      "to": "scorched_village",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lava_fields",
+      "to": "iron_mine",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lava_fields",
+      "to": "ember_creek",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "scorched_village",
+      "to": "sulfur_springs",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "scorched_village",
+      "to": "ruined_chapel",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "dragons_lookout",
+      "to": "cragmaw_fortress",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "dragons_lookout",
+      "to": "obsidian_cavern",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "iron_mine",
+      "to": "cragmaw_fortress",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "iron_mine",
+      "to": "final_approach",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "sulfur_springs",
+      "to": "final_approach",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "sulfur_springs",
+      "to": "warlords_camp",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "cragmaw_fortress",
+      "to": "obsidian_cavern",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "cragmaw_fortress",
+      "to": "ashen_gate",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "final_approach",
+      "to": "warlords_camp",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "final_approach",
+      "to": "ashen_gate",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "the_iron_throne",
+      "to": "ashen_gate",
+      "rollChance": 0.35,
+      "encounterTableId": "ashfall_road"
+    }
+  ],
+  "regionEdges": [
+    {
+      "fromMapId": "thornwood",
+      "fromNodeId": "ancient_ruins",
+      "toMapId": "ashfall",
+      "toNodeId": "mountain_pass",
+      "rollChance": 0.4
+    },
+    {
+      "fromMapId": "thornwood",
+      "fromNodeId": "morganas_grove",
+      "toMapId": "ashfall",
+      "toNodeId": "ashfall_trail",
+      "rollChance": 0.4
+    }
+  ]
+}
