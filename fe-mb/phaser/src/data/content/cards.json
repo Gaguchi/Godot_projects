@@ -1,0 +1,492 @@
+[
+  {
+    "id": "lord_rally",
+    "name": "Rally",
+    "apCost": 1,
+    "effects": [{ "kind": "DrawCards", "params": { "count": 2 } }],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": null
+  },
+  {
+    "id": "lord_inspiring_strike",
+    "name": "Inspiring Strike",
+    "apCost": 2,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 4 } },
+      { "kind": "GainAp", "params": { "amount": 1 } }
+    ],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "str"
+  },
+  {
+    "id": "lord_nobility",
+    "name": "Nobility",
+    "apCost": 1,
+    "effects": [{ "kind": "GrantArmor", "params": { "amount": 3 } }],
+    "range": { "min": 0, "max": 1 },
+    "targetKind": "ally",
+    "weaponType": null
+  },
+  {
+    "id": "lord_command",
+    "name": "Command",
+    "apCost": 2,
+    "effects": [{ "kind": "GainAp", "params": { "amount": 1, "target": "ally" } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "ally",
+    "weaponType": null
+  },
+  {
+    "id": "knight_fortify",
+    "name": "Fortify",
+    "apCost": 1,
+    "effects": [{ "kind": "GrantArmor", "params": { "amount": 5 } }],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": null
+  },
+  {
+    "id": "knight_bulwark",
+    "name": "Bulwark",
+    "apCost": 2,
+    "effects": [
+      { "kind": "GrantArmor", "params": { "amount": 4 } },
+      { "kind": "ApplyStatus", "params": { "effectId": "taunt", "turns": 1 } }
+    ],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": null
+  },
+  {
+    "id": "knight_hold_line",
+    "name": "Hold the Line",
+    "apCost": 1,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 3 } },
+      { "kind": "GrantArmor", "params": { "amount": 2 } }
+    ],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "str"
+  },
+  {
+    "id": "knight_shield_expertise",
+    "name": "Shield Expertise",
+    "apCost": 1,
+    "effects": [{ "kind": "GrantArmor", "params": { "amount": 6, "scalesWithShield": true } }],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": null
+  },
+  {
+    "id": "mage_focus",
+    "name": "Focus",
+    "apCost": 1,
+    "effects": [{ "kind": "DrawCards", "params": { "count": 1, "gainAp": 1 } }],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": null
+  },
+  {
+    "id": "mage_arcane_burst",
+    "name": "Arcane Burst",
+    "apCost": 2,
+    "effects": [{ "kind": "Damage", "params": { "base": 6, "damageType": "magic" } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "mag"
+  },
+  {
+    "id": "mage_barrier",
+    "name": "Barrier",
+    "apCost": 1,
+    "effects": [{ "kind": "GrantArmor", "params": { "amount": 3, "magic": true } }],
+    "range": { "min": 0, "max": 1 },
+    "targetKind": "ally",
+    "weaponType": null
+  },
+  {
+    "id": "mage_elemental_mastery",
+    "name": "Elemental Mastery",
+    "apCost": 2,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 4, "damageType": "magic" } },
+      { "kind": "ApplyStatus", "params": { "effectId": "burn", "value": 2, "turns": 2 } }
+    ],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "mag"
+  },
+  {
+    "id": "iron_sword_slash",
+    "name": "Slash",
+    "apCost": 1,
+    "effects": [{ "kind": "Damage", "params": { "base": 4 } }],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str"
+  },
+  {
+    "id": "iron_sword_thrust",
+    "name": "Thrust",
+    "apCost": 2,
+    "effects": [{ "kind": "Damage", "params": { "base": 8 } }],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str"
+  },
+  {
+    "id": "iron_sword_guard_break",
+    "name": "Guard Break",
+    "apCost": 1,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 3 } },
+      { "kind": "RemoveStatus", "params": { "kind": "armor", "amount": 2 } }
+    ],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str"
+  },
+  {
+    "id": "steel_sword_slash",
+    "name": "Steel Slash",
+    "apCost": 1,
+    "effects": [{ "kind": "Damage", "params": { "base": 6 } }],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str"
+  },
+  {
+    "id": "steel_sword_thrust",
+    "name": "Steel Thrust",
+    "apCost": 2,
+    "effects": [{ "kind": "Damage", "params": { "base": 11 } }],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str"
+  },
+  {
+    "id": "steel_sword_guard_break",
+    "name": "Steel Guard Break",
+    "apCost": 1,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 5 } },
+      { "kind": "RemoveStatus", "params": { "kind": "armor", "amount": 3 } }
+    ],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str"
+  },
+  {
+    "id": "iron_lance_jab",
+    "name": "Jab",
+    "apCost": 1,
+    "effects": [{ "kind": "Damage", "params": { "base": 5 } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str"
+  },
+  {
+    "id": "iron_lance_impale",
+    "name": "Impale",
+    "apCost": 2,
+    "effects": [{ "kind": "Damage", "params": { "base": 10 } }],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str"
+  },
+  {
+    "id": "iron_lance_brace",
+    "name": "Brace",
+    "apCost": 1,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 4 } },
+      { "kind": "GrantArmor", "params": { "amount": 2 } }
+    ],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str"
+  },
+  {
+    "id": "obsidian_chop",
+    "name": "Obsidian Chop",
+    "apCost": 1,
+    "effects": [{ "kind": "Damage", "params": { "base": 7 } }],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str"
+  },
+  {
+    "id": "obsidian_magma_swing",
+    "name": "Magma Swing",
+    "apCost": 2,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 5 } },
+      { "kind": "ApplyStatus", "params": { "effectId": "burn", "value": 3, "turns": 2, "splash": "adjacent" } }
+    ],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str",
+    "aoeRadius": 1
+  },
+  {
+    "id": "obsidian_shatter",
+    "name": "Shatter",
+    "apCost": 1,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 4 } },
+      { "kind": "RemoveStatus", "params": { "kind": "armor", "amount": 4 } }
+    ],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str"
+  },
+  {
+    "id": "buckler_block",
+    "name": "Block",
+    "apCost": 1,
+    "effects": [{ "kind": "GrantArmor", "params": { "amount": 4 } }],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": null
+  },
+  {
+    "id": "buckler_parry",
+    "name": "Parry",
+    "apCost": 1,
+    "effects": [
+      { "kind": "GrantArmor", "params": { "amount": 3 } },
+      { "kind": "ApplyStatus", "params": { "effectId": "riposte", "value": 2, "turns": 1 } }
+    ],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": null
+  },
+  {
+    "id": "buckler_deflect",
+    "name": "Deflect",
+    "apCost": 0,
+    "effects": [{ "kind": "GrantArmor", "params": { "amount": 2 } }],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": null
+  },
+  {
+    "id": "darkwood_thorn_arrow",
+    "name": "Thorn Arrow",
+    "apCost": 1,
+    "effects": [{ "kind": "Damage", "params": { "base": 5 } }],
+    "range": { "min": 2, "max": 3 },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str"
+  },
+  {
+    "id": "darkwood_natures_aim",
+    "name": "Nature's Aim",
+    "apCost": 2,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 10 } },
+      { "kind": "ApplyStatus", "params": { "effectId": "poison", "value": 2, "turns": 2 } }
+    ],
+    "range": { "min": 2, "max": 3 },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str"
+  },
+  {
+    "id": "darkwood_briar_volley",
+    "name": "Briar Volley",
+    "apCost": 3,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 3 } },
+      { "kind": "ApplyStatus", "params": { "effectId": "poison", "value": 1, "turns": 2 } }
+    ],
+    "range": { "min": 2, "max": 3 },
+    "targetKind": "tile",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "aoeRadius": 1
+  },
+  {
+    "id": "crossbow_bolt",
+    "name": "Bolt",
+    "apCost": 1,
+    "effects": [{ "kind": "Damage", "params": { "base": 5 } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str"
+  },
+  {
+    "id": "crossbow_heavy_bolt",
+    "name": "Heavy Bolt",
+    "apCost": 2,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 10 } },
+      { "kind": "RemoveStatus", "params": { "kind": "armor", "amount": 2 } }
+    ],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str"
+  },
+  {
+    "id": "crossbow_pinning_shot",
+    "name": "Pinning Shot",
+    "apCost": 1,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 3 } },
+      { "kind": "ApplyStatus", "params": { "effectId": "immobilize", "turns": 1 } }
+    ],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str"
+  },
+  {
+    "id": "fire_tome_fire",
+    "name": "Fire",
+    "apCost": 1,
+    "effects": [{ "kind": "Damage", "params": { "base": 4, "damageType": "magic" } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag"
+  },
+  {
+    "id": "fire_tome_blaze",
+    "name": "Blaze",
+    "apCost": 2,
+    "effects": [{ "kind": "Damage", "params": { "base": 8, "damageType": "magic" } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag"
+  },
+  {
+    "id": "fire_tome_flame_burst",
+    "name": "Flame Burst",
+    "apCost": 2,
+    "effects": [{ "kind": "Damage", "params": { "base": 4, "damageType": "magic" } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "tile",
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "aoeRadius": 2
+  },
+  {
+    "id": "heal_staff_heal",
+    "name": "Heal",
+    "apCost": 1,
+    "effects": [{ "kind": "Heal", "params": { "amount": 8 } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "ally",
+    "weaponType": "staff"
+  },
+  {
+    "id": "heal_staff_restore",
+    "name": "Restore",
+    "apCost": 2,
+    "effects": [{ "kind": "Heal", "params": { "amount": 15 } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "ally",
+    "weaponType": "staff"
+  },
+  {
+    "id": "heal_staff_purify",
+    "name": "Purify",
+    "apCost": 1,
+    "effects": [{ "kind": "RemoveStatus", "params": { "kind": "debuff", "all": true } }],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "ally",
+    "weaponType": "staff"
+  },
+  {
+    "id": "lord_charge",
+    "name": "Charge",
+    "apCost": 2,
+    "effects": [
+      { "kind": "Move", "params": { "distance": 2 } },
+      { "kind": "Damage", "params": { "base": 5 } }
+    ],
+    "range": { "min": 1, "max": 1 },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "str"
+  },
+  {
+    "id": "knight_taunt",
+    "name": "Taunt",
+    "apCost": 1,
+    "effects": [{ "kind": "ApplyStatus", "params": { "effectId": "taunt", "turns": 2 } }],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": null
+  },
+  {
+    "id": "mage_chill",
+    "name": "Chill",
+    "apCost": 1,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 2, "damageType": "magic" } },
+      { "kind": "ApplyStatus", "params": { "effectId": "slow", "value": 1, "turns": 2 } }
+    ],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "mag"
+  },
+  {
+    "id": "iron_sword_riposte",
+    "name": "Riposte Stance",
+    "apCost": 1,
+    "effects": [{ "kind": "ApplyStatus", "params": { "effectId": "riposte", "value": 3, "turns": 1 } }],
+    "range": { "min": 0, "max": 0 },
+    "targetKind": "self",
+    "weaponType": "sword"
+  },
+  {
+    "id": "fire_tome_ember",
+    "name": "Ember",
+    "apCost": 0,
+    "effects": [
+      { "kind": "Damage", "params": { "base": 1, "damageType": "magic" } },
+      { "kind": "ApplyStatus", "params": { "effectId": "burn", "value": 1, "turns": 2 } }
+    ],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag"
+  },
+  {
+    "id": "heal_staff_blessing",
+    "name": "Blessing",
+    "apCost": 2,
+    "effects": [
+      { "kind": "Heal", "params": { "amount": 6 } },
+      { "kind": "GrantArmor", "params": { "amount": 2 } }
+    ],
+    "range": { "min": 1, "max": 2 },
+    "targetKind": "ally",
+    "weaponType": "staff"
+  }
+]

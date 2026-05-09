@@ -1,0 +1,29 @@
+[
+  {
+    "id": "lord",
+    "name": "Lord",
+    "baseStats": { "str": 5, "mag": 0, "skl": 4, "spd": 5, "def": 3, "res": 1 },
+    "growthRates": { "str": 50, "mag": 5, "skl": 50, "spd": 45, "def": 30, "res": 25 },
+    "innateCardIds": ["lord_rally", "lord_inspiring_strike", "lord_nobility", "lord_command"],
+    "startingMov": 5,
+    "startingHp": 22
+  },
+  {
+    "id": "knight",
+    "name": "Knight",
+    "baseStats": { "str": 7, "mag": 0, "skl": 4, "spd": 3, "def": 8, "res": 1 },
+    "growthRates": { "str": 45, "mag": 0, "skl": 35, "spd": 20, "def": 50, "res": 15 },
+    "innateCardIds": ["knight_fortify", "knight_bulwark", "knight_hold_line", "knight_shield_expertise"],
+    "startingMov": 4,
+    "startingHp": 28
+  },
+  {
+    "id": "mage",
+    "name": "Mage",
+    "baseStats": { "str": 1, "mag": 7, "skl": 5, "spd": 5, "def": 2, "res": 7 },
+    "growthRates": { "str": 5, "mag": 60, "skl": 40, "spd": 40, "def": 15, "res": 50 },
+    "innateCardIds": ["mage_focus", "mage_arcane_burst", "mage_barrier", "mage_elemental_mastery"],
+    "startingMov": 5,
+    "startingHp": 18
+  }
+]
