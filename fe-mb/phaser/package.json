@@ -12,7 +12,8 @@
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
     "typecheck": "tsc --noEmit",
-    "check-context-doc": "tsx scripts/check-context-doc.ts"
+    "check-context-doc": "tsx scripts/check-context-doc.ts",
+    "perf-gates": "node scripts/measure-bundle.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",
