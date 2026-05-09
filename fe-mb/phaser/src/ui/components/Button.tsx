@@ -35,7 +35,8 @@ const VARIANT_CLASS: Record<NonNullable<ButtonProps['variant']>, string> = {
 
 const BASE_CLASS =
   'inline-flex items-center justify-center px-4 py-2 font-mono text-sm tracking-wider ' +
-  'transition-[transform,background-color,border-color] duration-100 select-none cursor-pointer outline-none rounded'
+  'motion-safe:transition-[transform,background-color,border-color] motion-safe:duration-100 ' +
+  'select-none cursor-pointer outline-none rounded'
 
 export function Button({
   variant = 'secondary',
