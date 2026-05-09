@@ -4,6 +4,7 @@ import { usePress, useHover, useFocusRing, mergeProps } from 'react-aria'
 export interface PressableProps {
   onPress?: () => void
   isDisabled?: boolean
+  id?: string
   className?: string
   style?: React.CSSProperties
   children: React.ReactNode
@@ -12,7 +13,7 @@ export interface PressableProps {
 }
 
 export function Pressable({
-  onPress, isDisabled, className, style, children,
+  onPress, isDisabled, id, className, style, children,
   'aria-label': ariaLabel,
   'aria-describedby': ariaDescribedBy,
 }: PressableProps): React.JSX.Element {
@@ -30,6 +31,7 @@ export function Pressable({
   return (
     <div
       {...merged}
+      id={id}
       role="button"
       tabIndex={isDisabled ? -1 : 0}
       aria-disabled={isDisabled || undefined}
