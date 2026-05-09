@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test'
 
-test('boot smoke', async ({ page }) => {
+test('boot smoke — title view by default', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('#game-canvas-container canvas')).toBeVisible({ timeout: 5000 })
-  // DevHud renders in dev mode
+  // P1-01: view defaults to 'title'; canvas not yet mounted (no New Game click yet)
+  await expect(page.locator('#title-placeholder')).toBeVisible({ timeout: 5000 })
+  // DevHud renders in dev mode regardless of active view
   await expect(page.locator('text=Dev HUD')).toBeVisible({ timeout: 2000 })
 })
