@@ -1,7 +1,7 @@
 import classesJson from '../../data/content/classes.json'
-import { asUnitId, asClassId, asTileId } from '../../domain/ids'
+import { asUnitId, asClassId, asCardId, asTileId } from '../../domain/ids'
 import type { Unit } from '../../domain/unit'
-import type { CombatEvent, CombatGrid } from '../../domain/combatState'
+import type { CombatEvent, CombatGrid, DeckState } from '../../domain/combatState'
 import type { RngState } from '../../domain/rng'
 
 /**
@@ -60,6 +60,24 @@ export function seedStubBattle(rngSeed: RngState): Extract<CombatEvent, { type: 
     mk('bandit_c', 'Bandit', bandit, 13, 4),
   ]
 
+  // Build a starter deck for each unit from class.innateCardIds. Hand =
+  // innate cards (4-5); draw pile is one extra copy so reshuffle has fuel.
+  const decks: Record<string, DeckState> = {}
+  const classFor = (classId: string): typeof lord => {
+    const c = classMap.get(classId)
+    if (!c) throw new Error(`seedStubBattle: missing class ${classId}`)
+    return c
+  }
+  for (const u of units) {
+    const cls = classFor(u.classId as unknown as string)
+    const cardIds = cls.innateCardIds.map((id) => asCardId(id))
+    decks[u.id as unknown as string] = {
+      draw: [...cardIds],
+      hand: [...cardIds],
+      discard: [],
+    }
+  }
+
   const grid: CombatGrid = {
     width: 14,
     height: 10,
@@ -68,6 +86,6 @@ export function seedStubBattle(rngSeed: RngState): Extract<CombatEvent, { type: 
 
   return {
     type: 'startBattle',
-    payload: { units, grid, rngSeed },
+    payload: { units, grid, rngSeed, decks },
   }
 }

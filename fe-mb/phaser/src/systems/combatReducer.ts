@@ -27,14 +27,15 @@ export function initialCombatState(): CombatState {
 }
 
 function teamsOf(units: Record<string, Unit>): UnitTeam {
-  // Convention for foundation: classId containing 'bandit' or 'mage' marks an enemy.
-  // Real battles will set team explicitly via unit metadata or spawn payload — for now
-  // this is the cheapest way to write deterministic tests against the reducer.
+  // Convention for foundation: classId containing 'bandit' marks an enemy.
+  // (mage_bandit and similar enemy variants will still match.) Pure 'mage'
+  // is a player class — see classes.json. Real battles will set team
+  // explicitly via Unit metadata; tracked as future refactor.
   const partyIds: UnitId[] = []
   const enemyIds: UnitId[] = []
   for (const u of Object.values(units)) {
     const cid = u.classId as unknown as string
-    if (cid.includes('bandit') || cid.includes('mage')) enemyIds.push(u.id)
+    if (cid.includes('bandit')) enemyIds.push(u.id)
     else partyIds.push(u.id)
   }
   return { partyIds, enemyIds }
@@ -71,6 +72,7 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
         subPhase: 'IDLE',
         turn: { number: 1, unitId: first, team },
         units,
+        decks: event.payload.decks ?? state.decks,
         grid: event.payload.grid,
         rng: event.payload.rngSeed,
       }

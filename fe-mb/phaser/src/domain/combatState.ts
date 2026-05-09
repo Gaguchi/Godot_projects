@@ -39,7 +39,7 @@ export interface CombatState {
 // --- CombatEvent: dispatched into the reducer ---
 
 export type CombatEvent =
-  | { type: 'startBattle'; payload: { units: Unit[]; grid: CombatGrid; rngSeed: RngState } }
+  | { type: 'startBattle'; payload: { units: Unit[]; grid: CombatGrid; rngSeed: RngState; decks?: Record<string, DeckState> } }
   | { type: 'startTurn'; payload: { unitId: UnitId } }
   | { type: 'selectCard'; payload: { cardId: CardId } }
   | { type: 'cancelSelection' }

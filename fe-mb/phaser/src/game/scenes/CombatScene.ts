@@ -5,18 +5,48 @@ import { CombatRuntime } from '../runtime/CombatRuntime'
 import { createRng } from '../../systems/rng'
 import { seedStubBattle } from './seedStubBattle'
 import type { CombatEffect } from '../../domain/combatState'
+import cardsJson from '../../data/content/cards.json'
+import { asCardId } from '../../domain/ids'
 
 const TILE = 48
 const GRID_OFFSET_X = 240
 const GRID_OFFSET_Y = 120
 const GRID_W = 14
 const GRID_H = 10
+const CARD_W = 96
+const CARD_H = 132
+const CARD_SPACING = 110
+const CARD_HAND_Y = 620   // baseline y for cards (canvas height - margin)
 
 interface UnitView {
   container: Phaser.GameObjects.Container
   body: Phaser.GameObjects.Arc
   hpBar: Phaser.GameObjects.Rectangle
   glow: Phaser.GameObjects.Arc | null
+}
+
+interface CardView {
+  cardId: string
+  container: Phaser.GameObjects.Container
+  bg: Phaser.GameObjects.Rectangle
+  border: Phaser.GameObjects.Rectangle
+  baseY: number
+  baseX: number
+  hovered: boolean
+}
+
+type CardData = typeof cardsJson[number]
+const cardsMap = new Map<string, CardData>(cardsJson.map((c) => [c.id, c]))
+
+function getCardDamageBase(card: CardData): number | null {
+  for (const e of card.effects) {
+    if (e.kind === 'Damage' || e.kind === 'Heal') {
+      const base = (e.params as { base?: number; amount?: number }).base
+        ?? (e.params as { amount?: number }).amount
+      if (typeof base === 'number') return base
+    }
+  }
+  return null
 }
 
 function tileToWorld(tileId: string): { x: number; y: number } {
@@ -34,6 +64,7 @@ export class CombatScene extends Phaser.Scene {
   private unsubEffects: (() => void) | null = null
   private unsubState: (() => void) | null = null
   private unitViews = new Map<string, UnitView>()
+  private cardViews: CardView[] = []
 
   constructor() { super('combat') }
 
@@ -54,9 +85,13 @@ export class CombatScene extends Phaser.Scene {
 
     this.drawGrid()
     this.renderUnits()
+    this.renderCardHand()
 
     // Re-render on any state update
-    this.unsubState = useCombatStore.subscribe(() => this.renderUnits())
+    this.unsubState = useCombatStore.subscribe(() => {
+      this.renderUnits()
+      this.renderCardHand()
+    })
 
     // Drain effects on lastEffectId change
     this.unsubEffects = useCombatStore.subscribe(
@@ -149,6 +184,115 @@ export class CombatScene extends Phaser.Scene {
     }
   }
 
+  private renderCardHand(): void {
+    const cs = useCombatStore.getState()
+    const state = cs.state
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+
+    // Clear existing cards
+    for (const view of this.cardViews) view.container.destroy()
+    this.cardViews = []
+
+    if (!activeId || state.turn.team !== 'party') return
+    const deck = state.decks[activeId]
+    if (!deck) return
+
+    const activeUnit = state.units[activeId]
+    const ap = activeUnit?.ap ?? 0
+
+    const handIds = deck.hand.slice(0, 5)
+    const totalWidth = (handIds.length - 1) * CARD_SPACING
+    const startX = (this.scale.width - totalWidth) / 2
+
+    handIds.forEach((cardIdBranded, idx) => {
+      const cardIdStr = cardIdBranded as unknown as string
+      const card = cardsMap.get(cardIdStr)
+      if (!card) return
+
+      const x = startX + idx * CARD_SPACING
+      const y = CARD_HAND_Y
+      const affordable = card.apCost <= ap
+
+      const container = this.add.container(x, y)
+      const border = this.add.rectangle(0, 0, CARD_W + 4, CARD_H + 4, 0x000000, 0)
+        .setStrokeStyle(2, 0x4a3a20)
+      const bg = this.add.rectangle(0, 0, CARD_W, CARD_H, 0x1a1410)
+        .setStrokeStyle(1, 0x2a2010)
+      const nameText = this.add.text(0, -CARD_H / 2 + 14, card.name, {
+        fontFamily: 'monospace', fontSize: '11px', color: '#e0d0a0',
+        wordWrap: { width: CARD_W - 12 }, align: 'center',
+      }).setOrigin(0.5, 0)
+      const dmgBase = getCardDamageBase(card)
+      const dmgText = this.add.text(0, -8, dmgBase !== null ? String(dmgBase) : '—', {
+        fontFamily: 'monospace', fontSize: '20px',
+        color: dmgBase !== null ? '#ffaa44' : '#666',
+      }).setOrigin(0.5)
+      const apText = this.add.text(-CARD_W / 2 + 6, CARD_H / 2 - 16, `${card.apCost} AP`, {
+        fontFamily: 'monospace', fontSize: '10px', color: '#a0d0ff',
+      }).setOrigin(0, 0)
+      const targetKindText = this.add.text(CARD_W / 2 - 6, CARD_H / 2 - 16, card.targetKind.replace('_', ' '), {
+        fontFamily: 'monospace', fontSize: '8px', color: '#888',
+      }).setOrigin(1, 0)
+
+      container.add([bg, border, nameText, dmgText, apText, targetKindText])
+
+      const isSelected = state.selectedCardId !== null
+        && (state.selectedCardId as unknown as string) === cardIdStr
+
+      // Visual states
+      if (!affordable) {
+        container.setAlpha(0.45)
+      } else if (isSelected) {
+        border.setStrokeStyle(2, 0xfacc15)
+        bg.setFillStyle(0x2a2418)
+      }
+
+      // Interactivity
+      const hitArea = new Phaser.Geom.Rectangle(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H)
+      container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains)
+
+      const view: CardView = {
+        cardId: cardIdStr,
+        container,
+        bg,
+        border,
+        baseY: y,
+        baseX: x,
+        hovered: false,
+      }
+
+      container.on('pointerover', () => {
+        if (!affordable) return
+        view.hovered = true
+        container.setY(view.baseY - 24)
+        // dim siblings
+        for (const v of this.cardViews) {
+          if (v !== view && !v.hovered) v.container.setAlpha(v === view ? 1 : 0.5)
+        }
+      })
+      container.on('pointerout', () => {
+        view.hovered = false
+        container.setY(view.baseY)
+        // restore siblings
+        for (const v of this.cardViews) v.container.setAlpha(v.cardId === cardIdStr || true ? 1 : 1)
+        if (!affordable) container.setAlpha(0.45)
+      })
+      container.on('pointerdown', () => {
+        if (!affordable) return
+        cs.dispatch({ type: 'selectCard', payload: { cardId: asCardId(cardIdStr) } }, createRng(state.rng))
+      })
+
+      this.cardViews.push(view)
+    })
+
+    // Re-apply alpha for non-affordable cards (after the listeners are attached, the hover-out
+    // restoration above sets affordable cards to 1; the unaffordable ones got 0.45 above)
+    for (const v of this.cardViews) {
+      const card = cardsMap.get(v.cardId)
+      if (card && card.apCost > ap) v.container.setAlpha(0.45)
+    }
+  }
+
   private handleEffect(e: CombatEffect): void {
     // Foundation: log only. Real animation handling lands in F-06.
     // eslint-disable-next-line no-console
@@ -161,5 +305,7 @@ export class CombatScene extends Phaser.Scene {
     if (this.unsubState) { this.unsubState(); this.unsubState = null }
     for (const view of this.unitViews.values()) view.container.destroy()
     this.unitViews.clear()
+    for (const view of this.cardViews) view.container.destroy()
+    this.cardViews = []
   }
 }
