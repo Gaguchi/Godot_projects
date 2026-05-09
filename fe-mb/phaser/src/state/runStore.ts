@@ -51,6 +51,7 @@ export type RunAction =
   | { type: 'endDialogue' }
   | { type: 'markEncounterFired'; payload: { encounterId: string } }
   | { type: 'consumeFoodPerHop' }
+  | { type: 'enterMap'; payload: { mapId: MapId; nodeId: NodeId } }
 
 interface RunStateWithDispatch extends RunState {
   dispatch(action: RunAction): void
@@ -328,6 +329,15 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
         set(s => {
           const next = new Set(s.oneShotsFired); next.add(action.payload.encounterId)
           return { oneShotsFired: next }
+        })
+        return
+      case 'enterMap':
+        set(s => {
+          const key = visitedKey(action.payload.mapId, action.payload.nodeId)
+          return {
+            worldPosition: { mapId: action.payload.mapId, nodeId: action.payload.nodeId },
+            visitedNodes: { ...s.visitedNodes, [key]: true },
+          }
         })
         return
       case 'consumeFoodPerHop': {
