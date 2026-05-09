@@ -28,10 +28,10 @@ Each iteration completes ONE task end-to-end (TDD: failing test → implementati
 
 ## Phase C — Travel encounters + per-hop food
 
-- [ ] **GP-C1** Add `Region` domain + schema + `regions.json` (borderlands/thornwood/ashfall, tier 1-3).
-- [ ] **GP-C2** Add `EncounterEntry` + `EnemyGroup` domain types + schemas.
-- [ ] **GP-C3** Build `systems/encounterRoller.ts` (predicate-filtered weighted pick + one-shot tracking) with deterministic-RNG tests.
-- [ ] **GP-C4** Port `data/events/travel_events.json` → 3 region encounter tables. Port `enemy_groups.json` → 4 group files (bandits, wolves, brigands, darens_gang).
+- [x] **GP-C1** Region domain + schema + 3 regions ported. ✅ f07e248. borderlands/thornwood/ashfall tier 1/2/3.
+- [x] **GP-C2** Encounter domain + schemas. ✅ 9fccf32. EncounterEntry/Table, EnemyGroup, EncounterOutcome, CaptureTarget, EnemyGroupMember. asEncounterId.
+- [x] **GP-C3** encounterRoller.ts. ✅ 9fccf32. Weighted + predicate-filtered + one-shot tracking. 6 deterministic-RNG tests.
+- [x] **GP-C4** 3 encounter tables + 4 enemy groups ported. ✅ 9fccf32. borderlands_road has full 7 Godot entries; thornwood/ashfall placeholders.
 - [ ] **GP-C5** Wire `OverworldScene.handleNodeClick` to encounterRoller. Branch dialogue → `startDialogue`, battle → combat seed. Add `markEncounterFired` action + `oneShotsFired` state.
 - [ ] **GP-C6** Add `consumeFoodPerHop` action (decrements food, deals 3 HP starvation when 0). HUD shows food + "starving" indicator.
 
