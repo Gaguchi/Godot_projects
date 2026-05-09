@@ -29,3 +29,13 @@ test('load game click → modal opens with empty state → close', async ({ page
   await page.locator('#load-game-close').click()
   await expect(page.locator('#load-game-modal')).toHaveCount(0)
 })
+
+test('quit click → fallback modal in browser → back to title', async ({ page }) => {
+  await page.goto('/')
+  await page.locator('#title-quit').click()
+  await expect(page.locator('#quit-modal')).toBeVisible({ timeout: 2000 })
+  await page.locator('#quit-close').click()
+  await expect(page.locator('#quit-modal')).toHaveCount(0)
+  // Title screen still rendered behind the closed modal
+  await expect(page.locator('#title-screen')).toBeVisible()
+})
