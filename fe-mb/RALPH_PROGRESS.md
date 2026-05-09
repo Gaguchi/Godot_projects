@@ -20,7 +20,7 @@ Read this file each iteration. Pick the next unchecked item. Build the entire fe
 - [x] **F-06** Card resolution animations: handlers for `PlayTween` (sprite tween toward target+back), `HitFlash` (white tint 80ms), `FloatDamage` (floating text up+fade 600ms, color by kind), `ShakeCamera`, sprite fade-out on death, `WaitForAnimations` blocks input until `runtime.activeTweens` settles then dispatches `animationsCompleted`. — `32d77d5` 2026-05-09
 - [x] **F-07** AP indicator + End Turn button + turn banner: text "AP: cur/max" top-right, End Turn button bottom-right dispatches `endTurn`, brief "<UnitName>'s Turn" overlay 800ms on turn change. — `32d77d5` 2026-05-09
 - [x] **F-08** Real combat reducer card play: extend `combatReducer.ts` so `playCard` actually runs `effectPipeline.runEffects` and produces `CombatEffect[]` for the scene to drain (not just `WaitForAnimations`). Apply `CardEffect.kind` results to `state.units` (HP, statuses, AP). — `32d77d5` 2026-05-09
-- [x] **F-09** Real `enemyAI.planTurn`: replace stub `[endTurn]` with closest-target movement + attack with available AP; handles distance, line-of-sight, picks lowest-HP target on tie. — pending-sha 2026-05-09
+- [x] **F-09** Real `enemyAI.planTurn`: replace stub `[endTurn]` with closest-target movement + attack with available AP; handles distance, line-of-sight, picks lowest-HP target on tie. — `4bc15ce` 2026-05-09
 - [ ] **F-10** Victory / Defeat React modals: `VictoryModal.tsx` + `DefeatModal.tsx` shown when `combatStore.state.phase` is VICTORY/DEFEAT; outcome text, gold earned, captured list, Restart (re-seeds stub battle) and Return-to-Title buttons. Mounted in App.tsx outside `view === 'combat'` guard so they always render when phase fires.
 
 ## B. Overworld Layer (React DOM scene)
