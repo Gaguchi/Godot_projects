@@ -41,7 +41,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 ## Phase 3 — Combat HUD migration + BoardScene reduction
 
 - [x] **UI-T18** `CombatHud.tsx` shell + `TopBar.tsx` (turn / active unit / HP / AP). ✅ 182 tests pass. Subscribes via Zustand selectors. pointer-events:none on overlay; pointer-events:auto on each interactive child so canvas underneath still receives clicks.
-- [ ] **UI-T19** Build `ModeLabel.tsx` with Framer Motion `<AnimatePresence>`. Shows banner during SELECTING_MOVE / SELECTING_TARGET.
+- [x] **UI-T19** `ModeLabel.tsx` with Framer Motion `<AnimatePresence>`. ✅ 185 tests pass. Shows banner only in SELECTING_MOVE / SELECTING_TARGET subPhases. Slides in from above with fade.
 - [ ] **UI-T20** Build `EndTurnBtn.tsx`. Uses `<Button variant="primary">`. Disabled when not party turn / RESOLVING.
 - [ ] **UI-T21** Build `MoveBtn.tsx`. Toggles enterMoveMode / cancelSelection. Disabled when hasMovedThisTurn.
 - [ ] **UI-T22** Build `CardHand.tsx` (fan layout, 5 cards, `<Card>` with AP guard + `<Tooltip>` on disabled).
