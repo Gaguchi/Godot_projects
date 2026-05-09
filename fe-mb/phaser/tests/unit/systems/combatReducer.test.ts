@@ -8,7 +8,7 @@ const mk = (id: string, spd: number, classId = 'lord'): Unit => ({
   id: asUnitId(id), name: id, classId: asClassId(classId), level: 1,
   hp: { current: 20, max: 20 },
   stats: { str: 5, mag: 0, skl: 4, spd, def: 3, res: 1 },
-  hand: { left: null, right: null }, position: null, ap: 3, armor: 0, statuses: [],
+  position: null, ap: 3, armor: 0, statuses: [],
 })
 
 describe('combatReducer (core)', () => {

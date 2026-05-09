@@ -7,7 +7,7 @@ const mkUnit = (id: string): Unit => ({
   id: asUnitId(id), name: id, classId: asClassId('lord'), level: 1,
   hp: { current: 20, max: 20 },
   stats: { str: 5, mag: 0, skl: 4, spd: 5, def: 3, res: 1 },
-  hand: { left: null, right: null }, position: null, ap: 3, armor: 0, statuses: [],
+  position: null, ap: 3, armor: 0, statuses: [],
 })
 
 describe('runStore', () => {

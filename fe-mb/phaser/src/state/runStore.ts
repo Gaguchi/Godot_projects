@@ -27,7 +27,6 @@ export interface RunState {
 export type RunAction =
   | { type: 'recruitUnit'; payload: { unit: Unit } }
   | { type: 'fallenUnit'; payload: { unitId: UnitId; cause: string; turn: number } }
-  | { type: 'equipHand'; payload: { unitId: UnitId; slot: 'left' | 'right'; itemId: ItemId | null } }
   | { type: 'moveItemInBag'; payload: { itemId: ItemId; x: number; y: number } }
   | { type: 'addGold'; payload: { amount: number } }
   | { type: 'arriveAtNode'; payload: { nodeId: NodeId } }
@@ -88,16 +87,6 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
         set(s => ({
           deathLog: [...s.deathLog, { unitId, cause, turn }],
         }))
-        return
-      }
-      case 'equipHand': {
-        const { unitId, slot, itemId } = action.payload
-        set(s => {
-          const u = s.party.units[unitId as unknown as string]
-          if (!u) return s
-          const updated: Unit = { ...u, hand: { ...u.hand, [slot]: itemId } }
-          return { party: { ...s.party, units: { ...s.party.units, [unitId as unknown as string]: updated } } }
-        })
         return
       }
       case 'moveItemInBag': {

@@ -42,7 +42,6 @@ export function seedStubBattle(rngSeed: RngState): Extract<CombatEvent, { type: 
     level: 1,
     hp: { current: cls.startingHp, max: cls.startingHp },
     stats: { ...cls.baseStats },
-    hand: { left: null, right: null },
     position: asTileId(`${x},${y}`),
     ap: 3,
     armor: 0,

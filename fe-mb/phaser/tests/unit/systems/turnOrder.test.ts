@@ -6,7 +6,7 @@ import { asUnitId, asClassId } from '../../../src/domain/ids'
 const mk = (id: string, spd: number): Unit => ({
   id: asUnitId(id), name: id, classId: asClassId('lord'), level: 1,
   hp: { current: 1, max: 1 }, stats: { str: 0, mag: 0, skl: 0, spd, def: 0, res: 0 },
-  hand: { left: null, right: null }, position: null, ap: 3, armor: 0, statuses: [],
+  position: null, ap: 3, armor: 0, statuses: [],
 })
 
 describe('buildInitiativeQueue', () => {

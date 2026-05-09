@@ -13,7 +13,6 @@ const mkUnit = (id: string, name: string): Unit => ({
   level: 1,
   hp: { current: 18, max: 22 },
   stats: { str: 5, mag: 0, skl: 4, spd: 5, def: 3, res: 1 },
-  hand: { left: null, right: null },
   position: null,
   ap: 2,
   armor: 0,

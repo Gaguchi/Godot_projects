@@ -12,7 +12,6 @@ export const UnitSchema = z.object({
   level: z.number().int().min(1),
   hp: z.object({ current: z.number().int().min(0), max: z.number().int().min(1) }),
   stats: UnitStatsSchema,
-  hand: z.object({ left: z.string().nullable(), right: z.string().nullable() }),
   position: z.string().nullable(),
   ap: z.number().int().min(0),
   armor: z.number().int().min(0),

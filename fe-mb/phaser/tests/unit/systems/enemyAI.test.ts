@@ -9,7 +9,6 @@ const mkUnit = (id: string, classId: string, x: number, y: number, hp = 20): Uni
   id: asUnitId(id), name: id, classId: asClassId(classId), level: 1,
   hp: { current: hp, max: 20 },
   stats: { str: 4, mag: 0, skl: 3, spd: 4, def: 2, res: 1 },
-  hand: { left: null, right: null },
   position: asTileId(`${x},${y}`),
   ap: 3, armor: 0, statuses: [],
 })
