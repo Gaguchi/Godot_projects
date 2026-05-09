@@ -31,11 +31,11 @@ Read this file each iteration. Pick the next unchecked item. Build the entire fe
 
 ## C. Town Layer (React DOM)
 
-- [x] **F-14** Town scene React layout: enter when player arrives at TOWN node. Mount-and-Blade-style sidebar (Inn / Shop / Tavern / Leave) + content panel right. Town JSON schema + Pine Crossing town data. View `'overworld' → 'town'`. — pending-sha 2026-05-09
-- [x] **F-15** Inn panel: heal all party members, cost 8g/unit, button disabled if insufficient gold; dispatches `runStore.addGold(-cost)` and unit-by-unit HP restore via dispatch. — pending-sha 2026-05-09
-- [x] **F-16** Shop panel: buy/sell with regional inventory filter (per `Item.region` + town `region` config), item detail view, integrates with grid inventory (F-17). 8 items minimum stocked at Pine Crossing (foundation has 10 items; Pine stocks borderlands subset). — pending-sha 2026-05-09
+- [x] **F-14** Town scene React layout: enter when player arrives at TOWN node. Mount-and-Blade-style sidebar (Inn / Shop / Tavern / Leave) + content panel right. Town JSON schema + Pine Crossing town data. View `'overworld' → 'town'`. — `ef22f2a` 2026-05-09
+- [x] **F-15** Inn panel: heal all party members, cost 8g/unit, button disabled if insufficient gold; dispatches `runStore.addGold(-cost)` and unit-by-unit HP restore via dispatch. — `ef22f2a` 2026-05-09
+- [x] **F-16** Shop panel: buy/sell with regional inventory filter (per `Item.region` + town `region` config), item detail view, integrates with grid inventory (F-17). 8 items minimum stocked at Pine Crossing (foundation has 10 items; Pine stocks borderlands subset). — `ef22f2a` 2026-05-09
 - [ ] **F-17** Grid inventory drag-drop UI (8×4 cells using @dnd-kit): items render at `gridSize.width × gridSize.height`, drag-drop to move/equip, drag onto unit portrait fires `equipHand`, "Bag full" overlay if no fit, "Organize" auto-pack button using bin-packing helper. Install @dnd-kit/core + @dnd-kit/sortable.
-- [x] **F-18** Tavern panel: rumors list (flavor text from town JSON), accept-quest list (Blood Ties shows up at Pine Crossing per F-19), bounty board placeholder (real wiring in F-22), recruitment locked stub. — pending-sha 2026-05-09
+- [x] **F-18** Tavern panel: rumors list (flavor text from town JSON), accept-quest list (Blood Ties shows up at Pine Crossing per F-19), bounty board placeholder (real wiring in F-22), recruitment locked stub. — `ef22f2a` 2026-05-09
 
 ## D. Quest + Dialogue Layer
 
