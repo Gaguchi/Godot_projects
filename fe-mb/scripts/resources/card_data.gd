@@ -58,8 +58,9 @@ var source: String = "innate"  # "innate", "hand_left", "hand_right"
 @export var is_consumable: bool = false      # Removed from deck after use
 
 
-## Get computed damage for a specific unit (base + stat scaling only)
+## Get computed damage for a specific unit (base + stat scaling + sharpness)
 ## Weapon might is baked into gear cards' damage_base — not added here.
+## Sharpness bonus is dynamic (degrades each battle) so it IS added here.
 func get_computed_damage(unit: UnitData) -> int:
 	var base: float = damage_base
 	if damage_stat != "" and unit:
@@ -67,7 +68,16 @@ func get_computed_damage(unit: UnitData) -> int:
 			"str": base += unit.strength
 			"mag": base += unit.magic
 			"skl": base += unit.skill
-	return int(base * damage_multiplier)
+	# Add sharpness bonus from the weapon that sourced this card
+	if unit and source != "innate":
+		var weapon: Resource = null
+		if source == "hand_left":
+			weapon = unit.hand_left
+		elif source == "hand_right":
+			weapon = unit.hand_right
+		if weapon and weapon is ItemData:
+			base += weapon.get_sharpness_bonus()
+	return max(0, int(base * damage_multiplier))
 
 
 ## Get computed healing for a specific unit

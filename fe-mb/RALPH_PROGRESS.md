@@ -14,7 +14,7 @@ Each iteration completes ONE task end-to-end (TDD: failing test → implementati
 - [x] **GP-A1** Trim `items.json` + Item domain to `kind: 'food' | 'potion'` only. ✅ items.json now 3 entries (food_rations, healing_potion, power_elixir). Item type stripped of WeaponType, gearCards, quiverModifier, isTwoHanded, range. Schema matches.
 - [x] **GP-A2** Drop `HandSlots` from `Unit` + remove fixtures. ✅ HandSlots interface deleted. seedStubBattle and 9 test files cleaned via sed. Combined with the runStore equipHand drop (planned A4) since equipHand referenced unit.hand.
 - [x] **GP-A3** Delete `systems/deckBuilder.ts` + dead test (no callers). ✅ Combined with A1 since A1's typecheck depended on A3's deletion (deckBuilder consumed `Item.gearCards`).
-- [ ] **GP-A4** Drop `equipHand` action, `ItemAcquired` event, `grantItem` quest effect, `hasItem` predicate.
+- [x] **GP-A4** Drop `ItemAcquired` event, `grantItem` quest effect, `hasItem` predicate. ✅ equipHand was already gone in A2. Domain types + Zod schemas + questRunner table + predicate eval all updated. 179 tests pass (was 180; -1 from hasItem test).
 - [ ] **GP-A5** Drop `loot` field from `BattleResult` + battleResolver + applyBattleResult.
 - [ ] **GP-A6** Bump `SAVE_VERSION` to `'0.6.0-cards-only'`. Drop `hand`/`loot` from save schema. Drop `itemId` alias.
 

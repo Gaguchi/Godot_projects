@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { evaluatePredicate } from '../../../src/systems/predicates'
-import { asFlagKey, asQuestId, asStageId, asClassId, asItemId, asEncounterId, asMapId, asNodeId } from '../../../src/domain/ids'
+import { asFlagKey, asQuestId, asStageId, asClassId, asEncounterId, asMapId, asNodeId } from '../../../src/domain/ids'
 import type { Predicate } from '../../../src/domain/predicate'
 
 const baseState = () => ({
@@ -60,13 +60,6 @@ describe('evaluatePredicate', () => {
     s.party.units['roy'] = { classId: 'lord' }
     expect(evaluatePredicate({ kind: 'partyHas', classId: asClassId('lord') }, s)).toBe(true)
     expect(evaluatePredicate({ kind: 'partyHas', classId: asClassId('mage') }, s)).toBe(false)
-  })
-
-  it('hasItem', () => {
-    const s = baseState()
-    s.inventory.items.push({ itemId: 'iron_sword' })
-    expect(evaluatePredicate({ kind: 'hasItem', itemId: asItemId('iron_sword') }, s)).toBe(true)
-    expect(evaluatePredicate({ kind: 'hasItem', itemId: asItemId('absent') }, s)).toBe(false)
   })
 
   it('goldAtLeast', () => {

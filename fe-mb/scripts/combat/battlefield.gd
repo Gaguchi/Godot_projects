@@ -794,6 +794,17 @@ func _end_battle(victory: bool) -> void:
 				if ct.has("killed_flag"):
 					EventBus.set_flag(ct.killed_flag, true)
 
+	# Degrade weapon sharpness after battle
+	if victory:
+		for unit in player_units:
+			if is_instance_valid(unit) and unit.has_method("get_unit_data"):
+				var data: UnitData = unit.get_unit_data()
+				if data and data.is_alive():
+					if data.hand_left and data.hand_left is ItemData:
+						data.hand_left.degrade_sharpness()
+					if data.hand_right and data.hand_right is ItemData:
+						data.hand_right.degrade_sharpness()
+
 	GameManager.last_battle_victory = victory
 
 	EventBus.battle_ended.emit(victory)

@@ -13,6 +13,7 @@
 				"A company of knights rode north last month. Haven't been seen since."
 			]
 		},
+		"blacksmith": {},
 		"arena": { "locked": true, "locked_text": "No arena here. Try Borderkeep." }
 	}
 }

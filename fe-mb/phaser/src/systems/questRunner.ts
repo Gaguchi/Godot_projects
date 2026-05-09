@@ -18,7 +18,6 @@ const EVENT_TYPE_MAP: Record<DomainEvent['type'], QuestListenerEvent | null> = {
   UnitDied: null,
   EnemyCaptured: null,
   LocationArrived: 'LocationArrived',
-  ItemAcquired: 'ItemAcquired',
   FlagSet: 'FlagSet',
   QuestStageAdvanced: null,
 }

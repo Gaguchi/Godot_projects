@@ -123,6 +123,7 @@ func _serialize_game_manager() -> Dictionary:
 		"current_location_id": GameManager.current_location_id,
 		"nodes_visited": GameManager.nodes_visited,
 		"captured_enemies": captured_data,
+		"pending_travel_path": GameManager.pending_travel_path,
 	}
 
 func _deserialize_game_manager(data: Dictionary) -> void:
@@ -164,27 +165,11 @@ func _deserialize_game_manager(data: Dictionary) -> void:
 		unit.from_dict(unit_dict)
 		GameManager.captured_enemies.append(unit)
 
-	# Migration: 0.4.0 → 0.5.0
-	if save_version < "0.5.0":
-		# Migrate equipped_weapon -> hand_left, remove quick_slots and sharpness
-		if "party" in data:
-			for unit_dict in data["party"]:
-				if "equipped_weapon" in unit_dict:
-					unit_dict["hand_left"] = unit_dict["equipped_weapon"]
-					unit_dict.erase("equipped_weapon")
-				if "quick_slots" in unit_dict:
-					unit_dict.erase("quick_slots")
-				for key in ["hand_left", "hand_right"]:
-					if key in unit_dict and unit_dict[key] is Dictionary:
-						unit_dict[key].erase("sharpness")
-						unit_dict[key].erase("is_honed")
-		if "party_bag" in data:
-			var filtered = []
-			for entry in data["party_bag"]:
-				if entry.get("item", {}).get("item_name", "") != "Whetstone":
-					filtered.append(entry)
-			data["party_bag"] = filtered
-		print("[SaveManager] Migrated save from %s to 0.5.0" % save_version)
+	# Restore pending_travel_path
+	var raw_path = data.get("pending_travel_path", [])
+	GameManager.pending_travel_path.clear()
+	for node_id in raw_path:
+		GameManager.pending_travel_path.append(int(node_id))
 
 	# Restore party bag (0.4.0+) or migrate from old food integer
 	if save_version >= "0.4.0":

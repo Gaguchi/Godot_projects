@@ -20,8 +20,10 @@ var _panel: PanelContainer
 var _title_label: Label
 var _vbox: VBoxContainer
 var _rest_btn: Button
+var _sharpen_btn: Button
 var _scout_btn: Button
 var _leave_btn: Button
+var _sharpen_selector: PanelContainer
 var _camp_name: String = ""
 
 
@@ -33,6 +35,7 @@ func _ready() -> void:
 func open(camp_name: String) -> void:
 	_camp_name = camp_name
 	_title_label.text = camp_name
+	show()
 
 	var has_food: bool = GameManager.food >= 1
 
@@ -43,6 +46,18 @@ func open(camp_name: String) -> void:
 	else:
 		_rest_btn.disabled = true
 		_rest_btn.text = "Rest\nHeal 20% HP (No food)"
+
+	# Sharpen button
+	var all_sharp := _all_weapons_sharp()
+	if not has_food:
+		_sharpen_btn.disabled = true
+		_sharpen_btn.text = "Sharpen\nRestore weapon sharpness (No Food)"
+	elif all_sharp:
+		_sharpen_btn.disabled = true
+		_sharpen_btn.text = "Sharpen\nRestore weapon sharpness (All Sharp)"
+	else:
+		_sharpen_btn.disabled = false
+		_sharpen_btn.text = "Sharpen\nRestore weapon sharpness (1 food)"
 
 
 func _build_ui() -> void:
@@ -105,6 +120,10 @@ func _build_ui() -> void:
 	_rest_btn.pressed.connect(_on_rest_pressed)
 	_vbox.add_child(_rest_btn)
 
+	_sharpen_btn = _create_button("Sharpen\nRestore weapon sharpness (1 food)", COLOR_EMBER)
+	_sharpen_btn.pressed.connect(_on_sharpen_pressed)
+	_vbox.add_child(_sharpen_btn)
+
 	_scout_btn = _create_button("Scout\nScout the road ahead", COLOR_SKILL_BLUE)
 	_scout_btn.pressed.connect(_on_scout_pressed)
 	_vbox.add_child(_scout_btn)
@@ -153,6 +172,8 @@ func _create_button(text: String, accent: Color) -> Button:
 
 
 func _on_rest_pressed() -> void:
+	if GameManager.food < 1:
+		return
 	GameManager.consume_food(1)
 	GameManager.rest_party(0.2)
 	EventBus.show_notification.emit("Rested at %s. Party healed 20%%." % _camp_name)
@@ -169,7 +190,107 @@ func _on_leave_pressed() -> void:
 
 
 func _close() -> void:
+	hide()
+	if _sharpen_selector and is_instance_valid(_sharpen_selector):
+		_sharpen_selector.queue_free()
+		_sharpen_selector = null
 	popup_closed.emit()
+
+
+func _all_weapons_sharp() -> bool:
+	for unit in GameManager.party:
+		for weapon in [unit.hand_left, unit.hand_right]:
+			if weapon and weapon is ItemData and weapon.item_type == ItemData.ItemType.WEAPON and weapon.sharpness != ItemData.Sharpness.SHARP:
+				return false
+	return true
+
+
+func _on_sharpen_pressed() -> void:
+	if GameManager.food < 1:
+		return
+	_show_sharpen_selector()
+
+
+func _show_sharpen_selector() -> void:
+	if _sharpen_selector and is_instance_valid(_sharpen_selector):
+		_sharpen_selector.queue_free()
+
+	_sharpen_selector = PanelContainer.new()
+	_sharpen_selector.custom_minimum_size = Vector2(300, 0)
+	_sharpen_selector.anchor_left = 0.5
+	_sharpen_selector.anchor_top = 0.5
+	_sharpen_selector.anchor_right = 0.5
+	_sharpen_selector.anchor_bottom = 0.5
+	_sharpen_selector.offset_left = -150
+	_sharpen_selector.offset_top = -100
+	_sharpen_selector.offset_right = 150
+	_sharpen_selector.offset_bottom = 100
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.06, 0.065, 0.09, 0.98)
+	style.border_color = COLOR_EMBER
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(4)
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	_sharpen_selector.add_theme_stylebox_override("panel", style)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	_sharpen_selector.add_child(vbox)
+
+	var header := Label.new()
+	header.text = "Choose a weapon to sharpen:"
+	header.add_theme_font_size_override("font_size", 14)
+	header.add_theme_color_override("font_color", COLOR_EMBER)
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(header)
+
+	for unit in GameManager.party:
+		for hand in ["hand_left", "hand_right"]:
+			var weapon: ItemData = unit.get(hand)
+			if not weapon or not weapon is ItemData or weapon.item_type != ItemData.ItemType.WEAPON:
+				continue
+			if weapon.sharpness == ItemData.Sharpness.SHARP:
+				continue
+
+			var sharpness_label := ""
+			match weapon.sharpness:
+				ItemData.Sharpness.NORMAL:
+					sharpness_label = "Normal"
+				ItemData.Sharpness.DULL:
+					sharpness_label = "Dull"
+
+			var btn := _create_button(
+				"%s — %s (%s)" % [unit.unit_name, weapon.item_name, sharpness_label],
+				COLOR_EMBER
+			)
+			btn.pressed.connect(_on_sharpen_unit.bind(unit, hand))
+			vbox.add_child(btn)
+
+	var cancel_btn := _create_button("Cancel", COLOR_WORN_STONE)
+	cancel_btn.pressed.connect(_close_sharpen_selector)
+	vbox.add_child(cancel_btn)
+
+	add_child(_sharpen_selector)
+
+
+func _on_sharpen_unit(unit: UnitData, hand: String) -> void:
+	var weapon: ItemData = unit.get(hand)
+	if not weapon:
+		return
+	weapon.sharpen()
+	GameManager.consume_food(1)
+	EventBus.show_notification.emit("Sharpened %s's %s!" % [unit.unit_name, weapon.item_name])
+	_close()
+
+
+func _close_sharpen_selector() -> void:
+	if _sharpen_selector and is_instance_valid(_sharpen_selector):
+		_sharpen_selector.queue_free()
+		_sharpen_selector = null
 
 
 func _input(event: InputEvent) -> void:

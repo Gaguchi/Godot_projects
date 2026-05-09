@@ -27,6 +27,12 @@ enum Rarity {
 	LEGENDARY
 }
 
+enum Sharpness {
+	DULL,    # -2 damage
+	NORMAL,  # +0 damage
+	SHARP    # +2 damage
+}
+
 @export_group("Identity")
 @export var item_name: String = "Item"
 @export var description: String = ""
@@ -63,6 +69,10 @@ enum Rarity {
 
 @export_group("Hand Slots")
 @export var is_two_handed: bool = false
+
+@export_group("Sharpness")
+@export var sharpness: Sharpness = Sharpness.NORMAL
+@export var honed: bool = false  # Blacksmith bonus — first degradation is skipped
 
 @export_group("Gear Cards")
 @export var gear_cards: Array = []  # Array of card definition Dictionaries
@@ -137,6 +147,33 @@ func is_ranged() -> bool:
 	return range_max > 1
 
 
+## Get damage bonus/penalty from sharpness tier
+func get_sharpness_bonus() -> int:
+	match sharpness:
+		Sharpness.SHARP: return 2
+		Sharpness.NORMAL: return 0
+		Sharpness.DULL: return -2
+	return 0
+
+
+## Degrade sharpness by 1 tier. Honed weapons skip the first degradation.
+func degrade_sharpness() -> void:
+	if item_type != ItemType.WEAPON:
+		return
+	if honed:
+		honed = false
+		return
+	match sharpness:
+		Sharpness.SHARP: sharpness = Sharpness.NORMAL
+		Sharpness.NORMAL: sharpness = Sharpness.DULL
+		# DULL stays DULL
+
+
+## Restore sharpness to Sharp
+func sharpen() -> void:
+	sharpness = Sharpness.SHARP
+
+
 ## Create an ItemData from a catalog dictionary entry
 ## Handles string-to-enum conversion for item_type and weapon_type
 static func create_from_dict(data: Dictionary) -> ItemData:
@@ -204,6 +241,18 @@ static func create_from_dict(data: Dictionary) -> ItemData:
 	else:
 		item.rarity = rarity_val
 
+	# Handle string or int sharpness
+	var sharp_val = data.get("sharpness", Sharpness.NORMAL)
+	if sharp_val is String:
+		match sharp_val:
+			"SHARP": item.sharpness = Sharpness.SHARP
+			"NORMAL": item.sharpness = Sharpness.NORMAL
+			"DULL": item.sharpness = Sharpness.DULL
+			_: item.sharpness = Sharpness.NORMAL
+	else:
+		item.sharpness = sharp_val
+	item.honed = data.get("honed", false)
+
 	return item
 
 
@@ -234,6 +283,8 @@ func to_dict() -> Dictionary:
 		"rarity": rarity,
 		"is_two_handed": is_two_handed,
 		"gear_cards": gear_cards,
+		"sharpness": sharpness,
+		"honed": honed,
 	}
 	if not quiver_modifier.is_empty():
 		d["quiver_modifier"] = quiver_modifier
@@ -266,3 +317,13 @@ func from_dict(data: Dictionary) -> void:
 	is_two_handed = data.get("is_two_handed", false)
 	gear_cards = data.get("gear_cards", [])
 	quiver_modifier = data.get("quiver_modifier", {})
+	var sharp_val = data.get("sharpness", Sharpness.NORMAL)
+	if sharp_val is String:
+		match sharp_val:
+			"SHARP": sharpness = Sharpness.SHARP
+			"NORMAL": sharpness = Sharpness.NORMAL
+			"DULL": sharpness = Sharpness.DULL
+			_: sharpness = Sharpness.NORMAL
+	else:
+		sharpness = sharp_val
+	honed = data.get("honed", false)

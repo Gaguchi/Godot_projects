@@ -317,7 +317,8 @@ func to_dict() -> Dictionary:
 		"deck": deck_list,
 		"max_ap": max_ap,
 		"is_capture_target": is_capture_target,
-		"bounty_value": bounty_value
+		"bounty_value": bounty_value,
+		"is_bound": is_bound
 	}
 
 
@@ -351,6 +352,7 @@ func from_dict(data: Dictionary) -> void:
 	
 	is_capture_target = data.get("is_capture_target", false)
 	bounty_value = data.get("bounty_value", 0)
+	is_bound = data.get("is_bound", false)
 	max_ap = data.get("max_ap", 3)
 
 	# Deserialize Deck

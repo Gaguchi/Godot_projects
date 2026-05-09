@@ -9,7 +9,6 @@ export const PredicateSchema: z.ZodType<unknown> = z.lazy(() =>
     z.object({ kind: z.literal('questStage'), questId: z.string(), stage: z.string() }),
     z.object({ kind: z.literal('questComplete'), questId: z.string() }),
     z.object({ kind: z.literal('partyHas'), classId: z.string() }),
-    z.object({ kind: z.literal('hasItem'), itemId: z.string() }),
     z.object({ kind: z.literal('goldAtLeast'), amount: z.number() }),
     z.object({ kind: z.literal('visited'), ref: z.object({ mapKind: z.enum(['overworld','dungeon','battle']), mapId: z.string(), nodeId: z.string() }) }),
     z.object({ kind: z.literal('cleared'), encounterId: z.string() }),

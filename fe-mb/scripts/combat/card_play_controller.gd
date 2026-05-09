@@ -85,8 +85,10 @@ func init_decks(player_units: Array) -> void:
 		dm.set_script(dm_script)
 
 		# Load innate cards for this class, then build full deck from innate + gear
-		var innate := _load_innate_cards(data)
-		var all_cards := dm.build_deck_from_gear(innate, data)
+		var innate: Array = _load_innate_cards(data)
+		if innate == null:
+			innate = []
+		var all_cards: Array = dm.build_deck_from_gear(innate, data)
 		dm.init_deck(all_cards)
 		dm.deck_shuffled.connect(_on_deck_reshuffled.bind(data.unit_name))
 		_deck_managers[unit] = dm

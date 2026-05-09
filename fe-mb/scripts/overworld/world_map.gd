@@ -354,6 +354,7 @@ func _on_map_node_clicked(hit_node: Node) -> void:
 	var current_id = GameManager.current_location_id
 
 	if target.id == current_id:
+		_trigger_location_event(target)
 		return
 
 	var path = _find_path(current_id, target.id)

@@ -3,7 +3,6 @@ import { PredicateSchema } from './predicate'
 
 export const QuestEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('setFlag'), key: z.string(), value: z.unknown(), scope: z.enum(['run','quest','battle','permanent']).optional() }),
-  z.object({ kind: z.literal('grantItem'), itemId: z.string() }),
   z.object({ kind: z.literal('recruitUnit'), classId: z.string(), level: z.number().int().min(1) }),
   z.object({ kind: z.literal('spawnNode'), ref: z.object({ mapKind: z.enum(['overworld','dungeon','battle']), mapId: z.string(), nodeId: z.string() }) }),
   z.object({ kind: z.literal('unlockNode'), ref: z.object({ mapKind: z.enum(['overworld','dungeon','battle']), mapId: z.string(), nodeId: z.string() }) }),
@@ -15,7 +14,7 @@ export const QuestStageSchema = z.object({
   id: z.string(),
   onEnter: z.array(QuestEffectSchema),
   listeners: z.array(z.object({
-    on: z.enum(['BattleVictory','LocationArrived','ItemAcquired','FlagSet']),
+    on: z.enum(['BattleVictory','LocationArrived','FlagSet']),
     predicate: PredicateSchema,
     emit: z.array(QuestEffectSchema),
   })),

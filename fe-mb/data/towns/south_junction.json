@@ -13,6 +13,7 @@
 				"Some fool tried to challenge the warlord's men. Didn't end well."
 			]
 		},
+		"blacksmith": {},
 		"arena": { "locked": true, "locked_text": "The locals prefer settling scores in the alley." }
 	}
 }

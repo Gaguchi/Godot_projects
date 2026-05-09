@@ -1,4 +1,4 @@
-import type { FlagKey, QuestId, StageId, ClassId, ItemId, EncounterId } from './ids'
+import type { FlagKey, QuestId, StageId, ClassId, EncounterId } from './ids'
 import type { MapNodeRef } from './map'
 
 export type Predicate =
@@ -9,7 +9,6 @@ export type Predicate =
   | { kind: 'questStage'; questId: QuestId; stage: StageId }
   | { kind: 'questComplete'; questId: QuestId }
   | { kind: 'partyHas'; classId: ClassId }
-  | { kind: 'hasItem'; itemId: ItemId }
   | { kind: 'goldAtLeast'; amount: number }
   | { kind: 'visited'; ref: MapNodeRef }
   | { kind: 'cleared'; encounterId: EncounterId }

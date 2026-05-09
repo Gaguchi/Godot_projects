@@ -657,7 +657,8 @@ func _on_unit_left_slot_clicked(unit: UnitData) -> void:
 		if old_right:
 			var placed_right := GameManager.bag_auto_place(old_right)
 			if placed_right == -1:
-				push_warning("[GridInventoryUI] Bag full — old right hand item dropped on unequip")
+				unit.hand_right = old_right
+				push_warning("[GridInventoryUI] Bag full — restored right hand item")
 		_pick_up_from_bag(placed)
 		_refresh_unit_panels()
 		return
@@ -676,18 +677,27 @@ func _on_unit_left_slot_clicked(unit: UnitData) -> void:
 
 	if removed.is_two_handed:
 		var displaced: Array = unit.equip_two_handed(removed)
-		for displaced_item in displaced:
+		for i in displaced.size():
+			var displaced_item = displaced[i]
 			if displaced_item and displaced_item is ItemData:
 				var p := GameManager.bag_auto_place(displaced_item as ItemData)
 				if p == -1:
-					push_warning("[GridInventoryUI] Bag full — displaced item lost on 2H equip")
+					# Restore to appropriate hand slot instead of losing the item
+					if i == 0:
+						unit.hand_left = displaced_item
+					else:
+						unit.hand_right = displaced_item
+					push_warning("[GridInventoryUI] Bag full — restored displaced item to hand slot")
 	else:
 		var old_left: ItemData = unit.unequip_hand("left") as ItemData
 		unit.hand_left = removed
 		if old_left:
 			var placed := GameManager.bag_auto_place(old_left)
 			if placed == -1:
-				push_warning("[GridInventoryUI] Bag full — old left hand item dropped on equip")
+				unit.hand_left = old_left
+				# Put the held item back in bag since we can't complete the swap
+				GameManager.bag_auto_place(removed)
+				push_warning("[GridInventoryUI] Bag full — restored old left hand item")
 
 	_cancel_hold()
 	_refresh_grid()
@@ -779,7 +789,7 @@ func _show_info(item: ItemData) -> void:
 				detail = "Restores %d HP" % item.heal_amount
 			else:
 				detail = item.description if item.description != "" else "Consumable"
-			if not item.is_unbreakable:
+			if not item.is_unbreakable and item.item_name != "Food Rations":
 				detail += "  |  Uses: %d/%d" % [item.current_uses, item.max_uses]
 		_:
 			detail = item.description if item.description != "" else "Key item"

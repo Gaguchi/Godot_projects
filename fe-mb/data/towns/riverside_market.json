@@ -14,6 +14,7 @@
 				"A traveling healer passed through last week. Sold potions at a fair price."
 			]
 		},
+		"blacksmith": {},
 		"arena": { "locked": true, "locked_text": "The arena is closed for repairs." }
 	}
 }

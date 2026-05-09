@@ -4,7 +4,7 @@ extends RefCounted
 
 
 ## Resolve a card being played. Returns result dictionary.
-## battle_context: { "terrain_def_bonus": int, "get_defender_weapon_type": Callable }
+## battle_context: { "terrain_def_bonus": int }
 func resolve_card(card: CardData, caster: UnitData, target: UnitData, battle_context: Dictionary = {}) -> Dictionary:
 	var result := {
 		"damage_dealt": 0,

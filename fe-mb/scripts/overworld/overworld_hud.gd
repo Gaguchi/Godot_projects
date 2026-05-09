@@ -96,11 +96,13 @@ func _build_ui() -> void:
 	margin.add_theme_constant_override("margin_top", 8)
 	margin.add_theme_constant_override("margin_right", 8)
 	margin.add_theme_constant_override("margin_bottom", 8)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(margin)
 
 	# Main HBoxContainer
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 12)
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(hbox)
 
 	# --- PARTY SECTION (left, ~440px) ---
@@ -108,6 +110,7 @@ func _build_ui() -> void:
 	_party_container.custom_minimum_size.x = 440
 	_party_container.add_theme_constant_override("separation", 8)
 	_party_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_party_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(_party_container)
 
 	# Separator
@@ -121,6 +124,7 @@ func _build_ui() -> void:
 	location_section.custom_minimum_size.x = 300
 	location_section.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	location_section.alignment = BoxContainer.ALIGNMENT_CENTER
+	location_section.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(location_section)
 
 	_location_name_label = Label.new()
@@ -212,6 +216,7 @@ func _build_ui() -> void:
 	resources_section.custom_minimum_size.x = 340
 	resources_section.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	resources_section.add_theme_constant_override("separation", 4)
+	resources_section.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(resources_section)
 
 	# Supply row
@@ -323,8 +328,18 @@ func _build_party_slots(party: Array) -> void:
 		if not unit is UnitData:
 			continue
 		var slot := _create_unit_slot(unit as UnitData)
+		_set_mouse_ignore_recursive(slot.root)
 		_party_container.add_child(slot.root)
 		_unit_slots.append(slot)
+
+
+## Recursively set mouse_filter = IGNORE on a control and all children,
+## except Buttons which need to stay interactive.
+func _set_mouse_ignore_recursive(node: Node) -> void:
+	if node is Control and not node is Button:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		_set_mouse_ignore_recursive(child)
 
 
 ## Creates a single unit slot VBoxContainer and returns a dictionary of references
@@ -332,10 +347,12 @@ func _create_unit_slot(unit: UnitData) -> Dictionary:
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 2)
 	root.custom_minimum_size.x = 68
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	# Top row: class circle + info
 	var top_row := HBoxContainer.new()
 	top_row.add_theme_constant_override("separation", 4)
+	top_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(top_row)
 
 	# Class circle (36px diameter)

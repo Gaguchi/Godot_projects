@@ -39,8 +39,6 @@ export function evaluatePredicate(pred: Predicate, state: PredicateState): boole
     }
     case 'partyHas':
       return Object.values(state.party.units).some(u => u.classId === (pred.classId as unknown as string))
-    case 'hasItem':
-      return state.inventory.items.some(i => i.itemId === (pred.itemId as unknown as string))
     case 'goldAtLeast':
       return state.gold >= pred.amount
     case 'visited':

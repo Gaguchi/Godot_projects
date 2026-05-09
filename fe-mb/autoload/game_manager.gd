@@ -245,12 +245,15 @@ func start_new_run() -> void:
 	# Starting bag: 2x Food Rations (3 hops each = 6 food), 1x Vulnerary
 	var catalog := _load_item_catalog()
 	if not catalog.is_empty():
-		for _n in 2:
-			var fr := ItemData.create_from_dict(catalog.get("food_rations", {}))
-			fr.current_uses = 3
-			bag_auto_place(fr)
-		var vuln := ItemData.create_from_dict(catalog.get("vulnerary", {}))
-		if vuln:
+		var fr_data: Dictionary = catalog.get("food_rations", {})
+		if not fr_data.is_empty():
+			for _n in 2:
+				var fr := ItemData.create_from_dict(fr_data)
+				fr.current_uses = 3
+				bag_auto_place(fr)
+		var vuln_data: Dictionary = catalog.get("vulnerary", {})
+		if not vuln_data.is_empty():
+			var vuln := ItemData.create_from_dict(vuln_data)
 			bag_auto_place(vuln)
 
 	# Reset dungeon state
@@ -436,7 +439,11 @@ func add_food(hops: int) -> void:
 	# Create new rations for remaining hops
 	while hops > 0:
 		var catalog := _load_item_catalog()
-		var fr := ItemData.create_from_dict(catalog.get("food_rations", {}))
+		var fr_data: Dictionary = catalog.get("food_rations", {})
+		if fr_data.is_empty():
+			push_warning("[GameManager] food_rations not found in item catalog")
+			break
+		var fr := ItemData.create_from_dict(fr_data)
 		fr.current_uses = min(3, hops)
 		if bag_auto_place(fr) == -1:
 			push_warning("[GameManager] Bag full, cannot add food rations")
