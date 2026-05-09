@@ -1,94 +1,79 @@
-# Ralph Loop Prompt — FE_MB Ship to Playable
+# Ralph Loop Prompt — FE_MB Polish & Interactivity Pass
 
-> Same prompt fed every iteration. Your work persists in files + git. Read this carefully each time — it is your only briefing.
+> Same prompt fed every iteration. Vertical slice was tagged at `phaser-vertical-slice`. This pass: fix interactivity bugs and polish UI to game-feel quality using design skills.
 
-You are driving the FE_MB phaser game from foundation v2 (tagged `phaser-foundations-v2`) to a fully playable vertical slice with Godot parity. The completion promise tag is `<promise>GAME-PLAYABLE</promise>` and you may ONLY emit it when the game can be played title → run → win/lose without a crash AND all five gates pass on HEAD.
+You are polishing the FE_MB phaser game to "actually playable" quality. Each iteration completes ONE item from `RALPH_PROGRESS.md` end-to-end.
 
 ## Required reading every iteration
 
-1. `phaser/CONTEXT.md` — architecture invariants, store ownership, contracts. Critical.
-2. `RALPH_PROGRESS.md` (repo root) — find the next unchecked `- [ ] **F-XX**` item.
-3. `docs/superpowers/specs/2026-05-09-ralph-ship-plan-design.md` — phase containing the active feature.
-4. `docs/superpowers/specs/2026-03-29-ship-plan-design.md` — game-design source-of-truth, section relevant to the active feature.
-5. `git log --oneline -15` — see what previous iterations did. Sanity-check that recent commits aren't broken.
+1. `phaser/CONTEXT.md` — architecture invariants, store ownership, contracts
+2. `RALPH_PROGRESS.md` — find next unchecked item
+3. `phaser/README.md` — vertical slice scope reminder
+4. `git log --oneline -15` — sanity-check recent commits
 
-## Per-iteration job: complete ONE FEATURE end-to-end
+## Per-iteration job
 
-**An iteration is a feature, not a commit.** You will likely produce 3-10 commits in a single iteration. That's expected. The iteration is "done" when the feature is complete, all gates pass, and the checkbox is updated.
+### For UI-XX items (design + implementation)
 
-For the active F-XX feature:
+1. **Invoke a design Skill FIRST.** Each UI item names which skill to use (e.g. `frontend-design`, `refactoring-ui`, `bolder`, `colorize`, `polish`, `godot-battle-ui`, `creating-dashboards`). Use `Skill` tool to invoke. Read the skill's guidance.
+2. Apply the skill's recommendations to the relevant React component or Phaser scene.
+3. Verify with Playwright MCP screenshot that the scene now looks game-feel quality (not bare DOM forms).
+4. Run all gates.
+5. Commit with message: `feat(phaser): [UI-XX] <component> polished via <skill>`.
+6. Update RALPH_PROGRESS.md with `[x]` and SHA.
 
-1. **Read the feature description** in `RALPH_PROGRESS.md` carefully. The description names what's needed.
-2. **If the feature is huge (>2 hour estimate)**: split into sub-items (`F-XXa`, `F-XXb`, ...) indented under the parent in `RALPH_PROGRESS.md`. Commit the checklist update. Then start work on the first sub-item, treating each sub-item as its own atomic implementation. The parent F-XX checks off when all sub-items are done.
-3. **Implement** following project conventions:
-   - **TDD on pure systems** (`src/systems/`, `src/procgen/`, `src/persistence/`, `src/contracts/`): test first → fail → implement → pass.
-   - **Visual snapshot test (Playwright)** for new UI components.
-   - **Use `useRunStore.dispatch` / `useCombatStore.dispatch` / `useMetaStore.dispatch`** for state mutations. Never mutate stores directly.
-   - **Cross-system writes via `src/contracts/` types.**
-   - **No `Math.random()`** — use `createRng` / `deriveRng`. Lint blocks it.
-   - **Multiple commits per iteration are fine and encouraged** when atomic. Each commit message: `feat(phaser): [F-XX] <subscope>` or `test(phaser): [F-XX] <test description>`.
-4. **Verify before iteration check-off**:
-   ```
-   cd phaser && npm run typecheck    # must pass
-   cd phaser && npm test              # must pass
-   cd phaser && npm run check-context-doc  # must pass (update phaser/CONTEXT.md if drift)
-   cd phaser && npm run test:e2e      # must pass
-   cd phaser && npm run build         # must pass
-   ```
-   If a gate fails after honest effort: mark item `🚧 BLOCKED: <one-line reason>` in `RALPH_PROGRESS.md` and pick the next non-blocked item. Do not commit broken code as "done."
-5. **Update `RALPH_PROGRESS.md`**: change the F-XX line from `- [ ]` to `- [x]`, append ` — <last-commit-sha> <YYYY-MM-DD>` at the end. Commit the checklist update with message `chore(ralph): [F-XX] complete`.
-6. **Check overall completion**:
-   - All F-XX items are `[x]`
-   - All five gates pass on HEAD
-   - Manual playthrough script (final E2E in F-28) passes: title → new run → at least one combat → at least one town visit → at least one quest interaction → at least one win/lose → no crashes
-   - If yes: emit `<promise>GAME-PLAYABLE</promise>`
-   - If no: exit normally; loop refeeds prompt.
+### For B-XX bugs (TDD)
 
-## Drift safeguards — emit `<promise>NEEDS_HUMAN_REVIEW</promise>` if any of these trigger
+1. Reproduce the bug (write a failing test or describe the broken interaction).
+2. Implement the fix.
+3. Verify the test passes / interaction works in browser via Playwright MCP.
+4. Run all gates.
+5. Commit `fix(phaser): [B-XX] <description>`.
 
-- **3+ consecutive `🚧 BLOCKED:` markers** added across recent iterations.
-- **Tests fail on HEAD at iteration start** (a previous iteration committed broken code).
-- **`check-context-doc` fails for 2 iterations in a row.**
-- **You cannot identify the next item** after reading all required context (most items unclear, contradictions in spec, etc.).
-- **A single feature has produced >20 commits** without check-off (you're spinning).
+### For F-XX functional gaps
 
-## Architecture rules (from `phaser/CONTEXT.md`)
+1. Read the relevant spec section (often `docs/superpowers/specs/2026-03-29-ship-plan-design.md`).
+2. TDD on pure systems; visual snapshot on UI.
+3. Multi-commit allowed within an iteration.
+4. Verify gates + visual.
+5. Commit.
 
-- **Combat = Phaser canvas only.** Everything else (overworld, town, shop, inventory, deck preview, dialogue, modals) = React DOM with Tailwind/inline-styles.
-- **Three Zustand stores:** `metaStore`, `runStore`, `combatStore`. Single `dispatch(action)` mutation each.
-- **Pure systems** in `src/systems/` and `src/procgen/` — no Phaser, no React, no I/O.
-- **Combat is a reducer** over discriminated `CombatEvent` union. Effects are intents to render, not state.
-- **`CombatScene`** owns mutable `CombatRuntime` POJO (sprite refs, tween handles). NEVER reads store state per frame; subscribes to `lastEffectId` event channel.
-- **Predicates are declarative AST** (`Predicate` type) — round-trip through save. Single evaluator: `evaluatePredicate(pred, state)`.
-- **Domain events** flow through `eventBus`. Subscribers dispatch back to stores; bus is NOT a mutation channel.
+## Verify before check-off
 
-## Reference codebase rule
+```
+cd phaser && npm run typecheck    # must pass
+cd phaser && npm test              # must pass
+cd phaser && npm run check-context-doc  # must pass
+cd phaser && npm run test:e2e      # must pass
+cd phaser && npm run build         # must pass
+```
 
-The Godot codebase at the repo root is **behavior reference, not source of truth**.
+If any gate fails: mark `🚧 BLOCKED: <reason>` and pick next non-blocked item.
 
-- ✅ Read Godot files to understand intent ("what does the dialogue choice gate look like?")
-- ✅ Reference Godot data files (`data/dialogue/*.json`, `data/quests/quest_definitions.json`, `data/maps/test_overworld.json`) as content templates to translate into TS
-- ❌ Never copy-paste GDScript patterns into TypeScript
-- ❌ Never assume Godot's solution is correct in the foundation's TS architecture
-- ❌ Never edit any file outside `phaser/`, `docs/`, `RALPH_PROGRESS.md`, or research deliverables in `docs/research/`
+## Drift safeguards — emit `<promise>NEEDS_HUMAN_REVIEW</promise>` if any
 
-## Be ambitious per iteration
+- **3+ consecutive `🚧 BLOCKED:` markers**
+- **Tests fail on HEAD at iteration start** (previous iteration committed broken code)
+- **You skip the design skill on a UI-XX item** — that's the whole point. If a UI skill genuinely doesn't fit, mark `⏸ NEEDS-CONTEXT: <which skill alternative>`
+- **Visual screenshot shows scene unchanged** after UI iteration — the skill output didn't land in code
 
-This is the major change from the earlier prompt: previously each item was a single commit. Now each item is a **feature**. Examples:
+## Architecture rules (from CONTEXT.md)
 
-- **F-02 (stub battle bootstrapper)**: ~3-5 commits internally — the bootstrapper module, integration with CombatScene, snapshot test for "scene boots with units in place," any small store wiring.
-- **F-06 (card resolution animations)**: ~6-10 commits — one per effect handler, then chained `WaitForAnimations` glue, then a snapshot test of mid-resolution.
-- **F-19 (Blood Ties content port)**: ~5-8 commits — quest JSON, each dialogue tree, gameStore wiring to load on boot, predicates verified against the existing `evaluatePredicate`.
-- **F-29 (content fill to Godot parity)**: ~10-15 commits — one per class, one per item batch, one per town map, one per enemy group.
+- **Combat = Phaser canvas only.** Everything else = React DOM with Tailwind/inline-styles
+- **Three Zustand stores** with single dispatch each
+- **Pure systems** in `src/systems/` and `src/procgen/` — no Phaser, no React, no I/O
+- **Combat is a reducer** over `CombatEvent` discriminated union
+- **`Math.random()` lint-banned** — use `RNG` parameters
+- **Cross-system writes** via `src/contracts/` types
 
-Don't artificially stop early. **Don't pause to summarize.** Keep going within an iteration until the feature is complete and all gates pass. Then update the checklist and exit. The loop refeeds and you tackle the next feature.
+## On the canvas-vs-DOM debate
 
-If after honest work a feature genuinely cannot be done in one iteration (some integration concern, some missing decision, some test you can't make pass), use the `🚧 BLOCKED:` or `⏸ NEEDS-CONTEXT:` markers — that's what they're for. Don't fake completion.
+The user previously suggested moving everything to canvas. The architecture stays as-is (combat=canvas, rest=React) because canvas-only menus are 10× the implementation cost for marginal feel gains. The fix is to make React+Tailwind LOOK game-feel via design skills. If a specific scene genuinely needs canvas (e.g. animated background particles overlay), add a Phaser overlay scene without replacing React for the layout.
 
 ## Final reminders
 
-- Same prompt every iteration. Your only "memory" is files + git.
-- Iteration = feature, not commit. Multiple commits per iteration is the norm.
-- The completion promise is `<promise>GAME-PLAYABLE</promise>`. Do NOT emit it falsely.
-- All five gates must pass at iteration end. No broken commits.
-- The Godot codebase is read-only reference.
+- Same prompt every iteration. Memory = files + git
+- Iteration = one item, multiple commits OK
+- UI items REQUIRE a design skill invocation before code
+- All five gates pass before check-off
+- Promise = `<promise>GAME-POLISHED</promise>` when checklist drained + visual playthrough verified
