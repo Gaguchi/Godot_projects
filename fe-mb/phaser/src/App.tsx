@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { ErrorBoundary } from './ui/ErrorBoundary'
 import { DevHud } from './ui/DevHud'
 import { ViewContext, type View } from './ui/view'
@@ -28,6 +28,42 @@ export function App(): React.JSX.Element {
   const [loadModalOpen, setLoadModalOpen] = useState(false)
   const [quitModalOpen, setQuitModalOpen] = useState(false)
   const dispatchMeta = useMetaStore((s) => s.dispatch)
+
+  // F-26: Permadeath sync. When combat phase becomes VICTORY/DEFEAT, walk
+  // the units and record fallen party members in runStore.deathLog. On
+  // VICTORY, also remove them from runStore.party so subsequent battles
+  // are seeded without them.
+  useEffect(() => {
+    const unsub = useCombatStore.subscribe((s) => {
+      if (s.state.phase !== 'VICTORY' && s.state.phase !== 'DEFEAT') return
+      const fallenPartyIds: string[] = []
+      for (const u of Object.values(s.state.units)) {
+        if (u.hp.current > 0) continue
+        if ((u.classId as unknown as string).includes('bandit')) continue
+        fallenPartyIds.push(u.id as unknown as string)
+      }
+      if (fallenPartyIds.length === 0) return
+      const turn = s.state.turn.number
+      for (const id of fallenPartyIds) {
+        useRunStore.getState().dispatch({
+          type: 'fallenUnit',
+          payload: { unitId: id as never, cause: 'battle', turn },
+        })
+      }
+      // On VICTORY, sweep dead party from runStore.party so they don't reseed
+      if (s.state.phase === 'VICTORY') {
+        useRunStore.setState((rs) => {
+          const newUnits: typeof rs.party.units = { ...rs.party.units }
+          for (const id of fallenPartyIds) delete newUnits[id]
+          const newOrder = rs.party.partyOrder.filter(
+            (uid) => !fallenPartyIds.includes(uid as unknown as string),
+          )
+          return { party: { units: newUnits, partyOrder: newOrder } }
+        })
+      }
+    })
+    return () => { unsub() }
+  }, [])
 
   const onNewGame = useCallback(() => {
     dispatchMeta({ type: 'startNewRun' })
