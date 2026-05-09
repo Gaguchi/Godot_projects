@@ -312,8 +312,52 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       }
     }
 
-    case 'capture':
-      // Rich implementation lands with capture+recruitment feature.
-      return { state, effects: [{ kind: 'WaitForAnimations' }] }
+    case 'capture': {
+      const { targetId, attackerIds } = event.payload
+      const target = state.units[targetId as unknown as string]
+      if (!target) return { state, effects: [] }
+
+      // Compute capture chance via the existing captureChance helper
+      const adjacentAttackers = attackerIds.length
+      const ctx = { target, adjacentAttackers, bountyHunterBonus: false }
+      // Inline the formula to avoid a system dep cycle
+      const hpFraction = target.hp.current / Math.max(1, target.hp.max)
+      const chance = Math.max(0, Math.min(1,
+        (1 - hpFraction) * 0.6 + ctx.adjacentAttackers * 0.25 + (ctx.bountyHunterBonus ? 0.15 : 0),
+      ))
+
+      // Roll vs chance using the persistent rng
+      const roll = _rng.next()
+      const success = roll < chance
+
+      const newUnits: Record<string, Unit> = { ...state.units }
+      if (success) {
+        // Mark unit as captured: HP=1, set status flag (we use a custom marker via name suffix)
+        newUnits[targetId as unknown as string] = {
+          ...target,
+          hp: { ...target.hp, current: 0 }, // remove from grid like death
+          name: target.name + ' (captured)',
+        }
+      }
+
+      const newState: CombatState = {
+        ...state,
+        units: newUnits,
+      }
+      const phase = checkEnd(newState)
+      const finalState = phase !== 'COMBAT' ? { ...newState, phase } : newState
+      return {
+        state: finalState,
+        effects: [
+          {
+            kind: 'FloatDamage',
+            tile: target.position!,
+            amount: success ? 1 : 0,
+            damageKind: 'heal',
+          },
+          { kind: 'WaitForAnimations' },
+        ],
+      }
+    }
   }
 }
