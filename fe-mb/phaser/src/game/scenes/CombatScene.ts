@@ -4,9 +4,10 @@ import { useRunStore } from '../../state/runStore'
 import { CombatRuntime } from '../runtime/CombatRuntime'
 import { createRng } from '../../systems/rng'
 import { seedStubBattle } from './seedStubBattle'
+import { tilesInRange, tilesInAoe } from '../../systems/targeting'
 import type { CombatEffect } from '../../domain/combatState'
 import cardsJson from '../../data/content/cards.json'
-import { asCardId } from '../../domain/ids'
+import { asCardId, asTileId } from '../../domain/ids'
 
 const TILE = 48
 const GRID_OFFSET_X = 240
@@ -65,6 +66,9 @@ export class CombatScene extends Phaser.Scene {
   private unsubState: (() => void) | null = null
   private unitViews = new Map<string, UnitView>()
   private cardViews: CardView[] = []
+  private tileRects = new Map<string, Phaser.GameObjects.Rectangle>()
+  private aoePreview: Phaser.GameObjects.Graphics | null = null
+  private damagePreview: Phaser.GameObjects.Text | null = null
 
   constructor() { super('combat') }
 
@@ -86,11 +90,32 @@ export class CombatScene extends Phaser.Scene {
     this.drawGrid()
     this.renderUnits()
     this.renderCardHand()
+    this.renderTargeting()
+
+    // ESC cancels card selection
+    this.input.keyboard?.on('keydown-ESC', () => {
+      const cs2 = useCombatStore.getState()
+      if (cs2.state.subPhase !== 'IDLE') {
+        cs2.dispatch({ type: 'cancelSelection' }, createRng(cs2.state.rng))
+      }
+    })
+
+    // Disable browser context menu on canvas right-click; right-click cancels selection
+    this.input.mouse?.disableContextMenu()
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.rightButtonDown()) {
+        const cs2 = useCombatStore.getState()
+        if (cs2.state.subPhase !== 'IDLE') {
+          cs2.dispatch({ type: 'cancelSelection' }, createRng(cs2.state.rng))
+        }
+      }
+    })
 
     // Re-render on any state update
     this.unsubState = useCombatStore.subscribe(() => {
       this.renderUnits()
       this.renderCardHand()
+      this.renderTargeting()
     })
 
     // Drain effects on lastEffectId change
@@ -104,23 +129,168 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private drawGrid(): void {
-    // Tile fills (plain terrain colour)
-    const fills = this.add.graphics()
-    fills.fillStyle(0x0c1018, 1)
     for (let y = 0; y < GRID_H; y++) {
       for (let x = 0; x < GRID_W; x++) {
-        fills.fillRect(GRID_OFFSET_X + x * TILE, GRID_OFFSET_Y + y * TILE, TILE - 1, TILE - 1)
+        const rect = this.add.rectangle(
+          GRID_OFFSET_X + x * TILE + TILE / 2,
+          GRID_OFFSET_Y + y * TILE + TILE / 2,
+          TILE - 2, TILE - 2,
+          0x0c1018,
+        ).setStrokeStyle(1, 0x333344, 0.6)
+        const tileId = `${x},${y}`
+        rect.setInteractive({ useHandCursor: false })
+        rect.on('pointerover', () => this.onTileHover(tileId))
+        rect.on('pointerout', () => this.onTileOut())
+        rect.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          if (!pointer.rightButtonDown()) this.onTileClick(tileId)
+        })
+        this.tileRects.set(tileId, rect)
       }
     }
-    // Grid lines
-    const g = this.add.graphics()
-    g.lineStyle(1, 0x333344, 0.6)
-    for (let x = 0; x <= GRID_W; x++) {
-      g.lineBetween(GRID_OFFSET_X + x * TILE, GRID_OFFSET_Y, GRID_OFFSET_X + x * TILE, GRID_OFFSET_Y + GRID_H * TILE)
+  }
+
+  private renderTargeting(): void {
+    const state = useCombatStore.getState().state
+
+    // Reset all tiles to default
+    for (const rect of this.tileRects.values()) {
+      rect.setFillStyle(0x0c1018)
     }
-    for (let y = 0; y <= GRID_H; y++) {
-      g.lineBetween(GRID_OFFSET_X, GRID_OFFSET_Y + y * TILE, GRID_OFFSET_X + GRID_W * TILE, GRID_OFFSET_Y + y * TILE)
+
+    // Clear AOE preview
+    if (this.aoePreview) {
+      this.aoePreview.destroy()
+      this.aoePreview = null
     }
+    if (this.damagePreview) {
+      this.damagePreview.destroy()
+      this.damagePreview = null
+    }
+
+    if (state.subPhase !== 'SELECTING_TARGET' || state.selectedCardId === null) return
+    const cardIdStr = state.selectedCardId as unknown as string
+    const card = cardsMap.get(cardIdStr)
+    if (!card) return
+
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+    if (!activeId) return
+    const activeUnit = state.units[activeId]
+    if (!activeUnit?.position) return
+    const sourceTileId = activeUnit.position as unknown as string
+
+    const targetState = {
+      width: state.grid.width,
+      height: state.grid.height,
+      obstacles: state.grid.obstacles,
+    }
+    const valid = tilesInRange(asTileId(sourceTileId), card.range.min, card.range.max, targetState)
+    for (const t of valid) {
+      const tileStr = t as unknown as string
+      const rect = this.tileRects.get(tileStr)
+      if (rect) rect.setFillStyle(0x4a3a20)
+    }
+  }
+
+  private onTileHover(tileId: string): void {
+    const state = useCombatStore.getState().state
+    if (state.subPhase !== 'SELECTING_TARGET' || state.selectedCardId === null) return
+    const cardIdStr = state.selectedCardId as unknown as string
+    const card = cardsMap.get(cardIdStr)
+    if (!card) return
+
+    // Validate hover is on a valid target tile (only show preview for in-range tiles)
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+    if (!activeId) return
+    const activeUnit = state.units[activeId]
+    if (!activeUnit?.position) return
+    const sourceTileId = activeUnit.position as unknown as string
+    const targetState = {
+      width: state.grid.width,
+      height: state.grid.height,
+      obstacles: state.grid.obstacles,
+    }
+    const valid = tilesInRange(asTileId(sourceTileId), card.range.min, card.range.max, targetState)
+    const validSet = new Set(valid.map((t) => t as unknown as string))
+    if (!validSet.has(tileId)) return
+
+    // AOE preview ring
+    if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
+    const radius = card.aoeRadius ?? 0
+    if (radius > 0) {
+      const tiles = tilesInAoe(asTileId(tileId), radius, targetState)
+      const g = this.add.graphics()
+      g.fillStyle(0x9966cc, 0.25)
+      g.lineStyle(1, 0x9966cc, 0.8)
+      for (const t of tiles) {
+        const { x, y } = tileToWorld(t as unknown as string)
+        g.fillRect(x - TILE / 2 + 2, y - TILE / 2 + 2, TILE - 4, TILE - 4)
+        g.strokeRect(x - TILE / 2 + 2, y - TILE / 2 + 2, TILE - 4, TILE - 4)
+      }
+      this.aoePreview = g
+    }
+
+    // Damage preview (only on enemy unit tiles)
+    if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
+    const dmgBase = getCardDamageBase(card)
+    if (dmgBase !== null) {
+      // Find any unit standing on this tile
+      const targetUnit = Object.values(state.units).find((u) =>
+        u.position && (u.position as unknown as string) === tileId,
+      )
+      if (targetUnit) {
+        const isEnemy = (targetUnit.classId as unknown as string).includes('bandit')
+        if (isEnemy) {
+          // Predict: dmg + source stat - target def/2
+          let dmg = dmgBase
+          const stat = card.damageStat
+          if (stat === 'str') dmg += activeUnit.stats.str
+          else if (stat === 'mag') dmg += activeUnit.stats.mag
+          else if (stat === 'skl') dmg += activeUnit.stats.skl
+          dmg = Math.max(0, dmg - Math.floor(targetUnit.stats.def / 2))
+          const { x, y } = tileToWorld(tileId)
+          this.damagePreview = this.add.text(x, y - 30, `-${dmg}`, {
+            fontFamily: 'monospace', fontSize: '20px', color: '#ff6644',
+          }).setOrigin(0.5)
+        }
+      }
+    }
+  }
+
+  private onTileOut(): void {
+    if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
+    if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
+  }
+
+  private onTileClick(tileId: string): void {
+    const cs = useCombatStore.getState()
+    const state = cs.state
+    if (state.subPhase !== 'SELECTING_TARGET' || state.selectedCardId === null) return
+    const cardIdStr = state.selectedCardId as unknown as string
+    const card = cardsMap.get(cardIdStr)
+    if (!card) return
+
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+    if (!activeId) return
+    const activeUnit = state.units[activeId]
+    if (!activeUnit?.position) return
+    const sourceTileId = activeUnit.position as unknown as string
+    const targetState = {
+      width: state.grid.width,
+      height: state.grid.height,
+      obstacles: state.grid.obstacles,
+    }
+    const valid = tilesInRange(asTileId(sourceTileId), card.range.min, card.range.max, targetState)
+    const validSet = new Set(valid.map((t) => t as unknown as string))
+    if (!validSet.has(tileId)) return
+
+    cs.dispatch({
+      type: 'playCard',
+      payload: {
+        cardId: asCardId(cardIdStr),
+        srcId: activeUnit.id,
+        targets: [asTileId(tileId)],
+      },
+    }, createRng(state.rng))
   }
 
   private renderUnits(): void {
@@ -307,5 +477,9 @@ export class CombatScene extends Phaser.Scene {
     this.unitViews.clear()
     for (const view of this.cardViews) view.container.destroy()
     this.cardViews = []
+    for (const rect of this.tileRects.values()) rect.destroy()
+    this.tileRects.clear()
+    if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
+    if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
   }
 }
