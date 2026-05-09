@@ -201,6 +201,7 @@ phaser/src/
 - **Domain event bus is NOT a mutation channel.** Subscribers dispatch back to stores; the bus carries events only.
 - **Predicates round-trip through save.** They MUST be declarative JSON, not function references.
 - **`CombatEvent` ≠ `DomainEvent` ≠ `QuestListener.on`.** Three different "event-shaped" patterns. Don't confuse.
+- **`QuestEffect` ≠ `CardEffect`** — separate domains; never confuse.
 - **Effect pipeline middleware ordering:** stages 1=source-mod, 2=target-mod, 3=terrain, 4=card-specific, 5=armor, 6=clamp. Lower stages run first; each can spawn/absorb effects.
 - **`combatReducer` team detection** uses `classId.includes('bandit'|'mage')` as a foundation heuristic — replace with explicit `team` field on Unit (or spawn payload) when starter content lands.
 
