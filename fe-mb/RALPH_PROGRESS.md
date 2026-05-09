@@ -30,7 +30,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 ## Phase 2 — Migrate non-combat scenes
 
 - [x] **UI-T10** Migrate `TitleScreen.tsx` → `<Button>` + `<Heading>`. ✅ Inline-styled `onMouseEnter`/`onMouseLeave` hover handlers replaced with Tailwind data-[hovered]: variants. E2E selectors (`button:has-text("New Game")`, id-based) all still pass — RAC renders to native `<button>`. Bundle 444.36 KB (+11.69 KB from baseline; within +75 budget).
-- [ ] **UI-T11** Migrate `QuitModal.tsx` → `<Dialog>` + `<Button>`.
+- [x] **UI-T11** Migrate `QuitModal.tsx` → `<Dialog>` + `<Button>` + `<Heading>`. ✅ Manual overlay/`onClick={e.stopPropagation()}` deleted; ESC dismiss + backdrop click are handled by RAC ModalOverlay. Bundle 454.28 KB.
 - [ ] **UI-T12** Migrate `BattleEndModal.tsx` → `<Dialog>` + `<Button>` (Continue / Restart / Return).
 - [ ] **UI-T13** Migrate `LoadGameModal.tsx` → `<Dialog>` + `<ListBox>`.
 - [ ] **UI-T14** Migrate `QuestLog.tsx` → `<Dialog>`.
