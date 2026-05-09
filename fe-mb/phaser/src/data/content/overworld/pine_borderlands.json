@@ -1,0 +1,47 @@
+{
+  "id": "pine_borderlands",
+  "width": 12,
+  "height": 8,
+  "tileSize": 64,
+  "terrainGrid": [],
+  "nodes": [
+    {
+      "id": "pine_crossing",
+      "type": "town",
+      "position": { "x": 1, "y": 4 },
+      "visiblePredicate": { "kind": "always" }
+    },
+    {
+      "id": "frontier_camp",
+      "type": "camp",
+      "position": { "x": 5, "y": 3 },
+      "visiblePredicate": { "kind": "always" }
+    },
+    {
+      "id": "north_watch",
+      "type": "camp",
+      "position": { "x": 5, "y": 6 },
+      "visiblePredicate": { "kind": "always" }
+    },
+    {
+      "id": "smugglers_cave",
+      "type": "dungeon",
+      "position": { "x": 8, "y": 5 },
+      "visiblePredicate": { "kind": "always" }
+    },
+    {
+      "id": "iron_throne",
+      "type": "exit",
+      "position": { "x": 11, "y": 4 },
+      "visiblePredicate": { "kind": "always" }
+    }
+  ],
+  "edges": [
+    { "from": "pine_crossing", "to": "frontier_camp", "encounterTableId": "borderlands_road", "rollChance": 0.35 },
+    { "from": "pine_crossing", "to": "north_watch", "encounterTableId": "borderlands_road", "rollChance": 0.35 },
+    { "from": "frontier_camp", "to": "smugglers_cave", "encounterTableId": "borderlands_road", "rollChance": 0.35 },
+    { "from": "north_watch", "to": "smugglers_cave", "encounterTableId": "borderlands_road", "rollChance": 0.35 },
+    { "from": "smugglers_cave", "to": "iron_throne", "encounterTableId": "borderlands_road", "rollChance": 0.45 },
+    { "from": "frontier_camp", "to": "iron_throne", "encounterTableId": "borderlands_road", "rollChance": 0.40 }
+  ]
+}

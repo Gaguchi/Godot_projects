@@ -3,6 +3,7 @@ import { ErrorBoundary } from './ui/ErrorBoundary'
 import { DevHud } from './ui/DevHud'
 import { ViewContext, type View } from './ui/view'
 import { TitleScreen } from './ui/screens/TitleScreen'
+import { OverworldScene } from './ui/screens/OverworldScene'
 import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { QuitModal } from './ui/modals/QuitModal'
 import { BattleEndModal } from './ui/modals/BattleEndModal'
@@ -26,9 +27,7 @@ export function App(): React.JSX.Element {
 
   const onNewGame = useCallback(() => {
     dispatchMeta({ type: 'startNewRun' })
-    setView('combat')
-    // Stub battle seeding lands in P1-09 (CombatScene.create reads from
-    // combatStore which is still in initial BOOT state until then).
+    setView('overworld')
   }, [dispatchMeta])
 
   const onLoadGame = useCallback(() => {
@@ -64,17 +63,42 @@ export function App(): React.JSX.Element {
     <ViewContext.Provider value={{ view, setView }}>
       <ErrorBoundary errorBus={errorBus}>
         <div id="app-root">
-          {view === 'title' ? (
+          {view === 'title' && (
             <TitleScreen
               onNewGame={onNewGame}
               onLoadGame={onLoadGame}
               onQuit={onQuit}
             />
-          ) : (
+          )}
+          {view === 'overworld' && (
+            <OverworldScene
+              onTravelToCombat={() => setView('combat')}
+              onEnterTown={() => setView('town')}
+              onEnterDungeon={() => setView('dungeon')}
+              onWin={() => setView('title')}
+            />
+          )}
+          {view === 'combat' && (
             <>
               <div id="game-canvas-container" />
               <div id="react-shell" />
             </>
+          )}
+          {view === 'town' && (
+            <div id="town-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0f', color: '#e0d0a0', fontFamily: 'monospace' }}>
+              <div style={{ textAlign: 'center' }}>
+                <h1 style={{ fontSize: 32 }}>Town (F-14)</h1>
+                <button onClick={() => setView('overworld')} style={{ marginTop: 24, padding: '12px 24px', background: 'transparent', color: '#e0d0a0', border: '1px solid #4a3a20', cursor: 'pointer', fontFamily: 'monospace' }}>Leave</button>
+              </div>
+            </div>
+          )}
+          {view === 'dungeon' && (
+            <div id="dungeon-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0f', color: '#e0d0a0', fontFamily: 'monospace' }}>
+              <div style={{ textAlign: 'center' }}>
+                <h1 style={{ fontSize: 32 }}>Dungeon (F-24/F-25)</h1>
+                <button onClick={() => setView('overworld')} style={{ marginTop: 24, padding: '12px 24px', background: 'transparent', color: '#e0d0a0', border: '1px solid #4a3a20', cursor: 'pointer', fontFamily: 'monospace' }}>Leave</button>
+              </div>
+            </div>
           )}
           <DevHud errorBus={errorBus} eventBus={eventBus} actionLog={actionLog} />
           <LoadGameModal
