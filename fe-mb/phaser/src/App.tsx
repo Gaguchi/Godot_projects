@@ -107,6 +107,15 @@ export function App(): React.JSX.Element {
   const onNewGame = useCallback(() => {
     dispatchMeta({ type: 'startNewRun' })
     setView('overworld')
+    // GP-G1: prologue trigger on first new game. Flag is permanent so it
+    // doesn't fire again on subsequent runs.
+    const run = useRunStore.getState()
+    if (!run.flags.has('prologue_seen' as never)) {
+      run.dispatch({
+        type: 'startDialogue',
+        payload: { dialogueId: 'prologue' as never, nodeId: 'start' },
+      })
+    }
   }, [dispatchMeta])
 
   const onLoadGame = useCallback(() => {

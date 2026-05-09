@@ -1,8 +1,12 @@
 import React, { useState } from 'react'
 import { useRunStore } from '../../state/runStore'
+import { evaluatePredicate } from '../../systems/predicates'
+import { predicateStateFromRun } from '../../state/runStore'
 import itemsJson from '../../data/content/items.json'
-import { asItemId } from '../../domain/ids'
+import pineCrossingTown from '../../data/content/towns/pine_crossing.json'
+import { asItemId, asDialogueId } from '../../domain/ids'
 import type { Unit } from '../../domain/unit'
+import type { TownDef } from '../../domain/town'
 import { Button, Heading } from '../components'
 
 type Panel = 'inn' | 'shop' | 'tavern'
@@ -197,38 +201,46 @@ export function TownScene({ onLeave }: TownSceneProps): React.JSX.Element {
 
             <h3 className="mt-6 text-sm tracking-widest text-amber-200">RUMORS</h3>
             <ul className="text-stone-500 leading-relaxed list-disc pl-5">
-              <li>"Bandit raids on the Frontier road. Iron weapons fetch a good price these days."</li>
-              <li>"Smuggler's Cave to the east — old tunnels, said to hide a fortune."</li>
-              <li>"The Iron Throne stands at the borderlands' edge. Few return from beyond."</li>
+              {(pineCrossingTown as TownDef).rumors.map((r, i) => (
+                <li key={i}>"{r}"</li>
+              ))}
             </ul>
 
             <h3 className="mt-6 text-sm tracking-widest text-amber-200">QUEST BOARD</h3>
-            {Object.keys(questStates).length === 0 ? (
-              <div className="p-4 border border-stone-800 mt-3">
-                <strong>Blood Ties</strong>
-                <p className="text-xs text-stone-500 mt-1">
-                  A frontier farmer's son joined a bandit gang. Find Daren and resolve the matter — capture or kill.
-                </p>
-                <Button
-                  id="tavern-accept-blood-ties"
-                  variant="primary"
-                  onPress={() => {
-                    dispatchRun({
-                      type: 'advanceQuestStage',
-                      payload: { questId: 'blood_ties' as never, toStage: 'find_daren' as never },
-                    })
-                  }}
-                  className="mt-3 !text-xs"
-                >
-                  Accept Quest
-                </Button>
-              </div>
-            ) : (
+            {(() => {
+              const town = pineCrossingTown as TownDef
+              const predicateState = predicateStateFromRun(useRunStore.getState())
+              const visibleQuests = town.tavernQuests.filter((q) =>
+                !q.visibleIf || evaluatePredicate(q.visibleIf, predicateState),
+              )
+              if (visibleQuests.length === 0) {
+                return <div className="mt-3 text-stone-500">No quests on the board today.</div>
+              }
+              return visibleQuests.map((q) => (
+                <div key={q.questId} className="p-4 border border-stone-800 mt-3">
+                  <strong>{q.npcName}</strong>
+                  <p className="text-xs text-stone-500 mt-1">{q.npcDescription}</p>
+                  <Button
+                    id={`tavern-talk-${q.questId}`}
+                    variant="primary"
+                    onPress={() => {
+                      dispatchRun({
+                        type: 'startDialogue',
+                        payload: { dialogueId: asDialogueId(q.dialogueId), nodeId: 'start' },
+                      })
+                    }}
+                    className="mt-3 !text-xs"
+                  >
+                    Talk to {q.npcName}
+                  </Button>
+                </div>
+              ))
+            })()}
+            {Object.keys(questStates).length > 0 && (
               <div className="mt-3 text-stone-500">
                 Active quest: Blood Ties (in progress)
               </div>
             )}
-
             <h3 className="mt-6 text-sm tracking-widest text-amber-200">BOUNTY BOARD</h3>
             <div className="text-stone-500 italic">No bounties available. (Captures land in F-22.)</div>
 
