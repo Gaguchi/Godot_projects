@@ -1,0 +1,20 @@
+[
+  {
+    "id": "borderlands",
+    "name": "The Borderlands",
+    "color": "#a07a40",
+    "tier": 1
+  },
+  {
+    "id": "thornwood",
+    "name": "Thornwood",
+    "color": "#3a6a3e",
+    "tier": 2
+  },
+  {
+    "id": "ashfall",
+    "name": "Ashfall",
+    "color": "#7a2010",
+    "tier": 3
+  }
+]

@@ -165,6 +165,7 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/map.ts` ↔ `WorldMap | BattleMap` (DungeonGraph schema TBD with generator). **Active.**
 - `data/schemas/quest.ts` ↔ `QuestDef` (`QuestSchema`, `QuestStageSchema`, `QuestEffectSchema`; `StatKind` for statCheck). **Active.**
 - `data/schemas/dialogue.ts` ↔ `DialogueTree` (DialogueChoice's next is union of node id, 'end', or `DialogueBranch` for stat-check forks). **Active.**
+- `data/schemas/region.ts` ↔ `Region` (`asRegionId`, tier 1-3 modulates encounter difficulty). **Active.**
 - `data/schemas/predicate.ts` ↔ `Predicate` (recursive via `z.lazy`). **Active.**
 - `persistence/saveFormat.ts` ↔ `SaveFile` (`SAVE_VERSION = '0.6.0-cards-only'`, `SerializedRunState`, `SerializedMetaState`). **Active.**
 - `persistence/contentAliases.ts` ↔ `ContentAliases` (`cardId | itemId | flagKey | questId | stageId | dungeonId | mapId` maps, `resolveAlias`). **Active.**
