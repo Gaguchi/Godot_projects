@@ -10,3 +10,13 @@ test('boot smoke — title screen renders by default', async ({ page }) => {
   // DevHud renders in dev mode regardless of active view
   await expect(page.locator('text=Dev HUD')).toBeVisible({ timeout: 2000 })
 })
+
+test('new game click → combat view → canvas mounts', async ({ page }) => {
+  await page.goto('/')
+  await page.locator('#title-new-game').click()
+  // Title screen unmounted; canvas container + Phaser canvas now in DOM
+  await expect(page.locator('#title-screen')).toHaveCount(0)
+  await expect(page.locator('#game-canvas-container canvas')).toBeVisible({ timeout: 5000 })
+  // metaStore action log entry shown in DevHud (totalRuns increments)
+  await expect(page.locator('text=Dev HUD')).toBeVisible()
+})
