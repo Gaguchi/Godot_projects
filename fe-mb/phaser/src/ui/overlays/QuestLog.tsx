@@ -1,30 +1,10 @@
 import React from 'react'
 import { useRunStore } from '../../state/runStore'
+import { Dialog, Button, Heading } from '../components'
 
 export interface QuestLogProps {
   open: boolean
   onClose: () => void
-}
-
-const overlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0, 0, 0, 0.7)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 800,
-}
-
-const panelStyle: React.CSSProperties = {
-  width: 560,
-  maxHeight: '80vh',
-  overflowY: 'auto',
-  background: '#0a0a0f',
-  border: '1px solid #4a3a20',
-  color: '#e0d0a0',
-  fontFamily: 'monospace',
-  padding: 24,
 }
 
 const QUEST_DESCRIPTIONS: Record<string, { name: string; stages: Record<string, string> }> = {
@@ -38,34 +18,24 @@ const QUEST_DESCRIPTIONS: Record<string, { name: string; stages: Record<string, 
   },
 }
 
-export function QuestLog({ open, onClose }: QuestLogProps): React.JSX.Element | null {
+export function QuestLog({ open, onClose }: QuestLogProps): React.JSX.Element {
   const questStates = useRunStore((s) => s.questStates)
-  if (!open) return null
-
   const activeQuests = Object.entries(questStates)
 
   return (
-    <div id="quest-log-overlay" style={overlayStyle} onClick={onClose}>
-      <div
-        id="quest-log-panel"
-        style={panelStyle}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-labelledby="quest-log-title"
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid #2a2010', paddingBottom: 8 }}>
-          <h2 id="quest-log-title" style={{ margin: 0, fontSize: 18, letterSpacing: 2 }}>Quest Log</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ padding: '4px 12px', background: 'transparent', border: '1px solid #4a3a20', color: '#a07a40', fontFamily: 'monospace', cursor: 'pointer' }}
-          >
+    <Dialog isOpen={open} onOpenChange={(o) => { if (!o) onClose() }} aria-label="Quest Log">
+      <div id="quest-log-panel" className="flex flex-col gap-4 min-w-[480px] max-h-[80vh] overflow-y-auto">
+        <div className="flex justify-between items-center border-b border-stone-800 pb-2">
+          <Heading level={2} className="text-lg tracking-widest m-0">
+            Quest Log
+          </Heading>
+          <Button variant="ghost" onPress={onClose} className="text-amber-400 px-3 py-1" aria-label="Close">
             ×
-          </button>
+          </Button>
         </div>
 
         {activeQuests.length === 0 && (
-          <div style={{ fontStyle: 'italic', color: '#8a7860', textAlign: 'center', padding: 32 }}>
+          <div className="italic text-stone-500 text-center py-8">
             No active quests. Visit a tavern to find work.
           </div>
         )}
@@ -73,15 +43,13 @@ export function QuestLog({ open, onClose }: QuestLogProps): React.JSX.Element | 
         {activeQuests.map(([questId, state]) => {
           const descr = QUEST_DESCRIPTIONS[questId]
           return (
-            <div key={questId} style={{ padding: 16, border: '1px solid #2a2010', marginBottom: 12 }}>
-              <div style={{ color: '#facc15', fontSize: 14, letterSpacing: 1 }}>
-                {descr?.name ?? questId}
-              </div>
-              <div style={{ marginTop: 8, color: '#8a7860', fontSize: 12 }}>
-                Stage: <span style={{ color: '#e0d0a0' }}>{state.currentStage}</span>
+            <div key={questId} className="p-4 border border-stone-800 rounded">
+              <div className="text-amber-400 text-sm tracking-wider">{descr?.name ?? questId}</div>
+              <div className="mt-2 text-stone-500 text-xs">
+                Stage: <span className="text-amber-100">{state.currentStage}</span>
               </div>
               {descr?.stages[state.currentStage] && (
-                <div style={{ marginTop: 8, color: '#a0a0c0', fontSize: 12, lineHeight: 1.5 }}>
+                <div className="mt-2 text-stone-300 text-xs leading-relaxed">
                   {descr.stages[state.currentStage]}
                 </div>
               )}
@@ -89,6 +57,6 @@ export function QuestLog({ open, onClose }: QuestLogProps): React.JSX.Element | 
           )
         })}
       </div>
-    </div>
+    </Dialog>
   )
 }

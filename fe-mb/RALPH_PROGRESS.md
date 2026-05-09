@@ -33,7 +33,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 - [x] **UI-T11** Migrate `QuitModal.tsx` → `<Dialog>` + `<Button>` + `<Heading>`. ✅ Manual overlay/`onClick={e.stopPropagation()}` deleted; ESC dismiss + backdrop click are handled by RAC ModalOverlay. Bundle 454.28 KB.
 - [x] **UI-T12** Migrate `BattleEndModal.tsx` → `<Dialog>` + 3× `<Button>` + `<Heading>`. ✅ Variant border color (amber for VICTORY, red for DEFEAT). isDismissable=false (battle end is a forced gate). Bundle 454.30 KB.
 - [x] **UI-T13** Migrate `LoadGameModal.tsx` → `<Dialog>` + `<ListBox>` + `<Button>` + `<Heading>`. ✅ Save slots → ListBoxItem with arrow-key + Enter selection. Bundle 472.10 KB (+17.8 from T12; ListBox brought widget code in). Cumulative +39.43 vs baseline; within +75 budget.
-- [ ] **UI-T14** Migrate `QuestLog.tsx` → `<Dialog>`.
+- [x] **UI-T14** Migrate `QuestLog.tsx` → `<Dialog>` + `<Button>` + `<Heading>`. ✅ Bundle 471.96 KB.
 - [ ] **UI-T15** Migrate `OverworldScene.tsx` → `<Pressable>` for round map nodes + `<Button>` for HUD buttons. Keep SVG edge layer with `pointer-events: none`.
 - [ ] **UI-T16** Migrate `TownScene.tsx` → `<Button>` sidebar + `<ListBox>` shop items + `<Tooltip>` for disabled-with-reason on Inn heal.
 - [ ] **UI-T17** Migrate `DungeonScene.tsx` → `<Pressable>` rooms + `<Button variant=danger>` Retreat.
