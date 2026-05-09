@@ -42,8 +42,8 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 
 - [x] **UI-T18** `CombatHud.tsx` shell + `TopBar.tsx` (turn / active unit / HP / AP). ✅ 182 tests pass. Subscribes via Zustand selectors. pointer-events:none on overlay; pointer-events:auto on each interactive child so canvas underneath still receives clicks.
 - [x] **UI-T19** `ModeLabel.tsx` with Framer Motion `<AnimatePresence>`. ✅ 185 tests pass. Shows banner only in SELECTING_MOVE / SELECTING_TARGET subPhases. Slides in from above with fade.
-- [ ] **UI-T20** Build `EndTurnBtn.tsx`. Uses `<Button variant="primary">`. Disabled when not party turn / RESOLVING.
-- [ ] **UI-T21** Build `MoveBtn.tsx`. Toggles enterMoveMode / cancelSelection. Disabled when hasMovedThisTurn.
+- [x] **UI-T20** `EndTurnBtn.tsx`. ✅ Disabled when not party turn / RESOLVING. Dispatched via store.
+- [x] **UI-T21** `MoveBtn.tsx`. ✅ Toggles enterMoveMode / cancelSelection. Variant flips primary↔secondary based on selecting state. 185 tests pass.
 - [ ] **UI-T22** Build `CardHand.tsx` (fan layout, 5 cards, `<Card>` with AP guard + `<Tooltip>` on disabled).
 - [ ] **UI-T23** Build `CaptureBtn.tsx` (shown when adjacent to low-HP enemy on player turn).
 - [ ] **UI-T24** Wire `<CombatHud />` into `App.tsx` for `view === 'combat'`. Pointer-events overlay over canvas.

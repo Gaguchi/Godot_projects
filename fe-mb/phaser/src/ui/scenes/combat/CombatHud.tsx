@@ -1,6 +1,8 @@
 import React from 'react'
 import { TopBar } from './TopBar'
 import { ModeLabel } from './ModeLabel'
+import { MoveBtn } from './MoveBtn'
+import { EndTurnBtn } from './EndTurnBtn'
 
 /**
  * Top-level combat HUD overlay rendered over the Phaser canvas.
@@ -17,6 +19,10 @@ export function CombatHud(): React.JSX.Element {
     >
       <div className="pointer-events-auto"><TopBar /></div>
       <ModeLabel />
+      <div className="absolute bottom-4 right-4 flex gap-3 pointer-events-auto">
+        <MoveBtn />
+        <EndTurnBtn />
+      </div>
     </div>
   )
 }

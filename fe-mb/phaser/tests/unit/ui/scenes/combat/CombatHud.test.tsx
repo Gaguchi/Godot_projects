@@ -27,7 +27,7 @@ describe('<CombatHud>', () => {
 
   it('renders empty TopBar when no active unit', () => {
     render(<CombatHud />)
-    expect(screen.getByText(/Turn/)).toBeInTheDocument()
+    expect(screen.getByText(/Turn 0/)).toBeInTheDocument()
   })
 
   it('shows the active unit name + AP when in combat', () => {
