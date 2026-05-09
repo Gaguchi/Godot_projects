@@ -4,6 +4,7 @@ import { DevHud } from './ui/DevHud'
 import { ViewContext, type View } from './ui/view'
 import { TitleScreen } from './ui/screens/TitleScreen'
 import { OverworldScene } from './ui/screens/OverworldScene'
+import { TownScene } from './ui/screens/TownScene'
 import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { QuitModal } from './ui/modals/QuitModal'
 import { BattleEndModal } from './ui/modals/BattleEndModal'
@@ -100,12 +101,7 @@ export function App(): React.JSX.Element {
             </>
           )}
           {view === 'town' && (
-            <div id="town-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0f', color: '#e0d0a0', fontFamily: 'monospace' }}>
-              <div style={{ textAlign: 'center' }}>
-                <h1 style={{ fontSize: 32 }}>Town (F-14)</h1>
-                <button onClick={() => setView('overworld')} style={{ marginTop: 24, padding: '12px 24px', background: 'transparent', color: '#e0d0a0', border: '1px solid #4a3a20', cursor: 'pointer', fontFamily: 'monospace' }}>Leave</button>
-              </div>
-            </div>
+            <TownScene onLeave={() => setView('overworld')} />
           )}
           {view === 'dungeon' && (
             <div id="dungeon-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0f', color: '#e0d0a0', fontFamily: 'monospace' }}>
