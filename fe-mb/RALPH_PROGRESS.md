@@ -1,68 +1,77 @@
-# UI Input Overhaul Progress
+# Godot Parity Pass Progress
 
-> **Spec:** `docs/superpowers/specs/2026-05-09-ui-input-overhaul-design.md`
-> **Plan:** `docs/superpowers/plans/2026-05-09-ui-input-overhaul-plan.md`
-> **Loop prompt:** `docs/superpowers/plans/2026-05-09-ralph-loop-prompt.md`
-> **Completion promise:** `<promise>UI-INPUT-FIXED</promise>` — emit ONLY when:
->   - All 4 user-visible criteria pass (4-state UI, keyboard nav, no click lost mid-tween, touch parity verified)
->   - All performance gates green (bundle ≤ +75 KB gzipped, hover p95 < 8ms, mount < 50ms)
->   - All five build gates green (typecheck, unit, e2e, check-context-doc, build)
->   - `CombatScene.ts` renamed to `BoardScene.ts`; HUD code deleted
->   - Tag `phaser-ui-input-fixed` pushed
->   - Visual playthrough recorded (title → overworld → combat → win)
+> **Spec:** `docs/superpowers/specs/2026-05-10-godot-parity-design.md`
+> **Plan:** `docs/superpowers/plans/2026-05-10-godot-parity-plan.md`
+> **Loop prompt:** `docs/superpowers/plans/2026-05-10-godot-parity-loop-prompt.md`
+> **Promise tag:** `<promise>GODOT-PARITY</promise>` — emit only when all done criteria from the spec hold.
 
-Each iteration completes ONE task end-to-end (test → impl → run → gates → commit). All 5 gates pass before check-off. Skip items prefixed `🚧 BLOCKED:`.
+Each iteration completes ONE task end-to-end (TDD: failing test → implementation → all gates green → commit → check off).
 
 ---
 
-## Phase 1 — Component library
+## Phase A — Equipment removal (subtractive)
 
-- [x] **UI-T1** Install `react-aria-components` + `framer-motion`. Record bundle baseline. No code consumers yet. ✅ Bundle baseline: 432.67 KB gzipped (ceiling 507.67 KB). Versions: react-aria-components ^1.17.0, framer-motion ^12.38.0, react-aria ^3.48.0.
-- [x] **UI-T2** `Button` wrapper + 4 unit tests. ✅ 158 tests pass. Variants: primary/secondary/ghost/danger with full data-[hovered/pressed/focus-visible/disabled]: Tailwind classes. Testing infrastructure also added: jsdom env, @testing-library/react, tests/setup.ts with auto-cleanup.
-- [x] **UI-T3** `Pressable` wrapper for non-button clickables. ✅ Renders `<div role="button">` with full `usePress`/`useHover`/`useFocusRing` semantics. tabIndex toggles 0/-1 on disabled. Same data-[pressed/hovered/focus-visible/disabled] attribute surface as `<Button>`. 161 tests pass.
-- [x] **UI-T4** `Card` wrapper with AP-cost guard + Framer Motion lift. ✅ 165 tests pass. Click hits the RAC `<Button>`; lift via Framer Motion `whileHover` / `whileTap` (skipped under `prefers-reduced-motion`). Disabled when `apCost > availableAp`; reason exposed via `data-disabled-reason` attribute (Tooltip in T8 will render it visually). RAC strips arbitrary HTML attributes (title) so we use a data-attribute instead.
-- [x] **UI-T5** `Dialog` wrapper (ModalOverlay + Modal + RACDialog). ✅ Focus trap, ESC dismiss (verified in test), backdrop click dismisses when isDismissable (default true). Stone-950 panel with amber border. 169 tests pass.
-- [x] **UI-T6** `Menu` + `MenuItem` wrappers. ✅ 172 tests pass. Click + arrow-key + Enter all fire onAction. RAC handles type-to-search and roving tabindex internally.
-- [x] **UI-T7** `ListBox` + `ListBoxItem` wrappers. ✅ 175 tests pass. Click + arrow-key + selection state via data-[selected]. Used by shop and save-slot UIs.
-- [x] **UI-T8** `Tooltip` wrapper. ✅ 177 tests pass. TooltipTrigger + RACTooltip + OverlayArrow with stone/amber styling. 500ms hover delay default; isOpen prop for forced display (used in tests + always-on cases).
-- [x] **UI-T9** `Heading` wrapper + barrel `index.ts` + ESLint guard. ✅ 180 tests pass. Heading wraps RACHeading with project font-mono/amber styling. Barrel exports all 8 components + types. `eslint.config.js` adds `no-restricted-imports` rule blocking raw `react-aria-components` and `react-aria` imports outside `src/ui/components/`. Phase 1 complete.
+- [ ] **GP-A1** Trim `items.json` + Item domain to `kind: 'food' | 'potion'` only. Drop weapons/armor/tomes/staves. Add healing_potion + power_elixir.
+- [ ] **GP-A2** Drop `HandSlots` from `Unit` + remove `hand: { left, right }` fixtures from 13 test files + `seedStubBattle.ts`.
+- [ ] **GP-A3** Delete `systems/deckBuilder.ts` + dead test (no callers).
+- [ ] **GP-A4** Drop `equipHand` action, `ItemAcquired` event, `grantItem` quest effect, `hasItem` predicate.
+- [ ] **GP-A5** Drop `loot` field from `BattleResult` + battleResolver + applyBattleResult.
+- [ ] **GP-A6** Bump `SAVE_VERSION` to `'0.6.0-cards-only'`. Drop `hand`/`loot` from save schema. Drop `itemId` alias.
 
-## Phase 2 — Migrate non-combat scenes
+## Phase B — Quest engine + dialogue infrastructure
 
-- [x] **UI-T10** Migrate `TitleScreen.tsx` → `<Button>` + `<Heading>`. ✅ Inline-styled `onMouseEnter`/`onMouseLeave` hover handlers replaced with Tailwind data-[hovered]: variants. E2E selectors (`button:has-text("New Game")`, id-based) all still pass — RAC renders to native `<button>`. Bundle 444.36 KB (+11.69 KB from baseline; within +75 budget).
-- [x] **UI-T11** Migrate `QuitModal.tsx` → `<Dialog>` + `<Button>` + `<Heading>`. ✅ Manual overlay/`onClick={e.stopPropagation()}` deleted; ESC dismiss + backdrop click are handled by RAC ModalOverlay. Bundle 454.28 KB.
-- [x] **UI-T12** Migrate `BattleEndModal.tsx` → `<Dialog>` + 3× `<Button>` + `<Heading>`. ✅ Variant border color (amber for VICTORY, red for DEFEAT). isDismissable=false (battle end is a forced gate). Bundle 454.30 KB.
-- [x] **UI-T13** Migrate `LoadGameModal.tsx` → `<Dialog>` + `<ListBox>` + `<Button>` + `<Heading>`. ✅ Save slots → ListBoxItem with arrow-key + Enter selection. Bundle 472.10 KB (+17.8 from T12; ListBox brought widget code in). Cumulative +39.43 vs baseline; within +75 budget.
-- [x] **UI-T14** Migrate `QuestLog.tsx` → `<Dialog>` + `<Button>` + `<Heading>`. ✅ Bundle 471.96 KB.
-- [x] **UI-T15** Migrate `OverworldScene.tsx` → `<Pressable>` for round map nodes. ✅ All inline `onMouseEnter`/`onMouseLeave` and `useState(hoverNodeId)` deleted; data-[hovered]: variants drive the scale-up + glow. `id` prop added to Pressable to keep e2e selector compatibility (`#node-pine_crossing`). Bundle 472.19 KB.
-- [x] **UI-T16** Migrate `TownScene.tsx` → `<Button>` sidebar + buy/sell + tavern accept. ✅ Active panel = primary variant; others = secondary. Inn heal uses isDisabled + on-button label conveys gold need ("Need 24g"). Bundle 471.99 KB.
-- [x] **UI-T17** Migrate `DungeonScene.tsx` → `<Pressable>` rooms + `<Button variant=danger>` Retreat. ✅ Phase 2 complete. All 8 non-combat scenes/modals now use the wrapper layer. Bundle 471.69 KB.
+- [ ] **GP-B1** Extend `QuestEffect` union with `addGold | addFood | damageParty | healParty | statCheck`. Match in schema. Implement in questRunner.
+- [ ] **GP-B2** Wire `questRunner` into `runStore.dispatch` post-action hook. Add `applyQuestEffects { effects }` action.
+- [ ] **GP-B3** Build `DialogueModal.tsx` + `StatCheckModal.tsx`. Add `pendingDialogue` state + `startDialogue` / `endDialogue` actions. Mount at App root.
+- [ ] **GP-B4** Build `scripts/convert-dialogue.mjs` (Godot→phaser dialogue JSON converter).
+- [ ] **GP-B5** Port 8 Godot dialogues to `data/content/dialogue/*.json` + Blood Ties quest to `data/content/quests/blood_ties.json`.
 
-## Phase 3 — Combat HUD migration + BoardScene reduction
+## Phase C — Travel encounters + per-hop food
 
-- [x] **UI-T18** `CombatHud.tsx` shell + `TopBar.tsx` (turn / active unit / HP / AP). ✅ 182 tests pass. Subscribes via Zustand selectors. pointer-events:none on overlay; pointer-events:auto on each interactive child so canvas underneath still receives clicks.
-- [x] **UI-T19** `ModeLabel.tsx` with Framer Motion `<AnimatePresence>`. ✅ 185 tests pass. Shows banner only in SELECTING_MOVE / SELECTING_TARGET subPhases. Slides in from above with fade.
-- [x] **UI-T20** `EndTurnBtn.tsx`. ✅ Disabled when not party turn / RESOLVING. Dispatched via store.
-- [x] **UI-T21** `MoveBtn.tsx`. ✅ Toggles enterMoveMode / cancelSelection. Variant flips primary↔secondary based on selecting state. 185 tests pass.
-- [x] **UI-T22** `CardHand.tsx` (5 cards, `<Card>` with AP guard + `<Tooltip>` for disabled-with-reason). ✅ Cards now live in DOM; click hits the real `<button>`, hover lifts via Framer Motion `whileHover`, AP-insufficient cards show tooltip "Needs N AP, you have M".
-- [x] **UI-T23** `CaptureBtn.tsx`. ✅ Lists each adjacent enemy with HP < 50% as a danger-variant button with capture % preview. Tooltip explains the formula.
-- [x] **UI-T24** Wire `<CombatHud />` into `App.tsx`. ✅ Mounted whenever `view === 'combat'`. Bundle 478.28 KB (cumulative +45.61 vs baseline; within +75 budget). Stripped Framer Motion from CardHand + Card + ModeLabel — pure CSS / Tailwind transitions instead. motion-safe: variants honor prefers-reduced-motion.
-- [x] **UI-T25** `CombatScene.ts` → `BoardScene.ts`. ✅ ~370 LoC of HUD code deleted from canvas (card hand, end-turn btn, move btn, AP indicator, mode label, button containers). Kept: grid, units, animations, tile/unit click spatial pickers, enemy turn loop, AOE/damage tile preview. createGame.ts updated to register BoardScene.
-- [x] **UI-T26** Update E2E tests for DOM HUD. ✅ `combat-buttons.spec.ts` now targets `#combat-end-turn-btn`, `#combat-move-btn`, and `[data-testid^="card-"]`. `combat-movement.spec.ts` unchanged (still targets canvas for tile/unit clicks). DevHud default-closed so it doesn't intercept clicks. All 8 e2e pass.
+- [ ] **GP-C1** Add `Region` domain + schema + `regions.json` (borderlands/thornwood/ashfall, tier 1-3).
+- [ ] **GP-C2** Add `EncounterEntry` + `EnemyGroup` domain types + schemas.
+- [ ] **GP-C3** Build `systems/encounterRoller.ts` (predicate-filtered weighted pick + one-shot tracking) with deterministic-RNG tests.
+- [ ] **GP-C4** Port `data/events/travel_events.json` → 3 region encounter tables. Port `enemy_groups.json` → 4 group files (bandits, wolves, brigands, darens_gang).
+- [ ] **GP-C5** Wire `OverworldScene.handleNodeClick` to encounterRoller. Branch dialogue → `startDialogue`, battle → combat seed. Add `markEncounterFired` action + `oneShotsFired` state.
+- [ ] **GP-C6** Add `consumeFoodPerHop` action (decrements food, deals 3 HP starvation when 0). HUD shows food + "starving" indicator.
 
-## Phase 4 — Cross-cutting polish
+## Phase D — Multi-region overworld
 
-- [x] **UI-T27** `prefers-reduced-motion` honored. ✅ `motion-safe:transition-*` and `motion-safe:data-[hovered]:-translate-y-6` variants gate every animation. Reduced-motion users still get visual state changes (color, opacity) but no transform tweens.
-- [x] **UI-T28** `scripts/measure-bundle.mjs` + `npm run perf-gates`. ✅ Reports baseline 432.67, ceiling 507.67, actual 462.68 KB gzipped (+30.01). PASS.
-- [x] **UI-T29** ✅ CONTEXT.md updated (Phaser-board-only invariant; BoardScene rename). Visual playthrough confirmed: title → overworld → combat with HUD overlay; end-turn click verified advances turn; hover sets data-hovered=true. All 6 gates green. Tag `phaser-ui-input-fixed` pushed.
+- [ ] **GP-D1** Port Godot `overworld.json` into 3 region maps (`borderlands.json`, `thornwood.json`, `ashfall.json`). Extend `WorldMap` with `regionId` + `MapEdge` for cross-map.
+- [ ] **GP-D2** Build `systems/overworldPath.ts` (BFS). Multi-hop click = compute path → travel hop-by-hop with encounter roll on each.
+- [ ] **GP-D3** Hover tooltip with hop count + food cost preview, color-coded by affordability.
+- [ ] **GP-D4** Add `enterMap` action. Region-edge crossings dispatch enterMap + arriveAtNode. QuestRunner sees correct `LocationArrived`.
+- [ ] **GP-D5** Build `MapBackground.tsx` — region-tinted radial gradient.
+- [ ] **GP-D6** Dynamic quest nodes — `runStore.dynamicNodes` + `spawnQuestNode` / `removeQuestNode` actions. QuestRunner spawnNode effect dispatches.
+
+## Phase E — Town content + panels
+
+- [ ] **GP-E1** Add `TownDef` domain + schema.
+- [ ] **GP-E2** Port 5 Godot towns to `data/content/towns/*.json`. Register in `data/load.ts`.
+- [ ] **GP-E3** Extract `InnPanel.tsx` + `ShopPanel.tsx` + `TavernPanel.tsx`. Refactor `TownScene` to take `townId` prop. Pass townId from current overworld node.
+- [ ] **GP-E4** Build `CampScene.tsx` (Rest / Scout-stub / Leave) + `restAtCamp` action. Wire camp nodes to CampScene via App view router.
+- [ ] **GP-E5** Tavern → DialogueModal: iterate `tavernQuests`, each NPC click dispatches `startDialogue { dialogueId }`. Replace hardcoded blood_ties button.
+
+## Phase F — Dungeon parity
+
+- [ ] **GP-F1** Add `DungeonDef` domain + schema. Port 5 dungeons (smugglers_cave, iron_mine, thornwood_depths, ancient_ruins, obsidian_cavern).
+- [ ] **GP-F2** Add row-band rules to `dungeonGenerator.ts`. Include `shop` (~10%) + `treasure` (~15%) in mid-row weights. Test: 100 sample runs produce all 7 room types.
+- [ ] **GP-F3** Add `restParty { percent }` reducer. Replace `useRunStore.setState` bypass in `DungeonScene.tsx`.
+- [ ] **GP-F4** Build `seedDungeonBattle.ts` — looks up DungeonDef → enemy group → seeds battle. BoardScene routes via dungeon vs travel encounter source. OverworldScene passes dungeonId from clicked node.
+
+## Phase G — Integration + visual playthrough
+
+- [ ] **GP-G1** Prologue trigger: on first new game with `prologue_seen` flag false, dispatch startDialogue('prologue').
+- [ ] **GP-G2** CONTEXT.md drift updates (drop equipHand action, add new domain types + actions). `npm run perf-gates` passes (rebaseline if legitimate).
+- [ ] **GP-G3** Final visual playthrough recording. All 5 gates + perf-gates green. Tag `phaser-godot-parity`. Emit `<promise>GODOT-PARITY</promise>`.
 
 ---
 
 ## Notes for the loop
 
-- **TDD per task**: write the failing test first, run it, then implement, run again, commit. Each test+impl+commit = one iteration.
-- **All 5 build gates pass before check-off**: `typecheck`, `npm test -- --run`, `check-context-doc`, `test:e2e`, `build`.
-- **Do not skip the test step.** A wrapper without tests is a wrapper without proof of working hover/click/keyboard semantics.
-- **Visual sanity check** every Phase 2/3 task using Playwright MCP — load the scene, verify button is clickable AND hover-able AND disabled state visible.
-- **Drift safeguards**: emit `<promise>NEEDS_HUMAN_REVIEW</promise>` if 3+ consecutive `🚧 BLOCKED:` items, OR tests fail on HEAD at iteration start, OR perf gate exceeded by >50%.
-- **Cutoff**: if anything tempts adding a button/menu to Phaser canvas, stop. Spec rule: UI is DOM, board is canvas.
+- **TDD discipline**: failing test first, implement, gates, commit. No skipping the test step.
+- **All five build gates + perf-gates pass before check-off.**
+- **Drift safeguards**: NEEDS_HUMAN_REVIEW promise if 3+ consecutive blocked, or tests fail at HEAD start, or perf gate exceeded by >50 KB beyond ceiling.
+- **Architectural fence**: still no buttons in Phaser canvas; no raw `useRunStore.setState` in feature code.
+- **Skip BLOCKED items** (mark `🚧 BLOCKED: <reason>` and move on).
+- **Total estimate**: ~32 tasks × 15-30 min each = ~12-16 hours of loop time. Max iterations 400.
