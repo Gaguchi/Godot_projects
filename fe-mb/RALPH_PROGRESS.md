@@ -46,7 +46,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 - [x] **UI-T21** `MoveBtn.tsx`. ✅ Toggles enterMoveMode / cancelSelection. Variant flips primary↔secondary based on selecting state. 185 tests pass.
 - [x] **UI-T22** `CardHand.tsx` (5 cards, `<Card>` with AP guard + `<Tooltip>` for disabled-with-reason). ✅ Cards now live in DOM; click hits the real `<button>`, hover lifts via Framer Motion `whileHover`, AP-insufficient cards show tooltip "Needs N AP, you have M".
 - [x] **UI-T23** `CaptureBtn.tsx`. ✅ Lists each adjacent enemy with HP < 50% as a danger-variant button with capture % preview. Tooltip explains the formula.
-- [ ] **UI-T24** Wire `<CombatHud />` into `App.tsx` for `view === 'combat'`. Pointer-events overlay over canvas.
+- [x] **UI-T24** Wire `<CombatHud />` into `App.tsx`. ✅ Mounted whenever `view === 'combat'`. Bundle 478.28 KB (cumulative +45.61 vs baseline; within +75 budget). Stripped Framer Motion from CardHand + Card + ModeLabel — pure CSS / Tailwind transitions instead. motion-safe: variants honor prefers-reduced-motion.
 - [ ] **UI-T25** Strip HUD code from `CombatScene.ts`; rename to `BoardScene.ts`. Delete: card hand, end-turn, move, AP indicator, mode label, all button containers. Keep: grid, units, animations, tile/unit click (spatial pickers), enemy turn loop. Net ~370 LoC removed.
 - [ ] **UI-T26** Update E2E tests: `combat-buttons.spec.ts` now targets DOM buttons; `combat-movement.spec.ts` keeps canvas tile click; new `keyboard-nav.spec.ts` exercises Tab/Enter flow.
 

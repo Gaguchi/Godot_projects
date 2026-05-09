@@ -9,9 +9,11 @@ describe('<ModeLabel>', () => {
     useCombatStore.setState({ state: initialCombatState(), lastEffectId: 0 })
   })
 
-  it('renders nothing in IDLE subPhase', () => {
-    const { container } = render(<ModeLabel />)
-    expect(container.textContent).toBe('')
+  it('renders hidden banner in IDLE subPhase (always-mounted, opacity 0)', () => {
+    render(<ModeLabel />)
+    const banner = document.querySelector('[aria-hidden="true"]')
+    expect(banner).not.toBeNull()
+    expect(banner?.className).toMatch(/opacity-0/)
   })
 
   it('shows move-mode banner when subPhase = SELECTING_MOVE', () => {

@@ -10,6 +10,7 @@ import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { QuitModal } from './ui/modals/QuitModal'
 import { BattleEndModal } from './ui/modals/BattleEndModal'
 import { QuestLog } from './ui/overlays/QuestLog'
+import { CombatHud } from './ui/scenes/combat/CombatHud'
 import { useCombatStore } from './state/combatStore'
 import { useRunStore } from './state/runStore'
 import { asNodeId } from './domain/ids'
@@ -168,6 +169,7 @@ export function App(): React.JSX.Element {
             <>
               <div id="game-canvas-container" />
               <div id="react-shell" />
+              <CombatHud />
             </>
           )}
           {view === 'town' && (

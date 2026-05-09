@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { Card, Tooltip } from '../../components'
 import { useCombatStore } from '../../../state/combatStore'
 import { createRng } from '../../../systems/rng'
@@ -38,10 +37,8 @@ export function CardHand(): React.JSX.Element | null {
   const handIds = deck.hand.slice(0, 5).map((id) => id as unknown as string)
 
   return (
-    <motion.div
-      layout
-      className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 items-end pointer-events-auto z-10"
-    >
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 items-end pointer-events-auto z-10">
+      {/* No motion.div needed at the row level; lift animation lives on each Card. */}
       {handIds.map((cardId) => {
         const card = cardsMap.get(cardId)
         if (!card) return null
@@ -89,6 +86,6 @@ export function CardHand(): React.JSX.Element | null {
         }
         return <React.Fragment key={cardId}>{cardEl}</React.Fragment>
       })}
-    </motion.div>
+    </div>
   )
 }
