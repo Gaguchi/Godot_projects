@@ -1,13 +1,13 @@
 import React from 'react'
+import { Button, Heading } from '../components'
 
 /**
  * Title screen — first thing the player sees on boot.
  *
- * Layout: full-viewport, centered game title with three buttons stacked below.
- * Buttons emit onClick events here; wiring (New Game → start run; Load Game →
- * save list; Quit → window close) lands in P1-03, P1-04, P1-05 respectively.
- *
- * Styling is intentionally inline for now — P1-06 refactors to Tailwind dark-fantasy.
+ * Layout: full-viewport, centered title with three buttons stacked below.
+ * Each button is a <Button> from src/ui/components — the centralized wrapper
+ * over react-aria-components. That gives us reliable hover/press/focus state
+ * machines, keyboard activation, and 4-state styling for free.
  */
 export interface TitleScreenProps {
   onNewGame: () => void
@@ -15,83 +15,25 @@ export interface TitleScreenProps {
   onQuit: () => void
 }
 
-const containerStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '100vh',
-  width: '100vw',
-  background: '#0a0a0f',
-  color: '#e0d0a0',
-  fontFamily: 'monospace',
-  gap: 32,
-}
-
-const titleStyle: React.CSSProperties = {
-  fontSize: 64,
-  letterSpacing: 4,
-  marginBottom: 24,
-  textShadow: '0 2px 12px rgba(255, 180, 80, 0.25)',
-}
-
-const subtitleStyle: React.CSSProperties = {
-  fontSize: 14,
-  color: '#8a7860',
-  marginTop: -16,
-  marginBottom: 32,
-  letterSpacing: 1,
-}
-
-const buttonStyle: React.CSSProperties = {
-  width: 280,
-  padding: '14px 24px',
-  fontFamily: 'monospace',
-  fontSize: 18,
-  background: 'transparent',
-  color: '#e0d0a0',
-  border: '1px solid #4a3a20',
-  cursor: 'pointer',
-  letterSpacing: 2,
-  textAlign: 'center',
-  transition: 'background 120ms, border-color 120ms',
-}
-
 export function TitleScreen({ onNewGame, onLoadGame, onQuit }: TitleScreenProps): React.JSX.Element {
   return (
-    <div id="title-screen" style={containerStyle}>
-      <h1 style={titleStyle}>FE_MB</h1>
-      <div style={subtitleStyle}>tactical roguelite</div>
-      <button
-        id="title-new-game"
-        type="button"
-        style={buttonStyle}
-        onClick={onNewGame}
-        onMouseEnter={(e) => { e.currentTarget.style.background = '#1a1410'; e.currentTarget.style.borderColor = '#a07a40' }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#4a3a20' }}
-      >
+    <div
+      id="title-screen"
+      className="flex flex-col items-center justify-center h-screen w-screen bg-stone-950 text-amber-100 gap-8 font-mono"
+    >
+      <Heading level={1} className="text-6xl tracking-[0.25em] mb-2 drop-shadow-[0_2px_12px_rgba(255,180,80,0.25)]">
+        FE_MB
+      </Heading>
+      <div className="text-sm text-stone-500 -mt-4 mb-8 tracking-widest">tactical roguelite</div>
+      <Button id="title-new-game" variant="secondary" onPress={onNewGame} className="w-72 py-4 text-lg tracking-widest">
         New Game
-      </button>
-      <button
-        id="title-load-game"
-        type="button"
-        style={buttonStyle}
-        onClick={onLoadGame}
-        onMouseEnter={(e) => { e.currentTarget.style.background = '#1a1410'; e.currentTarget.style.borderColor = '#a07a40' }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#4a3a20' }}
-      >
+      </Button>
+      <Button id="title-load-game" variant="secondary" onPress={onLoadGame} className="w-72 py-4 text-lg tracking-widest">
         Load Game
-      </button>
-      <button
-        id="title-quit"
-        type="button"
-        style={buttonStyle}
-        onClick={onQuit}
-        onMouseEnter={(e) => { e.currentTarget.style.background = '#1a1410'; e.currentTarget.style.borderColor = '#a07a40' }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#4a3a20' }}
-      >
+      </Button>
+      <Button id="title-quit" variant="secondary" onPress={onQuit} className="w-72 py-4 text-lg tracking-widest">
         Quit
-      </button>
+      </Button>
     </div>
   )
 }
