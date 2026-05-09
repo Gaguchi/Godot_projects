@@ -5,6 +5,7 @@ import { ViewContext, type View } from './ui/view'
 import { TitleScreen } from './ui/screens/TitleScreen'
 import { OverworldScene } from './ui/screens/OverworldScene'
 import { TownScene } from './ui/screens/TownScene'
+import { DungeonScene } from './ui/screens/DungeonScene'
 import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { QuitModal } from './ui/modals/QuitModal'
 import { BattleEndModal } from './ui/modals/BattleEndModal'
@@ -104,12 +105,11 @@ export function App(): React.JSX.Element {
             <TownScene onLeave={() => setView('overworld')} />
           )}
           {view === 'dungeon' && (
-            <div id="dungeon-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0f', color: '#e0d0a0', fontFamily: 'monospace' }}>
-              <div style={{ textAlign: 'center' }}>
-                <h1 style={{ fontSize: 32 }}>Dungeon (F-24/F-25)</h1>
-                <button onClick={() => setView('overworld')} style={{ marginTop: 24, padding: '12px 24px', background: 'transparent', color: '#e0d0a0', border: '1px solid #4a3a20', cursor: 'pointer', fontFamily: 'monospace' }}>Leave</button>
-              </div>
-            </div>
+            <DungeonScene
+              onClearAndExit={() => setView('overworld')}
+              onCombatRoom={() => setView('combat')}
+              onLeave={() => setView('overworld')}
+            />
           )}
           <DevHud errorBus={errorBus} eventBus={eventBus} actionLog={actionLog} />
           <LoadGameModal

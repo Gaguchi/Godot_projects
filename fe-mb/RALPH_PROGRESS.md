@@ -46,9 +46,9 @@ Read this file each iteration. Pick the next unchecked item. Build the entire fe
 
 ## E. Dungeon Layer
 
-- [ ] **F-23** Real `procgen/dungeonGenerator.ts` per `docs/research/sts-procgen.md`: 15 rows + boss, 6 paths, validator pass, full reveal. Keep stub linear corridor as fallback for tests. Update existing tests; add procgen invariant tests (≥6 paths, no row-skipping, forced placements row 1/9/15/16, no Rest on row 14, no Elite on rows 2-5).
-- [ ] **F-24** Dungeon scene React component: branching DAG render with rooms as icons (combat/elite/rest/event/treasure/boss), edges, current position glow, valid-next rooms clickable. View `'overworld' → 'dungeon'` when player visits DUNGEON node.
-- [ ] **F-25** Room navigation + per-type behavior: combat room → boots CombatScene with dungeon enemy group, victory returns to dungeon scene; event room → dialogue (small placeholder); rest room → heal 30%; treasure room → grant 1 random item; elite → harder combat; boss → final encounter, win exits dungeon. Quest-locked dungeon access (Smuggler's Cave gated by Blood Ties completion via predicate).
+- [x] **F-23** Real `procgen/dungeonGenerator.ts` per `docs/research/sts-procgen.md`: 15 rows + boss, 6 paths, validator pass, full reveal. Keep stub linear corridor as fallback for tests. Update existing tests; add procgen invariant tests (≥6 paths, no row-skipping, forced placements row 1/9/15/16, no Rest on row 14, no Elite on rows 2-5). — pending-sha 2026-05-09
+- [x] **F-24** Dungeon scene React component: branching DAG render with rooms as icons (combat/elite/rest/event/treasure/boss), edges, current position glow, valid-next rooms clickable. View `'overworld' → 'dungeon'` when player visits DUNGEON node. — pending-sha 2026-05-09
+- [x] **F-25** Room navigation + per-type behavior: combat room → boots CombatScene with dungeon enemy group, victory returns to dungeon scene; event room → dialogue (small placeholder); rest room → heal 30%; treasure room → grant 1 random item; elite → harder combat; boss → final encounter, win exits dungeon. Quest-locked dungeon access (Smuggler's Cave gated by Blood Ties completion via predicate). — pending-sha 2026-05-09
 
 ## F. Permadeath, Recruitment, Polish
 
