@@ -1,0 +1,27 @@
+{
+  "id": "thornwood_path",
+  "regionId": "thornwood",
+  "entries": [
+    {
+      "id": "thornwood_brigands",
+      "weight": 10,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": { "kind": "battle", "enemyGroupId": "brigands" }
+    },
+    {
+      "id": "thornwood_wolf_pack",
+      "weight": 8,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": { "kind": "battle", "enemyGroupId": "wolves" }
+    },
+    {
+      "id": "thornwood_merchant",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": { "kind": "dialogue", "dialogueId": "road_merchant" }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ashfall_track",
+  "regionId": "ashfall",
+  "entries": [
+    {
+      "id": "ashfall_brigands",
+      "weight": 10,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": { "kind": "battle", "enemyGroupId": "brigands" }
+    },
+    {
+      "id": "ashfall_bandits",
+      "weight": 6,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": { "kind": "battle", "enemyGroupId": "bandits_small" }
+    }
+  ]
+}
