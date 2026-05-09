@@ -1,0 +1,43 @@
+{
+  "version": "0.1.0",
+  "schema": "enemy_scaling/v1",
+  "_doc": "Stub from research deliverable #5 (docs/research/enemy-scaling-curves.md). Placeholder values — tune in difficulty milestone.",
+
+  "perClass": {
+    "FIGHTER": { "hpBase": 18, "hpPerLevel": 2, "strBase": 5, "defBase": 3, "resBase": 1, "spdBase": 4 },
+    "KNIGHT":  { "hpBase": 24, "hpPerLevel": 3, "strBase": 6, "defBase": 6, "resBase": 1, "spdBase": 2 },
+    "ARCHER":  { "hpBase": 16, "hpPerLevel": 2, "strBase": 4, "defBase": 2, "resBase": 2, "spdBase": 5 },
+    "THIEF":   { "hpBase": 15, "hpPerLevel": 2, "strBase": 3, "defBase": 2, "resBase": 2, "spdBase": 7 },
+    "MAGE":    { "hpBase": 14, "hpPerLevel": 2, "magBase": 6, "defBase": 1, "resBase": 5, "spdBase": 4 },
+    "CLERIC":  { "hpBase": 16, "hpPerLevel": 2, "magBase": 5, "defBase": 1, "resBase": 5, "spdBase": 4 },
+    "LORD":    { "hpBase": 30, "hpPerLevel": 4, "strBase": 7, "defBase": 5, "resBase": 4, "spdBase": 5 },
+    "BEAST":   { "hpBase": 22, "hpPerLevel": 3, "strBase": 6, "defBase": 4, "resBase": 1, "spdBase": 4 }
+  },
+
+  "perLevelFormulas": {
+    "strPerLevel": 1,
+    "defPerLevel": 0.5,
+    "resPerLevel": 0.333,
+    "weaponMightBase": 4,
+    "weaponMightPerLevel": 0.5,
+    "spdJitterMax": 2
+  },
+
+  "regionMultipliers": {
+    "borderlands": { "hpMul": 1.00, "levelRange": [1, 2], "lootRarityFloor": "common"   },
+    "thornwood":   { "hpMul": 1.10, "levelRange": [3, 4], "lootRarityFloor": "uncommon" },
+    "ashfall":     { "hpMul": 1.20, "levelRange": [5, 6], "lootRarityFloor": "uncommon" },
+    "ironThrone":  { "hpMul": 1.35, "levelRange": [7, 9], "lootRarityFloor": "rare"     }
+  },
+
+  "lootRarityByLevel": {
+    "1-2": { "common": 0.80, "uncommon": 0.20 },
+    "3-4": { "common": 0.50, "uncommon": 0.40, "rare": 0.10 },
+    "5-6": { "uncommon": 0.30, "rare": 0.50, "epic": 0.20 },
+    "7-9": { "rare": 0.40, "epic": 0.45, "legendary": 0.15 }
+  },
+
+  "bossOverrides": {
+    "ironThroneBoss": { "class": "LORD", "level": 9, "hpMul": 1.50, "gearRarity": "legendary" }
+  }
+}
