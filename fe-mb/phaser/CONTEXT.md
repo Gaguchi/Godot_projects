@@ -174,7 +174,7 @@ phaser/src/
 ├── mapRegistry/    MapRegistry: registry of world/battle/dungeon maps
 ├── state/          metaStore, runStore, combatStore, flags, eventBus, errorBus, actionLog
 ├── persistence/    saveFormat, save, load (atomic hydration), contentAliases
-├── game/           Phaser scenes + CombatRuntime POJO
+├── game/           createGame.ts + scenes/ (BootScene, CombatScene) + runtime/ (CombatRuntime POJO)
 ├── ui/             React shell + ErrorBoundary + DevHud + modals
 └── tests/          unit (Vitest) + e2e (Playwright)
 ```
