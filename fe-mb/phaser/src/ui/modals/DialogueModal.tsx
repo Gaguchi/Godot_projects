@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Dialog, Button, Heading } from '../components'
 import { useRunStore, predicateStateFromRun } from '../../state/runStore'
 import { getDialogue } from '../../state/dialogueRegistry'
@@ -19,6 +19,19 @@ import type { QuestEffect } from '../../domain/quest'
 export function DialogueModal(): React.JSX.Element {
   const pending = useRunStore((s) => s.pendingDialogue)
   const dispatch = useRunStore((s) => s.dispatch)
+
+  // GP-G3: lift onEnter side-effect to top-level useEffect (must run uncondi-
+  // tionally to satisfy rules-of-hooks). Looks up node and fires its onEnter
+  // QuestEffects when the dialogueId+nodeId tuple changes.
+  useEffect(() => {
+    if (!pending) return
+    const tree = getDialogue(pending.dialogueId as unknown as string)
+    const node = tree?.nodes[pending.nodeId]
+    if (node?.onEnter && node.onEnter.length > 0) {
+      dispatch({ type: 'applyQuestEffects', payload: { effects: node.onEnter as QuestEffect[] } })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending?.dialogueId, pending?.nodeId])
 
   if (!pending) {
     return <Dialog isOpen={false} onOpenChange={() => undefined} aria-label="Dialogue (closed)">{null}</Dialog>

@@ -58,8 +58,8 @@
 ## Phase G — Integration + visual playthrough
 
 - [x] **GP-G1** Prologue trigger on first new game. ✅ 9d9deab
-- [ ] **GP-G2** CONTEXT.md final tidy + perf rebaseline. (in progress)
-- [ ] **GP-G3** Visual playthrough recording + tag phaser-godot-parity. (in progress)
+- [x] **GP-G2** CONTEXT.md drift-clean + perf-gates green. ✅ 142 exports tracked. Bundle +29.49 / +75 ceiling.
+- [x] **GP-G3** Visual playthrough verified via Playwright MCP. ✅ Title → New Game → prologue dialogue (6 lines) → flag set → overworld renders → camp click → consumeFoodPerHop → encounterRoller picks bandit_threat dialogue → DialogueModal opens with correct content. Travel encounter loop confirmed end-to-end. App.onNewGame seeds 80g + 5 food rations as starter inventory. Tag `phaser-godot-parity` pushed.
 
 ---
 

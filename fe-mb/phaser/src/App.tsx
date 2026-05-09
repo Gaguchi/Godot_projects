@@ -106,10 +106,15 @@ export function App(): React.JSX.Element {
 
   const onNewGame = useCallback(() => {
     dispatchMeta({ type: 'startNewRun' })
+    // Seed starting state: 80g, 5 food rations. Party is seeded at the first
+    // combat by seedStubBattle / seedDungeonBattle. (Pre-alpha; richer party
+    // creation lands later.)
+    const run = useRunStore.getState()
+    run.dispatch({ type: 'addGold', payload: { amount: 80 } })
+    run.dispatch({ type: 'applyQuestEffects', payload: { effects: [{ kind: 'addFood', amount: 5 }] } })
     setView('overworld')
     // GP-G1: prologue trigger on first new game. Flag is permanent so it
     // doesn't fire again on subsequent runs.
-    const run = useRunStore.getState()
     if (!run.flags.has('prologue_seen' as never)) {
       run.dispatch({
         type: 'startDialogue',
