@@ -1,5 +1,6 @@
 import React from 'react'
 import { useCombatStore } from '../../state/combatStore'
+import { Dialog, Button, Heading } from '../components'
 
 /**
  * Victory / Defeat overlay shown when combatStore.state.phase becomes
@@ -12,53 +13,14 @@ export interface BattleEndModalProps {
   onContinueToOverworld?: () => void
 }
 
-const overlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0, 0, 0, 0.85)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 999,
-}
-
-const modalStyle = (variant: 'VICTORY' | 'DEFEAT'): React.CSSProperties => ({
-  width: 480,
-  background: '#0a0a0f',
-  border: `2px solid ${variant === 'VICTORY' ? '#a07a40' : '#7a2010'}`,
-  color: '#e0d0a0',
-  fontFamily: 'monospace',
-  padding: 32,
-  textAlign: 'center',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 20,
-})
-
-const titleStyle = (variant: 'VICTORY' | 'DEFEAT'): React.CSSProperties => ({
-  margin: 0,
-  fontSize: 36,
-  letterSpacing: 6,
-  color: variant === 'VICTORY' ? '#facc15' : '#dc2626',
-  textShadow: '0 2px 12px rgba(0,0,0,0.6)',
-})
-
-const buttonStyle: React.CSSProperties = {
-  padding: '12px 24px',
-  background: 'transparent',
-  color: '#e0d0a0',
-  border: '1px solid #4a3a20',
-  cursor: 'pointer',
-  fontFamily: 'monospace',
-  fontSize: 14,
-  letterSpacing: 2,
-}
-
-export function BattleEndModal({ onRestart, onReturnToTitle, onContinueToOverworld }: BattleEndModalProps): React.JSX.Element | null {
+export function BattleEndModal({
+  onRestart, onReturnToTitle, onContinueToOverworld,
+}: BattleEndModalProps): React.JSX.Element {
   const phase = useCombatStore((s) => s.state.phase)
   const units = useCombatStore((s) => s.state.units)
 
-  if (phase !== 'VICTORY' && phase !== 'DEFEAT') return null
+  const open = phase === 'VICTORY' || phase === 'DEFEAT'
+  const isVictory = phase === 'VICTORY'
 
   const partyAlive = Object.values(units).filter(
     (u) => u.hp.current > 0 && !(u.classId as unknown as string).includes('bandit'),
@@ -68,30 +30,51 @@ export function BattleEndModal({ onRestart, onReturnToTitle, onContinueToOverwor
   ).length
 
   return (
-    <div id="battle-end-overlay" style={overlayStyle}>
+    <Dialog
+      isOpen={open}
+      onOpenChange={() => undefined}
+      isDismissable={false}
+      aria-label={isVictory ? 'Victory' : 'Defeat'}
+      className={isVictory ? 'border-amber-700' : 'border-red-900'}
+    >
       <div
-        id={phase === 'VICTORY' ? 'victory-modal' : 'defeat-modal'}
-        style={modalStyle(phase)}
-        role="dialog"
-        aria-labelledby="battle-end-title"
+        id={isVictory ? 'victory-modal' : 'defeat-modal'}
+        className="flex flex-col gap-5 text-center min-w-[420px]"
       >
-        <h1 id="battle-end-title" style={titleStyle(phase)}>{phase}</h1>
-        <div style={{ color: '#8a7860', fontSize: 14 }}>
-          {phase === 'VICTORY'
-            ? `Enemies defeated: ${enemiesDefeated}`
-            : `Your party has fallen.`}
+        <Heading
+          level={1}
+          className={
+            'text-4xl tracking-[0.4em] m-0 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] ' +
+            (isVictory ? 'text-amber-400' : 'text-red-600')
+          }
+        >
+          {phase}
+        </Heading>
+        <div className="text-stone-500 text-sm">
+          {isVictory ? `Enemies defeated: ${enemiesDefeated}` : 'Your party has fallen.'}
         </div>
-        <div style={{ color: '#8a7860', fontSize: 13, marginTop: 8 }}>
+        <div className="text-stone-500 text-xs mt-2">
           Survivors: {partyAlive.map((u) => u.name).join(', ') || 'None'}
         </div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {phase === 'VICTORY' && onContinueToOverworld && (
-            <button id="battle-end-continue" type="button" style={buttonStyle} onClick={onContinueToOverworld}>Continue</button>
+        <div className="flex gap-3 mt-4 justify-center flex-wrap">
+          {isVictory && onContinueToOverworld && (
+            <Button
+              id="battle-end-continue"
+              variant="primary"
+              onPress={onContinueToOverworld}
+              className="tracking-widest"
+            >
+              Continue
+            </Button>
           )}
-          <button id="battle-end-restart" type="button" style={buttonStyle} onClick={onRestart}>Restart</button>
-          <button id="battle-end-title-btn" type="button" style={buttonStyle} onClick={onReturnToTitle}>Return to Title</button>
+          <Button id="battle-end-restart" variant="secondary" onPress={onRestart} className="tracking-widest">
+            Restart
+          </Button>
+          <Button id="battle-end-title-btn" variant="ghost" onPress={onReturnToTitle} className="tracking-widest">
+            Return to Title
+          </Button>
         </div>
       </div>
-    </div>
+    </Dialog>
   )
 }
