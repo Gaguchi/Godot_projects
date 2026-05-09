@@ -44,7 +44,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 - [x] **UI-T19** `ModeLabel.tsx` with Framer Motion `<AnimatePresence>`. ✅ 185 tests pass. Shows banner only in SELECTING_MOVE / SELECTING_TARGET subPhases. Slides in from above with fade.
 - [x] **UI-T20** `EndTurnBtn.tsx`. ✅ Disabled when not party turn / RESOLVING. Dispatched via store.
 - [x] **UI-T21** `MoveBtn.tsx`. ✅ Toggles enterMoveMode / cancelSelection. Variant flips primary↔secondary based on selecting state. 185 tests pass.
-- [ ] **UI-T22** Build `CardHand.tsx` (fan layout, 5 cards, `<Card>` with AP guard + `<Tooltip>` on disabled).
+- [x] **UI-T22** `CardHand.tsx` (5 cards, `<Card>` with AP guard + `<Tooltip>` for disabled-with-reason). ✅ Cards now live in DOM; click hits the real `<button>`, hover lifts via Framer Motion `whileHover`, AP-insufficient cards show tooltip "Needs N AP, you have M".
 - [ ] **UI-T23** Build `CaptureBtn.tsx` (shown when adjacent to low-HP enemy on player turn).
 - [ ] **UI-T24** Wire `<CombatHud />` into `App.tsx` for `view === 'combat'`. Pointer-events overlay over canvas.
 - [ ] **UI-T25** Strip HUD code from `CombatScene.ts`; rename to `BoardScene.ts`. Delete: card hand, end-turn, move, AP indicator, mode label, all button containers. Keep: grid, units, animations, tile/unit click (spatial pickers), enemy turn loop. Net ~370 LoC removed.
