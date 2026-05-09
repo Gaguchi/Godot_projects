@@ -35,7 +35,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 - [x] **UI-T13** Migrate `LoadGameModal.tsx` → `<Dialog>` + `<ListBox>` + `<Button>` + `<Heading>`. ✅ Save slots → ListBoxItem with arrow-key + Enter selection. Bundle 472.10 KB (+17.8 from T12; ListBox brought widget code in). Cumulative +39.43 vs baseline; within +75 budget.
 - [x] **UI-T14** Migrate `QuestLog.tsx` → `<Dialog>` + `<Button>` + `<Heading>`. ✅ Bundle 471.96 KB.
 - [x] **UI-T15** Migrate `OverworldScene.tsx` → `<Pressable>` for round map nodes. ✅ All inline `onMouseEnter`/`onMouseLeave` and `useState(hoverNodeId)` deleted; data-[hovered]: variants drive the scale-up + glow. `id` prop added to Pressable to keep e2e selector compatibility (`#node-pine_crossing`). Bundle 472.19 KB.
-- [ ] **UI-T16** Migrate `TownScene.tsx` → `<Button>` sidebar + `<ListBox>` shop items + `<Tooltip>` for disabled-with-reason on Inn heal.
+- [x] **UI-T16** Migrate `TownScene.tsx` → `<Button>` sidebar + buy/sell + tavern accept. ✅ Active panel = primary variant; others = secondary. Inn heal uses isDisabled + on-button label conveys gold need ("Need 24g"). Bundle 471.99 KB.
 - [ ] **UI-T17** Migrate `DungeonScene.tsx` → `<Pressable>` rooms + `<Button variant=danger>` Retreat.
 
 ## Phase 3 — Combat HUD migration + BoardScene reduction
