@@ -9,6 +9,7 @@ import { useCombatStore } from '../../state/combatStore'
 export interface BattleEndModalProps {
   onRestart: () => void
   onReturnToTitle: () => void
+  onContinueToOverworld?: () => void
 }
 
 const overlayStyle: React.CSSProperties = {
@@ -53,7 +54,7 @@ const buttonStyle: React.CSSProperties = {
   letterSpacing: 2,
 }
 
-export function BattleEndModal({ onRestart, onReturnToTitle }: BattleEndModalProps): React.JSX.Element | null {
+export function BattleEndModal({ onRestart, onReturnToTitle, onContinueToOverworld }: BattleEndModalProps): React.JSX.Element | null {
   const phase = useCombatStore((s) => s.state.phase)
   const units = useCombatStore((s) => s.state.units)
 
@@ -83,7 +84,10 @@ export function BattleEndModal({ onRestart, onReturnToTitle }: BattleEndModalPro
         <div style={{ color: '#8a7860', fontSize: 13, marginTop: 8 }}>
           Survivors: {partyAlive.map((u) => u.name).join(', ') || 'None'}
         </div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {phase === 'VICTORY' && onContinueToOverworld && (
+            <button id="battle-end-continue" type="button" style={buttonStyle} onClick={onContinueToOverworld}>Continue</button>
+          )}
           <button id="battle-end-restart" type="button" style={buttonStyle} onClick={onRestart}>Restart</button>
           <button id="battle-end-title-btn" type="button" style={buttonStyle} onClick={onReturnToTitle}>Return to Title</button>
         </div>

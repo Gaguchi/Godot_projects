@@ -3,6 +3,7 @@ import overworldJson from '../../data/content/overworld/pine_borderlands.json'
 import { useRunStore } from '../../state/runStore'
 import { asNodeId, asMapId } from '../../domain/ids'
 import type { NodeId } from '../../domain/ids'
+import { createRng, deriveRng } from '../../systems/rng'
 
 const NODE_TYPE_ICON: Record<string, string> = {
   town: '⌂',
@@ -36,6 +37,8 @@ export function OverworldScene({
   const map = overworldJson
   const dispatchRun = useRunStore((s) => s.dispatch)
   const worldPosition = useRunStore((s) => s.worldPosition)
+  const visitedNodes = useRunStore((s) => s.visitedNodes)
+  const questStates = useRunStore((s) => s.questStates)
   const [hoverNodeId, setHoverNodeId] = useState<string | null>(null)
 
   // Initialize player position to pine_crossing if not set
@@ -57,14 +60,42 @@ export function OverworldScene({
     if (nodeId === currentNodeId) return
     if (!neighbors.has(nodeId)) return
 
-    // Move pawn first
+    // Find the edge between current and target to get encounter chance
+    const edge = overworldJson.edges.find(
+      (e) => (e.from === currentNodeId && e.to === nodeId)
+        || (e.to === currentNodeId && e.from === nodeId),
+    )
+    const rollChance = edge?.rollChance ?? 0.3
+
+    // Roll for encounter using a derived RNG (deterministic per (runSeed, hop+nodeId))
+    const rngState = useRunStore.getState().rngState
+    const parent = createRng(rngState)
+    const hopRng = deriveRng(parent, `hop:${currentNodeId}->${nodeId}`)
+    const roll = hopRng.next()
+
+    if (roll < rollChance && type !== 'town' && type !== 'dungeon' && type !== 'exit') {
+      // Encounter! Save destination, route to combat. View resumes overworld
+      // after victory; the combat scene will seed the stub battle.
+      dispatchRun({
+        type: 'startTravelPath',
+        payload: {
+          path: {
+            remainingNodeIds: [asNodeId(nodeId)],
+            totalHopsThisLeg: 1,
+            rngBranch: rngState,
+          },
+        },
+      })
+      _onTravelToCombat(asNodeId(nodeId))
+      return
+    }
+
+    // No encounter — just move and dispatch arrival
     dispatchRun({ type: 'arriveAtNode', payload: { nodeId: asNodeId(nodeId) } })
 
-    // Then handle the node type
     if (type === 'town') onEnterTown(asNodeId(nodeId))
     else if (type === 'dungeon') onEnterDungeon(asNodeId(nodeId))
     else if (type === 'exit') onWin()
-    // 'camp' arrival is just rest spot for now
   }
 
   const containerStyle: React.CSSProperties = {
@@ -119,35 +150,84 @@ export function OverworldScene({
         const isCurrent = node.id === currentNodeId
         const isReachable = neighbors.has(node.id)
         const isHovered = hoverNodeId === node.id
+        const visitKey = `overworld:${worldPosition.mapId as unknown as string}:${node.id}`
+        const isVisited = visitedNodes[visitKey] === true
+        // Quest indicator: any active quest on this node? stub: only true for pine_crossing
+        // until F-19 wires real quest location_indicators
+        const hasQuest = node.id === 'pine_crossing'
+          && Object.keys(questStates).length === 0  // no quests accepted yet → quest available
 
         return (
-          <button
-            key={node.id}
-            id={`node-${node.id}`}
-            type="button"
-            onClick={() => handleNodeClick(node.id, node.type)}
-            onMouseEnter={() => setHoverNodeId(node.id)}
-            onMouseLeave={() => setHoverNodeId(null)}
-            disabled={!isReachable && !isCurrent}
-            style={{
-              position: 'absolute',
-              left: x - 24,
-              top: y - 24,
-              width: 48, height: 48,
-              borderRadius: '50%',
-              background: isCurrent ? '#facc15' : '#0a0a0f',
-              border: `2px solid ${isCurrent ? '#facc15' : isReachable ? '#a07a40' : '#3a2a18'}`,
-              color: isCurrent ? '#0a0a0f' : NODE_TYPE_COLOR[node.type],
-              fontSize: 22,
-              cursor: isReachable && !isCurrent ? 'pointer' : 'default',
-              boxShadow: isHovered && isReachable ? '0 0 12px rgba(250,204,21,0.6)' : 'none',
-              transform: isHovered && isReachable ? 'scale(1.1)' : 'scale(1)',
-              transition: 'transform 100ms, box-shadow 100ms',
-            }}
-            aria-label={`${node.type}: ${node.id}`}
-          >
-            {NODE_TYPE_ICON[node.type] ?? '?'}
-          </button>
+          <React.Fragment key={node.id}>
+            <button
+              id={`node-${node.id}`}
+              type="button"
+              onClick={() => handleNodeClick(node.id, node.type)}
+              onMouseEnter={() => setHoverNodeId(node.id)}
+              onMouseLeave={() => setHoverNodeId(null)}
+              disabled={!isReachable && !isCurrent}
+              style={{
+                position: 'absolute',
+                left: x - 24,
+                top: y - 24,
+                width: 48, height: 48,
+                borderRadius: '50%',
+                background: isCurrent ? '#facc15' : isVisited ? '#1a1410' : '#0a0a0f',
+                border: `2px solid ${isCurrent ? '#facc15' : isReachable ? '#a07a40' : isVisited ? '#5a4a30' : '#3a2a18'}`,
+                color: isCurrent ? '#0a0a0f' : NODE_TYPE_COLOR[node.type],
+                fontSize: 22,
+                cursor: isReachable && !isCurrent ? 'pointer' : 'default',
+                boxShadow: isHovered && isReachable ? '0 0 12px rgba(250,204,21,0.6)' : 'none',
+                transform: isHovered && isReachable ? 'scale(1.1)' : 'scale(1)',
+                transition: 'transform 100ms, box-shadow 100ms',
+                opacity: !isReachable && !isCurrent && !isVisited ? 0.6 : 1,
+              }}
+              aria-label={`${node.type}: ${node.id}`}
+            >
+              {NODE_TYPE_ICON[node.type] ?? '?'}
+            </button>
+            {/* Quest indicator */}
+            {hasQuest && (
+              <div
+                id={`node-${node.id}-quest`}
+                style={{
+                  position: 'absolute',
+                  left: x + 14,
+                  top: y - 30,
+                  width: 18, height: 18,
+                  borderRadius: '50%',
+                  background: '#facc15',
+                  color: '#0a0a0f',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  border: '1px solid #a07a40',
+                  pointerEvents: 'none',
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                }}
+              >!</div>
+            )}
+            {/* Visited checkmark */}
+            {isVisited && !isCurrent && (
+              <div style={{
+                position: 'absolute',
+                left: x + 14,
+                top: y + 12,
+                width: 14, height: 14,
+                borderRadius: '50%',
+                background: '#44cc44',
+                color: '#0a0a0f',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 10,
+                fontWeight: 'bold',
+                pointerEvents: 'none',
+              }}>✓</div>
+            )}
+          </React.Fragment>
         )
       })}
 
@@ -181,6 +261,14 @@ export function OverworldScene({
         <span>at: {currentNodeId.replace(/_/g, ' ')}</span>
         <span>click an adjacent node to travel</span>
       </div>
+
+      {/* Pulse animation for quest indicators */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.15); opacity: 0.85; }
+        }
+      `}</style>
 
       {/* Suppress lint warning for asMapId import (used internally) */}
       <span style={{ display: 'none' }}>{asMapId.name}</span>

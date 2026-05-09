@@ -8,6 +8,8 @@ import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { QuitModal } from './ui/modals/QuitModal'
 import { BattleEndModal } from './ui/modals/BattleEndModal'
 import { useCombatStore } from './state/combatStore'
+import { useRunStore } from './state/runStore'
+import { asNodeId } from './domain/ids'
 import { createErrorBus } from './state/errorBus'
 import { createEventBus } from './state/eventBus'
 import { createActionLog } from './state/actionLog'
@@ -52,6 +54,19 @@ export function App(): React.JSX.Element {
   const onReturnToTitle = useCallback(() => {
     useCombatStore.getState().reset()
     setView('title')
+  }, [])
+
+  const onContinueToOverworld = useCallback(() => {
+    // Travel encounter resolved successfully — consume pending path and arrive
+    const run = useRunStore.getState()
+    const pending = run.pendingTravelPath
+    if (pending && pending.remainingNodeIds.length > 0) {
+      const nextNode = pending.remainingNodeIds[0]!
+      run.dispatch({ type: 'arriveAtNode', payload: { nodeId: asNodeId(nextNode as unknown as string) } })
+      run.dispatch({ type: 'startTravelPath', payload: { path: { ...pending, remainingNodeIds: [] } } })
+    }
+    useCombatStore.getState().reset()
+    setView('overworld')
   }, [])
 
   // P1-04: empty list for now. Real save slots are read from localStorage
@@ -111,7 +126,11 @@ export function App(): React.JSX.Element {
             }}
           />
           <QuitModal open={quitModalOpen} onClose={() => setQuitModalOpen(false)} />
-          <BattleEndModal onRestart={onBattleRestart} onReturnToTitle={onReturnToTitle} />
+          <BattleEndModal
+            onRestart={onBattleRestart}
+            onReturnToTitle={onReturnToTitle}
+            onContinueToOverworld={onContinueToOverworld}
+          />
         </div>
       </ErrorBoundary>
     </ViewContext.Provider>
