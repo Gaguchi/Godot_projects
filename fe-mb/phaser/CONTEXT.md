@@ -153,7 +153,8 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/quest.ts` ↔ `QuestDef` (`QuestSchema`, `QuestStageSchema`, `QuestEffectSchema`). **Active.**
 - `data/schemas/dialogue.ts` ↔ `DialogueTree`. **Active.**
 - `data/schemas/predicate.ts` ↔ `Predicate` (recursive via `z.lazy`). **Active.**
-- `saveFile.ts` ↔ `SaveFile` `[STUB]` (lands with persistence layer).
+- `persistence/saveFormat.ts` ↔ `SaveFile` (`SAVE_VERSION = '0.5.0-foundation'`, `SerializedRunState`, `SerializedMetaState`). **Active.**
+- `persistence/contentAliases.ts` ↔ `ContentAliases` (`cardId | itemId | flagKey | questId | stageId | dungeonId | mapId` maps, `resolveAlias`). **Active.**
 
 ## 9. File Map (≤25 lines)
 
