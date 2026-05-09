@@ -43,7 +43,9 @@
 
 ## 3. Action Catalog (≤40 lines) `[STUB — fills in Week 2]`
 
-**`metaStore` actions:**
+Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, each with a single `dispatch(action)` chokepoint. Action unions: `MetaAction`, `RunAction`, `CombatEvent`. `combatStore` state shape: `CombatStoreState` wrapping `CombatState`.
+
+**`metaStore` actions** (`MetaAction` union):
 - `startNewRun`
 - `recordRunCompleted { won }`
 
@@ -85,6 +87,10 @@ All in `src/contracts/`. Compiler-enforced. Barrel export: `src/contracts/index.
 - **`PendingTravelPath`** — remainingNodeIds, totalHopsThisLeg, rngBranch.
 - **`CombatBootRequest`** — battleId, battleMapId, enemyGroupId, rngSeed, triggeringHopIndex, returnTo.
 - **`DomainEvent`** — discriminated union of cross-system events; see §7.
+
+**State infrastructure factories** (`src/state/`): `createErrorBus`, `createEventBus`, `createActionLog`, `createFlagStore`. Each returns a small interface object (`ErrorBus`, `EventBus`, `ActionLog`, `FlagStore`) with subscribe/emit/recent/snapshot semantics — non-mutation channels.
+
+**Persistence API** (`src/persistence/`): `serializeRun(state)`, `buildSaveFile(meta, run)`, `saveToString(save)`, `loadFromString(json)` (returns `LoadResult`), `reproduceCombatAction(state, action)` (returns `ReproduceResult`). `SaveVersion` constant tags schema; `CONTENT_ALIASES_VERSION` tags alias-table compatibility.
 
 ## 5. RNG Domain Map (≤15 lines)
 
