@@ -15,9 +15,12 @@
     "check-context-doc": "tsx scripts/check-context-doc.ts"
   },
   "dependencies": {
+    "framer-motion": "^12.38.0",
     "howler": "^2.2.4",
     "phaser": "^4.1.0",
     "react": "^19.2.5",
+    "react-aria": "^3.48.0",
+    "react-aria-components": "^1.17.0",
     "react-dom": "^19.2.5",
     "zod": "^3.25.76",
     "zustand": "^5.0.13"
