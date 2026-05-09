@@ -1,11 +1,12 @@
 import { create } from 'zustand'
 import { createFlagStore, type TypedFlagStore } from './flags'
 import type { Unit } from '../domain/unit'
-import type { UnitId, ItemId, NodeId, MapId, FlagKey, QuestId, StageId, DungeonId } from '../domain/ids'
-import type { FlagScope } from '../domain/quest'
+import type { UnitId, ItemId, NodeId, MapId, FlagKey, QuestId, StageId, DungeonId, DialogueId } from '../domain/ids'
+import type { FlagScope, QuestEffect } from '../domain/quest'
 import type { BattleResult, PendingTravelPath } from '../contracts'
 import type { DungeonGraph } from '../domain/map'
 import type { RngState } from '../domain/rng'
+import type { PredicateState } from '../systems/predicates'
 
 export interface RunState {
   runId: string
@@ -22,6 +23,8 @@ export interface RunState {
   activeDungeon: { dungeonId: DungeonId; graph: DungeonGraph; position: NodeId; clearedRooms: Set<NodeId> } | null
   rngState: RngState
   deathLog: { unitId: UnitId; cause: string; turn: number }[]
+  /** GP-B3: when set, the DialogueModal renders with the current dialogue tree + node. */
+  pendingDialogue: { dialogueId: DialogueId; nodeId: string } | null
 }
 
 export type RunAction =
@@ -39,10 +42,97 @@ export type RunAction =
   | { type: 'clearFlagsByScope'; payload: { scope: FlagScope } }
   | { type: 'advanceQuestStage'; payload: { questId: QuestId; toStage: StageId } }
   | { type: 'applyBattleResult'; payload: { result: BattleResult } }
+  | { type: 'applyQuestEffects'; payload: { effects: QuestEffect[] } }
+  | { type: 'startDialogue'; payload: { dialogueId: DialogueId; nodeId: string } }
+  | { type: 'endDialogue' }
 
 interface RunStateWithDispatch extends RunState {
   dispatch(action: RunAction): void
   __resetForTest(): void
+}
+
+/**
+ * Apply a single QuestEffect to runStore. Recursively handles statCheck.
+ * Called from the applyQuestEffects RunAction handler.
+ */
+function applyQuestEffect(
+  effect: QuestEffect,
+  get: () => RunStateWithDispatch,
+  set: (partial: Partial<RunState> | ((s: RunState) => Partial<RunState>)) => void,
+): void {
+  switch (effect.kind) {
+    case 'setFlag':
+      get().flags.set(effect.key, effect.value, effect.scope)
+      set({})
+      return
+    case 'recruitUnit':
+      // Unit construction lives elsewhere; recruitUnit here marks intent. The
+      // overworld/town wiring (GP-E5) creates the actual Unit and dispatches
+      // {type: 'recruitUnit', payload: {unit}}. For now, no-op so the effect
+      // doesn't crash; questRunner-driven recruits are scaffolded in GP-B5.
+      return
+    case 'spawnNode':
+    case 'unlockNode':
+      // Dynamic quest nodes land in GP-D6. Stub: no-op.
+      return
+    case 'startDialogue':
+      set({ pendingDialogue: { dialogueId: effect.treeId, nodeId: 'start' } })
+      return
+    case 'completeQuest':
+      set(s => ({
+        questStates: {
+          ...s.questStates,
+          [effect.questId as unknown as string]: {
+            currentStage: '__complete__',
+            metadata: s.questStates[effect.questId as unknown as string]?.metadata ?? {},
+          },
+        },
+      }))
+      return
+    case 'addGold':
+      set(s => ({ gold: s.gold + effect.amount }))
+      return
+    case 'addFood': {
+      // Food = food_rations item charges. Each food_rations item is +1 charge
+      // for now (GP-C6 may switch to a charges field). Naively append items.
+      const newItems: { itemId: ItemId; gridX: number; gridY: number }[] = []
+      for (let i = 0; i < effect.amount; i++) {
+        newItems.push({ itemId: 'food_rations' as unknown as ItemId, gridX: 0, gridY: 0 })
+      }
+      set(s => ({ inventory: { items: [...s.inventory.items, ...newItems] } }))
+      return
+    }
+    case 'damageParty':
+      set(s => {
+        const newUnits: Record<string, Unit> = {}
+        for (const [id, u] of Object.entries(s.party.units)) {
+          newUnits[id] = { ...u, hp: { ...u.hp, current: Math.max(0, u.hp.current - effect.amount) } }
+        }
+        return { party: { ...s.party, units: newUnits } }
+      })
+      return
+    case 'healParty':
+      set(s => {
+        const newUnits: Record<string, Unit> = {}
+        for (const [id, u] of Object.entries(s.party.units)) {
+          const heal = Math.floor(u.hp.max * effect.percent)
+          newUnits[id] = { ...u, hp: { ...u.hp, current: Math.min(u.hp.max, u.hp.current + heal) } }
+        }
+        return { party: { ...s.party, units: newUnits } }
+      })
+      return
+    case 'statCheck': {
+      // Sum the chosen stat across the active party; pass if >= threshold.
+      const state = get()
+      const total = Object.values(state.party.units).reduce(
+        (sum, u) => sum + (u.stats[effect.stat as keyof typeof u.stats] ?? 0),
+        0,
+      )
+      const branch = total >= effect.threshold ? effect.successEffects : effect.failEffects
+      for (const sub of branch) applyQuestEffect(sub, get, set)
+      return
+    }
+  }
 }
 
 function freshState(): RunState {
@@ -61,6 +151,23 @@ function freshState(): RunState {
     activeDungeon: null,
     rngState: { seed: 0, counter: 0 },
     deathLog: [],
+    pendingDialogue: null,
+  }
+}
+
+/**
+ * GP-B2: PredicateState facade derived from RunState. Used by questRunner and
+ * dialogueRunner to evaluate predicates without coupling to the full store.
+ */
+export function predicateStateFromRun(s: RunState): PredicateState {
+  return {
+    flags: s.flags.asPredicateMap(),
+    questStates: s.questStates,
+    party: { units: Object.fromEntries(Object.entries(s.party.units).map(([k, u]) => [k, { classId: u.classId as unknown as string }])) },
+    inventory: { items: s.inventory.items.map(i => ({ itemId: i.itemId as unknown as string })) },
+    gold: s.gold,
+    visitedNodes: new Set(Object.keys(s.visitedNodes).filter(k => s.visitedNodes[k])),
+    clearedEncounters: new Set(Object.keys(s.clearedEncounters).filter(k => s.clearedEncounters[k])),
   }
 }
 
@@ -175,6 +282,18 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
         }))
         return
       }
+      case 'applyQuestEffects': {
+        for (const effect of action.payload.effects) {
+          applyQuestEffect(effect, get, set)
+        }
+        return
+      }
+      case 'startDialogue':
+        set({ pendingDialogue: { dialogueId: action.payload.dialogueId, nodeId: action.payload.nodeId } })
+        return
+      case 'endDialogue':
+        set({ pendingDialogue: null })
+        return
     }
   },
   __resetForTest() { set(freshState()) },

@@ -49,10 +49,9 @@ Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, 
 - `startNewRun`
 - `recordRunCompleted { won }`
 
-**`runStore` actions** (15 total — `RunAction` union in `state/runStore.ts`):
+**`runStore` actions** (`RunAction` union in `state/runStore.ts`):
 - `recruitUnit { unit }`
 - `fallenUnit { unitId, cause, turn }`
-- `equipHand { unitId, slot, itemId }`
 - `moveItemInBag { itemId, x, y }`
 - `addGold { amount }`
 - `arriveAtNode { nodeId }`
@@ -65,6 +64,11 @@ Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, 
 - `clearFlagsByScope { scope }`
 - `advanceQuestStage { questId, toStage }`
 - `applyBattleResult { result: BattleResult }`
+- `applyQuestEffects { effects: QuestEffect[] }` — handler walks each effect via `applyQuestEffect` (recursive for `statCheck`)
+- `startDialogue { dialogueId, nodeId }` — sets `pendingDialogue`; consumed by `<DialogueModal>`
+- `endDialogue` — clears `pendingDialogue`
+
+Helper: `predicateStateFromRun(s)` reifies a `RunState` into the `PredicateState` shape questRunner / dialogueRunner expect.
 
 **`combatStore` events** (`CombatEvent` union, see `domain/combatState.ts`):
 - `startBattle { units, grid, rngSeed }`

@@ -21,7 +21,7 @@ Each iteration completes ONE task end-to-end (TDD: failing test → implementati
 ## Phase B — Quest engine + dialogue infrastructure
 
 - [x] **GP-B1** QuestEffect union extended. ✅ addGold, addFood, damageParty, healParty, statCheck (with nested success/fail) added. Zod schema uses z.lazy for recursion. StatKind type ('str'|'mag'|'skl'|'spd'|'def'|'res'|'lck'). 6 unit tests cover each kind. CONTEXT.md updated for SAVE_VERSION + StatKind.
-- [ ] **GP-B2** Wire `questRunner` into `runStore.dispatch` post-action hook. Add `applyQuestEffects { effects }` action.
+- [x] **GP-B2** `applyQuestEffects` action + `predicateStateFromRun` helper. ✅ Handler dispatches each QuestEffect kind: addGold/addFood/damageParty/healParty mutate state directly; setFlag uses flag store; completeQuest sets stage to __complete__; startDialogue sets pendingDialogue; statCheck recurses into success/fail. recruitUnit/spawnNode/unlockNode are stubs (concrete wiring lands in B5/D6/E5). 8 unit tests cover each kind. Domain-event subscription scaffolding deferred to B5 when actual quest content drives the bus.
 - [ ] **GP-B3** Build `DialogueModal.tsx` + `StatCheckModal.tsx`. Add `pendingDialogue` state + `startDialogue` / `endDialogue` actions. Mount at App root.
 - [ ] **GP-B4** Build `scripts/convert-dialogue.mjs` (Godot→phaser dialogue JSON converter).
 - [ ] **GP-B5** Port 8 Godot dialogues to `data/content/dialogue/*.json` + Blood Ties quest to `data/content/quests/blood_ties.json`.
