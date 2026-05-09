@@ -1,34 +1,24 @@
-import type { ItemId, CardId } from './ids'
-import type { WeaponType } from './card'
+import type { ItemId } from './ids'
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 export type Region = 'borderlands' | 'thornwood' | 'ashfall' | 'none'
 
-export type ItemKind =
-  | 'weapon_1h' | 'weapon_2h'
-  | 'shield' | 'tome' | 'staff' | 'quiver'
-  | 'consumable'
-
-export type QuiverEffectKind = 'poison' | 'burn' | 'slow' | 'thunder' | 'explosive'
-
-export interface QuiverModifier {
-  kind: QuiverEffectKind
-  value: number
-  turns?: number
-}
+/**
+ * After the GP-A1 equipment removal, items are consumables only.
+ * Weapons / armor / shields / tomes / staves / quivers all gone.
+ *
+ * - 'food': consumed by per-hop overworld travel (1 charge / hop).
+ * - 'potion': single-use combat consumable (heal, +AP, etc.) — use action lands later.
+ */
+export type ItemKind = 'food' | 'potion'
 
 export interface Item {
   id: ItemId
   name: string
   kind: ItemKind
-  weaponType?: WeaponType
   rarity: Rarity
   region: Region
-  gearCards: CardId[]
-  quiverModifier?: QuiverModifier
-  isTwoHanded: boolean
   gridSize: { width: number; height: number }
-  range?: { min: number; max: number }
   buyPrice: number
   sellPrice: number
 }

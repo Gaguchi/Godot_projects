@@ -11,9 +11,9 @@ Each iteration completes ONE task end-to-end (TDD: failing test → implementati
 
 ## Phase A — Equipment removal (subtractive)
 
-- [ ] **GP-A1** Trim `items.json` + Item domain to `kind: 'food' | 'potion'` only. Drop weapons/armor/tomes/staves. Add healing_potion + power_elixir.
+- [x] **GP-A1** Trim `items.json` + Item domain to `kind: 'food' | 'potion'` only. ✅ items.json now 3 entries (food_rations, healing_potion, power_elixir). Item type stripped of WeaponType, gearCards, quiverModifier, isTwoHanded, range. Schema matches.
 - [ ] **GP-A2** Drop `HandSlots` from `Unit` + remove `hand: { left, right }` fixtures from 13 test files + `seedStubBattle.ts`.
-- [ ] **GP-A3** Delete `systems/deckBuilder.ts` + dead test (no callers).
+- [x] **GP-A3** Delete `systems/deckBuilder.ts` + dead test (no callers). ✅ Combined with A1 since A1's typecheck depended on A3's deletion (deckBuilder consumed `Item.gearCards`).
 - [ ] **GP-A4** Drop `equipHand` action, `ItemAcquired` event, `grantItem` quest effect, `hasItem` predicate.
 - [ ] **GP-A5** Drop `loot` field from `BattleResult` + battleResolver + applyBattleResult.
 - [ ] **GP-A6** Bump `SAVE_VERSION` to `'0.6.0-cards-only'`. Drop `hand`/`loot` from save schema. Drop `itemId` alias.

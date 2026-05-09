@@ -13,10 +13,11 @@ describe('representative content', () => {
     }
   })
 
-  it('items.json passes ItemSchema (10 items)', () => {
-    expect(itemsJson.length).toBe(10)
+  it('items.json passes ItemSchema (consumables only after GP-A1)', () => {
+    expect(itemsJson.length).toBe(3)
     for (const i of itemsJson) {
       expect(() => ItemSchema.parse(i)).not.toThrow()
+      expect(['food', 'potion']).toContain(i.kind)
     }
   })
 
@@ -39,15 +40,6 @@ describe('representative content', () => {
       worldMaps: [],
     })
     expect(r.ok).toBe(true)
-  })
-
-  it('every gear card referenced by an item exists in cards.json', () => {
-    const cardIds = new Set(cardsJson.map((c) => c.id))
-    for (const item of itemsJson) {
-      for (const cardId of item.gearCards) {
-        expect(cardIds.has(cardId), `Missing card: ${cardId}`).toBe(true)
-      }
-    }
   })
 
   it('every innate card referenced by a class exists in cards.json', () => {
