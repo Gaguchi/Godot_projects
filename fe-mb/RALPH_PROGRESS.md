@@ -18,7 +18,7 @@ Each iteration completes ONE task end-to-end (test → impl → run → gates �
 ## Phase 1 — Component library
 
 - [x] **UI-T1** Install `react-aria-components` + `framer-motion`. Record bundle baseline. No code consumers yet. ✅ Bundle baseline: 432.67 KB gzipped (ceiling 507.67 KB). Versions: react-aria-components ^1.17.0, framer-motion ^12.38.0, react-aria ^3.48.0.
-- [ ] **UI-T2** `Button` wrapper + 4 unit tests (click, disabled, keyboard, data-attrs). Variants: primary/secondary/ghost/danger. Tailwind `data-[*]:` styling.
+- [x] **UI-T2** `Button` wrapper + 4 unit tests. ✅ 158 tests pass. Variants: primary/secondary/ghost/danger with full data-[hovered/pressed/focus-visible/disabled]: Tailwind classes. Testing infrastructure also added: jsdom env, @testing-library/react, tests/setup.ts with auto-cleanup.
 - [ ] **UI-T3** `Pressable` wrapper for non-button clickables (round map nodes). Wraps `usePress`/`useHover`/`useFocusRing`; renders `div[role=button]`.
 - [ ] **UI-T4** `Card` wrapper with AP-cost guard + Framer Motion lift. Disabled = `aria-disabled=true` + `aria-description="needs N AP, you have M"`.
 - [ ] **UI-T5** `Dialog` wrapper (ModalOverlay + Modal + Dialog). Focus trap, ESC dismiss, dismissable layer.

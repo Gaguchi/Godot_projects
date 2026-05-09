@@ -7,7 +7,8 @@ export default defineConfig({
   server: { port: 5173 },
   build: { target: 'es2022' },
   test: {
-    environment: 'node',
-    include: ['tests/unit/**/*.test.ts'],
+    environment: 'jsdom',
+    include: ['tests/unit/**/*.test.{ts,tsx}'],
+    setupFiles: ['./tests/setup.ts'],
   },
 });
