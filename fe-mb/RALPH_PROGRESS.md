@@ -20,7 +20,7 @@ Each iteration completes ONE task end-to-end (TDD: failing test → implementati
 
 ## Phase B — Quest engine + dialogue infrastructure
 
-- [ ] **GP-B1** Extend `QuestEffect` union with `addGold | addFood | damageParty | healParty | statCheck`. Match in schema. Implement in questRunner.
+- [x] **GP-B1** QuestEffect union extended. ✅ addGold, addFood, damageParty, healParty, statCheck (with nested success/fail) added. Zod schema uses z.lazy for recursion. StatKind type ('str'|'mag'|'skl'|'spd'|'def'|'res'|'lck'). 6 unit tests cover each kind. CONTEXT.md updated for SAVE_VERSION + StatKind.
 - [ ] **GP-B2** Wire `questRunner` into `runStore.dispatch` post-action hook. Add `applyQuestEffects { effects }` action.
 - [ ] **GP-B3** Build `DialogueModal.tsx` + `StatCheckModal.tsx`. Add `pendingDialogue` state + `startDialogue` / `endDialogue` actions. Mount at App root.
 - [ ] **GP-B4** Build `scripts/convert-dialogue.mjs` (Godot→phaser dialogue JSON converter).

@@ -5,6 +5,12 @@ import type { MapNodeRef } from './map'
 export type FlagScope = 'run' | 'quest' | 'battle' | 'permanent'
 
 // Quest effects (distinct from CardEffect — different domain).
+//
+// GP-B1: extended with resource deltas + statCheck so dialogue effects in the
+// Godot dialogues (add_gold, add_food, heal_party, damage_party, stat_check)
+// have a target shape during the port.
+export type StatKind = 'str' | 'mag' | 'skl' | 'spd' | 'def' | 'res' | 'lck'
+
 export type QuestEffect =
   | { kind: 'setFlag'; key: FlagKey; value: unknown; scope?: FlagScope }
   | { kind: 'recruitUnit'; classId: ClassId; level: number }
@@ -12,6 +18,11 @@ export type QuestEffect =
   | { kind: 'unlockNode'; ref: MapNodeRef }
   | { kind: 'startDialogue'; treeId: DialogueId }
   | { kind: 'completeQuest'; questId: QuestId }
+  | { kind: 'addGold'; amount: number }
+  | { kind: 'addFood'; amount: number }
+  | { kind: 'damageParty'; amount: number }
+  | { kind: 'healParty'; percent: number }
+  | { kind: 'statCheck'; stat: StatKind; threshold: number; successEffects: QuestEffect[]; failEffects: QuestEffect[] }
 
 export type QuestListenerEvent = 'BattleVictory' | 'LocationArrived' | 'FlagSet'
 

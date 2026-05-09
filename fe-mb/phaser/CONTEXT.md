@@ -157,10 +157,10 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/class.ts` ↔ `ClassDef` (`ClassSchema`). **Active.**
 - `data/schemas/statusEffect.ts` ↔ `StatusEffectDef` (`StatusEffectDataSchema` — JSON-shape only; function hooks live in code registry). **Active.**
 - `data/schemas/map.ts` ↔ `WorldMap | BattleMap` (DungeonGraph schema TBD with generator). **Active.**
-- `data/schemas/quest.ts` ↔ `QuestDef` (`QuestSchema`, `QuestStageSchema`, `QuestEffectSchema`). **Active.**
+- `data/schemas/quest.ts` ↔ `QuestDef` (`QuestSchema`, `QuestStageSchema`, `QuestEffectSchema`; `StatKind` for statCheck). **Active.**
 - `data/schemas/dialogue.ts` ↔ `DialogueTree`. **Active.**
 - `data/schemas/predicate.ts` ↔ `Predicate` (recursive via `z.lazy`). **Active.**
-- `persistence/saveFormat.ts` ↔ `SaveFile` (`SAVE_VERSION = '0.5.0-foundation'`, `SerializedRunState`, `SerializedMetaState`). **Active.**
+- `persistence/saveFormat.ts` ↔ `SaveFile` (`SAVE_VERSION = '0.6.0-cards-only'`, `SerializedRunState`, `SerializedMetaState`). **Active.**
 - `persistence/contentAliases.ts` ↔ `ContentAliases` (`cardId | itemId | flagKey | questId | stageId | dungeonId | mapId` maps, `resolveAlias`). **Active.**
 
 ## 9. File Map (≤25 lines)
