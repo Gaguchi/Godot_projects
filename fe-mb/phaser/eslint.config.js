@@ -29,4 +29,28 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // Forbid raw react-aria(-components) imports outside the wrapper layer.
+    // All UI code MUST go through src/ui/components/ for consistent state
+    // styling, accessibility, and bundle hygiene.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/ui/components/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react-aria-components',
+              message: 'Import from src/ui/components/ instead of raw react-aria-components.',
+            },
+            {
+              name: 'react-aria',
+              message: 'Import from src/ui/components/ instead of raw react-aria.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ])
