@@ -1,50 +1,8 @@
-import { test, expect, type Page } from '@playwright/test'
-
-interface CombatStateShape {
-  phase: string
-  subPhase: string
-  turn: { unitId: string | null; team: string }
-  units: Record<string, { id: string; name: string; position?: string; hp: { current: number; max: number }; hasMovedThisTurn?: boolean }>
-}
-
-declare global {
-  interface Window {
-    __debug: {
-      combatStore: { getState: () => { state: CombatStateShape; dispatch: (e: unknown, r: unknown) => void } }
-      runStore: unknown
-      metaStore: unknown
-    }
-  }
-}
-
-const fireMouse = async (page: Page, x: number, y: number): Promise<void> => {
-  await page.evaluate(({ x, y }) => {
-    const canvas = document.querySelector('canvas')
-    if (!canvas) throw new Error('no canvas')
-    const fire = (type: string): void => {
-      canvas.dispatchEvent(new MouseEvent(type, {
-        bubbles: true, cancelable: true, view: window, button: 0, buttons: 1,
-        clientX: x, clientY: y, screenX: x, screenY: y, relatedTarget: null,
-      }))
-    }
-    fire('mousemove'); fire('mousedown'); fire('mouseup'); fire('click')
-  }, { x, y })
-}
+import { test, expect } from '@playwright/test'
+import { fireMouse, bootCombat } from './helpers'
 
 test('B-01: clicking a party unit enters move mode and clicking a valid tile moves the unit', async ({ page }) => {
-  // Use the dev-only ?view=combat fast path so the test boots the stub battle
-  // directly without depending on overworld encounter randomness.
-  await page.goto('http://localhost:5173?view=combat')
-
-  // Wait for the combat scene to seed a battle
-  await page.waitForFunction(() => {
-    return window.__debug?.combatStore?.getState().state.phase === 'COMBAT'
-  })
-
-  // Wait for canvas to render
-  await page.waitForFunction(() => {
-    return document.querySelector('canvas') !== null
-  })
+  await bootCombat(page)
 
   // Read the active party unit's position
   const before = await page.evaluate(() => {
