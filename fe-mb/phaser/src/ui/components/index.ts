@@ -24,3 +24,6 @@ export type { PressableProps } from './Pressable'
 
 export { CheckButton } from './CheckButton'
 export type { CheckButtonProps } from './CheckButton'
+
+export { CheckCandidatePicker } from './CheckCandidatePicker'
+export type { CheckCandidatePickerProps } from './CheckCandidatePicker'
