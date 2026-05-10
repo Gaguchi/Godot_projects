@@ -13,7 +13,9 @@
     "test:e2e:update": "playwright test --update-snapshots",
     "typecheck": "tsc --noEmit",
     "check-context-doc": "tsx scripts/check-context-doc.ts",
-    "perf-gates": "node scripts/measure-bundle.mjs"
+    "perf-gates": "node scripts/measure-bundle.mjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",
@@ -48,6 +50,12 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.10",
-    "vitest": "^2.1.9"
+    "vitest": "^2.1.9",
+    "storybook": "^10.3.6",
+    "@storybook/react-vite": "^10.3.6",
+    "@chromatic-com/storybook": "^5.1.2",
+    "@storybook/addon-docs": "^10.3.6",
+    "@storybook/addon-onboarding": "^10.3.6",
+    "eslint-plugin-storybook": "^10.3.6"
   }
 }
