@@ -1,10 +1,18 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { generateDungeon } from '../../procgen/dungeonGenerator'
 import { createRng, deriveRng } from '../../systems/rng'
 import { asDungeonId, asNodeId } from '../../domain/ids'
 import type { DungeonGraph, DungeonRoom } from '../../domain/map'
+import type { CheckEventDef } from '../../domain/encounter'
+import type { QuestEffect } from '../../domain/quest'
 import { Button, Pressable } from '../components'
+import { CheckEventModal, type CheckEvent } from '../modals/CheckEventModal'
+import smugglersCave from '../../data/content/dungeons/smugglers_cave.json'
+
+const DUNGEON_DEFS: Record<string, { roomEvents?: CheckEventDef[] }> = {
+  smugglers_cave: smugglersCave as { roomEvents?: CheckEventDef[] },
+}
 
 const ROOM_TYPE_ICON: Record<DungeonRoom['type'], string> = {
   combat: '⚔',
@@ -49,6 +57,7 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
   const dispatchRun = useRunStore((s) => s.dispatch)
   const activeDungeon = useRunStore((s) => s.activeDungeon)
   const rngState = useRunStore((s) => s.rngState)
+  const [activeEvent, setActiveEvent] = useState<CheckEvent | null>(null)
 
   const dungeon: DungeonGraph = useMemo(() => {
     if (activeDungeon) return activeDungeon.graph
@@ -87,7 +96,18 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
     } else if (room.type === 'treasure') {
       dispatchRun({ type: 'addGold', payload: { amount: 50 } })
     } else if (room.type === 'event') {
-      dispatchRun({ type: 'addGold', payload: { amount: 30 } })
+      // Pull a check-event from the dungeon's roomEvents pool. If none defined,
+      // fall back to the legacy gold reward.
+      const dungeonId = (activeDungeon?.dungeonId as unknown as string) ?? 'smugglers_cave'
+      const def = DUNGEON_DEFS[dungeonId]
+      const pool = def?.roomEvents ?? []
+      if (pool.length === 0) {
+        dispatchRun({ type: 'addGold', payload: { amount: 30 } })
+      } else {
+        const eventRng = deriveRng(createRng(useRunStore.getState().rngState), `dungeon-event:${idStr}`)
+        const idx = eventRng.nextInt(0, pool.length - 1)
+        setActiveEvent(pool[idx] as CheckEvent)
+      }
     }
   }
 
@@ -214,6 +234,29 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
         >
           Exit Dungeon
         </Button>
+      )}
+
+      {activeEvent && (
+        <CheckEventModal
+          event={activeEvent}
+          party={Object.values(useRunStore.getState().party.units)}
+          gold={useRunStore.getState().gold}
+          foodCount={
+            useRunStore
+              .getState()
+              .inventory.items.filter((i) => (i.itemId as unknown as string) === 'food_rations').length
+          }
+          onResolve={({ outcome }) => {
+            if (outcome.effects.length > 0) {
+              dispatchRun({
+                type: 'applyQuestEffects',
+                payload: { effects: outcome.effects as QuestEffect[] },
+              })
+            }
+            setActiveEvent(null)
+          }}
+          onClose={() => setActiveEvent(null)}
+        />
       )}
     </div>
   )

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { CheckEventSchema } from './checkEvent'
 
 export const DungeonDefSchema = z.object({
   id: z.string(),
@@ -9,4 +10,5 @@ export const DungeonDefSchema = z.object({
   combatEnemyGroupId: z.string(),
   eliteEnemyGroupId: z.string(),
   bossEnemyGroupId: z.string(),
+  roomEvents: z.array(CheckEventSchema).default([]),
 })

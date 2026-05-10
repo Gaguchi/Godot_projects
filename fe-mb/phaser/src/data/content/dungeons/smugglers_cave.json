@@ -6,5 +6,70 @@
   "theme": "rocky-cave",
   "combatEnemyGroupId": "bandits_small",
   "eliteEnemyGroupId": "brigands",
-  "bossEnemyGroupId": "darens_gang"
+  "bossEnemyGroupId": "darens_gang",
+  "roomEvents": [
+    {
+      "id": "blocked_passage",
+      "title": "A boulder blocks the passage.",
+      "description": "Heavy. Old. Smugglers must have rolled it here generations ago.",
+      "choices": [
+        {
+          "id": "force",
+          "text": "Force it aside.",
+          "check": { "kind": "stat", "stat": "str", "threshold": 8 },
+          "onPass": {
+            "narration": "It rolls free, revealing a hidden chest of bandit loot.",
+            "effects": [{ "kind": "addGold", "amount": 50 }]
+          },
+          "onFail": {
+            "narration": "Nothing budges. You take 4 damage from the strain.",
+            "effects": [{ "kind": "damageParty", "amount": 4 }]
+          }
+        },
+        {
+          "id": "leave",
+          "text": "Move on.",
+          "onPass": { "narration": "You skirt around it.", "effects": [] }
+        }
+      ]
+    },
+    {
+      "id": "smuggler_cache",
+      "title": "A hidden cache.",
+      "description": "Crates lashed in oilcloth, half-buried under loose stones.",
+      "choices": [
+        {
+          "id": "pick_lock",
+          "text": "Pick the lock.",
+          "check": { "kind": "stat", "stat": "skl", "threshold": 7 },
+          "onPass": {
+            "narration": "The catch springs open. You pocket the contents.",
+            "effects": [{ "kind": "addGold", "amount": 35 }, { "kind": "addFood", "amount": 1 }]
+          },
+          "onFail": {
+            "narration": "The lock holds.",
+            "effects": []
+          }
+        },
+        {
+          "id": "smash",
+          "text": "Smash it.",
+          "check": { "kind": "stat", "stat": "str", "threshold": 7 },
+          "onPass": {
+            "narration": "The wood splinters. Half the contents are crushed but you salvage some gold.",
+            "effects": [{ "kind": "addGold", "amount": 20 }]
+          },
+          "onFail": {
+            "narration": "Your blow rebounds; you bruise your hand.",
+            "effects": [{ "kind": "damageParty", "amount": 2 }]
+          }
+        },
+        {
+          "id": "leave",
+          "text": "Leave it.",
+          "onPass": { "narration": "Best not.", "effects": [] }
+        }
+      ]
+    }
+  ]
 }

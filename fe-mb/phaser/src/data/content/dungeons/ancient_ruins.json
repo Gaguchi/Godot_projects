@@ -6,5 +6,45 @@
   "theme": "stone-ruins",
   "combatEnemyGroupId": "wolves",
   "eliteEnemyGroupId": "brigands",
-  "bossEnemyGroupId": "brigands"
+  "bossEnemyGroupId": "brigands",
+  "roomEvents": [
+    {
+      "id": "ancient_inscription",
+      "title": "An inscription on a fallen pillar.",
+      "description": "The script flickers as if alive. Untranslated, it watches you.",
+      "choices": [
+        {
+          "id": "read_arcane",
+          "text": "Read the arcane script.",
+          "check": { "kind": "stat", "stat": "mag", "threshold": 7 },
+          "onPass": {
+            "narration": "The pillar dissolves, revealing a vault. Gold and a glimmer of insight.",
+            "effects": [{ "kind": "addGold", "amount": 60 }]
+          },
+          "onFail": {
+            "narration": "The script burns your eyes; you stagger back.",
+            "effects": [{ "kind": "damageParty", "amount": 3 }]
+          }
+        },
+        {
+          "id": "cleric_prayer",
+          "text": "Invoke a prayer.",
+          "check": { "kind": "class", "classId": "cleric" },
+          "onPass": {
+            "narration": "Sacred light scatters the malice. The pillar yields its secrets.",
+            "effects": [{ "kind": "addGold", "amount": 40 }, { "kind": "healParty", "percent": 0.25 }]
+          },
+          "onFail": {
+            "narration": "No one in the party can call upon the divine here.",
+            "effects": []
+          }
+        },
+        {
+          "id": "leave",
+          "text": "Leave it alone.",
+          "onPass": { "narration": "You step quietly past.", "effects": [] }
+        }
+      ]
+    }
+  ]
 }
