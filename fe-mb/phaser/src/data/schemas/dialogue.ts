@@ -1,14 +1,7 @@
 import { z } from 'zod'
 import { PredicateSchema } from './predicate'
 import { QuestEffectSchema } from './quest'
-
-export const DialogueBranchSchema = z.object({
-  kind: z.literal('statCheck'),
-  stat: z.enum(['str', 'mag', 'skl', 'spd', 'def', 'res', 'lck']),
-  threshold: z.number().int(),
-  successNext: z.union([z.string(), z.literal('end')]),
-  failNext: z.union([z.string(), z.literal('end')]),
-})
+import { CheckRequirementSchema } from './check'
 
 export const DialogueChoiceSchema = z.object({
   id: z.string(),
@@ -16,8 +9,21 @@ export const DialogueChoiceSchema = z.object({
   visibleIf: PredicateSchema.optional(),
   enabledIf: PredicateSchema.optional(),
   effects: z.array(QuestEffectSchema),
-  next: z.union([z.string(), z.literal('end'), DialogueBranchSchema]),
-})
+  next: z.union([z.string(), z.literal('end')]).optional(),
+  check: CheckRequirementSchema.optional(),
+  onPass: z.union([z.string(), z.literal('end')]).optional(),
+  onFail: z.union([z.string(), z.literal('end')]).optional(),
+}).refine(
+  (c) => {
+    if (c.check === undefined) {
+      return c.next !== undefined
+    }
+    return c.onPass !== undefined && c.onFail !== undefined && c.next === undefined
+  },
+  {
+    message: 'choice must define `next` (no check) OR `check`+`onPass`+`onFail` (no next)',
+  },
+)
 
 export const DialogueNodeSchema = z.object({
   id: z.string(),

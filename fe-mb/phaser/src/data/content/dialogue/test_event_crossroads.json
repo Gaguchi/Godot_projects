@@ -10,13 +10,9 @@
           "id": "c0",
           "text": "Try to move it",
           "effects": [],
-          "next": {
-            "kind": "statCheck",
-            "stat": "str",
-            "threshold": 15,
-            "successNext": "moved_tree",
-            "failNext": "failed_move"
-          }
+          "check": { "kind": "stat", "stat": "str", "threshold": 8 },
+          "onPass": "moved_tree",
+          "onFail": "failed_move"
         },
         {
           "id": "c1",

@@ -166,7 +166,7 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/statusEffect.ts` ↔ `StatusEffectDef` (`StatusEffectDataSchema` — JSON-shape only; function hooks live in code registry). **Active.**
 - `data/schemas/map.ts` ↔ `WorldMap | BattleMap` (DungeonGraph schema TBD with generator). **Active.**
 - `data/schemas/quest.ts` ↔ `QuestDef` (`QuestSchema`, `QuestStageSchema`, `QuestEffectSchema`; `StatKind` for statCheck). **Active.**
-- `data/schemas/dialogue.ts` ↔ `DialogueTree` (DialogueChoice's next is union of node id, 'end', or `DialogueBranch` for stat-check forks). **Active.**
+- `data/schemas/dialogue.ts` ↔ `DialogueTree` (DialogueChoice has `next` for unconditional advances OR `check`+`onPass`+`onFail` for stat/class/gold/food gates; mutual exclusion enforced via Zod refine). **Active.**
 - `data/schemas/region.ts` ↔ `Region` (`asRegionId`, tier 1-3 modulates encounter difficulty). **Active.**
 - `data/schemas/encounter.ts` ↔ `EncounterEntry` / `EncounterTable` / `EnemyGroup` / `EnemyGroupMember` / `EncounterOutcome` / `CaptureTarget` (`EncounterId` brand, `asEncounterId`). Driven by `systems/encounterRoller.ts`. **Active.**
 - `data/schemas/town.ts` ↔ `TownDef` / `TavernQuestEntry` (5 town JSONs in `data/content/towns/`; powers TownScene panels). **Active.**

@@ -23,15 +23,11 @@
         },
         {
           "id": "c1",
-          "text": "Intimidate them (STR check)",
+          "text": "Intimidate them",
           "effects": [],
-          "next": {
-            "kind": "statCheck",
-            "stat": "str",
-            "threshold": 12,
-            "successNext": "intimidate_success",
-            "failNext": "intimidate_fail"
-          }
+          "check": { "kind": "stat", "stat": "str", "threshold": 7 },
+          "onPass": "intimidate_success",
+          "onFail": "intimidate_fail"
         },
         {
           "id": "c2",

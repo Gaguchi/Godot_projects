@@ -1,27 +1,26 @@
 import type { DialogueId, DialogueNodeId } from './ids'
 import type { Predicate } from './predicate'
-import type { QuestEffect, StatKind } from './quest'
+import type { QuestEffect } from './quest'
+import type { CheckRequirement } from './check'
 
 /**
- * GP-B4: A choice's destination can be a fixed node, end, or a stat-check
- * branch evaluated at press-time. The branch's stat is summed across the
- * party; if total >= threshold, go to successNext, else failNext.
+ * SC-4: Dialogue choices can route via a stat/class/gold/food check.
+ *   - Without a check: `next` carries the destination (back-compat).
+ *   - With a check: `onPass` and `onFail` are required; `next` must be absent.
+ *
+ * The legacy `DialogueBranch` (kind='statCheck' with party-sum) is removed;
+ * the check field uses the unified CheckRequirement union from domain/check.
  */
-export type DialogueBranch = {
-  kind: 'statCheck'
-  stat: StatKind
-  threshold: number
-  successNext: DialogueNodeId | 'end'
-  failNext: DialogueNodeId | 'end'
-}
-
 export interface DialogueChoice {
   id: string
   text: string
   visibleIf?: Predicate
   enabledIf?: Predicate
   effects: QuestEffect[]
-  next: DialogueNodeId | 'end' | DialogueBranch
+  next?: DialogueNodeId | 'end'
+  check?: CheckRequirement
+  onPass?: DialogueNodeId | 'end'
+  onFail?: DialogueNodeId | 'end'
 }
 
 export interface DialogueNode {
@@ -35,5 +34,5 @@ export interface DialogueNode {
 export interface DialogueTree {
   id: DialogueId
   startNodeId: DialogueNodeId
-  nodes: Record<string, DialogueNode>   // keyed by DialogueNodeId-as-string
+  nodes: Record<string, DialogueNode>
 }
