@@ -4,7 +4,7 @@ import { useRunStore } from '../../state/runStore'
 import { CombatRuntime } from '../runtime/CombatRuntime'
 import { createRng } from '../../systems/rng'
 import { seedStubBattle } from './seedStubBattle'
-import { tilesInRange, tilesInAoe, tilesReachable } from '../../systems/targeting'
+import { tilesInRange, tilesInAoe, tilesReachable, findMovePath } from '../../systems/targeting'
 import { planTurn } from '../../systems/enemyAI'
 import type { CombatEffect, CombatEvent } from '../../domain/combatState'
 import cardsJson from '../../data/content/cards.json'
@@ -46,10 +46,13 @@ function getCardDamageBase(card: CardData): number | null {
   return null
 }
 
-function tileToWorld(tileId: string): { x: number; y: number } {
+function tileXY(tileId: string): [number, number] {
   const [xs, ys] = tileId.split(',')
-  const x = parseInt(xs!, 10)
-  const y = parseInt(ys!, 10)
+  return [parseInt(xs!, 10), parseInt(ys!, 10)]
+}
+
+function tileToWorld(tileId: string): { x: number; y: number } {
+  const [x, y] = tileXY(tileId)
   return {
     x: GRID_OFFSET_X + x * TILE + TILE / 2,
     y: GRID_OFFSET_Y + y * TILE + TILE / 2,
@@ -83,6 +86,16 @@ export class BoardScene extends Phaser.Scene {
   private pendingAnimations = 0
   private enemyTurnQueue: CombatEvent[] = []
   private enemyTurnRunning = false
+  /**
+   * Path the next moveUnit-driven PlayTween should walk through, captured
+   * before dispatch so we can animate tile-by-tile. Cleared after use.
+   */
+  private pendingMovePath: { unitId: string; path: string[] } | null = null
+  /**
+   * Active walk tween chain — set when we're animating along pendingMovePath
+   * so a second click can skip-to-end (the animation finishes immediately).
+   */
+  private activeWalkSkip: (() => void) | null = null
 
   constructor() { super('combat') }
 
@@ -116,6 +129,9 @@ export class BoardScene extends Phaser.Scene {
         if (cs2.state.subPhase !== 'IDLE') {
           cs2.dispatch({ type: 'cancelSelection' }, createRng(cs2.state.rng))
         }
+      } else if (pointer.leftButtonDown() && this.activeWalkSkip) {
+        // Click-to-skip: a walk animation is in flight; instant-finish.
+        this.activeWalkSkip()
       }
     })
 
@@ -316,6 +332,18 @@ export class BoardScene extends Phaser.Scene {
         obstacles: state.grid.obstacles,
       }, blocked)
       if (!new Set(valid.map((t) => t as unknown as string)).has(tileId)) return
+      // Compute the path from source to destination so the visual tween can
+      // walk it tile-by-tile. The reducer still teleports the position.
+      const path = findMovePath(
+        asTileId(sourceTileId),
+        asTileId(tileId),
+        range,
+        { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
+        blocked,
+      )
+      if (path && path.length > 0) {
+        this.pendingMovePath = { unitId: activeId, path: path.map((t) => t as unknown as string) }
+      }
       cs.dispatch({
         type: 'moveUnit',
         payload: { unitId: asUnitId(activeId), tileId: asTileId(tileId) },
@@ -421,12 +449,50 @@ export class BoardScene extends Phaser.Scene {
       if (!view) return
       const targetTile = (e.props as { targetTile?: string }).targetTile
       if (!targetTile) return
-      const dest = tileToWorld(targetTile)
+
+      // Walk-the-path: if a path was captured before dispatch, walk it.
+      const walk = this.pendingMovePath
+      if (walk && walk.unitId === e.sprite.id && walk.path.length > 0) {
+        this.pendingMovePath = null
+        this.walkAlongPath(view, walk.path)
+        return
+      }
+
+      // Compute the path from current visual position to targetTile when
+      // the move is multi-tile (enemy AI emits these). This keeps the
+      // tween smooth for enemy turns without changing the event shape.
+      const visualTile = this.worldToTile(view.container.x, view.container.y)
+      const dx = Math.abs(visualTile.x - tileXY(targetTile)[0])
+      const dy = Math.abs(visualTile.y - tileXY(targetTile)[1])
+      if (dx + dy > 1) {
+        const state = useCombatStore.getState().state
+        const blocked = new Set<string>()
+        for (const u of Object.values(state.units)) {
+          if (u.hp.current <= 0 || !u.position) continue
+          if ((u.id as unknown as string) === e.sprite.id) continue
+          blocked.add(u.position as unknown as string)
+        }
+        const sourceTileStr = `${visualTile.x},${visualTile.y}`
+        const path = findMovePath(
+          asTileId(sourceTileStr),
+          asTileId(targetTile),
+          dx + dy + 2, // small buffer so detours don't fail
+          { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
+          blocked,
+        )
+        if (path && path.length > 0) {
+          this.walkAlongPath(view, path.map((t) => t as unknown as string))
+          return
+        }
+      }
+
+      // Otherwise — yoyo lunge (used by attacks).
+      const lungeDest = tileToWorld(targetTile)
       const orig = { x: view.container.x, y: view.container.y }
       this.pendingAnimations++
       this.tweens.add({
         targets: view.container,
-        x: dest.x, y: dest.y,
+        x: lungeDest.x, y: lungeDest.y,
         duration: e.durationMs / 2,
         yoyo: true,
         ease: 'Quad.easeOut',
@@ -475,6 +541,60 @@ export class BoardScene extends Phaser.Scene {
     } else if (e.kind === 'WaitForAnimations') {
       this.maybeAnimationsComplete()
     }
+  }
+
+  private worldToTile(x: number, y: number): { x: number; y: number } {
+    const tx = Math.round((x - GRID_OFFSET_X - TILE / 2) / TILE)
+    const ty = Math.round((y - GRID_OFFSET_Y - TILE / 2) / TILE)
+    return { x: tx, y: ty }
+  }
+
+  /**
+   * Animate a unit through `path` tile-by-tile, ~120ms per step. Sets
+   * `activeWalkSkip` so a second click can skip to the final tile.
+   */
+  private walkAlongPath(view: UnitView, path: string[]): void {
+    if (path.length === 0) return
+    const STEP_MS = 120
+    this.pendingAnimations++
+    let index = 0
+    let cancelled = false
+
+    const finishImmediately = (): void => {
+      if (cancelled) return
+      cancelled = true
+      const last = path[path.length - 1]!
+      const dest = tileToWorld(last)
+      this.tweens.killTweensOf(view.container)
+      view.container.setPosition(dest.x, dest.y)
+      this.activeWalkSkip = null
+      this.pendingAnimations--
+      this.maybeAnimationsComplete()
+    }
+
+    this.activeWalkSkip = finishImmediately
+
+    const stepNext = (): void => {
+      if (cancelled) return
+      if (index >= path.length) {
+        cancelled = true
+        this.activeWalkSkip = null
+        this.pendingAnimations--
+        this.maybeAnimationsComplete()
+        return
+      }
+      const tile = path[index]!
+      index++
+      const { x, y } = tileToWorld(tile)
+      this.tweens.add({
+        targets: view.container,
+        x, y,
+        duration: STEP_MS,
+        ease: 'Linear',
+        onComplete: stepNext,
+      })
+    }
+    stepNext()
   }
 
   private maybeAnimationsComplete(): void {

@@ -86,3 +86,59 @@ export function tilesReachable(
 
   return out
 }
+
+/**
+ * BFS shortest-path from `origin` to `dest` respecting `maxSteps`, terrain
+ * obstacles, and unit-blocked tiles. Returns the ordered list of tiles
+ * EXCLUDING the origin (so a path of length N is N moves). Returns `null`
+ * when destination is unreachable within the step budget.
+ *
+ * Used by the walk-the-path movement animation — the BoardScene tweens the
+ * unit through each returned tile in sequence.
+ */
+export function findMovePath(
+  origin: TileId,
+  dest: TileId,
+  maxSteps: number,
+  state: TargetingState,
+  blocked: Set<string>,
+): TileId[] | null {
+  if (maxSteps <= 0) return null
+  if ((origin as unknown as string) === (dest as unknown as string)) return []
+  const [ox, oy] = tileToXY(origin)
+  const [dx, dy] = tileToXY(dest)
+  const originKey = `${ox},${oy}`
+  const destKey = `${dx},${dy}`
+  const visited = new Map<string, { dist: number; parent: string | null }>()
+  visited.set(originKey, { dist: 0, parent: null })
+  const queue: Array<[number, number, number]> = [[ox, oy, 0]]
+
+  while (queue.length > 0) {
+    const [x, y, dist] = queue.shift()!
+    if (dist >= maxSteps) continue
+    const neighbors: Array<[number, number]> = [
+      [x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1],
+    ]
+    for (const [nx, ny] of neighbors) {
+      if (nx < 0 || ny < 0 || nx >= state.width || ny >= state.height) continue
+      const nKey = `${nx},${ny}`
+      if (visited.has(nKey)) continue
+      const nTile = xyToTile(nx, ny)
+      if (state.obstacles.has(nTile)) continue
+      if (blocked.has(nKey) && nKey !== destKey) continue
+      visited.set(nKey, { dist: dist + 1, parent: `${x},${y}` })
+      if (nKey === destKey) {
+        // Trace back
+        const path: TileId[] = []
+        let cur: string | null = destKey
+        while (cur !== null && cur !== originKey) {
+          path.push(xyToTile(...cur.split(',').map(Number) as [number, number]))
+          cur = visited.get(cur)?.parent ?? null
+        }
+        return path.reverse()
+      }
+      queue.push([nx, ny, dist + 1])
+    }
+  }
+  return null
+}

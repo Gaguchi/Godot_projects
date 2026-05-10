@@ -239,18 +239,22 @@ export function planTurn(state: CombatState, rng: RNG, enemyId: UnitId): CombatE
   const targets = pickRoleTargets(state, ai, self)
   if (!targets.primary) return [{ type: 'endTurn' as const }]
 
-  // Multi-step move toward desiredPosition (or toward primary if no desired).
+  // Walk toward desiredPosition; use a single moveUnit with the final tile
+  // so the BoardScene plays one continuous walk animation (path computed
+  // visually). The reducer just teleports — the animation is cosmetic.
   let pos = self.position as unknown as string
   const dest = targets.desiredPosition ?? (targets.primary.position as unknown as string)
   for (let step = 0; step < ai.movement; step++) {
     if (pos === dest) break
     const next = stepToward(state, pos, dest)
     if (!next) break
+    pos = next
+  }
+  if (pos !== (self.position as unknown as string)) {
     events.push({
       type: 'moveUnit',
-      payload: { unitId: enemyId, tileId: asTileId(next) },
+      payload: { unitId: enemyId, tileId: asTileId(pos) },
     })
-    pos = next
   }
 
   // Pick action. Distance is to PRIMARY target (the unit we want to affect).
