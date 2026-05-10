@@ -101,6 +101,12 @@ export class BoardScene extends Phaser.Scene {
   private hoverUnitId: string | null = null
   /** Tab toggle: render union of all enemy threat zones. */
   private globalDangerZone = false
+  /**
+   * Units currently mid-walk-animation. renderUnits() must NOT snap their
+   * container.setPosition to the logical tile while we're tweening through
+   * the path, or the visual teleports to the destination instantly.
+   */
+  private walkingUnits = new Set<string>()
 
   constructor() { super('combat') }
 
@@ -485,6 +491,12 @@ export class BoardScene extends Phaser.Scene {
       )
       if (path && path.length > 0) {
         this.pendingMovePath = { unitId: activeId, path: path.map((t) => t as unknown as string) }
+        // Mark BEFORE dispatch so the synchronous renderUnits subscription
+        // sees walkingUnits.has(activeId) and skips snapping the container
+        // to the new logical position. handleEffect's walkAlongPath then
+        // animates from origin → destination. Without this, renderUnits
+        // teleports first, walkAlongPath has nothing to animate.
+        this.walkingUnits.add(activeId)
       }
       cs.dispatch({
         type: 'moveUnit',
@@ -557,7 +569,7 @@ export class BoardScene extends Phaser.Scene {
         this.unitViews.set(idStr, view)
       }
 
-      if (unit.position) {
+      if (unit.position && !this.walkingUnits.has(idStr)) {
         const { x, y } = tileToWorld(unit.position as unknown as string)
         view.container.setPosition(x, y)
       }
@@ -596,7 +608,7 @@ export class BoardScene extends Phaser.Scene {
       const walk = this.pendingMovePath
       if (walk && walk.unitId === e.sprite.id && walk.path.length > 0) {
         this.pendingMovePath = null
-        this.walkAlongPath(view, walk.path)
+        this.walkAlongPath(view, walk.path, e.sprite.id)
         return
       }
 
@@ -623,7 +635,7 @@ export class BoardScene extends Phaser.Scene {
           blocked,
         )
         if (path && path.length > 0) {
-          this.walkAlongPath(view, path.map((t) => t as unknown as string))
+          this.walkAlongPath(view, path.map((t) => t as unknown as string), e.sprite.id)
           return
         }
       }
@@ -695,10 +707,11 @@ export class BoardScene extends Phaser.Scene {
    * Animate a unit through `path` tile-by-tile, ~120ms per step. Sets
    * `activeWalkSkip` so a second click can skip to the final tile.
    */
-  private walkAlongPath(view: UnitView, path: string[]): void {
+  private walkAlongPath(view: UnitView, path: string[], unitId: string): void {
     if (path.length === 0) return
     const STEP_MS = 120
     this.pendingAnimations++
+    this.walkingUnits.add(unitId)
     let index = 0
     let cancelled = false
 
@@ -709,6 +722,7 @@ export class BoardScene extends Phaser.Scene {
       const dest = tileToWorld(last)
       this.tweens.killTweensOf(view.container)
       view.container.setPosition(dest.x, dest.y)
+      this.walkingUnits.delete(unitId)
       this.activeWalkSkip = null
       this.pendingAnimations--
       this.maybeAnimationsComplete()
@@ -720,6 +734,7 @@ export class BoardScene extends Phaser.Scene {
       if (cancelled) return
       if (index >= path.length) {
         cancelled = true
+        this.walkingUnits.delete(unitId)
         this.activeWalkSkip = null
         this.pendingAnimations--
         this.maybeAnimationsComplete()
@@ -776,6 +791,11 @@ export class BoardScene extends Phaser.Scene {
       return
     }
     const next = this.enemyTurnQueue.shift()!
+    // Same race-fix as player onTileClick: mark walkingUnits before dispatch
+    // so renderUnits' synchronous snapping doesn't beat walkAlongPath.
+    if (next.type === 'moveUnit') {
+      this.walkingUnits.add(next.payload.unitId as unknown as string)
+    }
     cs.dispatch(next, createRng(cs.state.rng))
     if (next.type === 'endTurn') {
       this.enemyTurnRunning = false

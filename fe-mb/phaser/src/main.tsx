@@ -16,7 +16,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 function mountPhaserWhenReady(): void {
   const parent = document.getElementById('game-canvas-container')
   if (parent) {
-    createGame(parent)
+    const game = createGame(parent)
+    // Expose for debugging — lets devtools / Playwright inspect scene state.
+    if (import.meta.env.DEV) {
+      ;(window as unknown as { __game?: unknown }).__game = game
+    }
     return
   }
   requestAnimationFrame(mountPhaserWhenReady)
