@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { useCombatStore } from '../../state/combatStore'
+import { useCombatUiStore } from '../../state/combatUiStore'
 import { useRunStore } from '../../state/runStore'
 import { CombatRuntime } from '../runtime/CombatRuntime'
 import { createRng } from '../../systems/rng'
@@ -96,6 +97,10 @@ export class BoardScene extends Phaser.Scene {
    * so a second click can skip-to-end (the animation finishes immediately).
    */
   private activeWalkSkip: (() => void) | null = null
+  /** Unit being hovered (for hover-overlay rendering). Null = no hover. */
+  private hoverUnitId: string | null = null
+  /** Tab toggle: render union of all enemy threat zones. */
+  private globalDangerZone = false
 
   constructor() { super('combat') }
 
@@ -120,6 +125,13 @@ export class BoardScene extends Phaser.Scene {
       if (cs2.state.subPhase !== 'IDLE') {
         cs2.dispatch({ type: 'cancelSelection' }, createRng(cs2.state.rng))
       }
+    })
+
+    // Tab toggles the global enemy threat overlay.
+    this.input.keyboard?.on('keydown-TAB', (event: KeyboardEvent) => {
+      event.preventDefault()
+      this.globalDangerZone = !this.globalDangerZone
+      this.renderTargeting()
     })
 
     this.input.mouse?.disableContextMenu()
@@ -180,6 +192,18 @@ export class BoardScene extends Phaser.Scene {
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
 
+    // Hover overlay layer (IDLE phase only). Renders BENEFORE the selection
+    // overlay so SELECTING_* tiles remain authoritative when both apply.
+    if (state.subPhase === 'IDLE' && this.hoverUnitId) {
+      this.renderHoverOverlay(this.hoverUnitId, state)
+    }
+
+    // Tab-toggled global danger zone (always rendered, but darker tone so
+    // it doesn't fight the hover layer).
+    if (state.subPhase === 'IDLE' && this.globalDangerZone) {
+      this.renderGlobalDangerZone(state)
+    }
+
     if (state.subPhase === 'SELECTING_MOVE') {
       const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
       if (!activeId) return
@@ -227,8 +251,113 @@ export class BoardScene extends Phaser.Scene {
     }
   }
 
+  private renderHoverOverlay(unitId: string, state: ReturnType<typeof useCombatStore.getState>['state']): void {
+    const u = state.units[unitId]
+    if (!u || !u.position || u.hp.current <= 0) return
+    const isEnemy = (u.classId as unknown as string).includes('bandit')
+      || (u.classId as unknown as string).includes('brigand')
+      || (u.classId as unknown as string).includes('wolf')
+    const range = movementRangeForClass(u.classId as unknown as string)
+    const blocked = new Set<string>()
+    for (const other of Object.values(state.units)) {
+      if (other.hp.current <= 0 || !other.position) continue
+      if ((other.id as unknown as string) === unitId) continue
+      blocked.add(other.position as unknown as string)
+    }
+    const reachable = tilesReachable(
+      asTileId(u.position as unknown as string),
+      range,
+      { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
+      blocked,
+    )
+    // Move tiles
+    const moveColor = isEnemy ? 0x4a2a4a : 0x1f4a5a
+    for (const t of reachable) {
+      const rect = this.tileRects.get(t as unknown as string)
+      if (rect) rect.setFillStyle(moveColor)
+    }
+    // Attack ring: tiles 1 step beyond reachable (basic melee threat)
+    const attackTiles = new Set<string>()
+    const reachSet = new Set<string>(reachable.map((t) => t as unknown as string))
+    reachSet.add(u.position as unknown as string)
+    for (const tileStr of reachSet) {
+      const [tx, ty] = tileStr.split(',').map(Number)
+      const nbrs: Array<[number, number]> = [[tx! + 1, ty!], [tx! - 1, ty!], [tx!, ty! + 1], [tx!, ty! - 1]]
+      for (const [nx, ny] of nbrs) {
+        if (nx < 0 || ny < 0 || nx >= state.grid.width || ny >= state.grid.height) continue
+        const k = `${nx},${ny}`
+        if (reachSet.has(k)) continue
+        attackTiles.add(k)
+      }
+    }
+    const attackColor = isEnemy ? 0x6a1a1a : 0x6a3a1a
+    for (const t of attackTiles) {
+      const rect = this.tileRects.get(t)
+      if (rect) rect.setFillStyle(attackColor)
+    }
+  }
+
+  private renderGlobalDangerZone(state: ReturnType<typeof useCombatStore.getState>['state']): void {
+    const enemyTiles = new Set<string>()
+    for (const u of Object.values(state.units)) {
+      if (u.hp.current <= 0 || !u.position) continue
+      const isEnemy = (u.classId as unknown as string).includes('bandit')
+        || (u.classId as unknown as string).includes('brigand')
+        || (u.classId as unknown as string).includes('wolf')
+      if (!isEnemy) continue
+      const range = movementRangeForClass(u.classId as unknown as string)
+      const blocked = new Set<string>()
+      for (const other of Object.values(state.units)) {
+        if (other.hp.current <= 0 || !other.position) continue
+        if ((other.id as unknown as string) === (u.id as unknown as string)) continue
+        blocked.add(other.position as unknown as string)
+      }
+      const reachable = tilesReachable(
+        asTileId(u.position as unknown as string),
+        range,
+        { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
+        blocked,
+      )
+      enemyTiles.add(u.position as unknown as string)
+      for (const t of reachable) enemyTiles.add(t as unknown as string)
+      // Attack reach: 1 step beyond
+      const reachSet = new Set<string>(reachable.map((t) => t as unknown as string))
+      reachSet.add(u.position as unknown as string)
+      for (const tileStr of reachSet) {
+        const [tx, ty] = tileStr.split(',').map(Number)
+        const nbrs2: Array<[number, number]> = [[tx! + 1, ty!], [tx! - 1, ty!], [tx!, ty! + 1], [tx!, ty! - 1]]
+        for (const [nx, ny] of nbrs2) {
+          if (nx < 0 || ny < 0 || nx >= state.grid.width || ny >= state.grid.height) continue
+          enemyTiles.add(`${nx},${ny}`)
+        }
+      }
+    }
+    for (const t of enemyTiles) {
+      const rect = this.tileRects.get(t)
+      if (rect) {
+        // Soft purple — only overrides default-empty tiles, lets selection
+        // overlays win when both fire.
+        rect.setFillStyle(0x3a1a3a)
+      }
+    }
+  }
+
   private onTileHover(tileId: string): void {
     const state = useCombatStore.getState().state
+
+    // Unit hover: if there's a living unit on this tile and we're idle,
+    // mark it for the hover overlay.
+    if (state.subPhase === 'IDLE') {
+      const occupant = Object.values(state.units).find(
+        (u) => u.position && (u.position as unknown as string) === tileId && u.hp.current > 0,
+      )
+      const newHover = occupant ? (occupant.id as unknown as string) : null
+      if (newHover !== this.hoverUnitId) {
+        this.hoverUnitId = newHover
+        this.renderTargeting()
+      }
+    }
+
     if (state.subPhase !== 'SELECTING_TARGET' || state.selectedCardId === null) return
     const card = cardsMap.get(state.selectedCardId as unknown as string)
     if (!card) return
@@ -286,21 +415,34 @@ export class BoardScene extends Phaser.Scene {
     }
   }
 
+  private clearHoverUnit(): void {
+    if (this.hoverUnitId !== null) {
+      this.hoverUnitId = null
+      this.renderTargeting()
+    }
+  }
+
   private onTileOut(): void {
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
+    this.clearHoverUnit()
   }
 
   private onUnitClick(unitIdStr: string): void {
     const cs = useCombatStore.getState()
     const state = cs.state
     if (state.phase !== 'COMBAT') return
+    const unit = state.units[unitIdStr]
+    if (!unit || unit.hp.current <= 0) return
+
+    // Always pin the detail panel on click (works for any unit).
+    useCombatUiStore.getState().setPinnedDetailUnit(unitIdStr)
+
+    // Existing move-mode behavior only fires for the active party unit.
     if (state.turn.team !== 'party') return
     if (state.subPhase === 'RESOLVING') return
     const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
     if (activeId !== unitIdStr) return
-    const unit = state.units[unitIdStr]
-    if (!unit || unit.hp.current <= 0) return
     if (unit.hasMovedThisTurn) return
     if (state.subPhase === 'SELECTING_MOVE') {
       cs.dispatch({ type: 'cancelSelection' }, createRng(state.rng))
