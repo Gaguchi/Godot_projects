@@ -13,6 +13,7 @@ import { createRng, deriveRng } from '../../systems/rng'
 import { rollEncounter } from '../../systems/encounterRoller'
 import { buildGraph, findPath } from '../../systems/overworldPath'
 import type { EncounterTable } from '../../domain/encounter'
+import { diag } from '../../state/diagLog'
 import { Pressable } from '../components'
 
 const NODE_TYPE_ICON: Record<string, string> = {
@@ -236,6 +237,12 @@ export function OverworldScene({
         oneShots,
         encounterRng,
       )
+      diag('encounter', 'roll', {
+        from: currentNodeId,
+        to: nextNodeId,
+        table: tableForRegion.id,
+        result: result ? { entryId: result.entryId, outcomeKind: result.outcome.kind, oneShot: result.oneShot } : null,
+      })
       if (result) {
         if (result.oneShot) {
           dispatchRun({ type: 'markEncounterFired', payload: { encounterId: result.entryId } })
@@ -310,7 +317,11 @@ export function OverworldScene({
 
     // BFS path within the current map.
     const path = findPath(graph, currentNodeId, nodeId)
-    if (!path) return // unreachable
+    if (!path) {
+      diag('path', 'unreachable', { from: currentNodeId, to: nodeId, mapId }, 'warn')
+      return
+    }
+    diag('path', 'committed', { from: currentNodeId, to: nodeId, hops: path.length, path })
     dispatchRun({
       type: 'startTravelPath',
       payload: {

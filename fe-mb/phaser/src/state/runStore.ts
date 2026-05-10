@@ -7,6 +7,7 @@ import type { BattleResult, PendingTravelPath } from '../contracts'
 import type { DungeonGraph } from '../domain/map'
 import type { RngState } from '../domain/rng'
 import type { PredicateState } from '../systems/predicates'
+import { diag } from './diagLog'
 
 export interface RunState {
   runId: string
@@ -210,6 +211,9 @@ function visitedKey(mapId: MapId, nodeId: NodeId): string {
 export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
   ...freshState(),
   dispatch(action) {
+    // Diagnostic log: every action recorded so I can replay sequences via
+    // window.__debug.diag.recent() / .byCategory('store.run').
+    diag('store.run', action.type, 'payload' in action ? action.payload : undefined)
     switch (action.type) {
       case 'recruitUnit': {
         const u = action.payload.unit

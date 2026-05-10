@@ -72,6 +72,8 @@ Helper: `predicateStateFromRun(s)` reifies a `RunState` into the `PredicateState
 
 Dialogue registry (`state/dialogueRegistry.ts`): in-memory `DialogueTree` registry — `registerDialogue`, `getDialogue`, `clearDialogues`, `listDialogueIds`. `state/dialogueBootstrap.ts` exports `bootstrapDialogues()` which loads the 8 ported trees on App boot.
 
+**Diagnostic log** (`state/diagLog.ts`): bounded ring buffer (last 500 `DiagEntry` records, typed by `DiagLevel` and `DiagCategory`). Callers use `diag(category, msg, data?, level?)`. Wired into `runStore.dispatch`, `DialogueModal` lifecycle, `OverworldScene` encounter rolls and BFS path commits. Auto-mirrors to devtools console. Queryable via `window.__debug.diag`: `recent(n)`, `byCategory(cat,n)`, `byLevel(lvl,n)`, `since(ts)`, `search(re,n)`, `dump(n)` (formatted text), `categories()`, `clear()`. Exported as `diagLog` and `diag`.
+
 **`combatStore` events** (`CombatEvent` union, see `domain/combatState.ts`):
 - `startBattle { units, grid, rngSeed }`
 - `startTurn { unitId }`

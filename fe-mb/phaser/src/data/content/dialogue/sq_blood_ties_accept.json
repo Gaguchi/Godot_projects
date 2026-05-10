@@ -1,5 +1,5 @@
 {
-  "id": "blood_ties_quest_acceptance",
+  "id": "sq_blood_ties_accept",
   "startNodeId": "start",
   "nodes": {
     "start": {

@@ -13,6 +13,7 @@ import { DialogueModal } from './ui/modals/DialogueModal'
 import { QuestLog } from './ui/overlays/QuestLog'
 import { CombatHud } from './ui/scenes/combat/CombatHud'
 import { bootstrapDialogues } from './state/dialogueBootstrap'
+import { diagLog, diag } from './state/diagLog'
 import { useCombatStore } from './state/combatStore'
 import { useRunStore } from './state/runStore'
 import { asNodeId } from './domain/ids'
@@ -29,15 +30,17 @@ export const __busRefs = { errorBus, eventBus, actionLog }
 
 // One-shot dialogue registry bootstrap so DialogueModal can find trees by id.
 bootstrapDialogues()
+diag('lifecycle', 'app boot')
 
-// Dev-only debug surface so E2E + manual testing can read store state and
-// dispatch events from the browser console. Tree-shaken in production.
+// Dev-only debug surface. Claude diagnostic API entry point:
+// `window.__debug.diag` (recent / byCategory / byLevel / search / dump).
 if (import.meta.env.DEV) {
   ;(window as unknown as { __debug?: Record<string, unknown> }).__debug = {
     combatStore: useCombatStore,
     runStore: useRunStore,
     metaStore: useMetaStore,
     busRefs: { errorBus, eventBus, actionLog },
+    diag: diagLog,
   }
 }
 

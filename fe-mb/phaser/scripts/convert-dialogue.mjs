@@ -156,10 +156,11 @@ function convertLine(godotLine) {
   return node
 }
 
-export function convertGodotDialogue(godot) {
+export function convertGodotDialogue(godot, idOverride) {
   const lines = godot.lines ?? []
   const startId = lines[0]?.id ?? 'start'
-  const dialogueId = godot.id ?? godot.title?.toLowerCase().replace(/[^a-z0-9_]+/g, '_') ?? 'unknown'
+  // Prefer explicit override (filename-based id), then godot.id, then derived title.
+  const dialogueId = idOverride ?? godot.id ?? godot.title?.toLowerCase().replace(/[^a-z0-9_]+/g, '_') ?? 'unknown'
 
   const nodes = {}
   for (const line of lines) {
@@ -176,10 +177,14 @@ export function convertGodotDialogue(godot) {
 function convertFile(srcPath, destPath) {
   const raw = readFileSync(srcPath, 'utf8')
   const godot = JSON.parse(raw)
-  const phaser = convertGodotDialogue(godot)
+  // Use the source filename (without .json) as the canonical dialogue id.
+  // Towns/encounters reference dialogues by filename, not by Godot's "title"
+  // field, so this guarantees consistent lookups.
+  const idFromFilename = basename(srcPath, '.json')
+  const phaser = convertGodotDialogue(godot, idFromFilename)
   mkdirSync(dirname(destPath), { recursive: true })
   writeFileSync(destPath, JSON.stringify(phaser, null, 2) + '\n')
-  console.log(`✓ ${basename(srcPath)} → ${basename(destPath)}  (${Object.keys(phaser.nodes).length} nodes)`)
+  console.log(`✓ ${basename(srcPath)} → ${basename(destPath)}  id="${phaser.id}"  (${Object.keys(phaser.nodes).length} nodes)`)
   return phaser
 }
 

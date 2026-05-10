@@ -5,6 +5,7 @@ import { getCharacter } from '../data/characters'
 import { useTypewriter } from '../hooks/useTypewriter'
 import { useRunStore, predicateStateFromRun } from '../../state/runStore'
 import { getDialogue } from '../../state/dialogueRegistry'
+import { diag } from '../../state/diagLog'
 import { step, visibleChoices, isChoiceEnabled } from '../../systems/dialogueRunner'
 import type { DialogueNodeId, DialogueId } from '../../domain/ids'
 import type { QuestEffect } from '../../domain/quest'
@@ -34,8 +35,22 @@ export function DialogueModal(): React.JSX.Element {
   useEffect(() => {
     if (!pending) return
     const tree = getDialogue(pending.dialogueId as unknown as string)
-    const node = tree?.nodes[pending.nodeId]
-    if (node?.onEnter && node.onEnter.length > 0) {
+    if (!tree) {
+      diag('dialog', 'missing tree', { dialogueId: pending.dialogueId }, 'warn')
+      return
+    }
+    const node = tree.nodes[pending.nodeId]
+    if (!node) {
+      diag('dialog', 'missing node', { dialogueId: pending.dialogueId, nodeId: pending.nodeId }, 'warn')
+      return
+    }
+    diag('dialog', 'enter node', {
+      dialogueId: pending.dialogueId,
+      nodeId: pending.nodeId,
+      speaker: node.speaker ?? null,
+      onEnterCount: node.onEnter?.length ?? 0,
+    })
+    if (node.onEnter && node.onEnter.length > 0) {
       dispatch({ type: 'applyQuestEffects', payload: { effects: node.onEnter as QuestEffect[] } })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
