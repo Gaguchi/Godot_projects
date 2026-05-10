@@ -5,7 +5,7 @@ import { asUnitId, asClassId } from '../../../src/domain/ids'
 
 const mk = (cur: number, max: number): Unit => ({
   id: asUnitId('e'), name: 'e', classId: asClassId('bandit'), level: 1,
-  hp: { current: cur, max }, stats: { str: 0, mag: 0, skl: 0, spd: 0, def: 0, res: 0 },
+  hp: { current: cur, max }, stats: { str: 0, mag: 0, skl: 0, spd: 0, def: 0, res: 0, lck: 0 },
   position: null, ap: 3, armor: 0, statuses: [],
 })
 

@@ -9,7 +9,7 @@ const mkUnit = (id: string, hp = 10, hpMax = 20): Unit => ({
   classId: asClassId('lord'),
   level: 1,
   hp: { current: hp, max: hpMax },
-  stats: { str: 5, mag: 0, skl: 4, spd: 5, def: 3, res: 1 },
+  stats: { str: 5, mag: 0, skl: 4, spd: 5, def: 3, res: 1, lck: 0 },
   position: null,
   ap: 3,
   armor: 0,

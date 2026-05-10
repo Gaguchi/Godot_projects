@@ -3,6 +3,7 @@ import type { UnitId, ClassId, TileId, StatusEffectId } from './ids'
 export interface UnitStats {
   str: number; mag: number; skl: number
   spd: number; def: number; res: number
+  lck: number
 }
 
 export interface UnitHp { current: number; max: number }

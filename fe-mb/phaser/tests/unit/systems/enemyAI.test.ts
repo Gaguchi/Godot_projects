@@ -8,7 +8,7 @@ import type { Unit } from '../../../src/domain/unit'
 const mkUnit = (id: string, classId: string, x: number, y: number, hp = 20): Unit => ({
   id: asUnitId(id), name: id, classId: asClassId(classId), level: 1,
   hp: { current: hp, max: 20 },
-  stats: { str: 4, mag: 0, skl: 3, spd: 4, def: 2, res: 1 },
+  stats: { str: 4, mag: 0, skl: 3, spd: 4, def: 2, res: 1, lck: 0 },
   position: asTileId(`${x},${y}`),
   ap: 3, armor: 0, statuses: [],
 })

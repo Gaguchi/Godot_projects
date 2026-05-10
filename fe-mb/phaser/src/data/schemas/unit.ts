@@ -3,6 +3,7 @@ import { z } from 'zod'
 export const UnitStatsSchema = z.object({
   str: z.number().int(), mag: z.number().int(), skl: z.number().int(),
   spd: z.number().int(), def: z.number().int(), res: z.number().int(),
+  lck: z.number().int(),
 })
 
 export const UnitSchema = z.object({
