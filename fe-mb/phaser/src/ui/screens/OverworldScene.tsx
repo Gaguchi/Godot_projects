@@ -154,7 +154,9 @@ export function OverworldScene({
     if (!dragState.current.active) return
     const dx = e.clientX - dragState.current.startX
     const dy = e.clientY - dragState.current.startY
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragState.current.moved = true
+    // Bumped 3 → 8: tiny mouse jitter during a click was being misclassified as
+    // a drag and silently swallowing the click on overworld nodes.
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) dragState.current.moved = true
     setCamera({ x: dragState.current.baseX + dx, y: dragState.current.baseY + dy })
   }
   const onPanEnd = (): void => {
@@ -303,9 +305,22 @@ export function OverworldScene({
   // ── Click on a node ──────────────────────────────────────────────
   const handleNodeClick = (nodeId: string): void => {
     if (dragState.current.moved) return       // dragging — ignore click
-    if (nodeId === currentNodeId) return      // already there
     if (pendingDialogue) return               // dialogue blocks travel
     if (pendingTravelPath && pendingTravelPath.remainingNodeIds.length > 0) return // already traveling
+
+    // Click on the CURRENT node = re-enter its scene (town/camp/dungeon) or
+    // be a no-op for camps with no scene. Without this, players who closed
+    // a town menu had no way to reopen it; food costs nothing because the
+    // hop didn't happen.
+    if (nodeId === currentNodeId) {
+      const here = map.nodes.find((n) => n.id === nodeId)
+      if (!here) return
+      if (here.type === 'town') onEnterTown(asNodeId(nodeId))
+      else if (here.type === 'camp') onEnterCamp(asNodeId(nodeId))
+      else if (here.type === 'dungeon') onEnterDungeon(asNodeId(nodeId))
+      else if (here.type === 'exit') onWin()
+      return
+    }
 
     // Check region-edge first: if clicked node is in this map's regionEdges, it's a 1-hop transition.
     const regionEdge = (map.regionEdges ?? []).find(
@@ -388,6 +403,35 @@ export function OverworldScene({
           transition: dragState.current.active ? 'none' : 'transform 200ms ease-out',
         }}
       >
+        {/* Player marker — animated via CSS transition on top/left so multi-
+            hop travel actually walks between nodes instead of teleporting
+            (the underlying nodes still snap their highlight, but the marker
+            interpolates over HOP_DELAY_MS). */}
+        {(() => {
+          const cur = map.nodes.find((n) => n.id === currentNodeId)
+          if (!cur) return null
+          return (
+            <div
+              id="player-marker"
+              className="absolute pointer-events-none z-20"
+              style={{
+                left: cur.position.x - 14,
+                top: cur.position.y - 14,
+                width: 28,
+                height: 28,
+                transition: 'left 320ms ease-in-out, top 320ms ease-in-out',
+              }}
+            >
+              <div
+                className="w-full h-full rounded-full bg-amber-300 border-2 border-amber-100 shadow-[0_0_18px_rgba(250,204,21,0.9)]"
+                style={{
+                  animation: 'overworldPulse 1.6s ease-in-out infinite',
+                }}
+              />
+            </div>
+          )
+        })()}
+
         {/* Edges */}
         <svg
           width={map.width}
