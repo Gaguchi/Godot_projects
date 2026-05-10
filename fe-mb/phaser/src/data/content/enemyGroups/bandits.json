@@ -4,5 +4,6 @@
   "members": [
     { "name": "Bandit", "classId": "bandit", "level": 1, "count": 2 },
     { "name": "Bandit Archer", "classId": "bandit", "level": 1, "count": 1 }
-  ]
+  ],
+  "victoryEvent": "interrogate_survivor"
 }

@@ -50,4 +50,5 @@ export const EnemyGroupSchema = z.object({
   id: z.string(),
   name: z.string(),
   members: z.array(EnemyGroupMemberSchema).min(1),
+  victoryEvent: z.string().optional(),
 })

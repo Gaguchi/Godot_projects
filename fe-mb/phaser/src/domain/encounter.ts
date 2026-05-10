@@ -75,4 +75,9 @@ export interface EnemyGroup {
   id: string
   name: string
   members: EnemyGroupMember[]
+  /**
+   * SC-10: post-victory check-event id. When set, the BattleEndModal mounts
+   * the referenced CheckEventModal first, then proceeds to victory UI.
+   */
+  victoryEvent?: string
 }
