@@ -6,19 +6,38 @@ export interface InitiativeModifier {
   spdDelta: number
 }
 
+const ENEMY_CLASS_FRAGMENTS = ['bandit', 'brigand', 'wolf']
+function isEnemyUnit(u: Unit): boolean {
+  const id = u.classId as unknown as string
+  return ENEMY_CLASS_FRAGMENTS.some((s) => id.includes(s))
+}
+
+/**
+ * Build the per-round initiative queue. Order rules (top → bottom):
+ *   1. Higher SPD acts first.
+ *   2. On SPD tie, party units beat enemy units (FE GBA-era convention).
+ *   3. On further tie, alphabetic by unit id (deterministic).
+ *
+ * `modifiers` adds situational SPD deltas (not currently wired but kept
+ * for future Haste / Slow effects).
+ */
 export function buildInitiativeQueue(
   units: Unit[],
   modifiers: InitiativeModifier[] = [],
 ): UnitId[] {
-  const modBySpd = new Map<string, number>(modifiers.map(m => [m.unitId as unknown as string, m.spdDelta]))
-  const enriched = units.map(u => ({
+  const modBySpd = new Map<string, number>(
+    modifiers.map((m) => [m.unitId as unknown as string, m.spdDelta]),
+  )
+  const enriched = units.map((u) => ({
     id: u.id,
     spd: u.stats.spd + (modBySpd.get(u.id as unknown as string) ?? 0),
-    tieBreaker: (u.id as unknown as string),
+    isEnemy: isEnemyUnit(u),
+    tieBreaker: u.id as unknown as string,
   }))
   enriched.sort((a, b) => {
     if (b.spd !== a.spd) return b.spd - a.spd
+    if (a.isEnemy !== b.isEnemy) return a.isEnemy ? 1 : -1   // party first
     return a.tieBreaker.localeCompare(b.tieBreaker)
   })
-  return enriched.map(e => e.id)
+  return enriched.map((e) => e.id)
 }

@@ -5,6 +5,7 @@ import { MoveBtn } from './MoveBtn'
 import { EndTurnBtn } from './EndTurnBtn'
 import { CardHand } from './CardHand'
 import { CaptureBtn } from './CaptureBtn'
+import { InitiativeStrip } from './InitiativeStrip'
 
 /**
  * Top-level combat HUD overlay rendered over the Phaser canvas.
@@ -20,6 +21,7 @@ export function CombatHud(): React.JSX.Element {
       className="pointer-events-none absolute inset-0 z-[100] font-mono"
     >
       <div className="pointer-events-auto"><TopBar /></div>
+      <InitiativeStrip />
       <ModeLabel />
       <CardHand />
       <CaptureBtn />

@@ -27,4 +27,31 @@ describe('buildInitiativeQueue', () => {
     )
     expect(q.map(id => id as unknown as string)).toEqual(['a', 'b'])
   })
+
+  it('party beats enemy on SPD tie (FE-style)', () => {
+    const partyUnit = mk('roy', 5)
+    const enemyUnit: Unit = { ...mk('bandit_a', 5), classId: asClassId('bandit') }
+    const q = buildInitiativeQueue([enemyUnit, partyUnit])
+    expect(q.map(id => id as unknown as string)).toEqual(['roy', 'bandit_a'])
+  })
+
+  it('SPD tie within team falls back to alphabetic id', () => {
+    const enemy1: Unit = { ...mk('bandit_z', 5), classId: asClassId('bandit') }
+    const enemy2: Unit = { ...mk('bandit_a', 5), classId: asClassId('bandit') }
+    const q = buildInitiativeQueue([enemy1, enemy2])
+    expect(q.map(id => id as unknown as string)).toEqual(['bandit_a', 'bandit_z'])
+  })
+
+  it('full mixed group: SPD desc, party-first within tie', () => {
+    const units: Unit[] = [
+      mk('roy', 5),
+      { ...mk('bandit_a', 5), classId: asClassId('bandit') },
+      mk('lilina', 5),
+      { ...mk('bandit_b', 4), classId: asClassId('bandit') },
+      mk('marcus', 3),
+    ]
+    const q = buildInitiativeQueue(units).map((id) => id as unknown as string)
+    // SPD 5 ties: party first (lilina, roy alpha), then bandit_a; SPD 4: bandit_b; SPD 3: marcus
+    expect(q).toEqual(['lilina', 'roy', 'bandit_a', 'bandit_b', 'marcus'])
+  })
 })
