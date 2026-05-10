@@ -506,12 +506,28 @@ export class BoardScene extends Phaser.Scene {
     const cs = useCombatStore.getState()
     if (this.enemyTurnQueue.length === 0) {
       this.enemyTurnRunning = false
+      // Queue drained: if turn flipped to a NEW enemy, plan its turn now.
+      // Without this, the loop gets stuck because the subscription that
+      // would have called maybeRunEnemyTurn fired earlier (during dispatch)
+      // when enemyTurnRunning was still true.
+      this.maybeRunEnemyTurn()
       return
     }
     const next = this.enemyTurnQueue.shift()!
     cs.dispatch(next, createRng(cs.state.rng))
     if (next.type === 'endTurn') {
       this.enemyTurnRunning = false
+      // Same race-fix as above: if the reducer advanced to another enemy,
+      // start that turn immediately.
+      this.maybeRunEnemyTurn()
+      return
+    }
+    // For animation-producing events (playCard etc.), the next dispatch
+    // is scheduled by maybeAnimationsComplete after the tween finishes.
+    // For non-animation events (moveUnit), schedule ourselves so the
+    // queue keeps draining.
+    if (next.type === 'moveUnit') {
+      this.time.delayedCall(150, () => this.dispatchNextEnemyEvent())
     }
   }
 
