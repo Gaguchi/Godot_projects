@@ -178,6 +178,7 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/check.ts` ↔ `CheckRequirement` (discriminated union: `stat | class | gold | food`; `StatKey` covers all 7 stats incl. `lck`). Domain types in `domain/check.ts`: `CheckRequirement`, `CheckAttempt`, `CheckCandidate`, `StatKey`. **Active.**
 - `persistence/saveFormat.ts` ↔ `SaveFile` (`SAVE_VERSION = '0.6.0-cards-only'`, `SerializedRunState`, `SerializedMetaState`). **Active.**
 - `persistence/contentAliases.ts` ↔ `ContentAliases` (`cardId | itemId | flagKey | questId | stageId | dungeonId | mapId` maps, `resolveAlias`). **Active.**
+- `persistence/saveSlots.ts` ↔ `SaveSlotMeta` + `SaveSlotsMeta` shapes; 3-slot localStorage manager (`NUM_SLOTS = 3`). Exports `listSlots` / `readSlot` / `writeSlot` / `deleteSlot` / `isSlotEmpty`. Data at `fe-mb:save:slot:N`; sidecar meta at `fe-mb:save:meta` for fast list-rendering. Consumed by `<SaveGameModal>`, `<LoadGameModal>`, and the pause-menu Save flow. **Active.**
 
 ## 9. File Map (≤25 lines)
 

@@ -27,3 +27,6 @@ export type { CheckButtonProps } from './CheckButton'
 
 export { CheckCandidatePicker } from './CheckCandidatePicker'
 export type { CheckCandidatePickerProps } from './CheckCandidatePicker'
+
+export { PauseButton } from './PauseButton'
+export type { PauseButtonProps } from './PauseButton'

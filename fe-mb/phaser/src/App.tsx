@@ -7,13 +7,18 @@ import { OverworldScene } from './ui/screens/OverworldScene'
 import { TownScene } from './ui/screens/TownScene'
 import { CampScene } from './ui/screens/CampScene'
 import { DungeonScene } from './ui/screens/DungeonScene'
-import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
+import { LoadGameModal } from './ui/modals/LoadGameModal'
+import { SaveGameModal } from './ui/modals/SaveGameModal'
+import { PauseMenu } from './ui/modals/PauseMenu'
+import { PauseButton } from './ui/components/PauseButton'
 import { QuitModal } from './ui/modals/QuitModal'
 import { BattleEndModal } from './ui/modals/BattleEndModal'
 import { DialogueModal } from './ui/modals/DialogueModal'
 import { QuestLog } from './ui/overlays/QuestLog'
 import { CombatHud } from './ui/scenes/combat/CombatHud'
 import { bootstrapDialogues } from './state/dialogueBootstrap'
+import { buildSaveFile } from './persistence/save'
+import { writeSlot, readSlot } from './persistence/saveSlots'
 import { diagLog, diag } from './state/diagLog'
 import { useCombatStore } from './state/combatStore'
 import { useRunStore } from './state/runStore'
@@ -57,6 +62,8 @@ export function App(): React.JSX.Element {
   })()
   const [view, setView] = useState<View>(initialView)
   const [loadModalOpen, setLoadModalOpen] = useState(false)
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
+  const [pauseMenuOpen, setPauseMenuOpen] = useState(false)
   const [quitModalOpen, setQuitModalOpen] = useState(false)
   const [questLogOpen, setQuestLogOpen] = useState(false)
   const dispatchMeta = useMetaStore((s) => s.dispatch)
@@ -71,6 +78,28 @@ export function App(): React.JSX.Element {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [view])
+
+  // Esc opens pause menu in any non-title view. In combat, the BoardScene
+  // already handles Esc for cancel-selection; we only intercept when no
+  // selection is active so canceling stays the priority.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape') return
+      if (view === 'title') return
+      // If a modal is already open, close it instead of toggling pause.
+      if (saveModalOpen) { setSaveModalOpen(false); return }
+      if (loadModalOpen) { setLoadModalOpen(false); return }
+      if (questLogOpen) { setQuestLogOpen(false); return }
+      // In combat, cancel-selection takes priority when something's active.
+      if (view === 'combat') {
+        const cs = useCombatStore.getState()
+        if (cs.state.subPhase !== 'IDLE') return    // BoardScene handles cancel
+      }
+      setPauseMenuOpen((prev) => !prev)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [view, saveModalOpen, loadModalOpen, questLogOpen])
 
   // F-26: Permadeath sync. When combat phase becomes VICTORY/DEFEAT, walk
   // the units and record fallen party members in runStore.deathLog. On
@@ -131,6 +160,48 @@ export function App(): React.JSX.Element {
     setLoadModalOpen(true)
   }, [])
 
+  const onSaveGame = useCallback((slotId: string) => {
+    const meta = useMetaStore.getState()
+    const save = buildSaveFile({
+      meta: { gameStarted: meta.gameStarted, totalRuns: meta.totalRuns },
+      run: useRunStore.getState(),
+      combat: useCombatStore.getState().state.phase === 'COMBAT' ? useCombatStore.getState().state : null,
+      actionLog: actionLog.serialize(),
+    })
+    writeSlot(slotId, save, `Slot ${Number(slotId) + 1}`)
+    setSaveModalOpen(false)
+    setPauseMenuOpen(false)
+  }, [])
+
+  const onSlotLoad = useCallback((slotId: string) => {
+    const result = readSlot(slotId)
+    if (!result || !result.ok) {
+      // Bad save — close modal silently. Could add error toast later.
+      setLoadModalOpen(false)
+      return
+    }
+    // Hydrate run state from the save (minimal restore: gold, party, world position).
+    // Full hydration with combat/actionLog lands when persistence-load is wired
+    // through the reducer chain. For now, restore the run essentials.
+    const save = result.save
+    if (save.run) {
+      useRunStore.setState({
+        gold: save.run.gold,
+        worldPosition: save.run.worldPosition as never,
+        party: {
+          units: Object.fromEntries(save.run.partyUnits.map((u) => [(u as { id: string }).id, u as never])),
+          partyOrder: save.run.partyOrder.map((id) => id as never),
+        } as never,
+        inventory: { items: save.run.inventoryItems.map((i) => ({ itemId: i.itemId as never, gridX: i.gridX, gridY: i.gridY })) } as never,
+      } as never)
+    }
+    setLoadModalOpen(false)
+    setPauseMenuOpen(false)
+    // Bring the player back to overworld after a load (combat state is reset).
+    useCombatStore.getState().reset()
+    setView('overworld')
+  }, [])
+
   const onQuit = useCallback(() => {
     // window.close() only works for windows opened via window.open(); in a
     // normal browser tab it silently fails. Try it; if the tab is still here
@@ -163,11 +234,6 @@ export function App(): React.JSX.Element {
     useCombatStore.getState().reset()
     setView('overworld')
   }, [])
-
-  // P1-04: empty list for now. Real save slots are read from localStorage
-  // once the save UX lands in a later milestone. The persistence layer
-  // (loadFromString, atomic hydration) already exists in src/persistence/.
-  const saveSlots: SaveSlot[] = []
 
   return (
     <ViewContext.Provider value={{ view, setView }}>
@@ -209,15 +275,35 @@ export function App(): React.JSX.Element {
               onLeave={() => setView('overworld')}
             />
           )}
+          {view !== 'title' && (
+            <div className="fixed top-2 right-2 z-[120] pointer-events-auto">
+              <PauseButton onPress={() => setPauseMenuOpen(true)} />
+            </div>
+          )}
+          <PauseMenu
+            open={pauseMenuOpen}
+            canSave={view !== 'title'}
+            onClose={() => setPauseMenuOpen(false)}
+            onResume={() => setPauseMenuOpen(false)}
+            onSaveGame={() => { setPauseMenuOpen(false); setSaveModalOpen(true) }}
+            onLoadGame={() => { setPauseMenuOpen(false); setLoadModalOpen(true) }}
+            onReturnToTitle={() => {
+              setPauseMenuOpen(false)
+              useCombatStore.getState().reset()
+              setView('title')
+            }}
+            onQuit={() => { setPauseMenuOpen(false); onQuit() }}
+          />
+          <SaveGameModal
+            open={saveModalOpen}
+            onClose={() => setSaveModalOpen(false)}
+            onSave={onSaveGame}
+          />
           <DevHud errorBus={errorBus} eventBus={eventBus} actionLog={actionLog} />
           <LoadGameModal
             open={loadModalOpen}
-            slots={saveSlots}
             onClose={() => setLoadModalOpen(false)}
-            onSelect={(_slotId) => {
-              // Real load lands later. For foundation: just close the modal.
-              setLoadModalOpen(false)
-            }}
+            onSelect={onSlotLoad}
           />
           <QuitModal open={quitModalOpen} onClose={() => setQuitModalOpen(false)} />
           <BattleEndModal
