@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'
-import { Dialog, Button, Heading } from '../components'
+import React, { useEffect, useState } from 'react'
+import { Dialog, Button, Heading, CheckButton, CheckCandidatePicker } from '../components'
 import { CharacterPortrait } from '../components/CharacterPortrait'
 import { getCharacter } from '../data/characters'
 import { useTypewriter } from '../hooks/useTypewriter'
@@ -7,8 +7,10 @@ import { useRunStore, predicateStateFromRun } from '../../state/runStore'
 import { getDialogue } from '../../state/dialogueRegistry'
 import { diag } from '../../state/diagLog'
 import { step, visibleChoices, isChoiceEnabled } from '../../systems/dialogueRunner'
-import type { DialogueNodeId, DialogueId } from '../../domain/ids'
+import { evaluateCheck, getCheckCandidates } from '../../systems/checkResolver'
+import type { DialogueNodeId, DialogueId, UnitId } from '../../domain/ids'
 import type { QuestEffect } from '../../domain/quest'
+import type { DialogueChoice } from '../../domain/dialogue'
 
 /**
  * Dialogue UX overhaul: bottom-anchored panel with floating character portrait,
@@ -29,6 +31,7 @@ import type { QuestEffect } from '../../domain/quest'
 export function DialogueModal(): React.JSX.Element {
   const pending = useRunStore((s) => s.pendingDialogue)
   const dispatch = useRunStore((s) => s.dispatch)
+  const [pickerChoice, setPickerChoice] = useState<DialogueChoice | null>(null)
 
   // onEnter side-effects: fire QuestEffects when dialogueId+nodeId changes.
   // Top-level useEffect to satisfy rules-of-hooks (must run unconditionally).
@@ -107,8 +110,19 @@ export function DialogueModal(): React.JSX.Element {
   const choices = visibleChoices(tree, pending.nodeId as unknown as DialogueNodeId, predicateState)
   const character = getCharacter(node.speaker)
 
-  const onChoice = (choiceId: string): void => {
-    const result = step(tree, pending.nodeId as unknown as DialogueNodeId, choiceId, predicateState)
+  // Source partyState for check resolution from runStore.
+  const runState = useRunStore.getState()
+  const partyArr = Object.values(runState.party.units)
+  const foodCount = runState.inventory.items.filter(
+    (i) => (i.itemId as unknown as string) === 'food_rations',
+  ).length
+  const partyState = { gold: runState.gold, foodCount, party: partyArr }
+
+  const advance = (choiceId: string, attemptingUnitId?: UnitId): void => {
+    const result = step(tree, pending.nodeId as unknown as DialogueNodeId, choiceId, predicateState, {
+      partyState,
+      ...(attemptingUnitId ? { attemptingUnitId } : {}),
+    })
     if (result.effects.length > 0) {
       dispatch({ type: 'applyQuestEffects', payload: { effects: result.effects as QuestEffect[] } })
     }
@@ -125,6 +139,27 @@ export function DialogueModal(): React.JSX.Element {
     }
   }
 
+  const onChoice = (choice: DialogueChoice): void => {
+    if (!choice.check) {
+      advance(choice.id)
+      return
+    }
+    if (choice.check.kind === 'stat') {
+      setPickerChoice(choice)
+      return
+    }
+    // class / gold / food: auto-resolve, no attempting unit
+    advance(choice.id)
+  }
+
+  const computeCanPass = (choice: DialogueChoice): boolean => {
+    if (!choice.check) return true
+    if (choice.check.kind === 'stat') {
+      return getCheckCandidates(choice.check, partyArr).some((c) => c.meetsThreshold)
+    }
+    return evaluateCheck(choice.check, null, partyState)
+  }
+
   // Click-on-text behavior:
   //  - typewriter still running → skip reveal
   //  - reveal done + only one Continue choice → advance the choice
@@ -136,7 +171,9 @@ export function DialogueModal(): React.JSX.Element {
     }
     if (choices.length === 1) {
       const only = choices[0]!
-      if (isChoiceEnabled(only, predicateState)) onChoice(only.id)
+      // Don't auto-advance check-bearing choices — those need explicit picker flow.
+      if (only.check) return
+      if (isChoiceEnabled(only, predicateState)) advance(only.id)
     }
   }
 
@@ -211,12 +248,28 @@ export function DialogueModal(): React.JSX.Element {
             <div className="flex flex-col gap-2 mt-4">
               {choices.map((c) => {
                 const enabled = isChoiceEnabled(c, predicateState)
+                if (c.check) {
+                  const canPass = enabled && computeCanPass(c)
+                  const candidates = c.check.kind === 'stat'
+                    ? getCheckCandidates(c.check, partyArr)
+                    : []
+                  return (
+                    <CheckButton
+                      key={c.id}
+                      text={c.text}
+                      requirement={c.check}
+                      candidates={candidates}
+                      canPass={canPass}
+                      onPress={() => onChoice(c)}
+                    />
+                  )
+                }
                 return (
                   <Button
                     key={c.id}
                     variant={enabled ? 'primary' : 'ghost'}
                     isDisabled={!enabled}
-                    onPress={() => onChoice(c.id)}
+                    onPress={() => onChoice(c)}
                     className="!justify-start text-left"
                   >
                     <span className="text-amber-300 mr-3">▸</span>
@@ -228,6 +281,23 @@ export function DialogueModal(): React.JSX.Element {
           )}
         </div>
       </div>
+
+      <CheckCandidatePicker
+        open={pickerChoice !== null}
+        statLabel={pickerChoice?.check?.kind === 'stat' ? pickerChoice.check.stat.toUpperCase() : ''}
+        threshold={pickerChoice?.check?.kind === 'stat' ? pickerChoice.check.threshold : 0}
+        candidates={
+          pickerChoice?.check && pickerChoice.check.kind === 'stat'
+            ? getCheckCandidates(pickerChoice.check, partyArr)
+            : []
+        }
+        onPick={(c) => {
+          const choiceCopy = pickerChoice
+          setPickerChoice(null)
+          if (choiceCopy) advance(choiceCopy.id, c.unitId)
+        }}
+        onCancel={() => setPickerChoice(null)}
+      />
     </Dialog>
   )
 }
