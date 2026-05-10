@@ -50,13 +50,15 @@ export function seedStubBattle(rngSeed: RngState): Extract<CombatEvent, { type: 
 
   const units: Unit[] = [
     // Party — left columns
-    mk('roy', 'Roy', lord, 1, 4),
-    mk('marcus', 'Marcus', knight, 1, 5),
-    mk('lilina', 'Lilina', mage, 0, 4),
-    // Enemies — right columns
-    mk('bandit_a', 'Bandit', bandit, 12, 4),
-    mk('bandit_b', 'Bandit', bandit, 12, 5),
-    mk('bandit_c', 'Bandit', bandit, 13, 4),
+    mk('roy', 'Roy', lord, 2, 4),
+    mk('marcus', 'Marcus', knight, 2, 5),
+    mk('lilina', 'Lilina', mage, 1, 4),
+    // Enemies — closer columns (was 12-13; with 4-5 movement, that meant
+    // 2-3 turns of pure walking before any engagement, which feels broken).
+    // Now 8-9: party + AI can both reach combat range on turn 1.
+    mk('bandit_a', 'Bandit', bandit, 8, 4),
+    mk('bandit_b', 'Bandit', bandit, 8, 5),
+    mk('bandit_c', 'Bandit', bandit, 9, 4),
   ]
 
   // Build a starter deck for each unit from class.innateCardIds. Hand =

@@ -31,11 +31,16 @@ describe('seedStubBattle', () => {
     }
   })
 
-  it('places enemies (Bandits) in columns 11-13', () => {
+  it('places enemies (Bandits) in middle-right columns (close enough for engagement on turn 1-2)', () => {
     const evt = seedStubBattle({ seed: 42, counter: 0 })
     for (const u of evt.payload.units) {
       if ((u.id as unknown as string).startsWith('bandit_')) {
-        expect(tileX(u.position as unknown as string)).toBeGreaterThanOrEqual(11)
+        const x = tileX(u.position as unknown as string)
+        // Bandits at 8-9 — close enough that movement-5 units can engage
+        // on turn 1 (party at column 1-2, distance 6-8). Was 11-13, which
+        // forced 2-3 turns of pure walking before any combat could happen.
+        expect(x).toBeGreaterThanOrEqual(7)
+        expect(x).toBeLessThanOrEqual(10)
       }
     }
   })
