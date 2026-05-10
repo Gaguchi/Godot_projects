@@ -172,6 +172,7 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/town.ts` ↔ `TownDef` / `TavernQuestEntry` (5 town JSONs in `data/content/towns/`; powers TownScene panels). **Active.**
 - `data/schemas/dungeonDef.ts` ↔ `DungeonDef` (5 dungeon JSONs; consumed by `game/scenes/seedDungeonBattle.ts`). **Active.**
 - `data/schemas/predicate.ts` ↔ `Predicate` (recursive via `z.lazy`). **Active.**
+- `data/schemas/check.ts` ↔ `CheckRequirement` (discriminated union: `stat | class | gold | food`; `StatKey` covers all 7 stats incl. `lck`). Domain types in `domain/check.ts`: `CheckRequirement`, `CheckAttempt`, `CheckCandidate`, `StatKey`. **Active.**
 - `persistence/saveFormat.ts` ↔ `SaveFile` (`SAVE_VERSION = '0.6.0-cards-only'`, `SerializedRunState`, `SerializedMetaState`). **Active.**
 - `persistence/contentAliases.ts` ↔ `ContentAliases` (`cardId | itemId | flagKey | questId | stageId | dungeonId | mapId` maps, `resolveAlias`). **Active.**
 
