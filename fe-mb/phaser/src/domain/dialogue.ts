@@ -8,8 +8,8 @@ import type { CheckRequirement } from './check'
  *   - Without a check: `next` carries the destination (back-compat).
  *   - With a check: `onPass` and `onFail` are required; `next` must be absent.
  *
- * The legacy `DialogueBranch` (kind='statCheck' with party-sum) is removed;
- * the check field uses the unified CheckRequirement union from domain/check.
+ * The check field uses the unified CheckRequirement union from domain/check;
+ * party-sum semantics replaced by per-unit attempts via checkResolver.
  */
 export interface DialogueChoice {
   id: string
