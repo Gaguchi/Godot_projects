@@ -188,7 +188,8 @@ phaser/src/
 │   └── load.ts     parse + validate + alias-resolve at boot
 ├── systems/        pure functions: deckBuilder, combatReducer, effectPipeline,
 │                   statusEffects, targeting, turnOrder, capture, enemyAI,
-│                   predicates, questRunner, dialogueRunner, battleResolver
+│                   predicates, questRunner, dialogueRunner, battleResolver,
+│                   checkResolver (evaluateCheck, getCheckCandidates)
 ├── procgen/        pure deterministic generators: dungeonGenerator (stub),
 │                   overworldGenerator (stub)
 ├── mapRegistry/    MapRegistry: registry of world/battle/dungeon maps
