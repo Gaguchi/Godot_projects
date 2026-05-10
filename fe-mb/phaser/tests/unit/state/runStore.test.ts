@@ -31,7 +31,8 @@ describe('runStore', () => {
     useRunStore.getState().dispatch({ type: 'arriveAtNode', payload: { nodeId: asNodeId('pine') } })
     const s = useRunStore.getState()
     expect(s.worldPosition.nodeId).toBe(asNodeId('pine'))
-    expect(s.visitedNodes['overworld:test_overworld:pine']).toBe(true)
+    // Default starting map is 'borderlands' (matches the new region maps from GP-D1)
+    expect(s.visitedNodes['overworld:borderlands:pine']).toBe(true)
   })
 
   it('setFlag delegates to flag store with scope', () => {

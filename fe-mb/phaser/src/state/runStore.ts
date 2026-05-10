@@ -172,7 +172,7 @@ function freshState(): RunState {
     party: { units: {}, partyOrder: [] },
     inventory: { items: [] },
     gold: 0,
-    worldPosition: { mapId: 'test_overworld' as unknown as MapId, nodeId: 'pine' as unknown as NodeId },
+    worldPosition: { mapId: 'borderlands' as unknown as MapId, nodeId: 'frontier_camp' as unknown as NodeId },
     visitedNodes: {},
     clearedEncounters: {},
     pendingTravelPath: null,
