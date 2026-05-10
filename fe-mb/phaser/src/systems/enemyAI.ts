@@ -1,7 +1,18 @@
 import type { CombatState, CombatEvent } from '../domain/combatState'
 import type { RNG } from '../domain/rng'
 import type { UnitId } from '../domain/ids'
+import type { Unit } from '../domain/unit'
+import type { EnemyAction, EnemyClassAI } from '../domain/enemyAI'
 import { asCardId, asTileId } from '../domain/ids'
+import banditAI from '../data/content/enemyAI/bandit.json'
+import banditArcherAI from '../data/content/enemyAI/bandit_archer.json'
+import banditPriestAI from '../data/content/enemyAI/bandit_priest.json'
+
+const AI_BY_CLASS: Record<string, EnemyClassAI> = {
+  bandit: banditAI as EnemyClassAI,
+  bandit_archer: banditArcherAI as EnemyClassAI,
+  bandit_priest: banditPriestAI as EnemyClassAI,
+}
 
 const tileXY = (t: string): [number, number] => {
   const [xs, ys] = t.split(',')
@@ -14,84 +25,260 @@ const manhattan = (a: string, b: string): number => {
   return Math.abs(ax - bx) + Math.abs(ay - by)
 }
 
+const isEnemyClass = (classId: string): boolean =>
+  classId.includes('bandit') || classId.includes('brigand') || classId.includes('wolf')
+
+const partyAlive = (state: CombatState): Unit[] =>
+  Object.values(state.units).filter(
+    (u) => u.hp.current > 0 && u.position && !isEnemyClass(u.classId as unknown as string),
+  )
+
+const enemiesAlive = (state: CombatState, exceptId?: UnitId): Unit[] =>
+  Object.values(state.units).filter(
+    (u) =>
+      u.hp.current > 0
+      && u.position
+      && isEnemyClass(u.classId as unknown as string)
+      && (!exceptId || (u.id as unknown as string) !== (exceptId as unknown as string)),
+  )
+
+const tileOccupied = (state: CombatState, tile: string): boolean =>
+  Object.values(state.units).some(
+    (u) => u.hp.current > 0 && u.position && (u.position as unknown as string) === tile,
+  )
+
+const inBounds = (state: CombatState, tile: string): boolean => {
+  const [x, y] = tileXY(tile)
+  if (x < 0 || y < 0 || x >= state.grid.width || y >= state.grid.height) return false
+  return !state.grid.obstacles.has(asTileId(tile))
+}
+
+interface RoleTargets {
+  /** Whom we want to act on (attack target / heal target). */
+  primary: Unit | null
+  /** Where we want to stand by end of move phase. */
+  desiredPosition: string | null
+}
+
+function pickRoleTargets(state: CombatState, ai: EnemyClassAI, self: Unit): RoleTargets {
+  const myPos = self.position as unknown as string
+  switch (ai.role) {
+    case 'rusher':
+    case 'tank': {
+      const enemies = partyAlive(state)
+      if (enemies.length === 0) return { primary: null, desiredPosition: null }
+      // Lowest-HP first, then closest
+      let best = enemies[0]!
+      let bestScore = best.hp.current * 100 + manhattan(myPos, best.position as unknown as string)
+      for (const u of enemies.slice(1)) {
+        const score = u.hp.current * 100 + manhattan(myPos, u.position as unknown as string)
+        if (score < bestScore) { best = u; bestScore = score }
+      }
+      // Desired position: any tile orthogonally adjacent to the target
+      const targetPos = best.position as unknown as string
+      const [tx, ty] = tileXY(targetPos)
+      const neighbours = [
+        `${tx - 1},${ty}`,
+        `${tx + 1},${ty}`,
+        `${tx},${ty - 1}`,
+        `${tx},${ty + 1}`,
+      ].filter((t) => inBounds(state, t) && (!tileOccupied(state, t) || t === myPos))
+      // Prefer the one closest to current position
+      neighbours.sort((a, b) => manhattan(myPos, a) - manhattan(myPos, b))
+      return { primary: best, desiredPosition: neighbours[0] ?? null }
+    }
+    case 'archer': {
+      const enemies = partyAlive(state)
+      if (enemies.length === 0) return { primary: null, desiredPosition: null }
+      let best = enemies[0]!
+      let bestDist = manhattan(myPos, best.position as unknown as string)
+      for (const u of enemies.slice(1)) {
+        const d = manhattan(myPos, u.position as unknown as string)
+        if (d < bestDist) { best = u; bestDist = d }
+      }
+      // Desired position: at preferredRange from target
+      const targetPos = best.position as unknown as string
+      const [tx, ty] = tileXY(targetPos)
+      const pref = ai.preferredRange ?? { min: 2, max: 3 }
+      // Search nearby tiles for one whose distance to target is in pref range,
+      // and that's reachable in fewer steps than other candidates.
+      const candidates: { tile: string; cost: number }[] = []
+      for (let dx = -ai.movement; dx <= ai.movement; dx++) {
+        for (let dy = -ai.movement; dy <= ai.movement; dy++) {
+          const cand = `${tx + dx},${ty + dy}`
+          const dToTarget = Math.abs(dx) + Math.abs(dy)
+          if (dToTarget < pref.min || dToTarget > pref.max) continue
+          if (!inBounds(state, cand)) continue
+          if (tileOccupied(state, cand) && cand !== myPos) continue
+          const moveCost = manhattan(myPos, cand)
+          candidates.push({ tile: cand, cost: moveCost })
+        }
+      }
+      candidates.sort((a, b) => a.cost - b.cost)
+      return {
+        primary: best,
+        desiredPosition: candidates[0]?.tile ?? null,
+      }
+    }
+    case 'healer': {
+      // Heal lowest-HP wounded ally (other enemy unit) within preferredRange.
+      const allies = enemiesAlive(state, self.id).filter((u) => u.hp.current < u.hp.max)
+      const woundedAlly = allies.length > 0
+        ? allies.reduce((best, u) => (u.hp.current / u.hp.max < best.hp.current / best.hp.max ? u : best), allies[0]!)
+        : null
+      if (woundedAlly) {
+        const targetPos = woundedAlly.position as unknown as string
+        const pref = ai.preferredRange ?? { min: 1, max: 2 }
+        const [tx, ty] = tileXY(targetPos)
+        const candidates: { tile: string; cost: number }[] = []
+        for (let dx = -ai.movement; dx <= ai.movement; dx++) {
+          for (let dy = -ai.movement; dy <= ai.movement; dy++) {
+            const cand = `${tx + dx},${ty + dy}`
+            const dToAlly = Math.abs(dx) + Math.abs(dy)
+            if (dToAlly < pref.min || dToAlly > pref.max) continue
+            if (!inBounds(state, cand)) continue
+            if (tileOccupied(state, cand) && cand !== myPos) continue
+            candidates.push({ tile: cand, cost: manhattan(myPos, cand) })
+          }
+        }
+        candidates.sort((a, b) => a.cost - b.cost)
+        return { primary: woundedAlly, desiredPosition: candidates[0]?.tile ?? null }
+      }
+      // No wounded ally — keep distance from party and curse them
+      const party = partyAlive(state)
+      if (party.length === 0) return { primary: null, desiredPosition: null }
+      let furthest = party[0]!
+      let furthestDist = manhattan(myPos, furthest.position as unknown as string)
+      for (const u of party.slice(1)) {
+        const d = manhattan(myPos, u.position as unknown as string)
+        if (d > furthestDist) { furthest = u; furthestDist = d }
+      }
+      return { primary: furthest, desiredPosition: null }   // curse from current position
+    }
+  }
+}
+
 /**
- * Plans an enemy unit's full turn worth of events.
- *
- * Strategy:
- *   1. Find closest alive party unit (manhattan distance; ties broken by lowest HP).
- *   2. If adjacent: attack with `bandit_swing` (1 AP, 4 base damage).
- *   3. Otherwise: move one step toward the target.
- *   4. End turn.
- *
- * Real AI (line-of-sight, multi-step move, card selection, etc.) lands in later milestones.
+ * Step `self.position` one tile toward `dest` (Manhattan, prefers x then y).
+ * Returns the candidate tile, or `null` if the move is blocked.
  */
-export function planTurn(state: CombatState, _rng: RNG, enemyId: UnitId): CombatEvent[] {
+function stepToward(state: CombatState, fromTile: string, dest: string): string | null {
+  const [fx, fy] = tileXY(fromTile)
+  const [dx, dy] = tileXY(dest)
+  const candidates: string[] = []
+  if (dx < fx) candidates.push(`${fx - 1},${fy}`)
+  if (dx > fx) candidates.push(`${fx + 1},${fy}`)
+  if (dy < fy) candidates.push(`${fx},${fy - 1}`)
+  if (dy > fy) candidates.push(`${fx},${fy + 1}`)
+  for (const c of candidates) {
+    if (inBounds(state, c) && !tileOccupied(state, c)) return c
+  }
+  return null
+}
+
+interface ActionContext {
+  self: Unit
+  primary: Unit | null
+  selfPosAfterMove: string
+}
+
+function isSituationMatch(action: EnemyAction, ctx: ActionContext): boolean {
+  if (!action.situation || action.situation === 'always') return true
+  if (action.situation === 'self_low_hp') {
+    return ctx.self.hp.current / ctx.self.hp.max < 0.4
+  }
+  if (action.situation === 'target_low_hp' && ctx.primary) {
+    return ctx.primary.hp.current / ctx.primary.hp.max < 0.4
+  }
+  if (action.situation === 'ally_wounded' && ctx.primary) {
+    return ctx.primary.hp.current < ctx.primary.hp.max
+  }
+  return false
+}
+
+function pickAction(actions: EnemyAction[], ctx: ActionContext, distToTarget: number, rng: RNG): EnemyAction | null {
+  const eligible = actions.filter(
+    (a) =>
+      isSituationMatch(a, ctx)
+      && distToTarget >= a.range.min
+      && distToTarget <= a.range.max,
+  )
+  if (eligible.length === 0) return null
+  const total = eligible.reduce((s, a) => s + a.weight, 0)
+  if (total <= 0) return eligible[0] ?? null
+  let roll = rng.nextInt(0, total - 1)
+  for (const a of eligible) {
+    if (roll < a.weight) return a
+    roll -= a.weight
+  }
+  return eligible[0] ?? null
+}
+
+/**
+ * Plans an enemy unit's full turn worth of CombatEvents.
+ *
+ * Strategy is role-driven:
+ *   - rusher / tank: rush nearest party unit, attack adjacent
+ *   - archer: stay at preferredRange, kite if pressed
+ *   - healer: heal lowest-HP ally; otherwise curse from distance
+ *
+ * Movement is multi-step (up to ai.movement tiles per turn). After moving,
+ * the planner picks an action whose range matches current distance to
+ * target; weight is filtered by `situation` (self_low_hp, target_low_hp,
+ * ally_wounded). Falls back to endTurn if no eligible action.
+ */
+export function planTurn(state: CombatState, rng: RNG, enemyId: UnitId): CombatEvent[] {
   const events: CombatEvent[] = []
   const enemyKey = enemyId as unknown as string
-  const enemy = state.units[enemyKey]
-  if (!enemy || !enemy.position || enemy.hp.current <= 0) {
+  const self = state.units[enemyKey]
+  if (!self || !self.position || self.hp.current <= 0) {
     return [{ type: 'endTurn' as const }]
   }
 
-  const enemyPos = enemy.position as unknown as string
+  const ai = AI_BY_CLASS[self.classId as unknown as string] ?? AI_BY_CLASS['bandit']!
+  const targets = pickRoleTargets(state, ai, self)
+  if (!targets.primary) return [{ type: 'endTurn' as const }]
 
-  // Find party units (non-enemies, alive, with positions)
-  const partyAlive = Object.values(state.units).filter((u) => {
-    if (u.hp.current <= 0 || !u.position) return false
-    return !(u.classId as unknown as string).includes('bandit')
-  })
-
-  if (partyAlive.length === 0) return [{ type: 'endTurn' as const }]
-
-  // Pick closest, tie-break on lowest HP
-  let target = partyAlive[0]!
-  let bestDist = manhattan(enemyPos, target.position as unknown as string)
-  for (const u of partyAlive.slice(1)) {
-    const d = manhattan(enemyPos, u.position as unknown as string)
-    if (d < bestDist || (d === bestDist && u.hp.current < target.hp.current)) {
-      target = u
-      bestDist = d
-    }
+  // Multi-step move toward desiredPosition (or toward primary if no desired).
+  let pos = self.position as unknown as string
+  const dest = targets.desiredPosition ?? (targets.primary.position as unknown as string)
+  for (let step = 0; step < ai.movement; step++) {
+    if (pos === dest) break
+    const next = stepToward(state, pos, dest)
+    if (!next) break
+    events.push({
+      type: 'moveUnit',
+      payload: { unitId: enemyId, tileId: asTileId(next) },
+    })
+    pos = next
   }
-  const targetPos = target.position as unknown as string
 
-  if (bestDist <= 1) {
-    // In melee range — attack
+  // Pick action. Distance is to PRIMARY target (the unit we want to affect).
+  const targetPos = targets.primary.position as unknown as string
+  const distToTarget = manhattan(pos, targetPos)
+  const ctx: ActionContext = { self, primary: targets.primary, selfPosAfterMove: pos }
+  const action = pickAction(ai.actions, ctx, distToTarget, rng)
+
+  if (action) {
+    const cardId = asCardId(`${ai.classId}_${action.id}` as unknown as string)
+    const damageStatField = action.damageStat ? { damageStat: action.damageStat } : {}
+    const effectKind = action.kind === 'heal' ? 'Heal' : 'Damage'
+    const effectParams = action.kind === 'heal'
+      ? { amount: action.amount }
+      : { base: action.amount }
     events.push({
       type: 'playCard',
       payload: {
-        cardId: asCardId('bandit_swing'),
+        cardId,
         srcId: enemyId,
-        targets: [target.position!],
+        targets: [asTileId(targetPos)],
         card: {
           apCost: 1,
-          damageStat: 'str',
-          effects: [{ kind: 'Damage', params: { base: 4 } }],
+          ...damageStatField,
+          effects: [{ kind: effectKind, params: effectParams }],
         },
       },
     })
-  } else {
-    // Move one step toward target
-    const [ex, ey] = tileXY(enemyPos)
-    const [tx, ty] = tileXY(targetPos)
-    let nx = ex
-    let ny = ey
-    if (tx < ex) nx--
-    else if (tx > ex) nx++
-    else if (ty < ey) ny--
-    else if (ty > ey) ny++
-
-    // Don't step onto an occupied tile
-    const candidate = `${nx},${ny}`
-    const occupied = Object.values(state.units).some(
-      (u) => u.hp.current > 0 && u.position && (u.position as unknown as string) === candidate,
-    )
-    if (!occupied) {
-      events.push({
-        type: 'moveUnit',
-        payload: { unitId: enemyId, tileId: asTileId(candidate) },
-      })
-    }
   }
 
   events.push({ type: 'endTurn' as const })

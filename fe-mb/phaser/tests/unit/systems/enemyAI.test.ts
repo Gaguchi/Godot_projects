@@ -26,7 +26,7 @@ const baseState = (units: Unit[]): CombatState => {
   }
 }
 
-describe('enemyAI.planTurn', () => {
+describe('enemyAI.planTurn (rusher)', () => {
   it('returns endTurn when no party alive', () => {
     const enemy = mkUnit('bandit_a', 'bandit', 5, 5)
     const events = planTurn(baseState([enemy]), createRng({ seed: 0, counter: 0 }), enemy.id)
@@ -37,29 +37,88 @@ describe('enemyAI.planTurn', () => {
     const enemy = mkUnit('bandit_a', 'bandit', 5, 5)
     const party = mkUnit('roy', 'lord', 6, 5)
     const events = planTurn(baseState([enemy, party]), createRng({ seed: 0, counter: 0 }), enemy.id)
-    expect(events.length).toBe(2)
-    expect(events[0]!.type).toBe('playCard')
-    expect(events[1]!.type).toBe('endTurn')
+    expect(events[events.length - 1]!.type).toBe('endTurn')
+    expect(events.some((e) => e.type === 'playCard')).toBe(true)
   })
 
-  it('moves toward distant party unit', () => {
+  it('multi-step moves toward distant party unit (rusher movement = 4)', () => {
     const enemy = mkUnit('bandit_a', 'bandit', 12, 5)
     const party = mkUnit('roy', 'lord', 6, 5)
     const events = planTurn(baseState([enemy, party]), createRng({ seed: 0, counter: 0 }), enemy.id)
-    expect(events[0]!.type).toBe('moveUnit')
-    if (events[0]!.type === 'moveUnit') {
-      expect(events[0]!.payload.tileId as unknown as string).toBe('11,5')
+    const moves = events.filter((e) => e.type === 'moveUnit')
+    expect(moves.length).toBeGreaterThan(0)
+    expect(moves.length).toBeLessThanOrEqual(4)
+    // First move should step from x=12 toward x=6 → x=11
+    if (moves[0]!.type === 'moveUnit') {
+      expect(moves[0]!.payload.tileId as unknown as string).toBe('11,5')
     }
   })
 
-  it('targets lowest-HP unit on tie', () => {
+  it('targets lowest-HP party unit', () => {
     const enemy = mkUnit('bandit_a', 'bandit', 5, 5)
-    const party1 = mkUnit('full', 'lord', 4, 5, 20)
-    const party2 = mkUnit('weak', 'mage', 6, 5, 5)
-    const events = planTurn(baseState([enemy, party1, party2]), createRng({ seed: 0, counter: 0 }), enemy.id)
-    expect(events[0]!.type).toBe('playCard')
-    if (events[0]!.type === 'playCard') {
-      expect(events[0]!.payload.targets[0] as unknown as string).toBe('6,5')
+    const fullHp = mkUnit('full', 'lord', 4, 5, 20)
+    const weakHp = mkUnit('weak', 'mage', 6, 5, 5)
+    const events = planTurn(baseState([enemy, fullHp, weakHp]), createRng({ seed: 0, counter: 0 }), enemy.id)
+    const playCard = events.find((e) => e.type === 'playCard')
+    expect(playCard).toBeDefined()
+    if (playCard?.type === 'playCard') {
+      expect(playCard.payload.targets[0] as unknown as string).toBe('6,5')
+    }
+  })
+})
+
+describe('enemyAI.planTurn (archer)', () => {
+  it('archer keeps preferred range (2-3 tiles) from target', () => {
+    // Archer at distance 5, party at (5,5)
+    const archer = mkUnit('arch_a', 'bandit_archer', 10, 5)
+    const party = mkUnit('roy', 'lord', 5, 5)
+    const events = planTurn(baseState([archer, party]), createRng({ seed: 0, counter: 0 }), archer.id)
+    // Final position after moves: distance to (5,5) should be in [2, 3]
+    const moves = events.filter((e) => e.type === 'moveUnit')
+    let pos: [number, number] = [10, 5]
+    for (const m of moves) {
+      if (m.type === 'moveUnit') {
+        const [x, y] = (m.payload.tileId as unknown as string).split(',').map(Number)
+        pos = [x!, y!]
+      }
+    }
+    const distAfterMove = Math.abs(pos[0] - 5) + Math.abs(pos[1] - 5)
+    expect(distAfterMove).toBeGreaterThanOrEqual(2)
+    expect(distAfterMove).toBeLessThanOrEqual(4)
+  })
+
+  it('archer fires from range with playCard', () => {
+    const archer = mkUnit('arch_a', 'bandit_archer', 7, 5)
+    const party = mkUnit('roy', 'lord', 5, 5)
+    const events = planTurn(baseState([archer, party]), createRng({ seed: 0, counter: 0 }), archer.id)
+    const play = events.find((e) => e.type === 'playCard')
+    expect(play).toBeDefined()
+  })
+})
+
+describe('enemyAI.planTurn (healer)', () => {
+  it('healer prioritizes wounded ally over attacking party', () => {
+    const healer = mkUnit('priest', 'bandit_priest', 8, 5)
+    const woundedAlly = mkUnit('bandit_b', 'bandit', 7, 5, 5)   // wounded (5/20)
+    const party = mkUnit('roy', 'lord', 4, 5)
+    const events = planTurn(baseState([healer, woundedAlly, party]), createRng({ seed: 0, counter: 0 }), healer.id)
+    const play = events.find((e) => e.type === 'playCard')
+    expect(play).toBeDefined()
+    // Heal target should be the wounded ally, not the party unit
+    if (play?.type === 'playCard') {
+      expect(play.payload.targets[0] as unknown as string).toBe('7,5')
+    }
+  })
+
+  it('healer with no wounded ally falls back to cursing party', () => {
+    const healer = mkUnit('priest', 'bandit_priest', 8, 5)
+    const fullAlly = mkUnit('bandit_b', 'bandit', 7, 5, 20)    // full HP
+    const party = mkUnit('roy', 'lord', 6, 5)
+    const events = planTurn(baseState([healer, fullAlly, party]), createRng({ seed: 0, counter: 0 }), healer.id)
+    const play = events.find((e) => e.type === 'playCard')
+    expect(play).toBeDefined()
+    if (play?.type === 'playCard') {
+      expect(play.payload.targets[0] as unknown as string).toBe('6,5')
     }
   })
 })

@@ -1,0 +1,35 @@
+{
+  "classId": "bandit_archer",
+  "role": "archer",
+  "movement": 4,
+  "preferredRange": { "min": 2, "max": 3 },
+  "actions": [
+    {
+      "id": "shoot",
+      "kind": "attack",
+      "range": { "min": 2, "max": 3 },
+      "amount": 5,
+      "damageStat": "skl",
+      "weight": 70,
+      "situation": "always"
+    },
+    {
+      "id": "snipe",
+      "kind": "attack",
+      "range": { "min": 2, "max": 3 },
+      "amount": 8,
+      "damageStat": "skl",
+      "weight": 30,
+      "situation": "target_low_hp"
+    },
+    {
+      "id": "panic_shot",
+      "kind": "attack",
+      "range": { "min": 1, "max": 1 },
+      "amount": 2,
+      "damageStat": "skl",
+      "weight": 100,
+      "situation": "self_low_hp"
+    }
+  ]
+}

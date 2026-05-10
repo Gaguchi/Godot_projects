@@ -1,0 +1,26 @@
+{
+  "classId": "bandit_priest",
+  "role": "healer",
+  "movement": 3,
+  "preferredRange": { "min": 1, "max": 2 },
+  "actions": [
+    {
+      "id": "heal_ally",
+      "kind": "heal",
+      "range": { "min": 1, "max": 2 },
+      "amount": 8,
+      "damageStat": null,
+      "weight": 100,
+      "situation": "ally_wounded"
+    },
+    {
+      "id": "curse",
+      "kind": "attack",
+      "range": { "min": 1, "max": 2 },
+      "amount": 4,
+      "damageStat": "mag",
+      "weight": 50,
+      "situation": "always"
+    }
+  ]
+}
