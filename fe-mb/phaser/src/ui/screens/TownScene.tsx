@@ -4,10 +4,28 @@ import { evaluatePredicate } from '../../systems/predicates'
 import { predicateStateFromRun } from '../../state/runStore'
 import itemsJson from '../../data/content/items.json'
 import pineCrossingTown from '../../data/content/towns/pine_crossing.json'
+import riversideMarketTown from '../../data/content/towns/riverside_market.json'
+import southJunctionTown from '../../data/content/towns/south_junction.json'
+import borderkeepCastleTown from '../../data/content/towns/borderkeep_castle.json'
+import northernBridgeTown from '../../data/content/towns/northern_bridge.json'
 import { asItemId, asDialogueId } from '../../domain/ids'
 import type { Unit } from '../../domain/unit'
 import type { TownDef } from '../../domain/town'
 import { Button, Heading } from '../components'
+
+const TOWN_REGISTRY: Record<string, TownDef> = {
+  pine_crossing: pineCrossingTown as TownDef,
+  riverside_market: riversideMarketTown as TownDef,
+  south_junction: southJunctionTown as TownDef,
+  borderkeep_castle: borderkeepCastleTown as TownDef,
+  northern_bridge: northernBridgeTown as TownDef,
+}
+
+const REGION_DISPLAY: Record<string, string> = {
+  borderlands: 'BORDERLANDS',
+  thornwood: 'THORNWOOD',
+  ashfall: 'ASHFALL REACH',
+}
 
 type Panel = 'inn' | 'shop' | 'tavern'
 
@@ -31,6 +49,10 @@ export function TownScene({ onLeave }: TownSceneProps): React.JSX.Element {
   const partyUnits = useRunStore((s) => s.party.units)
   const inventoryItems = useRunStore((s) => s.inventory.items)
   const questStates = useRunStore((s) => s.questStates)
+  const worldPosition = useRunStore((s) => s.worldPosition)
+  const townId = worldPosition.nodeId as unknown as string
+  const town = TOWN_REGISTRY[townId] ?? (pineCrossingTown as TownDef)
+  const regionLabel = REGION_DISPLAY[town.regionId as unknown as string] ?? (town.regionId as unknown as string).toUpperCase()
 
   const partyArr = Object.values(partyUnits)
   const wounded = partyArr.filter((u) => u.hp.current < u.hp.max)
@@ -47,7 +69,7 @@ export function TownScene({ onLeave }: TownSceneProps): React.JSX.Element {
   }
 
   const shopStock = itemsJson.filter((i) =>
-    (i.region === 'borderlands' || i.region === 'none') && (i.rarity === 'common' || i.rarity === 'uncommon'),
+    town.shopStockIds.includes(i.id) || (i.region === town.regionId && (i.rarity === 'common' || i.rarity === 'uncommon')),
   )
 
   const onBuy = (itemId: string, price: number): void => {
@@ -85,8 +107,8 @@ export function TownScene({ onLeave }: TownSceneProps): React.JSX.Element {
       </div>
 
       <aside className="w-60 border-r border-stone-800 p-6 flex flex-col gap-2">
-        <Heading level={2} className="text-lg tracking-widest mb-2">Pine Crossing</Heading>
-        <div className="text-xs text-stone-500 mb-2 tracking-widest">BORDERLANDS</div>
+        <Heading level={2} className="text-lg tracking-widest mb-2">{town.name}</Heading>
+        <div className="text-xs text-stone-500 mb-2 tracking-widest">{regionLabel}</div>
         {(['inn', 'shop', 'tavern'] as Panel[]).map((p) => (
           <Button
             key={p}
@@ -201,14 +223,13 @@ export function TownScene({ onLeave }: TownSceneProps): React.JSX.Element {
 
             <h3 className="mt-6 text-sm tracking-widest text-amber-200">RUMORS</h3>
             <ul className="text-stone-500 leading-relaxed list-disc pl-5">
-              {(pineCrossingTown as TownDef).rumors.map((r, i) => (
+              {town.rumors.map((r, i) => (
                 <li key={i}>"{r}"</li>
               ))}
             </ul>
 
             <h3 className="mt-6 text-sm tracking-widest text-amber-200">QUEST BOARD</h3>
             {(() => {
-              const town = pineCrossingTown as TownDef
               const predicateState = predicateStateFromRun(useRunStore.getState())
               const visibleQuests = town.tavernQuests.filter((q) =>
                 !q.visibleIf || evaluatePredicate(q.visibleIf, predicateState),
