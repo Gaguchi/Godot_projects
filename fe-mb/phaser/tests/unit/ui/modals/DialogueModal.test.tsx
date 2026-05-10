@@ -25,7 +25,7 @@ describe('<DialogueModal>', () => {
     expect(screen.getByText(/Dialogue Not Found/)).toBeInTheDocument()
   })
 
-  it('renders speaker + text + choices when tree is registered', () => {
+  it('renders speaker name plate + text + choice buttons when branching (>1 choice)', () => {
     registerDialogue({
       id: asDialogueId('greeter'),
       startNodeId: asDialogueNodeId('start'),
@@ -51,13 +51,15 @@ describe('<DialogueModal>', () => {
       payload: { dialogueId: asDialogueId('greeter'), nodeId: 'start' },
     })
     render(<DialogueModal />)
-    expect(screen.getByText('Old Man')).toBeInTheDocument()
+    // Speaker name plate is uppercased
+    expect(screen.getByText('OLD MAN')).toBeInTheDocument()
     expect(screen.getByText('Halt, traveler.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Greetings.' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Goodbye.' })).toBeInTheDocument()
+    // With >1 choice, buttons render after typewriter completes (reduced-motion = instant)
+    expect(screen.getByRole('button', { name: /Greetings/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Goodbye/ })).toBeInTheDocument()
   })
 
-  it('clicking a choice with next=end calls endDialogue', () => {
+  it('clicking the body text with a single Continue choice calls endDialogue', () => {
     registerDialogue({
       id: asDialogueId('greeter'),
       startNodeId: asDialogueNodeId('start'),
@@ -74,11 +76,13 @@ describe('<DialogueModal>', () => {
       payload: { dialogueId: asDialogueId('greeter'), nodeId: 'start' },
     })
     render(<DialogueModal />)
-    fireEvent.click(screen.getByRole('button', { name: 'Bye' }))
+    // Single-choice path: click the body text area to advance.
+    const textArea = screen.getByLabelText('Dialogue text. Click to skip reveal.')
+    fireEvent.click(textArea)
     expect(useRunStore.getState().pendingDialogue).toBeNull()
   })
 
-  it('clicking a choice with effects fires them via applyQuestEffects', () => {
+  it('clicking a single-choice node fires the choice effects', () => {
     registerDialogue({
       id: asDialogueId('greeter'),
       startNodeId: asDialogueNodeId('start'),
@@ -95,7 +99,29 @@ describe('<DialogueModal>', () => {
       payload: { dialogueId: asDialogueId('greeter'), nodeId: 'start' },
     })
     render(<DialogueModal />)
-    fireEvent.click(screen.getByRole('button', { name: 'Thanks' }))
+    const textArea = screen.getByLabelText('Dialogue text. Click to skip reveal.')
+    fireEvent.click(textArea)
     expect(useRunStore.getState().gold).toBe(50)
+  })
+
+  it('renders a Narrator banner instead of portrait when speaker is empty', () => {
+    registerDialogue({
+      id: asDialogueId('intro'),
+      startNodeId: asDialogueNodeId('s'),
+      nodes: {
+        s: {
+          id: asDialogueNodeId('s'),
+          speaker: '',
+          text: 'Once upon a time...',
+          choices: [{ id: 'c', text: 'Continue', effects: [], next: 'end' }],
+        },
+      },
+    })
+    useRunStore.getState().dispatch({
+      type: 'startDialogue',
+      payload: { dialogueId: asDialogueId('intro'), nodeId: 's' },
+    })
+    render(<DialogueModal />)
+    expect(screen.getByText(/NARRATOR/)).toBeInTheDocument()
   })
 })
