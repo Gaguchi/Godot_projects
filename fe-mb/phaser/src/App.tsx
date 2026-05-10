@@ -5,6 +5,7 @@ import { ViewContext, type View } from './ui/view'
 import { TitleScreen } from './ui/screens/TitleScreen'
 import { OverworldScene } from './ui/screens/OverworldScene'
 import { TownScene } from './ui/screens/TownScene'
+import { CampScene } from './ui/screens/CampScene'
 import { DungeonScene } from './ui/screens/DungeonScene'
 import { LoadGameModal, type SaveSlot } from './ui/modals/LoadGameModal'
 import { QuitModal } from './ui/modals/QuitModal'
@@ -51,7 +52,7 @@ export function App(): React.JSX.Element {
     if (!import.meta.env.DEV) return 'title'
     const params = new URLSearchParams(window.location.search)
     const v = params.get('view')
-    if (v === 'combat' || v === 'overworld' || v === 'town' || v === 'dungeon') return v
+    if (v === 'combat' || v === 'overworld' || v === 'town' || v === 'dungeon' || v === 'camp') return v
     return 'title'
   })()
   const [view, setView] = useState<View>(initialView)
@@ -63,7 +64,7 @@ export function App(): React.JSX.Element {
   // Q key opens quest log when in overworld/town/dungeon
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key.toLowerCase() === 'q' && (view === 'overworld' || view === 'town' || view === 'dungeon')) {
+      if (e.key.toLowerCase() === 'q' && (view === 'overworld' || view === 'town' || view === 'dungeon' || view === 'camp')) {
         setQuestLogOpen((prev) => !prev)
       }
     }
@@ -183,6 +184,7 @@ export function App(): React.JSX.Element {
             <OverworldScene
               onTravelToCombat={() => setView('combat')}
               onEnterTown={() => setView('town')}
+              onEnterCamp={() => setView('camp')}
               onEnterDungeon={() => setView('dungeon')}
               onWin={() => setView('title')}
             />
@@ -196,6 +198,9 @@ export function App(): React.JSX.Element {
           )}
           {view === 'town' && (
             <TownScene onLeave={() => setView('overworld')} />
+          )}
+          {view === 'camp' && (
+            <CampScene onLeave={() => setView('overworld')} />
           )}
           {view === 'dungeon' && (
             <DungeonScene
@@ -223,7 +228,7 @@ export function App(): React.JSX.Element {
           <QuestLog open={questLogOpen} onClose={() => setQuestLogOpen(false)} />
           <DialogueModal />
           {/* Quest log key hint */}
-          {(view === 'overworld' || view === 'town' || view === 'dungeon') && !questLogOpen && (
+          {(view === 'overworld' || view === 'town' || view === 'dungeon' || view === 'camp') && !questLogOpen && (
             <div style={{ position: 'fixed', bottom: 8, left: 8, fontSize: 10, color: '#5a4a30', fontFamily: 'monospace', zIndex: 100 }}>
               [Q] Quest Log
             </div>

@@ -68,6 +68,7 @@ const REGIONS = Object.fromEntries(
 export interface OverworldSceneProps {
   onTravelToCombat: (nodeId: NodeId) => void
   onEnterTown: (nodeId: NodeId) => void
+  onEnterCamp: (nodeId: NodeId) => void
   onEnterDungeon: (nodeId: NodeId) => void
   onWin: () => void
 }
@@ -77,6 +78,7 @@ const HOP_DELAY_MS = 350
 export function OverworldScene({
   onTravelToCombat: _onTravelToCombat,
   onEnterTown,
+  onEnterCamp,
   onEnterDungeon,
   onWin,
 }: OverworldSceneProps): React.JSX.Element {
@@ -269,6 +271,7 @@ export function OverworldScene({
 
     // Routing on arrival
     if (type === 'town') onEnterTown(asNodeId(nextNodeId))
+    else if (type === 'camp') onEnterCamp(asNodeId(nextNodeId))
     else if (type === 'dungeon') onEnterDungeon(asNodeId(nextNodeId))
     else if (type === 'exit') onWin()
   }

@@ -9,7 +9,7 @@ import { createContext, useContext } from 'react'
  * - `town` — town menu UI (React DOM, lands Phase 3)
  * - `dungeon` — Slay-the-Spire-style dungeon map (Phase 5)
  */
-export type View = 'title' | 'combat' | 'overworld' | 'town' | 'dungeon'
+export type View = 'title' | 'combat' | 'overworld' | 'town' | 'dungeon' | 'camp'
 
 export interface ViewContextValue {
   view: View
