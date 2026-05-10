@@ -21,3 +21,6 @@ export type { HeadingProps } from './Heading'
 
 export { Pressable } from './Pressable'
 export type { PressableProps } from './Pressable'
+
+export { CheckButton } from './CheckButton'
+export type { CheckButtonProps } from './CheckButton'
