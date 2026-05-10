@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PredicateSchema } from './predicate'
+import { CheckEventSchema } from './checkEvent'
 
 const CaptureTargetSchema = z.object({
   unitName: z.string(),
@@ -15,6 +16,10 @@ const EncounterOutcomeSchema = z.discriminatedUnion('kind', [
     kind: z.literal('battle'),
     enemyGroupId: z.string(),
     captureTargets: z.array(CaptureTargetSchema).optional(),
+  }),
+  z.object({
+    kind: z.literal('checkEvent'),
+    event: CheckEventSchema,
   }),
 ])
 

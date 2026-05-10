@@ -15,6 +15,8 @@ import { buildGraph, findPath } from '../../systems/overworldPath'
 import type { EncounterTable } from '../../domain/encounter'
 import { diag } from '../../state/diagLog'
 import { Pressable } from '../components'
+import { CheckEventModal, type CheckEvent } from '../modals/CheckEventModal'
+import type { QuestEffect } from '../../domain/quest'
 
 const NODE_TYPE_ICON: Record<string, string> = {
   town: '⌂',
@@ -88,6 +90,7 @@ export function OverworldScene({
   const questStates = useRunStore((s) => s.questStates)
   const pendingDialogue = useRunStore((s) => s.pendingDialogue)
   const inventoryItems = useRunStore((s) => s.inventory.items)
+  const [activeCheckEvent, setActiveCheckEvent] = useState<CheckEvent | null>(null)
 
   const mapId = (worldPosition.mapId as unknown as string) || 'borderlands'
   const map = MAPS[mapId] ?? MAPS['borderlands']!
@@ -260,6 +263,11 @@ export function OverworldScene({
         if (result.outcome.kind === 'battle') {
           // Combat suspends; player resumes from overworld after victory.
           _onTravelToCombat(asNodeId(nextNodeId))
+          return
+        }
+        if (result.outcome.kind === 'checkEvent') {
+          // Suspend travel via local modal — useEffect resumes after activeCheckEvent clears.
+          setActiveCheckEvent(result.outcome.event as CheckEvent)
           return
         }
       }
@@ -583,6 +591,29 @@ export function OverworldScene({
           50% { transform: scale(1.15); opacity: 0.85; }
         }
       `}</style>
+
+      {activeCheckEvent && (
+        <CheckEventModal
+          event={activeCheckEvent}
+          party={Object.values(useRunStore.getState().party.units)}
+          gold={useRunStore.getState().gold}
+          foodCount={
+            useRunStore
+              .getState()
+              .inventory.items.filter((i) => (i.itemId as unknown as string) === 'food_rations').length
+          }
+          onResolve={({ outcome }) => {
+            if (outcome.effects.length > 0) {
+              dispatchRun({
+                type: 'applyQuestEffects',
+                payload: { effects: outcome.effects as QuestEffect[] },
+              })
+            }
+            setActiveCheckEvent(null)
+          }}
+          onClose={() => setActiveCheckEvent(null)}
+        />
+      )}
     </div>
   )
 }

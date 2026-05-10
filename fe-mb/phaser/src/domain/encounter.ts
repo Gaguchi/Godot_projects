@@ -11,6 +11,28 @@ export const asEncounterId = (s: string): EncounterId => s as EncounterId
 export type EncounterOutcome =
   | { kind: 'dialogue'; dialogueId: string }
   | { kind: 'battle'; enemyGroupId: string; captureTargets?: CaptureTarget[] }
+  | { kind: 'checkEvent'; event: CheckEventDef }
+
+/**
+ * Static event-card data: title + description + choices, each with optional
+ * stat/class/gold/food check and pass/fail outcomes. Mirrors the runtime
+ * shape consumed by `<CheckEventModal>` (deliberately structural — no domain
+ * branding so JSON parses straight into the runtime).
+ */
+export interface CheckEventDef {
+  id: string
+  title: string
+  description: string
+  choices: CheckEventChoiceDef[]
+}
+
+export interface CheckEventChoiceDef {
+  id: string
+  text: string
+  check?: import('./check').CheckRequirement
+  onPass: { narration: string; effects: import('./quest').QuestEffect[] }
+  onFail?: { narration: string; effects: import('./quest').QuestEffect[] }
+}
 
 export interface CaptureTarget {
   unitName: string

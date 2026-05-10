@@ -168,7 +168,8 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/quest.ts` ↔ `QuestDef` (`QuestSchema`, `QuestStageSchema`, `QuestEffectSchema`; `StatKind` for statCheck). **Active.**
 - `data/schemas/dialogue.ts` ↔ `DialogueTree` (DialogueChoice has `next` for unconditional advances OR `check`+`onPass`+`onFail` for stat/class/gold/food gates; mutual exclusion enforced via Zod refine). **Active.**
 - `data/schemas/region.ts` ↔ `Region` (`asRegionId`, tier 1-3 modulates encounter difficulty). **Active.**
-- `data/schemas/encounter.ts` ↔ `EncounterEntry` / `EncounterTable` / `EnemyGroup` / `EnemyGroupMember` / `EncounterOutcome` / `CaptureTarget` (`EncounterId` brand, `asEncounterId`). Driven by `systems/encounterRoller.ts`. **Active.**
+- `data/schemas/encounter.ts` ↔ `EncounterEntry` / `EncounterTable` / `EnemyGroup` / `EnemyGroupMember` / `EncounterOutcome` / `CaptureTarget` (`EncounterId` brand, `asEncounterId`). Outcome union: `dialogue | battle | checkEvent` (the last two require `enemyGroupId` / `event` payload respectively). Driven by `systems/encounterRoller.ts`. **Active.**
+- `data/schemas/checkEvent.ts` ↔ `CheckEventDef` / `CheckEventChoiceDef` (title, description, choices each with optional CheckRequirement + onPass/onFail outcome). Consumed by `<CheckEventModal>` and the encounter outcome union. **Active.**
 - `data/schemas/town.ts` ↔ `TownDef` / `TavernQuestEntry` (5 town JSONs in `data/content/towns/`; powers TownScene panels). **Active.**
 - `data/schemas/dungeonDef.ts` ↔ `DungeonDef` (5 dungeon JSONs; consumed by `game/scenes/seedDungeonBattle.ts`). **Active.**
 - `data/schemas/predicate.ts` ↔ `Predicate` (recursive via `z.lazy`). **Active.**

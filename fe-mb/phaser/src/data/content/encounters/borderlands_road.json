@@ -45,6 +45,106 @@
       "outcome": { "kind": "battle", "enemyGroupId": "brigands" }
     },
     {
+      "id": "stuck_caravan",
+      "weight": 8,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "event": {
+          "id": "stuck_caravan",
+          "title": "A caravan blocks the road.",
+          "description": "The driver shouts at his oxen. The road is narrow, and you'd have to push or talk your way past.",
+          "choices": [
+            {
+              "id": "help_push",
+              "text": "Help push the wagon free.",
+              "check": { "kind": "stat", "stat": "str", "threshold": 6 },
+              "onPass": {
+                "narration": "You shoulder the wheel free; the merchant tips you in gratitude.",
+                "effects": [{ "kind": "addGold", "amount": 25 }]
+              },
+              "onFail": {
+                "narration": "You strain but the wheel won't move. The merchant shrugs.",
+                "effects": []
+              }
+            },
+            {
+              "id": "negotiate",
+              "text": "Talk him into letting you detour.",
+              "check": { "kind": "stat", "stat": "skl", "threshold": 7 },
+              "onPass": {
+                "narration": "He laughs and waves you onto a hidden path. He even tosses a small purse.",
+                "effects": [{ "kind": "addGold", "amount": 15 }]
+              },
+              "onFail": {
+                "narration": "He waves you off, returning to his oxen.",
+                "effects": []
+              }
+            },
+            {
+              "id": "wait",
+              "text": "Wait it out.",
+              "onPass": {
+                "narration": "Two hours later, the road clears. You've used some of your supplies.",
+                "effects": [{ "kind": "addFood", "amount": -1 }]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "scout_ahead",
+      "weight": 6,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "event": {
+          "id": "scout_ahead",
+          "title": "A faint trail of smoke rises ahead.",
+          "description": "Could be travelers. Could be trouble. The road forks here.",
+          "choices": [
+            {
+              "id": "investigate",
+              "text": "Investigate the smoke.",
+              "check": { "kind": "stat", "stat": "spd", "threshold": 7 },
+              "onPass": {
+                "narration": "You scout ahead silently. A small abandoned camp; you scavenge useful supplies.",
+                "effects": [{ "kind": "addFood", "amount": 2 }]
+              },
+              "onFail": {
+                "narration": "You stumble in the brush; whoever was there packed up before you arrived.",
+                "effects": []
+              }
+            },
+            {
+              "id": "magic_sight",
+              "text": "Scry the camp from a distance.",
+              "check": { "kind": "stat", "stat": "mag", "threshold": 7 },
+              "onPass": {
+                "narration": "Your sight pierces the smoke — a hidden cache of gold lies abandoned.",
+                "effects": [{ "kind": "addGold", "amount": 30 }]
+              },
+              "onFail": {
+                "narration": "The vision flickers and fades. Nothing useful gleaned.",
+                "effects": []
+              }
+            },
+            {
+              "id": "skip",
+              "text": "Steer clear of it.",
+              "onPass": {
+                "narration": "You continue along the safer path.",
+                "effects": []
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "id": "sq_blood_ties_encounter",
       "weight": 100,
       "oneShot": true,
