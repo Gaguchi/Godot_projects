@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import type { ForecastResult } from '../../../systems/damage'
+import { Icon } from '../../components/Icon'
 
 export interface ForecastMathRowProps {
   forecast: ForecastResult
@@ -22,7 +23,7 @@ export function ForecastMathRow({ forecast }: ForecastMathRowProps): React.JSX.E
         className="flex items-center gap-2 text-left w-full text-stone-300 hover:text-amber-200"
         data-testid="forecast-math-toggle"
       >
-        <span className="text-stone-500">{expanded ? '▾' : '▸'}</span>
+        <span className="text-stone-500 flex items-center"><Icon name={expanded ? 'chevron-down' : 'chevron-right'} size={12} /></span>
         <span className="text-amber-300">{total} damage</span>
         {forecast.armorLost > 0 && (
           <span className="text-stone-500">

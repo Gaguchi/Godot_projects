@@ -14,15 +14,15 @@ import { rollEncounter } from '../../systems/encounterRoller'
 import { buildGraph, findPath } from '../../systems/overworldPath'
 import type { EncounterTable } from '../../domain/encounter'
 import { diag } from '../../state/diagLog'
-import { PartyChip, Pressable } from '../components'
+import { Icon, type IconName, PartyChip, Pressable } from '../components'
 import { CheckEventModal, type CheckEvent } from '../modals/CheckEventModal'
 import type { QuestEffect } from '../../domain/quest'
 
-const NODE_TYPE_ICON: Record<string, string> = {
-  town: '⌂',
-  camp: '⛺',
-  dungeon: '⚔',
-  exit: '▶',
+const NODE_TYPE_ICON: Record<string, IconName> = {
+  town: 'town',
+  camp: 'camp',
+  dungeon: 'dungeon',
+  exit: 'exit',
 }
 
 const NODE_TYPE_COLOR_CLASS: Record<string, string> = {
@@ -544,14 +544,19 @@ export function OverworldScene({
                 <div
                   onMouseEnter={() => setHoverNodeId(node.id)}
                   onMouseLeave={() => setHoverNodeId((id) => (id === node.id ? null : id))}
+                  className="flex items-center justify-center w-full h-full"
                 >
-                  {NODE_TYPE_ICON[node.type] ?? '?'}
+                  <Icon
+                    name={NODE_TYPE_ICON[node.type] ?? 'event'}
+                    size={28}
+                    aria-label={node.type}
+                  />
                 </div>
               </Pressable>
               {hasQuest && (
                 <div
                   id={`node-${node.id}-quest`}
-                  className="absolute rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-xs font-bold border border-amber-700 pointer-events-none"
+                  className="absolute rounded-full bg-amber-400 text-stone-950 flex items-center justify-center border border-amber-700 pointer-events-none"
                   style={{
                     left: node.position.x + 14,
                     top: node.position.y - 30,
@@ -559,19 +564,27 @@ export function OverworldScene({
                     height: 18,
                     animation: 'overworldPulse 1.5s ease-in-out infinite',
                   }}
-                >!</div>
+                  aria-label="quest available"
+                >
+                  <Icon name="quest" size={14} />
+                </div>
               )}
               {isVisited && !isCurrent && (
                 <div
-                  className="absolute rounded-full bg-emerald-500 text-stone-950 flex items-center justify-center text-[10px] font-bold pointer-events-none"
+                  className="absolute rounded-full bg-emerald-500 text-stone-950 flex items-center justify-center pointer-events-none"
                   style={{ left: node.position.x + 14, top: node.position.y + 12, width: 14, height: 14 }}
-                >✓</div>
+                  aria-label="visited"
+                >
+                  <Icon name="check" size={10} />
+                </div>
               )}
               {crossRegionTargets.has(node.id) && (
                 <div
-                  className="absolute text-[10px] text-amber-300 italic pointer-events-none"
-                  style={{ left: node.position.x - 30, top: node.position.y + 30, width: 100, textAlign: 'center' }}
-                >→ region edge</div>
+                  className="absolute text-[10px] text-amber-300 italic pointer-events-none flex items-center gap-1"
+                  style={{ left: node.position.x - 30, top: node.position.y + 30, width: 100, justifyContent: 'center' }}
+                >
+                  <Icon name="arrow-right" size={10} /> region edge
+                </div>
               )}
               {/* Node label */}
               <div

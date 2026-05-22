@@ -6,7 +6,7 @@ import { asDungeonId, asNodeId } from '../../domain/ids'
 import type { DungeonGraph, DungeonRoom } from '../../domain/map'
 import type { CheckEventDef } from '../../domain/encounter'
 import type { QuestEffect } from '../../domain/quest'
-import { Button, Heading, Pressable } from '../components'
+import { Button, Heading, Icon, type IconName, Pressable } from '../components'
 import { CheckEventModal, type CheckEvent } from '../modals/CheckEventModal'
 import smugglersCave from '../../data/content/dungeons/smugglers_cave.json'
 import itemsJson from '../../data/content/items.json'
@@ -23,14 +23,14 @@ const DUNGEON_DEFS: Record<string, { roomEvents?: CheckEventDef[] }> = {
   smugglers_cave: smugglersCave as { roomEvents?: CheckEventDef[] },
 }
 
-const ROOM_TYPE_ICON: Record<DungeonRoom['type'], string> = {
-  combat: '⚔',
-  elite: '☠',
-  rest: '✦',
-  shop: '$',
-  event: '?',
-  treasure: '◆',
-  boss: '⚜',
+const ROOM_TYPE_ICON: Record<DungeonRoom['type'], IconName> = {
+  combat: 'combat',
+  elite: 'elite',
+  rest: 'rest',
+  shop: 'shop',
+  event: 'event',
+  treasure: 'treasure',
+  boss: 'boss',
 }
 
 const ROOM_TYPE_COLOR_CLASS: Record<DungeonRoom['type'], string> = {
@@ -241,7 +241,7 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
                 className={`${baseClass} ${shapeClass} ${stateClass}`}
                 style={{ left: x - 28, top: y - 28, width: 56, height: 56 }}
               >
-                {ROOM_TYPE_ICON[room.type]}
+                <Icon name={ROOM_TYPE_ICON[room.type]} size={28} />
               </Pressable>
             )
           }),
@@ -249,11 +249,11 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
       </div>
 
       <div className="mt-6 text-[11px] text-stone-500 flex gap-4">
-        <span className="text-red-500">⚔ Combat</span>
-        <span className="text-purple-400">? Event</span>
-        <span className="text-emerald-400">✦ Rest</span>
-        <span className="text-red-600">☠ Elite</span>
-        <span className="text-red-400">⚜ Boss</span>
+        <span className="text-red-500 flex items-center gap-1"><Icon name="combat" size={14} /> Combat</span>
+        <span className="text-purple-400 flex items-center gap-1"><Icon name="event" size={14} /> Event</span>
+        <span className="text-emerald-400 flex items-center gap-1"><Icon name="rest" size={14} /> Rest</span>
+        <span className="text-red-600 flex items-center gap-1"><Icon name="elite" size={14} /> Elite</span>
+        <span className="text-red-400 flex items-center gap-1"><Icon name="boss" size={14} /> Boss</span>
       </div>
 
       {isCleared && (

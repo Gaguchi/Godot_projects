@@ -30,15 +30,18 @@ describe('<CheckCandidatePicker>', () => {
     expect(screen.getAllByTestId('candidate-row')).toHaveLength(2)
   })
 
-  it('passing rows show ✓; failing rows show ✗', () => {
+  it('passing rows show check icon; failing rows show cross icon', () => {
     render(
       <CheckCandidatePicker open={true} statLabel="STR" threshold={7}
         candidates={[mk('a', 8, true), mk('b', 5, false)]}
         onPick={() => {}} onCancel={() => {}} />,
     )
     const rows = screen.getAllByTestId('candidate-row')
-    expect(rows[0]!.textContent).toContain('✓')
-    expect(rows[1]!.textContent).toContain('✗')
+    // Both render an inline <svg> Icon (check vs cross). Color class differentiates them.
+    expect(rows[0]!.querySelector('svg')).toBeTruthy()
+    expect(rows[1]!.querySelector('svg')).toBeTruthy()
+    expect(rows[0]!.querySelector('.text-emerald-400')).toBeTruthy()
+    expect(rows[1]!.querySelector('.text-red-400')).toBeTruthy()
   })
 
   it('clicking a row fires onPick with that candidate', () => {

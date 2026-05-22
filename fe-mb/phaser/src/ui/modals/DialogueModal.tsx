@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Dialog, Button, Heading, CheckButton, CheckCandidatePicker } from '../components'
+import { Dialog, Button, Heading, CheckButton, CheckCandidatePicker, Icon } from '../components'
 import { CharacterPortrait } from '../components/CharacterPortrait'
 import { getCharacter } from '../data/characters'
 import { useTypewriter } from '../hooks/useTypewriter'
@@ -208,8 +208,10 @@ export function DialogueModal(): React.JSX.Element {
         {/* Main panel: padding accounts for the portrait overhang */}
         <div className={`px-8 ${isNarrator ? 'pt-8' : 'pt-12'} pb-6 max-w-5xl mx-auto`}>
           {isNarrator && (
-            <div className="text-center text-xs tracking-widest text-stone-500 mb-2">
-              ✦ NARRATOR ✦
+            <div className="flex items-center justify-center gap-2 text-xs tracking-widest text-stone-500 mb-2">
+              <Icon name="narrator" size={14} />
+              <span>NARRATOR</span>
+              <Icon name="narrator" size={14} />
             </div>
           )}
 
@@ -236,10 +238,14 @@ export function DialogueModal(): React.JSX.Element {
               )}
             </p>
             {!isDone && (
-              <div className="text-xs text-stone-500 mt-3">▸ click to skip</div>
+              <div className="text-xs text-stone-500 mt-3 flex items-center gap-1">
+                <Icon name="chevron-right" size={11} /> click to skip
+              </div>
             )}
             {isDone && choices.length === 1 && (
-              <div className="text-xs text-stone-500 mt-3">▸ click to continue</div>
+              <div className="text-xs text-stone-500 mt-3 flex items-center gap-1">
+                <Icon name="chevron-right" size={11} /> click to continue
+              </div>
             )}
           </button>
 
@@ -272,7 +278,7 @@ export function DialogueModal(): React.JSX.Element {
                     onPress={() => onChoice(c)}
                     className="!justify-start text-left"
                   >
-                    <span className="text-amber-300 mr-3">▸</span>
+                    <span className="text-amber-300 mr-3 flex items-center"><Icon name="chevron-right" size={14} /></span>
                     <span>{c.text}</span>
                   </Button>
                 )

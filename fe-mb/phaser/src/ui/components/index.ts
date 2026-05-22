@@ -32,3 +32,6 @@ export { PauseButton } from './PauseButton'
 export type { PauseButtonProps } from './PauseButton'
 
 export { PartyChip } from './PartyChip'
+
+export { Icon } from './Icon'
+export type { IconName, IconProps } from './Icon'

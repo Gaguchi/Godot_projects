@@ -426,8 +426,11 @@ export class BoardScene extends Phaser.Scene {
           fontFamily: 'monospace', fontSize: '20px', color,
         }).setOrigin(0.5)
         if (forecast.lethal) {
-          this.koSkull = this.add.text(x, y - 6, '☠', {
-            fontFamily: 'monospace', fontSize: '28px', color: '#ffe9b0',
+          // Lethal-hit indicator. Was an emoji skull; now a typographic
+          // "KO" badge for the no-pictograph directive (story 283).
+          this.koSkull = this.add.text(x, y - 6, 'KO', {
+            fontFamily: 'monospace', fontSize: '18px', fontStyle: 'bold',
+            color: '#ffe9b0', backgroundColor: '#7c1d1d', padding: { left: 5, right: 5, top: 1, bottom: 1 },
           }).setOrigin(0.5)
         }
       }

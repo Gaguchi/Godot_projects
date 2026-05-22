@@ -1,4 +1,5 @@
 import React from 'react'
+import { Icon } from '../../components/Icon'
 
 export interface ForecastHpBarProps {
   label: string
@@ -33,8 +34,8 @@ export function ForecastHpBar({
       <span className="tabular-nums w-20 text-right">
         {current}/{max}
         {delta !== 0 && (
-          <span className={delta > 0 ? 'text-emerald-400 ml-1' : 'text-red-400 ml-1'}>
-            → {predictedAfter}
+          <span className={`inline-flex items-center gap-0.5 ml-1 ${delta > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <Icon name="arrow-right" size={10} /> {predictedAfter}
           </span>
         )}
       </span>

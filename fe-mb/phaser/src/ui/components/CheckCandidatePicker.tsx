@@ -1,6 +1,7 @@
 import React from 'react'
 import { Dialog } from './Dialog'
 import { Button } from './Button'
+import { Icon } from './Icon'
 import type { CheckCandidate } from '../../domain/check'
 
 export interface CheckCandidatePickerProps {
@@ -47,8 +48,8 @@ export function CheckCandidatePicker({
             >
               <span className="font-bold w-24 truncate">{c.unitName}</span>
               <span className="text-stone-400 w-20">{statLabel} {c.statValue}</span>
-              <span className={c.meetsThreshold ? 'text-emerald-400' : 'text-red-400'}>
-                {c.meetsThreshold ? '✓' : '✗'}
+              <span className={`flex items-center ${c.meetsThreshold ? 'text-emerald-400' : 'text-red-400'}`}>
+                <Icon name={c.meetsThreshold ? 'check' : 'cross'} size={16} />
               </span>
             </button>
           ))

@@ -1,5 +1,6 @@
 import React from 'react'
 import { getCharacter, type PortraitShape } from '../data/characters'
+import { Icon } from './Icon'
 
 export interface CharacterPortraitProps {
   /** Speaker name (matches dialogue node.speaker). Empty → narrator. */
@@ -54,12 +55,18 @@ export function CharacterPortrait({
         }
         style={{ width: size, height: size }}
       >
-        <span
-          className={`font-bold tracking-tight ${c.textColor}`}
-          style={{ fontSize, fontFamily: 'serif', letterSpacing: '-0.05em' }}
-        >
-          {isNarrator ? '✦' : c.initials || '?'}
-        </span>
+        {isNarrator ? (
+          <span className={`${c.textColor} flex`}>
+            <Icon name="narrator" size={Math.round(size * 0.5)} />
+          </span>
+        ) : (
+          <span
+            className={`font-bold tracking-tight ${c.textColor}`}
+            style={{ fontSize, fontFamily: 'serif', letterSpacing: '-0.05em' }}
+          >
+            {c.initials || '?'}
+          </span>
+        )}
       </div>
       {/* Breath keyframes injected once; React dedupes via styled-components-like usage */}
       <style>{`
