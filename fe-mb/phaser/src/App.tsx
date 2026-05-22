@@ -124,13 +124,9 @@ export function App(): React.JSX.Element {
       }
       // On VICTORY, sweep dead party from runStore.party so they don't reseed
       if (s.state.phase === 'VICTORY') {
-        useRunStore.setState((rs) => {
-          const newUnits: typeof rs.party.units = { ...rs.party.units }
-          for (const id of fallenPartyIds) delete newUnits[id]
-          const newOrder = rs.party.partyOrder.filter(
-            (uid) => !fallenPartyIds.includes(uid as unknown as string),
-          )
-          return { party: { units: newUnits, partyOrder: newOrder } }
+        useRunStore.getState().dispatch({
+          type: 'sweepFallenUnits',
+          payload: { unitIds: fallenPartyIds as never[] },
         })
       }
     })
@@ -185,15 +181,16 @@ export function App(): React.JSX.Element {
     // through the reducer chain. For now, restore the run essentials.
     const save = result.save
     if (save.run) {
-      useRunStore.setState({
-        gold: save.run.gold,
-        worldPosition: save.run.worldPosition as never,
-        party: {
-          units: Object.fromEntries(save.run.partyUnits.map((u) => [(u as { id: string }).id, u as never])),
-          partyOrder: save.run.partyOrder.map((id) => id as never),
-        } as never,
-        inventory: { items: save.run.inventoryItems.map((i) => ({ itemId: i.itemId as never, gridX: i.gridX, gridY: i.gridY })) } as never,
-      } as never)
+      useRunStore.getState().dispatch({
+        type: 'hydrateFromSave',
+        payload: {
+          gold: save.run.gold,
+          worldPosition: save.run.worldPosition,
+          partyUnits: save.run.partyUnits as { id: string; [k: string]: unknown }[],
+          partyOrder: save.run.partyOrder,
+          inventoryItems: save.run.inventoryItems,
+        },
+      })
     }
     setLoadModalOpen(false)
     setPauseMenuOpen(false)
