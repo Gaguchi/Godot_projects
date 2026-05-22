@@ -6,9 +6,18 @@ import { asDungeonId, asNodeId } from '../../domain/ids'
 import type { DungeonGraph, DungeonRoom } from '../../domain/map'
 import type { CheckEventDef } from '../../domain/encounter'
 import type { QuestEffect } from '../../domain/quest'
-import { Button, Pressable } from '../components'
+import { Button, Heading, Pressable } from '../components'
 import { CheckEventModal, type CheckEvent } from '../modals/CheckEventModal'
 import smugglersCave from '../../data/content/dungeons/smugglers_cave.json'
+import itemsJson from '../../data/content/items.json'
+import { asItemId } from '../../domain/ids'
+
+interface ShopOffer {
+  itemId: string
+  name: string
+  rarity: string
+  buyPrice: number
+}
 
 const DUNGEON_DEFS: Record<string, { roomEvents?: CheckEventDef[] }> = {
   smugglers_cave: smugglersCave as { roomEvents?: CheckEventDef[] },
@@ -58,6 +67,8 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
   const activeDungeon = useRunStore((s) => s.activeDungeon)
   const rngState = useRunStore((s) => s.rngState)
   const [activeEvent, setActiveEvent] = useState<CheckEvent | null>(null)
+  const [shopOffers, setShopOffers] = useState<ShopOffer[] | null>(null)
+  const gold = useRunStore((s) => s.gold)
 
   const dungeon: DungeonGraph = useMemo(() => {
     if (activeDungeon) return activeDungeon.graph
@@ -93,6 +104,25 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
     } else if (room.type === 'rest') {
       // GP-F3: dispatch restParty instead of bypassing the chokepoint with setState
       dispatchRun({ type: 'restParty', payload: { percent: 0.3 } })
+    } else if (room.type === 'shop') {
+      // Roll 2 deterministic offers from the consumable pool at +0/+10% markup.
+      const shopRng = deriveRng(createRng(useRunStore.getState().rngState), `dungeon-shop:${idStr}`)
+      const pool = itemsJson
+      const picks: ShopOffer[] = []
+      const seen = new Set<string>()
+      while (picks.length < 2 && picks.length < pool.length) {
+        const i = shopRng.nextInt(0, pool.length - 1)
+        const item = pool[i]!
+        if (seen.has(item.id)) continue
+        seen.add(item.id)
+        picks.push({
+          itemId: item.id,
+          name: item.name,
+          rarity: item.rarity,
+          buyPrice: Math.round(item.buyPrice * (item.rarity === 'common' ? 1.0 : 1.1)),
+        })
+      }
+      setShopOffers(picks)
     } else if (room.type === 'treasure') {
       dispatchRun({ type: 'addGold', payload: { amount: 50 } })
     } else if (room.type === 'event') {
@@ -189,7 +219,7 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
 
             const baseClass =
               'absolute flex items-center justify-center text-2xl select-none ' +
-              'border-2 transition-[transform,box-shadow] duration-100 outline-none ' +
+              'border-2 motion-safe:transition-[transform,box-shadow] motion-safe:duration-100 outline-none ' +
               'data-[focus-visible]:ring-2 data-[focus-visible]:ring-amber-400'
             const shapeClass = isBoss ? 'rounded-lg' : 'rounded-full'
             const stateClass = isCurrent
@@ -234,6 +264,56 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
         >
           Exit Dungeon
         </Button>
+      )}
+
+      {shopOffers && (
+        <div
+          role="dialog"
+          aria-label="Dungeon Shop"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-950/70 backdrop-blur-sm"
+        >
+          <div className="w-96 bg-stone-950 border border-amber-700 rounded p-5 font-mono">
+            <div className="flex items-baseline justify-between mb-4">
+              <Heading level={2} className="text-lg text-amber-200">Black-Market Stall</Heading>
+              <span className="text-xs text-stone-400">Gold: {gold}g</span>
+            </div>
+            <p className="text-stone-500 text-xs mb-4">
+              A hooded smuggler nudges a few items toward you.
+            </p>
+            <div className="space-y-2">
+              {shopOffers.map((o) => {
+                const canAfford = gold >= o.buyPrice
+                return (
+                  <div
+                    key={o.itemId}
+                    className="p-2 border border-stone-800 flex justify-between items-center"
+                  >
+                    <div>
+                      <div className={o.rarity === 'uncommon' ? 'text-emerald-400' : 'text-amber-100'}>
+                        {o.name}
+                      </div>
+                      <div className="text-[10px] text-stone-500">{o.rarity}</div>
+                    </div>
+                    <Button
+                      variant="primary"
+                      isDisabled={!canAfford}
+                      onPress={() => {
+                        dispatchRun({ type: 'buyItem', payload: { itemId: asItemId(o.itemId), price: o.buyPrice } })
+                        setShopOffers((prev) => (prev ? prev.filter((x) => x.itemId !== o.itemId) : null))
+                      }}
+                      className="!text-xs"
+                    >
+                      {canAfford ? `Buy ${o.buyPrice}g` : `Need ${o.buyPrice}g`}
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button variant="secondary" onPress={() => setShopOffers(null)}>Leave</Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {activeEvent && (

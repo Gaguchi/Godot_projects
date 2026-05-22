@@ -178,6 +178,141 @@ describe('combatReducer (core)', () => {
     expect(s.subPhase).toBe('IDLE')
     expect(s.selectedCardId).toBeNull()
   })
+
+  it('playCard with physical damage: armor absorbs first, overflow to HP', () => {
+    const rng = createRng({ seed: 0, counter: 0 })
+    const roy = mk('roy', 5, 'lord')
+    roy.position = '1,4' as never
+    roy.stats.str = 5
+    const bandit = mk('bandit_a', 4, 'bandit')
+    bandit.position = '2,4' as never
+    bandit.hp.max = 20
+    bandit.hp.current = 20
+    bandit.stats.def = 4
+    bandit.armor = 3
+
+    let s = reduce(initialCombatState(), {
+      type: 'startBattle',
+      payload: {
+        units: [roy, bandit],
+        grid: { width: 14, height: 10, obstacles: new Set() },
+        rngSeed: { seed: 0, counter: 0 },
+        decks: {
+          roy: { draw: [], hand: ['slash' as never], discard: [] },
+          bandit_a: { draw: [], hand: [], discard: [] },
+        },
+      },
+    }, rng).state
+
+    const r = reduce(s, {
+      type: 'playCard',
+      payload: {
+        cardId: 'slash' as never,
+        srcId: roy.id,
+        targets: ['2,4' as never],
+        card: {
+          apCost: 1,
+          damageStat: 'str',
+          effects: [{ kind: 'Damage', params: { base: 4 } }],
+        },
+      },
+    }, rng)
+
+    // raw = 4 + 5 - floor(4/2) = 7; armor 3 absorbs 3, hp loses 4
+    const updated = r.state.units['bandit_a']!
+    expect(updated.armor).toBe(0)
+    expect(updated.hp.current).toBe(16)
+  })
+
+  it('playCard with magic damage: armor takes half (with overflow), hp takes half', () => {
+    const rng = createRng({ seed: 0, counter: 0 })
+    const roy = mk('roy', 5, 'lord')
+    roy.position = '1,4' as never
+    roy.stats.mag = 6
+    const bandit = mk('bandit_a', 4, 'bandit')
+    bandit.position = '2,4' as never
+    bandit.hp.max = 20
+    bandit.hp.current = 20
+    bandit.stats.res = 4
+    bandit.armor = 2
+
+    let s = reduce(initialCombatState(), {
+      type: 'startBattle',
+      payload: {
+        units: [roy, bandit],
+        grid: { width: 14, height: 10, obstacles: new Set() },
+        rngSeed: { seed: 0, counter: 0 },
+        decks: {
+          roy: { draw: [], hand: ['fireball' as never], discard: [] },
+          bandit_a: { draw: [], hand: [], discard: [] },
+        },
+      },
+    }, rng).state
+
+    const r = reduce(s, {
+      type: 'playCard',
+      payload: {
+        cardId: 'fireball' as never,
+        srcId: roy.id,
+        targets: ['2,4' as never],
+        card: {
+          apCost: 1,
+          damageStat: 'mag',
+          effects: [{ kind: 'Damage', params: { base: 4, damageType: 'magic' } }],
+        },
+      },
+    }, rng)
+
+    // raw = 4 + 6 - floor(4/2) = 8; magic: 4 to armor (2 absorbed, 2 overflow), 4 always to hp → hp -= 6
+    const updated = r.state.units['bandit_a']!
+    expect(updated.armor).toBe(0)
+    expect(updated.hp.current).toBe(14)
+  })
+
+  it('playCard with no armor: behavior matches pre-fix damage (regression)', () => {
+    const rng = createRng({ seed: 0, counter: 0 })
+    const roy = mk('roy', 5, 'lord')
+    roy.position = '1,4' as never
+    roy.stats.str = 5
+    const bandit = mk('bandit_a', 4, 'bandit')
+    bandit.position = '2,4' as never
+    bandit.hp.max = 20
+    bandit.hp.current = 20
+    bandit.stats.def = 4
+    // armor=0 (from mk default)
+
+    let s = reduce(initialCombatState(), {
+      type: 'startBattle',
+      payload: {
+        units: [roy, bandit],
+        grid: { width: 14, height: 10, obstacles: new Set() },
+        rngSeed: { seed: 0, counter: 0 },
+        decks: {
+          roy: { draw: [], hand: ['slash' as never], discard: [] },
+          bandit_a: { draw: [], hand: [], discard: [] },
+        },
+      },
+    }, rng).state
+
+    const r = reduce(s, {
+      type: 'playCard',
+      payload: {
+        cardId: 'slash' as never,
+        srcId: roy.id,
+        targets: ['2,4' as never],
+        card: {
+          apCost: 1,
+          damageStat: 'str',
+          effects: [{ kind: 'Damage', params: { base: 4 } }],
+        },
+      },
+    }, rng)
+
+    // Pre-fix expectation: 7 damage to HP; armor stays 0
+    const updated = r.state.units['bandit_a']!
+    expect(updated.hp.current).toBe(13)
+    expect(updated.armor).toBe(0)
+  })
 })
 
 describe('combatReducer (movement)', () => {

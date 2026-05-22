@@ -5,18 +5,26 @@ import type { CombatEvent, CombatGrid, DeckState } from '../../domain/combatStat
 import type { RngState } from '../../domain/rng'
 
 /**
- * Stub battle bootstrapper. Returns a `startBattle` CombatEvent with three
- * party members (Roy/Marcus/Lilina) on the left and three Bandit enemies on
- * the right of a 14×10 grid.
+ * Stub battle bootstrapper. Returns a `startBattle` CombatEvent with party
+ * units on the left and three Bandit enemies on the right of a 14×10 grid.
  *
  * Pure function — no Phaser, no React, no I/O. CombatScene calls this when
  * `state.phase === 'BOOT'` to seed an initial battle.
  *
+ * Party-resolution:
+ *   - If `recruitedParty` is non-empty, use those units (positioned in left
+ *     columns) — this is the live recruited party from runStore.
+ *   - If empty (pre-recruit boot / page-reload starting state), fall back to
+ *     the hardcoded Roy/Marcus/Lilina trio so the battle still seeds.
+ *
  * Spawn zones:
  *   - Party: columns 0-2 (left side)
- *   - Enemies: columns 11-13 (right side)
+ *   - Enemies: columns 8-9 (engagement-range right side)
  */
-export function seedStubBattle(rngSeed: RngState): Extract<CombatEvent, { type: 'startBattle' }> {
+export function seedStubBattle(
+  rngSeed: RngState,
+  recruitedParty: Unit[] = [],
+): Extract<CombatEvent, { type: 'startBattle' }> {
   const classMap = new Map(classesJson.map((c) => [c.id, c]))
   const find = (id: string): typeof classesJson[number] => {
     const c = classMap.get(id)
@@ -48,14 +56,23 @@ export function seedStubBattle(rngSeed: RngState): Extract<CombatEvent, { type: 
     statuses: [],
   })
 
+  // Build the party half of the unit list.
+  const PARTY_SLOTS: Array<[number, number]> = [
+    [2, 4], [2, 5], [1, 4], [1, 5], [0, 4], [0, 5],
+  ]
+  const partyUnits: Unit[] = recruitedParty.length > 0
+    ? recruitedParty.slice(0, PARTY_SLOTS.length).map((u, i) => {
+        const [x, y] = PARTY_SLOTS[i]!
+        return { ...u, position: asTileId(`${x},${y}`), ap: 3, armor: 0, statuses: [] }
+      })
+    : [
+        mk('roy', 'Roy', lord, 2, 4),
+        mk('marcus', 'Marcus', knight, 2, 5),
+        mk('lilina', 'Lilina', mage, 1, 4),
+      ]
+
   const units: Unit[] = [
-    // Party — left columns
-    mk('roy', 'Roy', lord, 2, 4),
-    mk('marcus', 'Marcus', knight, 2, 5),
-    mk('lilina', 'Lilina', mage, 1, 4),
-    // Enemies — closer columns (was 12-13; with 4-5 movement, that meant
-    // 2-3 turns of pure walking before any engagement, which feels broken).
-    // Now 8-9: party + AI can both reach combat range on turn 1.
+    ...partyUnits,
     mk('bandit_a', 'Bandit', bandit, 8, 4),
     mk('bandit_b', 'Bandit', bandit, 8, 5),
     mk('bandit_c', 'Bandit', bandit, 9, 4),

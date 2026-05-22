@@ -30,3 +30,5 @@ export type { CheckCandidatePickerProps } from './CheckCandidatePicker'
 
 export { PauseButton } from './PauseButton'
 export type { PauseButtonProps } from './PauseButton'
+
+export { PartyChip } from './PartyChip'

@@ -23,9 +23,10 @@ export function ModeLabel(): React.JSX.Element {
       data-active={active || undefined}
       aria-hidden={!active}
       className={
-        'absolute top-16 left-1/2 -translate-x-1/2 px-4 py-2 ' +
+        // top-36 = below the initiative strip (which sits at top-14 and is ~80px tall).
+        'absolute top-36 left-1/2 -translate-x-1/2 px-4 py-2 ' +
         'bg-amber-900/80 border border-amber-500 text-amber-50 ' +
-        'font-mono text-sm tracking-wider rounded shadow-lg z-10 ' +
+        'font-mono text-sm tracking-wider rounded shadow-lg z-[80] ' +
         'motion-safe:transition-[opacity,transform] motion-safe:duration-150 ' +
         (active ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none')
       }

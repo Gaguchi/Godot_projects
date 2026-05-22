@@ -14,7 +14,7 @@ import { rollEncounter } from '../../systems/encounterRoller'
 import { buildGraph, findPath } from '../../systems/overworldPath'
 import type { EncounterTable } from '../../domain/encounter'
 import { diag } from '../../state/diagLog'
-import { Pressable } from '../components'
+import { PartyChip, Pressable } from '../components'
 import { CheckEventModal, type CheckEvent } from '../modals/CheckEventModal'
 import type { QuestEffect } from '../../domain/quest'
 
@@ -89,6 +89,7 @@ export function OverworldScene({
   const visitedNodes = useRunStore((s) => s.visitedNodes)
   const questStates = useRunStore((s) => s.questStates)
   const pendingDialogue = useRunStore((s) => s.pendingDialogue)
+  const pendingCombat = useRunStore((s) => s.pendingCombat)
   const inventoryItems = useRunStore((s) => s.inventory.items)
   const [activeCheckEvent, setActiveCheckEvent] = useState<CheckEvent | null>(null)
 
@@ -162,6 +163,14 @@ export function OverworldScene({
   const onPanEnd = (): void => {
     dragState.current.active = false
   }
+
+  // ── Pending combat from a dialogue's `startCombat` effect ───────
+  useEffect(() => {
+    if (!pendingCombat) return
+    if (pendingDialogue) return
+    dispatchRun({ type: 'clearPendingCombat' })
+    _onTravelToCombat(asNodeId(currentNodeId))
+  }, [pendingCombat, pendingDialogue, currentNodeId, _onTravelToCombat, dispatchRun])
 
   // ── Multi-hop travel via pendingTravelPath ──────────────────────
   const pendingTravelPath = useRunStore((s) => s.pendingTravelPath)
@@ -502,7 +511,7 @@ export function OverworldScene({
 
           const baseClass =
             'absolute flex items-center justify-center rounded-full text-2xl select-none ' +
-            'border-2 transition-[transform,box-shadow,background-color] duration-150 outline-none ' +
+            'border-2 motion-safe:transition-[transform,box-shadow,background-color] motion-safe:duration-150 outline-none ' +
             'data-[focus-visible]:ring-2 data-[focus-visible]:ring-amber-400'
 
           const stateClass = isCurrent
@@ -590,15 +599,18 @@ export function OverworldScene({
         </span>
       </div>
 
-      <div className="absolute top-4 right-4 px-3 py-2 bg-stone-950/85 border border-amber-900/50 rounded text-xs tracking-wider pointer-events-none flex gap-4">
-        <span>
-          <span className="text-stone-500">FOOD:</span>{' '}
-          <span className={foodCount === 0 ? 'text-red-400' : 'text-amber-200'}>{foodCount}</span>
-        </span>
-        <span>
-          <span className="text-stone-500">GOLD:</span>{' '}
-          <span className="text-amber-300">{useRunStore.getState().gold}g</span>
-        </span>
+      <div className="absolute top-4 right-4 flex gap-3 items-start pointer-events-none">
+        <PartyChip />
+        <div className="px-3 py-2 bg-stone-950/85 border border-amber-900/50 rounded text-xs tracking-wider flex gap-4">
+          <span>
+            <span className="text-stone-500">FOOD:</span>{' '}
+            <span className={foodCount === 0 ? 'text-red-400' : 'text-amber-200'}>{foodCount}</span>
+          </span>
+          <span>
+            <span className="text-stone-500">GOLD:</span>{' '}
+            <span className="text-amber-300">{useRunStore.getState().gold}g</span>
+          </span>
+        </div>
       </div>
 
       {/* Hover-path tooltip */}

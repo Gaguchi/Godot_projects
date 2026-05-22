@@ -4,6 +4,7 @@ import type { UnitId } from '../domain/ids'
 import type { RNG } from '../domain/rng'
 import { buildInitiativeQueue } from './turnOrder'
 import { getStatusEffect } from './statusEffects'
+import { applyDamage } from './damage'
 
 interface UnitTeam { partyIds: UnitId[]; enemyIds: UnitId[] }
 
@@ -22,6 +23,7 @@ export function initialCombatState(): CombatState {
     grid: { width: 14, height: 10, obstacles: new Set() },
     rng: { seed: 0, counter: 0 },
     selectedCardId: null,
+    pinnedTargetTile: null,
     effectQueue: [],
   }
 }
@@ -118,6 +120,8 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
           ...state,
           phase: 'COMBAT',
           subPhase: 'IDLE',
+          selectedCardId: null,
+          pinnedTargetTile: null,
           turn: {
             number: wrapped ? state.turn.number + 1 : state.turn.number,
             unitId: nextId,
@@ -152,13 +156,25 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
 
     case 'cancelSelection':
       return {
-        state: { ...state, selectedCardId: null, subPhase: 'IDLE' },
+        state: { ...state, selectedCardId: null, pinnedTargetTile: null, subPhase: 'IDLE' },
+        effects: [],
+      }
+
+    case 'pinTarget':
+      return {
+        state: { ...state, pinnedTargetTile: event.payload.tileId },
+        effects: [],
+      }
+
+    case 'unpinTarget':
+      return {
+        state: { ...state, pinnedTargetTile: null },
         effects: [],
       }
 
     case 'enterMoveMode':
       return {
-        state: { ...state, subPhase: 'SELECTING_MOVE', selectedCardId: null },
+        state: { ...state, subPhase: 'SELECTING_MOVE', selectedCardId: null, pinnedTargetTile: null },
         effects: [],
       }
 
@@ -202,15 +218,19 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
             const dr = damageType === 'magic'
               ? Math.floor(target.stats.res / 2)
               : Math.floor(target.stats.def / 2)
-            const dmg = Math.max(0, base + statBonus - dr)
-            const newCurrent = Math.max(0, target.hp.current - dmg)
+            const afterDr = Math.max(0, base + statBonus - dr)
+            const split = applyDamage(target, afterDr, damageType === 'magic' ? 'magic' : 'physical')
             const tStr = target.id as unknown as string
-            const updated: Unit = { ...target, hp: { ...target.hp, current: newCurrent } }
+            const updated: Unit = {
+              ...target,
+              hp: { ...target.hp, current: split.newHp },
+              armor: split.newArmor,
+            }
             newUnits[tStr] = updated
             effects.push({
               kind: 'FloatDamage',
               tile: target.position!,
-              amount: dmg,
+              amount: afterDr,
               damageKind: damageType === 'magic' ? 'magic' : 'physical',
             })
             effects.push({
@@ -295,6 +315,7 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
         decks: newDecks,
         subPhase: 'RESOLVING',
         selectedCardId: null,
+        pinnedTargetTile: null,
       }
       const phase = checkEnd(stateAfter)
       const finalState: CombatState = phase !== 'COMBAT' ? { ...stateAfter, phase } : stateAfter

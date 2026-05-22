@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { seedStubBattle } from '../../../src/game/scenes/seedStubBattle'
+import { buildUnit } from '../../../src/systems/buildUnit'
 
 const tileX = (t: string): number => parseInt(t.split(',')[0]!, 10)
 
@@ -85,5 +86,49 @@ describe('seedStubBattle', () => {
     const b = seedStubBattle({ seed: 42, counter: 0 })
     expect(a.payload.units).toEqual(b.payload.units)
     expect(a.payload.rngSeed).toEqual(b.payload.rngSeed)
+  })
+})
+
+describe('seedStubBattle — recruited party (post-recruitment)', () => {
+  it('uses recruited party when provided (Garrik + Lyra instead of Roy/Marcus/Lilina)', () => {
+    const garrik = buildUnit('knight', 1, 'Garrik', 'recruit_garrik')!
+    const lyra = buildUnit('mage', 1, 'Lyra', 'recruit_lyra')!
+    const evt = seedStubBattle({ seed: 1, counter: 0 }, [garrik, lyra])
+    const partyNames = evt.payload.units
+      .filter((u) => (u.classId as unknown as string) !== 'bandit')
+      .map((u) => u.name)
+      .sort()
+    expect(partyNames).toEqual(['Garrik', 'Lyra'])
+  })
+
+  it('positions recruited party in left columns + scrubs runtime state', () => {
+    const u = buildUnit('knight', 5, 'Garrik', 'r1')!
+    // Pollute runtime state to confirm seedStubBattle clears it before spawn
+    u.position = '8,8' as never
+    u.ap = 99
+    u.armor = 50
+    const evt = seedStubBattle({ seed: 1, counter: 0 }, [u])
+    const seeded = evt.payload.units.find((x) => x.name === 'Garrik')!
+    expect(tileX(seeded.position as unknown as string)).toBeLessThanOrEqual(2)
+    expect(seeded.ap).toBe(3)
+    expect(seeded.armor).toBe(0)
+    expect(seeded.stats.def).toBe(12) // knight L5 = base 8 + lvl-bonus 4
+  })
+
+  it('caps recruited party at 6 units (6 spawn slots)', () => {
+    const big = Array.from({ length: 10 }, (_, i) =>
+      buildUnit('knight', 1, `Unit${i}`, `r${i}`)!,
+    )
+    const evt = seedStubBattle({ seed: 1, counter: 0 }, big)
+    const partyCount = evt.payload.units.filter(
+      (u) => (u.classId as unknown as string) !== 'bandit',
+    ).length
+    expect(partyCount).toBe(6)
+  })
+
+  it('empty recruited array still falls back to default trio', () => {
+    const evt = seedStubBattle({ seed: 1, counter: 0 }, [])
+    const names = evt.payload.units.map((u) => u.name).sort()
+    expect(names).toEqual(['Bandit', 'Bandit', 'Bandit', 'Lilina', 'Marcus', 'Roy'])
   })
 })

@@ -12,6 +12,20 @@ export interface TavernQuestEntry {
   visibleIf?: Predicate
 }
 
+/**
+ * A recruitable unit listed at this town's tavern. Cost is derived from
+ * classId + level via `recruitmentCost()` unless `costOverride` is set.
+ */
+export interface TavernRecruitEntry {
+  id: string             // stable id for this recruit slot (so a recruited slot stays gone across visits)
+  name: string
+  classId: string
+  level: number
+  description?: string
+  costOverride?: number
+  visibleIf?: Predicate
+}
+
 export interface TownDef {
   id: string
   name: string
@@ -25,6 +39,8 @@ export interface TownDef {
   rumors: string[]
   /** Tavern quest NPCs. */
   tavernQuests: TavernQuestEntry[]
+  /** Recruits available at the tavern. Optional — older content omits it. */
+  recruits?: TavernRecruitEntry[]
   /** Whether the blacksmith panel is unlocked at this town. */
   blacksmithEnabled: boolean
   /** Arena lock state (always locked through parity pass; flavor text varies). */

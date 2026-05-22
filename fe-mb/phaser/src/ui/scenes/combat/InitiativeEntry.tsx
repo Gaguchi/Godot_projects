@@ -21,7 +21,7 @@ export function InitiativeEntry({ entry }: InitiativeEntryProps): React.JSX.Elem
       data-unit-id={unit.id as unknown as string}
       data-active={isActive ? 'true' : 'false'}
       data-team={team}
-      className={`flex flex-col items-center gap-1 transition-transform ${isActive ? 'scale-110' : 'opacity-80'}`}
+      className={`flex flex-col items-center gap-1 motion-safe:transition-transform ${isActive ? 'scale-110' : 'opacity-80'}`}
       aria-label={`${unit.name}, ${unit.classId as unknown as string}, HP ${unit.hp.current} of ${unit.hp.max}${isActive ? ', active turn' : ''}`}
     >
       <div className={`rounded-full overflow-hidden ${ringClass}`}>

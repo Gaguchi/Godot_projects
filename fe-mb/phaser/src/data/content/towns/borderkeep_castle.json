@@ -15,6 +15,22 @@
     "There's talk of an ancient dungeon beneath the Stone Ruins. Treasure for the bold."
   ],
   "tavernQuests": [],
+  "recruits": [
+    {
+      "id": "bc_tane_knight",
+      "name": "Tane the Elder",
+      "classId": "knight",
+      "level": 3,
+      "description": "A castle veteran whose tour is up. Asks a king's ransom."
+    },
+    {
+      "id": "bc_seraphine_mage",
+      "name": "Seraphine",
+      "classId": "mage",
+      "level": 2,
+      "description": "Court scholar, mid-career, between patrons."
+    }
+  ],
   "blacksmithEnabled": true,
   "arenaLocked": true,
   "arenaLockedText": "The arena awaits the lord's tournament decree."

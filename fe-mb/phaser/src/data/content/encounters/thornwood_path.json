@@ -22,6 +22,98 @@
       "oneShot": false,
       "conditions": [],
       "outcome": { "kind": "dialogue", "dialogueId": "road_merchant" }
+    },
+    {
+      "id": "thornwood_bandit_parley",
+      "weight": 5,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "event": {
+          "id": "bandit_parley",
+          "title": "Three bandits block the road, blades drawn but no orders given.",
+          "description": "Their captain — leaner, more thoughtful than the rest — raises a hand. He'll talk before he fights.",
+          "choices": [
+            {
+              "id": "intimidate",
+              "text": "Show them why they should fear you.",
+              "check": { "kind": "stat", "stat": "str", "threshold": 6 },
+              "onPass": {
+                "narration": "The captain spits, but waves them off. The road clears.",
+                "effects": []
+              },
+              "onFail": {
+                "narration": "They laugh. Steel rings free of scabbards.",
+                "effects": []
+              }
+            },
+            {
+              "id": "pay_toll",
+              "text": "Pay the toll. 30 gold.",
+              "check": { "kind": "gold", "amount": 30 },
+              "onPass": {
+                "narration": "They step aside, all smiles. The captain even nods you a good evening.",
+                "effects": [{ "kind": "addGold", "amount": -30 }]
+              },
+              "onFail": {
+                "narration": "Your purse comes up short. They take it as insult.",
+                "effects": []
+              }
+            },
+            {
+              "id": "smooth_talk",
+              "text": "Talk your way through.",
+              "check": { "kind": "stat", "stat": "skl", "threshold": 7 },
+              "onPass": {
+                "narration": "Whatever you said worked. They wave you on, almost embarrassed.",
+                "effects": []
+              },
+              "onFail": {
+                "narration": "The captain's eyes harden. \"Enough talk.\"",
+                "effects": []
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "thornwood_bridge_crossing",
+      "weight": 4,
+      "oneShot": true,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "event": {
+          "id": "bridge_crossing",
+          "title": "An old rope bridge sways across a ravine.",
+          "description": "The shortcut saves a day's travel, but the planks are rotten and the wind is up.",
+          "choices": [
+            {
+              "id": "cross_carefully",
+              "text": "Send the most agile across first to scout.",
+              "check": { "kind": "stat", "stat": "spd", "threshold": 8 },
+              "onPass": {
+                "narration": "The lead scout makes it. The party crosses with whispered footing. You save a day.",
+                "effects": [{ "kind": "addFood", "amount": 2 }]
+              },
+              "onFail": {
+                "narration": "A plank gives way mid-cross. You haul them up, but the party loses a day backtracking.",
+                "effects": [{ "kind": "addFood", "amount": -1 }]
+              }
+            },
+            {
+              "id": "take_long_way",
+              "text": "Go the long way around. Safer.",
+              "onPass": {
+                "narration": "You take the road. Slow. Safe. No surprises.",
+                "effects": []
+              }
+            }
+          ]
+        }
+      }
     }
   ]
 }

@@ -6,6 +6,7 @@ import { EndTurnBtn } from './EndTurnBtn'
 import { CardHand } from './CardHand'
 import { CaptureBtn } from './CaptureBtn'
 import { InitiativeStrip } from './InitiativeStrip'
+import { ForecastPanel } from './ForecastPanel'
 import { UnitDetailPanel } from './UnitDetailPanel'
 import { useCombatUiStore } from '../../../state/combatUiStore'
 
@@ -26,6 +27,7 @@ export function CombatHud(): React.JSX.Element {
     >
       <div className="pointer-events-auto"><TopBar /></div>
       <InitiativeStrip />
+      <ForecastPanel />
       <ModeLabel />
       <CardHand />
       <CaptureBtn />

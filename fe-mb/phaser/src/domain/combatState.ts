@@ -33,6 +33,7 @@ export interface CombatState {
   grid: CombatGrid
   rng: RngState
   selectedCardId: CardId | null
+  pinnedTargetTile: TileId | null
   effectQueue: CombatEffect[]
 }
 
@@ -43,6 +44,8 @@ export type CombatEvent =
   | { type: 'startTurn'; payload: { unitId: UnitId } }
   | { type: 'selectCard'; payload: { cardId: CardId } }
   | { type: 'cancelSelection' }
+  | { type: 'pinTarget'; payload: { tileId: TileId } }
+  | { type: 'unpinTarget' }
   | {
       type: 'playCard'
       payload: {

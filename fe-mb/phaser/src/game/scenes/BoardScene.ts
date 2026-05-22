@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { shallow } from 'zustand/shallow'
 import { useCombatStore } from '../../state/combatStore'
 import { useCombatUiStore } from '../../state/combatUiStore'
 import { useRunStore } from '../../state/runStore'
@@ -7,6 +8,7 @@ import { createRng } from '../../systems/rng'
 import { seedStubBattle } from './seedStubBattle'
 import { tilesInRange, tilesInAoe, tilesReachable, findMovePath } from '../../systems/targeting'
 import { planTurn } from '../../systems/enemyAI'
+import { computeForecast, type ForecastCard } from '../../systems/damage'
 import type { CombatEffect, CombatEvent } from '../../domain/combatState'
 import cardsJson from '../../data/content/cards.json'
 import classesJson from '../../data/content/classes.json'
@@ -34,18 +36,6 @@ interface UnitView {
 
 type CardData = typeof cardsJson[number]
 const cardsMap = new Map<string, CardData>(cardsJson.map((c) => [c.id, c]))
-
-function getCardDamageBase(card: CardData): number | null {
-  for (const e of card.effects) {
-    if (e.kind === 'Damage' || e.kind === 'Heal') {
-      const base =
-        (e.params as { base?: number; amount?: number }).base
-        ?? (e.params as { amount?: number }).amount
-      if (typeof base === 'number') return base
-    }
-  }
-  return null
-}
 
 function tileXY(tileId: string): [number, number] {
   const [xs, ys] = tileId.split(',')
@@ -84,6 +74,7 @@ export class BoardScene extends Phaser.Scene {
   private tileRects = new Map<string, Phaser.GameObjects.Rectangle>()
   private aoePreview: Phaser.GameObjects.Graphics | null = null
   private damagePreview: Phaser.GameObjects.Text | null = null
+  private koSkull: Phaser.GameObjects.Text | null = null
   private pendingAnimations = 0
   private enemyTurnQueue: CombatEvent[] = []
   private enemyTurnRunning = false
@@ -115,8 +106,12 @@ export class BoardScene extends Phaser.Scene {
 
     const cs = useCombatStore.getState()
     if (cs.state.phase === 'BOOT') {
-      const runRng = useRunStore.getState().rngState
-      const event = seedStubBattle(runRng)
+      const runState = useRunStore.getState()
+      const runRng = runState.rngState
+      const recruitedParty = runState.party.partyOrder
+        .map((id) => runState.party.units[id as unknown as string])
+        .filter((u): u is NonNullable<typeof u> => u !== undefined)
+      const event = seedStubBattle(runRng, recruitedParty)
       cs.dispatch(event, createRng(runRng))
     }
 
@@ -153,11 +148,26 @@ export class BoardScene extends Phaser.Scene {
       }
     })
 
-    this.unsubState = useCombatStore.subscribe(() => {
-      this.renderUnits()
-      this.renderTargeting()
-      this.maybeRunEnemyTurn()
-    })
+    // Narrow subscribe: only fire renders + AI check when render-relevant
+    // slices change. Without the selector + shallow equality, every dispatch
+    // (including pure effect-queue mutations) would re-run all three methods.
+    // See CONTEXT.md §1 invariant #5.
+    this.unsubState = useCombatStore.subscribe(
+      (s) => ({
+        units: s.state.units,
+        turnUnitId: s.state.turn.unitId,
+        turnTeam: s.state.turn.team,
+        subPhase: s.state.subPhase,
+        selectedCardId: s.state.selectedCardId,
+        phase: s.state.phase,
+      }),
+      () => {
+        this.renderUnits()
+        this.renderTargeting()
+        this.maybeRunEnemyTurn()
+      },
+      { equalityFn: shallow },
+    )
 
     this.unsubEffects = useCombatStore.subscribe(
       (s) => s.lastEffectId,
@@ -197,6 +207,7 @@ export class BoardScene extends Phaser.Scene {
     }
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
+    if (this.koSkull) { this.koSkull.destroy(); this.koSkull = null }
 
     // Hover overlay layer (IDLE phase only). Renders BENEFORE the selection
     // overlay so SELECTING_* tiles remain authoritative when both apply.
@@ -401,22 +412,24 @@ export class BoardScene extends Phaser.Scene {
     }
 
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
-    const dmgBase = getCardDamageBase(card)
-    if (dmgBase !== null) {
-      const targetUnit = Object.values(state.units).find(
-        (u) => u.position && (u.position as unknown as string) === tileId,
-      )
-      if (targetUnit && (targetUnit.classId as unknown as string).includes('bandit')) {
-        let dmg = dmgBase
-        const stat = card.damageStat
-        if (stat === 'str') dmg += activeUnit.stats.str
-        else if (stat === 'mag') dmg += activeUnit.stats.mag
-        else if (stat === 'skl') dmg += activeUnit.stats.skl
-        dmg = Math.max(0, dmg - Math.floor(targetUnit.stats.def / 2))
+    if (this.koSkull) { this.koSkull.destroy(); this.koSkull = null }
+    const targetUnit = Object.values(state.units).find(
+      (u) => u.position && (u.position as unknown as string) === tileId,
+    )
+    if (targetUnit && (targetUnit.classId as unknown as string).includes('bandit')) {
+      const forecast = computeForecast(card as ForecastCard, activeUnit, targetUnit, 0)
+      if (forecast && (forecast.damageBefore > 0 || forecast.heal > 0)) {
         const { x, y } = tileToWorld(tileId)
-        this.damagePreview = this.add.text(x, y - 30, `-${dmg}`, {
-          fontFamily: 'monospace', fontSize: '20px', color: '#ff6644',
+        const label = forecast.heal > 0 ? `+${forecast.heal}` : `-${forecast.damageBefore}`
+        const color = forecast.heal > 0 ? '#88ee88' : '#ff6644'
+        this.damagePreview = this.add.text(x, y - 30, label, {
+          fontFamily: 'monospace', fontSize: '20px', color,
         }).setOrigin(0.5)
+        if (forecast.lethal) {
+          this.koSkull = this.add.text(x, y - 6, '☠', {
+            fontFamily: 'monospace', fontSize: '28px', color: '#ffe9b0',
+          }).setOrigin(0.5)
+        }
       }
     }
   }
@@ -431,6 +444,7 @@ export class BoardScene extends Phaser.Scene {
   private onTileOut(): void {
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
+    if (this.koSkull) { this.koSkull.destroy(); this.koSkull = null }
     this.clearHoverUnit()
   }
 
@@ -519,6 +533,19 @@ export class BoardScene extends Phaser.Scene {
       { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
     )
     if (!new Set(valid.map((t) => t as unknown as string)).has(tileId)) return
+
+    // Pin-then-play: first click pins the target (opens forecast panel);
+    // a second click on the same tile confirms and plays the card.
+    const pinned = state.pinnedTargetTile === null
+      ? null
+      : (state.pinnedTargetTile as unknown as string)
+    if (pinned !== tileId) {
+      cs.dispatch({
+        type: 'pinTarget',
+        payload: { tileId: asTileId(tileId) },
+      }, createRng(state.rng))
+      return
+    }
 
     const cardPayload: {
       apCost: number
@@ -823,5 +850,6 @@ export class BoardScene extends Phaser.Scene {
     this.tileRects.clear()
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
+    if (this.koSkull) { this.koSkull.destroy(); this.koSkull = null }
   }
 }

@@ -52,8 +52,12 @@ Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, 
 **`runStore` actions** (`RunAction` union in `state/runStore.ts`):
 - `recruitUnit { unit }`
 - `fallenUnit { unitId, cause, turn }`
+- `sweepFallenUnits { unitIds }` — removes the listed units from `party.units` + `party.partyOrder`; no-op for empty list or unknown ids. Dispatched on VICTORY for permadeath cleanup.
 - `moveItemInBag { itemId, x, y }`
+- `buyItem { itemId, price }` — atomic gold-deduction + add-to-first-empty-slot; no-op if gold insufficient or bag full
+- `sellItem { itemId, sellPrice }` — atomic remove-first-match + gold credit; no-op if item not in bag
 - `addGold { amount }`
+- `hydrateFromSave { gold, worldPosition, partyUnits, partyOrder, inventoryItems }` — minimal save-load restore. Atomic. Full hydration (flags, quests, dungeon, RNG, actionLog) lands when persistence-load is wired through the reducer.
 - `arriveAtNode { nodeId }`
 - `startTravelPath { path }`
 - `consumeTravelHop { hopIndex }`
@@ -172,7 +176,7 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/checkEvent.ts` ↔ `CheckEventDef` / `CheckEventChoiceDef` (title, description, choices each with optional CheckRequirement + onPass/onFail outcome). Consumed by `<CheckEventModal>` and the encounter outcome union. **Active.**
 - `data/schemas/enemyAI.ts` ↔ `EnemyClassAI` / `EnemyAction` / `EnemyRole` (rusher | archer | healer | tank). One JSON per enemy class in `data/content/enemyAI/`. Drives `systems/enemyAI.planTurn`. **Active.**
 - `state/combatUiStore.ts` ↔ lightweight UI-only Zustand store (`CombatUiState` shape, `useCombatUiStore` hook). Holds `pinnedDetailUnitId` for the click-pinned UnitDetailPanel. Phaser writes; React HUD reads. NOT routed through the combatReducer — purely chrome state. **Active.**
-- `data/schemas/town.ts` ↔ `TownDef` / `TavernQuestEntry` (5 town JSONs in `data/content/towns/`; powers TownScene panels). **Active.**
+- `data/schemas/town.ts` ↔ `TownDef` / `TavernQuestEntry` / `TavernRecruitEntry` (5 town JSONs in `data/content/towns/`; powers TownScene panels; recruits drive TavernPanel hire flow via `recruitmentCost` + `buildUnit`). **Active.**
 - `data/schemas/dungeonDef.ts` ↔ `DungeonDef` (5 dungeon JSONs; consumed by `game/scenes/seedDungeonBattle.ts`). **Active.**
 - `data/schemas/predicate.ts` ↔ `Predicate` (recursive via `z.lazy`). **Active.**
 - `data/schemas/check.ts` ↔ `CheckRequirement` (discriminated union: `stat | class | gold | food`; `StatKey` covers all 7 stats incl. `lck`). Domain types in `domain/check.ts`: `CheckRequirement`, `CheckAttempt`, `CheckCandidate`, `StatKey`. **Active.**
@@ -237,7 +241,7 @@ phaser/src/
 |---|---|---|---|
 | ~~OQ-1~~ | ~~Dungeon fog-of-war~~ → **CLOSED 2026-05-09**: full reveal at dungeon entry; Event node *contents* hidden until entered. See `docs/research/sts-procgen.md`. |
 | OQ-2 | Overworld procgen vs hand-authoring (Godot has hand-authored JSON; TS can do either) | TBD | next milestone |
-| OQ-3 | Recruitment cost formula for tavern recruits | TBD | recruitment milestone |
+| ~~OQ-3~~ | ~~Recruitment cost formula for tavern recruits~~ → **CLOSED 2026-05-22**: `recruitmentCost(classId, level) = base × (1 + (level - 1) × 0.5)` with per-class baseline. See `docs/research/recruitment-cost.md`. |
 | OQ-4 | Animation timing as data — `card.effects[].durationMs` granularity | TBD | combat-rendering milestone |
 | OQ-5 | Save migration ladder activation point — when does player count justify it? | project owner | post-foundation |
 | OQ-6 | Audio engine: Phaser built-in vs Howler vs Web Audio API direct | TBD | polish milestone |

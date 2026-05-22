@@ -30,12 +30,17 @@ export interface RunState {
   oneShotsFired: Set<string>
   /** GP-C6: HP damage applied to whole party when food = 0 on a hop. */
   starvationDamagePerHop: number
+  /** Combat requested from a dialogue or quest effect — OverworldScene routes the next tick. */
+  pendingCombat: { enemyGroupId: string } | null
 }
 
 export type RunAction =
   | { type: 'recruitUnit'; payload: { unit: Unit } }
   | { type: 'fallenUnit'; payload: { unitId: UnitId; cause: string; turn: number } }
+  | { type: 'sweepFallenUnits'; payload: { unitIds: UnitId[] } }
   | { type: 'moveItemInBag'; payload: { itemId: ItemId; x: number; y: number } }
+  | { type: 'buyItem'; payload: { itemId: ItemId; price: number } }
+  | { type: 'sellItem'; payload: { itemId: ItemId; sellPrice: number } }
   | { type: 'addGold'; payload: { amount: number } }
   | { type: 'arriveAtNode'; payload: { nodeId: NodeId } }
   | { type: 'startTravelPath'; payload: { path: PendingTravelPath } }
@@ -50,10 +55,18 @@ export type RunAction =
   | { type: 'applyQuestEffects'; payload: { effects: QuestEffect[] } }
   | { type: 'startDialogue'; payload: { dialogueId: DialogueId; nodeId: string } }
   | { type: 'endDialogue' }
+  | { type: 'clearPendingCombat' }
   | { type: 'markEncounterFired'; payload: { encounterId: string } }
   | { type: 'consumeFoodPerHop' }
   | { type: 'enterMap'; payload: { mapId: MapId; nodeId: NodeId } }
   | { type: 'restParty'; payload: { percent: number } }
+  | { type: 'hydrateFromSave'; payload: {
+      gold: number
+      worldPosition: { mapId: string; nodeId: string }
+      partyUnits: { id: string; [k: string]: unknown }[]
+      partyOrder: string[]
+      inventoryItems: { itemId: string; gridX: number; gridY: number }[]
+    } }
 
 interface RunStateWithDispatch extends RunState {
   dispatch(action: RunAction): void
@@ -153,15 +166,15 @@ function applyQuestEffect(
       }))
       return
     case 'startCombat':
-      // Combat seeding from a dialogue effect lands in GP-C5 when the encounter
-      // roller wires combat boots through the runStore. For now, set a flag so
-      // the next overworld arrival or test can react.
+      // Combat requested from inside a dialogue's choice effects. We surface
+      // it via `pendingCombat`; OverworldScene watches that field and routes
+      // the player into the combat scene as soon as the dialogue closes.
       get().flags.set(
         ('pending_combat_group:' + effect.enemyGroupId) as never,
         true as unknown,
         'run',
       )
-      set({})
+      set({ pendingCombat: { enemyGroupId: effect.enemyGroupId } })
       return
   }
 }
@@ -183,6 +196,7 @@ function freshState(): RunState {
     rngState: { seed: 0, counter: 0 },
     deathLog: [],
     pendingDialogue: null,
+    pendingCombat: null,
     oneShotsFired: new Set<string>(),
     starvationDamagePerHop: 3,
   }
@@ -232,6 +246,25 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
         }))
         return
       }
+      case 'sweepFallenUnits': {
+        const idSet = new Set(
+          action.payload.unitIds.map(u => u as unknown as string),
+        )
+        if (idSet.size === 0) return
+        set(s => {
+          const newUnits: typeof s.party.units = { ...s.party.units }
+          for (const id of idSet) delete newUnits[id]
+          return {
+            party: {
+              units: newUnits,
+              partyOrder: s.party.partyOrder.filter(
+                uid => !idSet.has(uid as unknown as string),
+              ),
+            },
+          }
+        })
+        return
+      }
       case 'moveItemInBag': {
         const { itemId, x, y } = action.payload
         set(s => ({
@@ -241,6 +274,49 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
             ),
           },
         }))
+        return
+      }
+      case 'buyItem': {
+        const { itemId, price } = action.payload
+        set(s => {
+          if (s.gold < price) return s
+          const occupied = new Set(
+            s.inventory.items.map(i => `${i.gridX},${i.gridY}`),
+          )
+          for (let y = 0; y < 4; y++) {
+            for (let x = 0; x < 8; x++) {
+              if (!occupied.has(`${x},${y}`)) {
+                return {
+                  gold: s.gold - price,
+                  inventory: {
+                    items: [
+                      ...s.inventory.items,
+                      { itemId, gridX: x, gridY: y },
+                    ],
+                  },
+                }
+              }
+            }
+          }
+          return s
+        })
+        return
+      }
+      case 'sellItem': {
+        const { itemId, sellPrice } = action.payload
+        set(s => {
+          const idx = s.inventory.items.findIndex(i => i.itemId === itemId)
+          if (idx === -1) return s
+          return {
+            gold: s.gold + sellPrice,
+            inventory: {
+              items: [
+                ...s.inventory.items.slice(0, idx),
+                ...s.inventory.items.slice(idx + 1),
+              ],
+            },
+          }
+        })
         return
       }
       case 'addGold':
@@ -330,6 +406,9 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
       case 'endDialogue':
         set({ pendingDialogue: null })
         return
+      case 'clearPendingCombat':
+        set({ pendingCombat: null })
+        return
       case 'markEncounterFired':
         set(s => {
           const next = new Set(s.oneShotsFired); next.add(action.payload.encounterId)
@@ -377,6 +456,30 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
             return { party: { ...s.party, units: newUnits } }
           })
         }
+        return
+      }
+      case 'hydrateFromSave': {
+        const p = action.payload
+        set({
+          gold: p.gold,
+          worldPosition: {
+            mapId: p.worldPosition.mapId as unknown as MapId,
+            nodeId: p.worldPosition.nodeId as unknown as NodeId,
+          },
+          party: {
+            units: Object.fromEntries(
+              p.partyUnits.map(u => [u.id, u as unknown as Unit]),
+            ),
+            partyOrder: p.partyOrder.map(id => id as unknown as UnitId),
+          },
+          inventory: {
+            items: p.inventoryItems.map(i => ({
+              itemId: i.itemId as unknown as ItemId,
+              gridX: i.gridX,
+              gridY: i.gridY,
+            })),
+          },
+        })
         return
       }
     }

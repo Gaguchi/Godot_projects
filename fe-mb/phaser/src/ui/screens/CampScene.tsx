@@ -57,10 +57,10 @@ export function CampScene({ onLeave }: CampSceneProps): React.JSX.Element {
           />
           <CampOption
             title="Scout"
-            description="Survey the area for trouble. (Coming soon)"
+            description="Survey the road ahead for danger."
             disabled={true}
             onPress={onScout}
-            footer="Stub — no effect yet"
+            footer="Coming soon"
           />
           <CampOption
             title="Leave"

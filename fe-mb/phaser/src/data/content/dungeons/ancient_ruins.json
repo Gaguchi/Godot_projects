@@ -45,6 +45,44 @@
           "onPass": { "narration": "You step quietly past.", "effects": [] }
         }
       ]
+    },
+    {
+      "id": "disarm_trap",
+      "title": "A pressure plate clicks beneath your boot.",
+      "description": "Dim torchlight glints off a wire. One wrong move and the ceiling comes down.",
+      "choices": [
+        {
+          "id": "disarm_skill",
+          "text": "Pick the mechanism apart.",
+          "check": { "kind": "stat", "stat": "skl", "threshold": 7 },
+          "onPass": {
+            "narration": "The plate clicks back into place. You pocket a small ruby left as bait.",
+            "effects": [{ "kind": "addGold", "amount": 60 }]
+          },
+          "onFail": {
+            "narration": "A spike-trap fires before you can move. The party takes a hit.",
+            "effects": [{ "kind": "damageParty", "amount": 5 }]
+          }
+        },
+        {
+          "id": "muscle_through",
+          "text": "Brace it open by force.",
+          "check": { "kind": "stat", "stat": "str", "threshold": 8 },
+          "onPass": {
+            "narration": "You jam the plate with a wedge. The trap stays mute.",
+            "effects": [{ "kind": "addGold", "amount": 30 }]
+          },
+          "onFail": {
+            "narration": "Your wedge snaps. The trap fires anyway.",
+            "effects": [{ "kind": "damageParty", "amount": 5 }]
+          }
+        },
+        {
+          "id": "retreat",
+          "text": "Step back. Leave it.",
+          "onPass": { "narration": "Whatever's behind the trap will stay there.", "effects": [] }
+        }
+      ]
     }
   ]
 }

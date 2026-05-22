@@ -34,6 +34,22 @@
       }
     }
   ],
+  "recruits": [
+    {
+      "id": "pc_garrik_knight",
+      "name": "Garrik",
+      "classId": "knight",
+      "level": 1,
+      "description": "A grizzled veteran looking for steady pay."
+    },
+    {
+      "id": "pc_lyra_mage",
+      "name": "Lyra",
+      "classId": "mage",
+      "level": 1,
+      "description": "A traveling scholar with a small bag of tricks."
+    }
+  ],
   "blacksmithEnabled": true,
   "arenaLocked": true,
   "arenaLockedText": "The fighting pit lies dormant."
