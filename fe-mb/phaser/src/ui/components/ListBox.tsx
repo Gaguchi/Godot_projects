@@ -24,7 +24,7 @@ export function ListBoxItem(props: RACListBoxItemProps): React.JSX.Element {
     <RACListBoxItem
       {...props}
       className={
-        'px-3 py-2 font-mono text-sm cursor-pointer outline-none rounded ' +
+        'px-3 py-2 font-body text-sm cursor-pointer outline-none rounded ' +
         'border border-transparent ' +
         'data-[hovered]:bg-stone-800 data-[hovered]:border-stone-600 ' +
         'data-[focused]:bg-stone-800 ' +

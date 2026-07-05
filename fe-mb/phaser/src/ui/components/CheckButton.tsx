@@ -1,5 +1,4 @@
 import React from 'react'
-import { Button } from './Button'
 import type { CheckRequirement, CheckCandidate } from '../../domain/check'
 
 export interface CheckButtonProps {
@@ -26,9 +25,13 @@ function formatPrefix(req: CheckRequirement, candidates: CheckCandidate[]): stri
 }
 
 /**
- * NV-style choice button. When a `requirement` is set, prefixes the choice
- * text with a bracketed `[STR 7 (8)]` (or `[100g]`, `[CLERIC]`, etc.).
- * Green when passable, red when blocked. Disabled when `canPass` is false.
+ * Fallout-NV-style choice button. A `requirement` prefixes the choice with a
+ * bracketed `[STR 7 (8)]` chip (green when passable, red when blocked).
+ *
+ * Unlike a plain disabled button, a BLOCKED check stays fully legible — it
+ * reads as a real, visibly-locked option (muted iron box + red requirement
+ * chip) rather than fading to near-invisible prose. Enabled checks get the
+ * hearth-lit primary treatment so they're obviously clickable.
  */
 export function CheckButton({
   text,
@@ -38,21 +41,33 @@ export function CheckButton({
   onPress,
 }: CheckButtonProps): React.JSX.Element {
   return (
-    <Button
-      onPress={onPress}
-      isDisabled={!canPass}
-      variant={canPass ? 'primary' : 'secondary'}
-      className="!justify-start text-left w-full"
+    <button
+      type="button"
+      disabled={!canPass}
+      onClick={() => { if (canPass) onPress() }}
+      className={
+        'flex w-full items-center gap-2.5 rounded border px-4 py-2.5 text-left font-body text-[0.95rem] ' +
+        'outline-none transition-colors focus-visible:[box-shadow:var(--focus-ring)] ' +
+        (canPass
+          ? 'cursor-pointer border-amber-700/60 bg-amber-900/45 text-amber-50 hover:border-amber-500 hover:bg-amber-900/70'
+          : 'cursor-not-allowed border-stone-700/60 bg-stone-900/70 text-stone-300')
+      }
+      title={canPass ? undefined : 'No one in the party meets this requirement'}
     >
       {requirement && (
         <span
           data-testid="check-prefix"
-          className={`mr-2 text-xs font-mono ${canPass ? 'text-emerald-400' : 'text-red-500'}`}
+          className={
+            'numeral shrink-0 rounded border px-1.5 py-0.5 text-xs ' +
+            (canPass
+              ? 'border-emerald-700/50 bg-emerald-950/40 text-emerald-300'
+              : 'border-red-800/60 bg-red-950/30 text-red-300')
+          }
         >
           [{formatPrefix(requirement, candidates)}]
         </span>
       )}
-      <span>{text}</span>
-    </Button>
+      <span className="flex-1">{text}</span>
+    </button>
   )
 }

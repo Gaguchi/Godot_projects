@@ -15,7 +15,7 @@ export function Heading({
   return (
     <RACHeading
       level={level}
-      className={`font-mono tracking-wider text-amber-200 ${className ?? ''}`.trim()}
+      className={`font-display tracking-[0.06em] text-amber-100 ${className ?? ''}`.trim()}
     >
       {children}
     </RACHeading>

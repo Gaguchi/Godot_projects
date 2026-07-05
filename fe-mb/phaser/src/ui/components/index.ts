@@ -33,5 +33,11 @@ export type { PauseButtonProps } from './PauseButton'
 
 export { PartyChip } from './PartyChip'
 
+export { GameHud } from './GameHud'
+export type { GameHudProps } from './GameHud'
+
 export { Icon } from './Icon'
 export type { IconName, IconProps } from './Icon'
+
+export { NodeQuickActionMenu } from './NodeQuickActionMenu'
+export type { NodeQuickAction, NodeQuickActionMenuProps } from './NodeQuickActionMenu'

@@ -4,6 +4,7 @@ import {
   Tooltip as RACTooltip,
   OverlayArrow,
 } from 'react-aria-components'
+import { stagePortalContainer } from '../stage'
 
 export interface TooltipProps {
   trigger: React.ReactElement
@@ -22,6 +23,7 @@ export function Tooltip({
   placement = 'top',
   isOpen,
 }: TooltipProps): React.JSX.Element {
+  const container = stagePortalContainer()
   return (
     <TooltipTrigger
       delay={delay}
@@ -30,9 +32,10 @@ export function Tooltip({
       {trigger}
       <RACTooltip
         placement={placement}
+        {...(container ? { UNSTABLE_portalContainer: container } : {})}
         className={
           'bg-stone-950 border border-amber-900/60 text-amber-100 ' +
-          'font-mono text-xs px-2 py-1 rounded shadow-lg max-w-xs'
+          'font-body text-xs px-2 py-1 rounded shadow-lg max-w-xs'
         }
       >
         <OverlayArrow>

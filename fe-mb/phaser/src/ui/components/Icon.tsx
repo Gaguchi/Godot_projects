@@ -20,6 +20,7 @@ export type IconName =
   | 'visited' | 'quest' | 'narrator'
   | 'chevron-right' | 'chevron-down' | 'arrow-right'
   | 'pause' | 'skull' | 'check' | 'cross'
+  | 'shield' | 'fangs' | 'bolt'
 
 export interface IconProps {
   name: IconName
@@ -221,5 +222,22 @@ const RENDER: Record<IconName, React.JSX.Element> = {
       <path d="M6 6 L18 18" />
       <path d="M18 6 L6 18" />
     </>
+  ),
+
+  // Shield — ally team sigil (rounded, protective)
+  shield: (
+    <path d="M12 3 L19 6 V11 c0 5 -3 8 -7 10 c-4 -2 -7 -5 -7 -10 V6 Z" />
+  ),
+
+  // Fangs — enemy team sigil (angular, hostile maw)
+  fangs: (
+    <>
+      <path d="M4 6 H20 L17 13 L15 8 L12 14 L9 8 L7 13 Z" />
+    </>
+  ),
+
+  // Bolt — magic / arcane
+  bolt: (
+    <path d="M13 3 L6 13 H11 L10 21 L18 10 H13 Z" />
   ),
 }
