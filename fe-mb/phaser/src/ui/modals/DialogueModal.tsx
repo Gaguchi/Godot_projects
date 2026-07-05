@@ -188,14 +188,18 @@ export function DialogueModal(): React.JSX.Element {
       position="bottom"
       aria-label={node.speaker ?? 'Dialogue'}
     >
-      <div id="dialogue-modal" className="relative">
-        {/* Floating portrait — overlaps the panel's top edge */}
+      <div
+        id="dialogue-modal"
+        className={`relative mx-auto max-w-5xl px-8 ${isNarrator ? 'pt-8' : 'pt-14'} pb-6`}
+      >
+        {/* Floating portrait — overhangs the panel's top edge, aligned to the
+            text column (not the full-width panel edge). */}
         {!isNarrator && (
-          <div className="absolute -top-12 left-6 z-10 flex flex-col items-center gap-1">
-            <CharacterPortrait speaker={node.speaker} active size={96} />
+          <div className="absolute -top-12 left-8 z-10 flex flex-col items-center gap-1">
+            <CharacterPortrait speaker={node.speaker} active size={88} />
             <div
               className={
-                `text-xs font-mono tracking-widest px-2 py-0.5 ` +
+                `voice-display text-xs tracking-[0.15em] px-2 py-0.5 rounded-sm ` +
                 `bg-stone-950/95 border ${character.ringColor.split(' ').filter(c => c.startsWith('border-')).join(' ')} ` +
                 `${character.textColor}`
               }
@@ -205,53 +209,66 @@ export function DialogueModal(): React.JSX.Element {
           </div>
         )}
 
-        {/* Main panel: padding accounts for the portrait overhang */}
-        <div className={`px-8 ${isNarrator ? 'pt-8' : 'pt-12'} pb-6 max-w-5xl mx-auto`}>
-          {isNarrator && (
-            <div className="flex items-center justify-center gap-2 text-xs tracking-widest text-stone-500 mb-2">
-              <Icon name="narrator" size={14} />
-              <span>NARRATOR</span>
-              <Icon name="narrator" size={14} />
-            </div>
-          )}
+        {isNarrator && (
+          <div className="flex items-center justify-center gap-2 text-xs tracking-widest text-parchment-dim mb-2">
+            <Icon name="narrator" size={14} />
+            <span>NARRATOR</span>
+            <Icon name="narrator" size={14} />
+          </div>
+        )}
 
-          {/* Body text area — click anywhere to skip / advance */}
-          <button
-            type="button"
-            onClick={onTextAreaClick}
-            className={
-              'w-full text-left p-4 rounded transition-colors min-h-[120px] ' +
-              'bg-stone-900/60 border border-stone-800 cursor-pointer ' +
-              'hover:bg-stone-900/80 outline-none focus-visible:ring-2 focus-visible:ring-amber-400'
-            }
-            aria-label="Dialogue text. Click to skip reveal."
-          >
-            <p
+        {/* Body text. It is click-to-skip/continue ONLY while revealing or when
+            there's a single Continue choice. With branching choices it is a
+            plain read-area (disabled) so a "skip" click can't land on an option. */}
+        {(() => {
+          const textInteractive = !isDone || choices.length <= 1
+          return (
+            <button
+              type="button"
+              onClick={onTextAreaClick}
+              disabled={!textInteractive}
               className={
-                `leading-relaxed whitespace-pre-line text-lg ` +
-                (isNarrator ? 'text-stone-300 italic' : 'text-stone-100')
+                'w-full text-left p-4 rounded transition-colors min-h-[84px] ' +
+                'bg-stone-900/60 border border-stone-800 outline-none ' +
+                (textInteractive
+                  ? 'cursor-pointer hover:bg-stone-900/80 focus-visible:[box-shadow:var(--focus-ring)]'
+                  : 'cursor-default')
               }
+              aria-label="Dialogue text"
             >
-              {visibleText}
+              <p
+                className={
+                  `leading-relaxed whitespace-pre-line text-lg ` +
+                  (isNarrator ? 'text-parchment-dim italic' : 'text-stone-100')
+                }
+              >
+                {visibleText}
+                {!isDone && (
+                  <span className="inline-block w-2 h-5 align-middle ml-1 bg-amber-300 animate-pulse" />
+                )}
+              </p>
               {!isDone && (
-                <span className="inline-block w-2 h-5 align-middle ml-1 bg-amber-300 animate-pulse" />
+                <div className="text-xs text-parchment-dim mt-3 flex items-center gap-1">
+                  <Icon name="chevron-right" size={11} /> click to skip
+                </div>
               )}
-            </p>
-            {!isDone && (
-              <div className="text-xs text-stone-500 mt-3 flex items-center gap-1">
-                <Icon name="chevron-right" size={11} /> click to skip
-              </div>
-            )}
-            {isDone && choices.length === 1 && (
-              <div className="text-xs text-stone-500 mt-3 flex items-center gap-1">
-                <Icon name="chevron-right" size={11} /> click to continue
-              </div>
-            )}
-          </button>
+              {isDone && choices.length === 1 && (
+                <div className="text-xs text-parchment-dim mt-3 flex items-center gap-1">
+                  <Icon name="chevron-right" size={11} /> click to continue
+                </div>
+              )}
+            </button>
+          )
+        })()}
 
-          {/* Choices — only render once the reveal is done so they don't pre-spoil */}
-          {isDone && choices.length > 1 && (
-            <div className="flex flex-col gap-2 mt-4">
+        {/* Choices — render after reveal, clearly separated from the read-area
+            so they never blend with the text or catch a stray skip-click. */}
+        {isDone && choices.length > 1 && (
+          <div className="mt-5 border-t border-[rgba(120,98,60,0.3)] pt-4">
+            <div className="mb-2 text-[0.6rem] uppercase tracking-[0.22em] text-parchment-dim">
+              Choose a response
+            </div>
+            <div className="flex flex-col gap-2">
               {choices.map((c) => {
                 const enabled = isChoiceEnabled(c, predicateState)
                 if (c.check) {
@@ -283,10 +300,10 @@ export function DialogueModal(): React.JSX.Element {
                   </Button>
                 )
               })}
+              </div>
             </div>
           )}
         </div>
-      </div>
 
       <CheckCandidatePicker
         open={pickerChoice !== null}

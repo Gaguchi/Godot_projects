@@ -6,7 +6,7 @@ import { asDungeonId, asNodeId } from '../../domain/ids'
 import type { DungeonGraph, DungeonRoom } from '../../domain/map'
 import type { CheckEventDef } from '../../domain/encounter'
 import type { QuestEffect } from '../../domain/quest'
-import { Button, Heading, Icon, type IconName, Pressable } from '../components'
+import { Button, GameHud, Heading, Icon, type IconName, Pressable } from '../components'
 import { CheckEventModal, type CheckEvent } from '../modals/CheckEventModal'
 import smugglersCave from '../../data/content/dungeons/smugglers_cave.json'
 import itemsJson from '../../data/content/items.json'
@@ -156,12 +156,44 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
   return (
     <div
       id="dungeon-scene"
-      className="h-screen w-screen text-amber-100 font-mono overflow-auto relative flex flex-col items-center p-8"
-      style={{ background: 'radial-gradient(ellipse at center, #1a0510 0%, #0a0506 75%)' }}
+      className="h-full w-full text-amber-100 font-body overflow-auto relative flex flex-col items-center p-8"
+      style={{
+        background: [
+          // Eerie central glow
+          'radial-gradient(ellipse 60% 50% at 50% 45%, #6b1a1f33 0%, transparent 60%)',
+          // Deep cave: red/charcoal sky-to-ground
+          'linear-gradient(to bottom, #2a0d10 0%, #170609 55%, #080304 100%)',
+        ].join(', '),
+      }}
     >
-      <div className="absolute top-4 left-4 text-xs text-red-600 tracking-widest">
-        DUNGEON — Smuggler's Cave
-      </div>
+      {/* Cave-grain noise overlay */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none opacity-[0.22] mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.0 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")`,
+          backgroundSize: '240px 240px',
+        }}
+      />
+
+      {/* Cave-mist drift — slower than overworld fog, redder palette */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none atmosphere-fog-fast opacity-25 mix-blend-screen"
+        style={{
+          backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.01 0.022' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.18 0 0 0 0 0.15 0 0 0 0.4 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>")`,
+          backgroundSize: '800px 500px',
+        }}
+      />
+      {/* Vignette — squeezes attention to the dungeon graph */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 80% 65% at 50% 50%, transparent 50%, rgba(0,0,0,0.7) 100%)',
+        }}
+      />
+      <GameHud regionName="Dungeon" location="Smuggler's Cave" />
       <Button
         id="dungeon-leave-btn"
         variant="danger"
@@ -194,12 +226,25 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
             const x2 = toRoom.col * COL_WIDTH + COL_WIDTH / 2
             const y2 = mapHeight - toRoom.row * ROW_HEIGHT - ROW_HEIGHT / 2
             const isAdjacent = currentNodeId === fromStr || currentNodeId === toStr
+            // Organic curved passage between rooms — same deterministic
+            // bow approach as the overworld so dungeons read as caves,
+            // not graph edges.
+            const seed = (fromStr.length * 31 + toStr.length * 17 + (fromStr.charCodeAt(0) ^ toStr.charCodeAt(0))) | 0
+            const sign = (seed & 1) === 0 ? 1 : -1
+            const dx = x2 - x1, dy = y2 - y1
+            const len = Math.hypot(dx, dy) || 1
+            const nx = -dy / len, ny = dx / len
+            const mag = sign * Math.min(36, len * 0.18)
+            const cx = (x1 + x2) / 2 + nx * mag
+            const cy = (y1 + y2) / 2 + ny * mag
             return (
-              <line
+              <path
                 key={i}
-                x1={x1} y1={y1} x2={x2} y2={y2}
+                d={`M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`}
+                fill="none"
                 stroke={isAdjacent ? '#a07a40' : '#3a2a18'}
                 strokeWidth={isAdjacent ? 2 : 1}
+                strokeLinecap="round"
                 {...(isAdjacent ? {} : { strokeDasharray: '4 4' })}
               />
             )
@@ -272,10 +317,10 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
           aria-label="Dungeon Shop"
           className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-950/70 backdrop-blur-sm"
         >
-          <div className="w-96 bg-stone-950 border border-amber-700 rounded p-5 font-mono">
+          <div className="w-96 bg-stone-950 border border-amber-700 rounded p-5 font-body">
             <div className="flex items-baseline justify-between mb-4">
-              <Heading level={2} className="text-lg text-amber-200">Black-Market Stall</Heading>
-              <span className="text-xs text-stone-400">Gold: {gold}g</span>
+              <Heading level={2} className="text-lg text-amber-200 voice-display">Black-Market Stall</Heading>
+              <span className="text-xs text-stone-400">Gold: <span className="numeral">{gold}</span>g</span>
             </div>
             <p className="text-stone-500 text-xs mb-4">
               A hooded smuggler nudges a few items toward you.
@@ -289,7 +334,7 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
                     className="p-2 border border-stone-800 flex justify-between items-center"
                   >
                     <div>
-                      <div className={o.rarity === 'uncommon' ? 'text-emerald-400' : 'text-amber-100'}>
+                      <div className={`voice-display ${o.rarity === 'uncommon' ? 'text-emerald-400' : 'text-amber-100'}`}>
                         {o.name}
                       </div>
                       <div className="text-[10px] text-stone-500">{o.rarity}</div>
@@ -303,7 +348,7 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
                       }}
                       className="!text-xs"
                     >
-                      {canAfford ? `Buy ${o.buyPrice}g` : `Need ${o.buyPrice}g`}
+                      {canAfford ? <>Buy <span className="numeral">{o.buyPrice}</span>g</> : <>Need <span className="numeral">{o.buyPrice}</span>g</>}
                     </Button>
                   </div>
                 )

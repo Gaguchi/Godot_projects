@@ -27,12 +27,17 @@ export function DevHud({ errorBus, eventBus, actionLog }: Props): React.JSX.Elem
     return () => { unsubE(); unsubV(); clearInterval(tick) }
   }, [isDev, errorBus, eventBus, actionLog])
 
+  // Toggle with the backtick key so no persistent "Dev HUD" stamp ever bleeds
+  // into game chrome (it used to overlap the End Turn button). Dev-only.
+  useEffect(() => {
+    if (!isDev) return
+    const onKey = (e: KeyboardEvent): void => { if (e.key === '`') setOpen((o) => !o) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isDev])
+
   if (!isDev) return null
-  if (!open) return (
-    <button onClick={() => setOpen(true)} style={{ position: 'fixed', right: 8, bottom: 8, zIndex: 99999 }}>
-      Dev HUD
-    </button>
-  )
+  if (!open) return null
 
   return (
     <div style={{

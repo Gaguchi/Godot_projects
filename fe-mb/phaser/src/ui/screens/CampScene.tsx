@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRunStore } from '../../state/runStore'
-import { Button, Heading } from '../components'
+import { Button, GameHud, Heading } from '../components'
 import { diag } from '../../state/diagLog'
 
 export interface CampSceneProps {
@@ -36,10 +36,15 @@ export function CampScene({ onLeave }: CampSceneProps): React.JSX.Element {
   }
 
   return (
-    <div className="fixed inset-0 bg-stone-950 text-amber-100 overflow-auto">
-      <div className="max-w-4xl mx-auto px-8 py-12">
+    <div
+      className="fixed inset-0 overflow-auto text-amber-100"
+      style={{ background: 'linear-gradient(to bottom, #221a10 0%, #15100a 58%, #0b0806 100%)' }}
+    >
+      <div aria-hidden className="hearth-glow pointer-events-none absolute inset-0" />
+      <GameHud location="Camp" />
+      <div className="relative mx-auto max-w-4xl px-8 pb-12 pt-24">
         <Heading level={1} className="text-3xl mb-2">Camp</Heading>
-        <p className="text-stone-400 italic mb-8">
+        <p className="text-parchment-dim italic mb-8">
           The fire crackles. The road waits.
         </p>
 
@@ -115,8 +120,8 @@ function PartyStatus(): React.JSX.Element {
           const barColor = pct > 0.66 ? 'bg-emerald-600' : pct > 0.33 ? 'bg-amber-500' : 'bg-red-600'
           return (
             <li key={u.id as unknown as string} className="flex items-center gap-3">
-              <span className="text-stone-200 w-32 truncate">{u.name}</span>
-              <span className="text-stone-400 w-20 text-right tabular-nums">
+              <span className="voice-display text-stone-200 w-32 truncate">{u.name}</span>
+              <span className="numeral text-stone-400 w-20 text-right">
                 {u.hp.current} / {u.hp.max}
               </span>
               <div className="flex-1 h-2 bg-stone-800 rounded">
