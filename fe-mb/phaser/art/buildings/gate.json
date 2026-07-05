@@ -1,0 +1,9 @@
+{
+  "id": "gate",
+  "name": "Border Gate",
+  "kind": "building",
+  "node": "EXIT",
+  "desc": "region exit / border-crossing node",
+  "prompt": "a fortified medieval border gate across a dirt road, timber-and-stone gatehouse with a raised iron portcullis, a hanging banner and a brazier, frontier checkpoint",
+  "status": "draft"
+}

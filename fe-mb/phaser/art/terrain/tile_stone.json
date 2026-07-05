@@ -1,0 +1,7 @@
+{
+  "id": "tile_stone",
+  "kind": "tile",
+  "desc": "stone ground / paving",
+  "prompt": "seamless tileable texture of grey stone ground, top-down flat overhead, one uniform weathered rock and flagstone material, fine cracks and tan dust in the gaps, flat material swatch, repeating pattern, no objects, no grass, no water, no other terrain",
+  "status": "draft"
+}

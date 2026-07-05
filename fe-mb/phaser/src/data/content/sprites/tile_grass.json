@@ -1,0 +1,31 @@
+{
+  "id": "tile_grass",
+  "w": 16,
+  "h": 16,
+  "scale": 3,
+  "palette": {
+    "m": "#41552f",
+    "d": "#2c3a22",
+    "l": "#5a6f3a",
+    "h": "#75863f",
+    "r": "#4a3a28"
+  },
+  "rows": [
+    "mmmmmmmlmmmmmmmm",
+    "mmlmmmmmmmmmdmmm",
+    "mmmmmmmmmlmmmmmm",
+    "mdmmmmmmmmmmmmlm",
+    "mmmmmlmmmmmmmmmm",
+    "mmmmmmmmmmrmmmmm",
+    "mmmmdmmmmmmmmmlm",
+    "lmmmmmmmlmmmmmmm",
+    "mmmmmmmmmmmmdmmm",
+    "mmmlmmmmmmmmmmmm",
+    "mmmmmmmdmmmmlmmm",
+    "mmmmmmmmmmmmmmmm",
+    "mlmmmmmmmrmmmmmm",
+    "mmmmmdmmmmmmmmlm",
+    "mmmmmmmmlmmmmmmm",
+    "mmdmmmmmmmmmlmmm"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "bandit_archer",
+  "name": "Bandit Archer",
+  "side": "enemy",
+  "class": "bandit",
+  "role": "Borderlands skirmisher",
+  "canon": "Part of the Bandit Ambush group (bandits.json).",
+  "appearance": "wiry bandit archer; ragged hood and light leather; shortbow drawn; quiver on the back; sneering",
+  "personality": "sly, cowardly, picks easy targets from range",
+  "prompt": "1man, solo, wiry bandit archer, ragged hood and light leather armor, shortbow in hand, quiver of arrows on the back, sneering sly expression, dark fantasy villain",
+  "status": "draft"
+}

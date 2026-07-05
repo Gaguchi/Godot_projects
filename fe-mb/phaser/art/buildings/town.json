@@ -1,0 +1,9 @@
+{
+  "id": "town",
+  "name": "Town",
+  "kind": "building",
+  "node": "TOWN",
+  "desc": "Borderlands settlement node — shops, inns, recruits.",
+  "prompt": "a small fortified medieval frontier town, timber and grey-stone houses clustered behind a low wooden palisade, a central watchtower and hanging banners, chimney smoke, dirt paths",
+  "status": "draft"
+}

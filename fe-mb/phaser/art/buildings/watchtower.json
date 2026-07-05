@@ -1,0 +1,9 @@
+{
+  "id": "watchtower",
+  "name": "Watchtower",
+  "kind": "building",
+  "node": "CAMP",
+  "desc": "military outpost / map scenery",
+  "prompt": "a tall lone grey-stone watchtower with timber scaffolding and a wooden palisade base, a lit beacon brazier at the top, frontier border outpost",
+  "status": "draft"
+}

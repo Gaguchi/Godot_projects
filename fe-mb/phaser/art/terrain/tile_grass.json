@@ -1,0 +1,7 @@
+{
+  "id": "tile_grass",
+  "kind": "tile",
+  "desc": "Borderlands base ground",
+  "prompt": "seamless tileable texture of short green grass, top-down flat overhead, one uniform single material, fine even blades, subtle natural variation, flat material swatch, repeating pattern, no objects, no other terrain",
+  "status": "draft"
+}

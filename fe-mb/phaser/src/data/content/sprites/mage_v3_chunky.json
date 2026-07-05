@@ -1,0 +1,101 @@
+{
+  "id": "mage_v3_chunky",
+  "w": 32,
+  "h": 32,
+  "palette": {
+    ".": null,
+    "K": "#1a1410",
+    "s": "#ffdbb5",
+    "f": "#d4956a",
+    "i": "#e8c878",
+    "j": "#b08a3a",
+    "p": "#8a63d6",
+    "v": "#b89cf0",
+    "u": "#4e3a82",
+    "w": "#6b4a2c",
+    "g": "#e8a93a",
+    "G": "#ffe39a",
+    "b": "#7ba6dd",
+    "d": "#3f6aa0"
+  },
+  "parts": [
+    { "name": "base",  "at": [7, 28], "rows": [
+      ".dbbbbbbbbbbbbbbd.",
+      "..dddddddddddddd.."
+    ] },
+    { "name": "staff", "at": [20, 3], "rows": [
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK",
+      "KwwK"
+    ] },
+    { "name": "gem",   "at": [19, 0], "rows": [
+      ".KgK.",
+      "KgGgK",
+      "KGGGK",
+      "KgGgK",
+      ".KgK."
+    ] },
+    { "name": "robe",  "at": [6, 13], "rows": [
+      "....KKKKKK....",
+      "...KuuuuuuuuK...",
+      "..KupppppppvuK..",
+      "..KuppppppppvK..",
+      ".KuppppppppppvK.",
+      ".KupppppppppppK.",
+      "KuppppppppppppvK",
+      "KuppppppppppppuK",
+      "KuppppppppppppuK",
+      "KuppppppppppppuK",
+      "KuppppppppppppuK",
+      "KuppppppppppppuK",
+      "KuuppppppppppuuK",
+      ".KKuuuuuuuuuuKK.",
+      "..KKKKKKKKKKKK.."
+    ] },
+    { "name": "arms",  "at": [4, 16], "rows": [
+      "KuuK........",
+      "KpvK........",
+      "KppK........",
+      "KuuK........"
+    ] },
+    { "name": "lhand", "at": [4, 20], "rows": [
+      "KsssK"
+    ] },
+    { "name": "rhand", "at": [17, 12], "rows": [
+      "Kssss",
+      "Kssss",
+      "Ksss."
+    ] },
+    { "name": "head",  "at": [11, 6], "rows": [
+      ".KKKKKKK.",
+      "KsssssssK",
+      "KssssssssK",
+      "KsKssKssK",
+      "KsssssssK",
+      "KsfffsK",
+      ".KssfK.",
+      "..KKK.."
+    ] },
+    { "name": "hat",   "at": [9, 2], "rows": [
+      "....KK....",
+      "...KppK...",
+      "..KpppK...",
+      ".KpvpppK..",
+      "KpvvppppK.",
+      "KKKKKKKKKKKK"
+    ] }
+  ]
+}

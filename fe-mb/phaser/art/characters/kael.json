@@ -1,0 +1,12 @@
+{
+  "id": "kael",
+  "name": "Kael",
+  "side": "ally",
+  "class": "bounty_hunter",
+  "role": "bounty hunter (quest recruit)",
+  "canon": "Quest 'Blood Ties' giver at Pine Crossing: 'A hooded bounty hunter nursing a drink alone.' Hunting his brother Daren, who fell in with a bandit gang; joins the party if Daren is captured alive.",
+  "appearance": "lean hooded bounty hunter; dark weathered cloak over worn leather; hood shadowing a stubbled grim face; twin daggers and a small crossbow",
+  "personality": "brooding, terse, carrying guilt over his brother",
+  "prompt": "1man, solo, hooded bounty hunter, dark weathered hooded cloak over worn leather armor, hood shadowing a stubbled grim face, twin daggers at the belt and a small crossbow on the back, brooding expression, dark fantasy",
+  "status": "draft"
+}

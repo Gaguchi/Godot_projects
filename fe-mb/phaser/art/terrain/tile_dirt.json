@@ -1,0 +1,7 @@
+{
+  "id": "tile_dirt",
+  "kind": "tile",
+  "desc": "packed earth / paths",
+  "prompt": "seamless tileable texture of bare packed dirt, top-down flat overhead, one uniform tan-brown earth material, fine soil grain and small pebbles, flat material swatch, repeating pattern, no objects, no grass, no water, no other terrain",
+  "status": "draft"
+}

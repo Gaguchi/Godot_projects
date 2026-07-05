@@ -1,0 +1,9 @@
+{
+  "id": "bridge",
+  "name": "Bridge",
+  "kind": "building",
+  "node": "scenery",
+  "desc": "map scenery / river crossing",
+  "prompt": "an old stone arch bridge over a stream on a solid chunky isometric earth platform base, dark grey weathered mossy stonework, vivid green moss, dark wood railings, a dirt road crossing, medieval crossing diorama, vivid saturated colors, strong dark shadows, high contrast on a plain white background",
+  "status": "draft"
+}

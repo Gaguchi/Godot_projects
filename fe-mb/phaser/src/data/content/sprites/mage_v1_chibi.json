@@ -1,0 +1,92 @@
+{
+  "id": "mage_v1_chibi",
+  "w": 32,
+  "h": 32,
+  "palette": {
+    ".": null,
+    "K": "#1a1410",
+    "s": "#ffdbb5",
+    "f": "#d4956a",
+    "i": "#e8c878",
+    "I": "#ffe9b0",
+    "j": "#b08a3a",
+    "p": "#8a63d6",
+    "v": "#b89cf0",
+    "u": "#4e3a82",
+    "w": "#6b4a2c",
+    "g": "#e8a93a",
+    "G": "#ffe39a",
+    "b": "#7ba6dd",
+    "d": "#3f6aa0"
+  },
+  "parts": [
+    { "name": "base",  "at": [10, 29], "rows": [
+      "bbbbbbbbbbbb",
+      ".dddddddddd."
+    ]},
+    { "name": "robe",  "at": [10, 17], "rows": [
+      "..pppppp..",
+      ".pppppppp.",
+      "pvpppppppp",
+      "pvpppppppp",
+      "pppppppppp",
+      "pppppppppp",
+      "pppppppppp",
+      "pppppppppp",
+      "ppuppppupp",
+      "uppupppuup",
+      "uppupppuup"
+    ]},
+    { "name": "arms",  "at": [8, 19],  "rows": [
+      "vp..........p",
+      "vp..........s",
+      ".p.........ss",
+      ".p.........ss"
+    ]},
+    { "name": "head",  "at": [10, 7],  "rows": [
+      ".Kssssssss.K",
+      "Kssssssssssj",
+      "Kssssssssssj",
+      "Ksssssssssjj",
+      "KssKKssssKKj",
+      "Kssssssssssj",
+      "Kssssffsssjj",
+      "Ksssffffssj.",
+      ".Kssssssssj.",
+      "..Kffffffj.."
+    ]},
+    { "name": "hair",  "at": [9, 4],  "rows": [
+      "...iiiiii...",
+      "..iiIiiiii..",
+      ".iiIIiiiiji.",
+      "iiIiiiiiijji",
+      "iiiiiiiiiijj",
+      "ji........ji"
+    ]},
+    { "name": "staff", "at": [21, 5],  "rows": [
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww"
+    ]},
+    { "name": "gem",   "at": [20, 1],  "rows": [
+      ".g.",
+      "gGg",
+      "vGv",
+      ".v."
+    ]}
+  ]
+}

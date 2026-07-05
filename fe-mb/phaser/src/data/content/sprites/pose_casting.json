@@ -1,0 +1,119 @@
+{
+  "id": "pose_casting",
+  "w": 64,
+  "h": 64,
+  "palette": {
+    ".": null,
+    "K": "#1a1410",
+    "b": "#7ba6dd"
+  },
+  "parts": [
+    { "name": "base", "at": [18, 57], "rows": [
+      "..bbbbbbbbbbbbbbbbbb..",
+      "...bbbbbbbbbbbbbbbb..."
+    ] },
+    { "name": "robe", "at": [12, 28], "rows": [
+      "..........KKKKKK......",
+      ".........KKKKKKKK.....",
+      ".........KKKKKKKK.....",
+      "........KKKKKKKKK.....",
+      "........KKKKKKKKKK....",
+      ".......KKKKKKKKKKK....",
+      ".......KKKKKKKKKKKK...",
+      "......KKKKKKKKKKKKK...",
+      "......KKKKKKKKKKKKKK..",
+      ".....KKKKKKKKKKKKKKK..",
+      ".....KKKKKKKKKKKKKKK..",
+      "....KKKKKKKKKKKKKKKK..",
+      "....KKKKKKKKKKKKKKKK..",
+      "...KKKKKKKKKKKKKKKKK..",
+      "...KKKKKKKKKKKKKKKKK..",
+      "..KKKKKKKKKKKKKKKKKK..",
+      "..KKKKKKKKKKKKKKKKKK..",
+      ".KKKKKKKKKKKKKKKKKKK..",
+      ".KKKKKKKKKKKKKKKKKKK..",
+      "KKKKKKKKKKKKKKKKKKKK..",
+      "KKKKKKKKKKKKKKKKKKKK..",
+      "KKKKKKKKKKKKKKKKKKKKK.",
+      "KKKKKKKKKKKKKKKKKKKKK.",
+      "KKKKKKKKKKKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKKKKKK",
+      "..KKKKKKKKKKKKKKKKKKK."
+    ] },
+    { "name": "torso", "at": [25, 20], "rows": [
+      "..KKKKK",
+      ".KKKKKK",
+      "KKKKKKK",
+      "KKKKKKK",
+      "KKKKKKKK",
+      "KKKKKKKK",
+      "KKKKKKKK",
+      ".KKKKKKK"
+    ] },
+    { "name": "free_arm", "at": [13, 24], "rows": [
+      "............KKK",
+      "..........KKKKK",
+      "........KKKKKK.",
+      "....KKKKKKKK...",
+      "KKKKKKKKK.....",
+      "KKKKKK........",
+      ".KKKK........."
+    ] },
+    { "name": "staff_arm", "at": [31, 18], "rows": [
+      ".....KKK",
+      "....KKKK",
+      "...KKKKK",
+      "..KKKKK.",
+      ".KKKKKK.",
+      "KKKKKK..",
+      "KKKKK..."
+    ] },
+    { "name": "staff", "at": [38, 3], "rows": [
+      ".......KK",
+      "......KK.",
+      "......KK.",
+      ".....KK..",
+      ".....KK..",
+      "....KK...",
+      "....KK...",
+      "...KK....",
+      "...KK....",
+      "..KK.....",
+      "..KK.....",
+      ".KK......",
+      ".KK......",
+      "KK......."
+    ] },
+    { "name": "gem", "at": [42, 0], "rows": [
+      ".KK.",
+      "KKKK",
+      "KKKK",
+      ".KK."
+    ] },
+    { "name": "head", "at": [27, 13], "rows": [
+      ".KKKKK",
+      "KKKKKK",
+      "KKKKKK",
+      "KKKKKK",
+      "KKKKKK",
+      ".KKKK."
+    ] },
+    { "name": "hat", "at": [22, 2], "rows": [
+      "..............KK",
+      "............KKK.",
+      "...........KKK..",
+      ".........KKKK...",
+      ".......KKKKK....",
+      "......KKKKK.....",
+      ".....KKKKKK.....",
+      "....KKKKKK......",
+      "...KKKKKKK......",
+      "..KKKKKKKK......",
+      ".KKKKKKKKKK.....",
+      "KKKKKKKKKKKKK..."
+    ] }
+  ]
+}

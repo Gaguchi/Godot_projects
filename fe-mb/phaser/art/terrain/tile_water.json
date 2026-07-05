@@ -1,0 +1,7 @@
+{
+  "id": "tile_water",
+  "kind": "tile",
+  "desc": "river / impassable",
+  "prompt": "seamless tileable texture of calm water surface, top-down flat overhead, one uniform blue-teal water material with gentle ripples and soft highlights, flat material swatch, repeating pattern, no land, no islands, no shore, no objects, no other terrain",
+  "status": "draft"
+}

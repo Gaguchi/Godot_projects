@@ -1,0 +1,12 @@
+{
+  "id": "brigand_chief",
+  "name": "Brigand Chief",
+  "side": "enemy",
+  "class": "bandit",
+  "role": "Borderlands raid leader",
+  "canon": "Leads the Brigand Raiders group (brigands.json), the tier-2 step up from common bandits.",
+  "appearance": "big brutal raid leader; scavenged plate-and-leather armor; heavy fur cloak; trophies and chains; great two-handed axe; cruel commanding face",
+  "personality": "cruel, domineering; takes whatever he wants",
+  "prompt": "1man, solo, brutal brigand chief, large muscular build, scavenged plate-and-leather armor, heavy fur cloak, trophies and chains, wielding a great two-handed axe, cruel commanding scarred face, dark fantasy boss",
+  "status": "draft"
+}

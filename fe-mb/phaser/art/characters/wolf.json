@@ -1,0 +1,12 @@
+{
+  "id": "wolf",
+  "name": "Wolf",
+  "side": "enemy",
+  "class": "bandit",
+  "role": "Borderlands beast",
+  "canon": "Wolf Pack (wolves.json): 3x Wolf, fast and fragile pure melee. Rumor: 'Wolves have grown bold on the northern roads.'",
+  "appearance": "lean grey dire-wolf; bristling shaggy fur; bared fangs; pale cold eyes; lowered predatory stance",
+  "personality": "feral pack hunter",
+  "prompt": "solo, no humans, lean grey dire wolf beast, bristling shaggy fur, bared fangs snarling, pale cold eyes, lowered predatory stance, dark fantasy creature",
+  "status": "draft"
+}

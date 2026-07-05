@@ -1,0 +1,88 @@
+{
+  "id": "mage_v4_balanced",
+  "w": 32,
+  "h": 32,
+  "scale": 1,
+  "palette": {
+    ".": null,
+    "K": "#1a1410",
+    "s": "#ffdbb5",
+    "f": "#d4956a",
+    "i": "#e8c878",
+    "j": "#b08a3a",
+    "p": "#8a63d6",
+    "v": "#b89cf0",
+    "u": "#4e3a82",
+    "w": "#6b4a2c",
+    "g": "#e8a93a",
+    "G": "#ffe39a",
+    "b": "#7ba6dd",
+    "d": "#3f6aa0"
+  },
+  "parts": [
+    { "name": "base",  "at": [9, 28], "rows": ["dbbbbbbbbbbbbd", ".dddddddddddd."] },
+    { "name": "robe",  "at": [12, 12], "rows": [
+      "vpppp",
+      "ppppp",
+      "ppppp",
+      "pppppp",
+      "vppppp",
+      "vpppppp",
+      "uppppppu",
+      "uppppppu",
+      "uppppppu",
+      "uppppppu",
+      "uppppppu",
+      "uppppppu",
+      "uppppppu",
+      "uuppppuu",
+      "uupppppu",
+      "uuuuuuuu"
+    ] },
+    { "name": "arms",  "at": [10, 14], "rows": [
+      "..pp...pp..",
+      ".vp.....pu.",
+      ".vp.....pu.",
+      ".sp.....pu.",
+      ".ss.....su."
+    ] },
+    { "name": "head",  "at": [14, 6], "rows": [
+      "ssss",
+      "ssss",
+      "sKsK",
+      "ssss",
+      "sffs",
+      ".ss."
+    ] },
+    { "name": "hair",  "at": [13, 5], "rows": [
+      "iiiiii",
+      "iiiiii",
+      "ji..ij"
+    ] },
+    { "name": "staff", "at": [9, 2], "rows": [
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww",
+      "ww"
+    ] },
+    { "name": "grip",  "at": [11, 17], "rows": ["ss"] },
+    { "name": "gem",   "at": [8, 0], "rows": [
+      ".G.",
+      "gGg",
+      "ggg",
+      ".g."
+    ] }
+  ]
+}

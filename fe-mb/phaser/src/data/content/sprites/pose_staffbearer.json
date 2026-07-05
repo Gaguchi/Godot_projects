@@ -1,0 +1,128 @@
+{
+  "id": "pose_staffbearer",
+  "w": 64,
+  "h": 64,
+  "scale": 1,
+  "_note": "Phase 1 silhouette only. Regal staff-bearer mage, 3/4 view, contrapposto: weight on figure's right leg (frame-left), hip shifted, robe flares wider to frame-right (trailing cloth). Tall staff held in frame-right hand rises on the right, gem isolated top-right in open space (clearly a distinct implement). Wide pointed wizard hat with broad brim, point leaning LEFT (opposite the staff) so the two identifiers don't merge. Single fill 'K'; 'b' ground disc.",
+  "palette": {
+    ".": null,
+    "K": "#1a1410",
+    "b": "#7ba6dd"
+  },
+  "parts": [
+    { "name": "base", "at": [18, 58], "rows": [
+      "...bbbbbbbbbbbbbbbb...",
+      ".bbbbbbbbbbbbbbbbbbbb.",
+      "..bbbbbbbbbbbbbbbbbb.."
+    ] },
+
+    { "name": "robe", "at": [20, 33], "rows": [
+      ".....KKKKKK.......",
+      "....KKKKKKKK......",
+      "...KKKKKKKKK......",
+      "...KKKKKKKKKK.....",
+      "..KKKKKKKKKKK.....",
+      "..KKKKKKKKKKKK....",
+      ".KKKKKKKKKKKKK....",
+      ".KKKKKKKKKKKKKK...",
+      "KKKKKKKKKKKKKKK...",
+      "KKKKKKKKKKKKKKKK..",
+      "KKKKKKKKKKKKKKKK..",
+      "KKKKKKKKKKKKKKKKK.",
+      ".KKKKKKKKKKKKKKKK.",
+      ".KKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKK",
+      "..KKKKKKKKKKKKKKKK",
+      "..KKKKKKKKKKKKKKKK",
+      "..KKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKKK",
+      "..KKKKKKKKKKKKKKKKK"
+    ] },
+
+    { "name": "torso", "at": [23, 25], "rows": [
+      "....KKKKK..",
+      "...KKKKKKK.",
+      "..KKKKKKKK.",
+      "..KKKKKKKKK",
+      ".KKKKKKKKKK",
+      ".KKKKKKKKKK",
+      "KKKKKKKKKKK",
+      "KKKKKKKKKKK"
+    ] },
+
+    { "name": "staff_arm", "at": [31, 28], "rows": [
+      "KKKK",
+      ".KKKK",
+      "..KKKK",
+      "...KKK"
+    ] },
+
+    { "name": "staff", "at": [37, 9], "rows": [
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK",
+      "KK"
+    ] },
+
+    { "name": "gem", "at": [36, 4], "rows": [
+      "..K..",
+      ".KKK.",
+      "KKKKK",
+      ".KKK.",
+      "..K.."
+    ] },
+
+    { "name": "head", "at": [25, 18], "rows": [
+      "..KKKKK..",
+      ".KKKKKKK.",
+      "KKKKKKKKK",
+      "KKKKKKKKK",
+      "KKKKKKKKK",
+      ".KKKKKKK.",
+      "..KKKKK.."
+    ] },
+
+    { "name": "hat", "at": [20, 6], "rows": [
+      "KK...............",
+      "KKK..............",
+      ".KKK.............",
+      ".KKKK............",
+      "..KKKK...........",
+      "..KKKKK..........",
+      "...KKKKK.........",
+      "...KKKKKK........",
+      "....KKKKKK.......",
+      "....KKKKKKK......",
+      ".....KKKKKKK.....",
+      ".....KKKKKKKK....",
+      "....KKKKKKKKKK...",
+      "..KKKKKKKKKKKKK..",
+      "KKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKK."
+    ] }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "marcus",
+  "name": "Marcus",
+  "side": "ally",
+  "class": "knight",
+  "role": "veteran guardian",
+  "canon": "Speaks the prologue; warns to stay alert for brigands and beasts on the roads. The cautious, tactical veteran.",
+  "appearance": "older veteran knight; greying hair and short beard; weathered heavy steel plate armor; red cape; an old scar; cavalry lance",
+  "personality": "steady, watchful, protective; has seen too many roads to be reckless",
+  "prompt": "1man, solo, veteran paladin knight, greying hair and short beard, weathered full steel plate armor, red cape, an old scar across one cheek, holding a steel cavalry lance upright, stern watchful expression, dark fantasy",
+  "status": "draft"
+}

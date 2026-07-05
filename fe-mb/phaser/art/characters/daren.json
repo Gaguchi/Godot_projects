@@ -1,0 +1,12 @@
+{
+  "id": "daren",
+  "name": "Daren",
+  "side": "enemy",
+  "class": "bandit",
+  "role": "capture target — Kael's brother",
+  "canon": "Daren's Gang (darens_gang.json): isCaptureTarget=true, bountyValue 50. Kael's brother who 'fell in with a bandit gang'; the Blood Ties quest wants him taken alive.",
+  "appearance": "younger bandit, lean; light leather armor; short sword; tousled hair; resembles Kael but more desperate and conflicted; no helmet",
+  "personality": "desperate, in over his head, conflicted — not truly hardened; a tragic figure",
+  "prompt": "1man, solo, young lean bandit, light leather armor, short sword in hand, tousled dark hair, a conflicted desperate expression, looks like a hardened bounty hunter's younger brother, dark fantasy",
+  "status": "draft"
+}

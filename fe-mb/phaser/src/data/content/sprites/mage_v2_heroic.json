@@ -1,0 +1,127 @@
+{
+  "id": "mage_v2_heroic",
+  "w": 32,
+  "h": 32,
+  "scale": 1,
+  "_note": "Heroic/elegant mage (FFT/Tactics Ogre): tall, slender, ~4.5 heads, small head, long flowing robe, gem-tipped staff breaking the top, blue ally disc. Silhouette/block-in pass with light K outline.",
+  "palette": {
+    ".": null,
+    "K": "#1a1410",
+    "s": "#ffdbb5",
+    "f": "#d4956a",
+    "i": "#e8c878",
+    "j": "#b08a3a",
+    "p": "#8a63d6",
+    "v": "#b89cf0",
+    "u": "#4e3a82",
+    "w": "#6b4a2c",
+    "g": "#e8a93a",
+    "G": "#ffe39a",
+    "b": "#7ba6dd",
+    "d": "#3f6aa0"
+  },
+  "parts": [
+    { "name": "base", "at": [10, 28], "rows": [
+      "Kbbbbbbbbbbb",
+      ".dddddddddd.",
+      "...dddddd..."
+    ] },
+    { "name": "robe_outline", "at": [11, 11], "rows": [
+      "KKKKKKKK",
+      "K......K",
+      "K......K",
+      "K......K",
+      "K......K",
+      "K......K",
+      "K......K",
+      "K......K",
+      "K......K",
+      "K......KK",
+      "K......uK",
+      "K......uuK",
+      "K......uuK",
+      "K......uuuK",
+      "K.......uuuK",
+      "KK......uuuK",
+      ".K.........K"
+    ] },
+    { "name": "robe", "at": [12, 12], "rows": [
+      "pppp",
+      "ppppp",
+      "ppppp",
+      "ppppp",
+      "ppppp",
+      "ppppp",
+      "ppppp",
+      "ppppp",
+      "pppppp",
+      "pppppv",
+      "ppppppv",
+      "ppppppv",
+      "pppppppv",
+      "ppppppppv",
+      "ppppppppv",
+      "ppppppppp"
+    ] },
+    { "name": "shoulders", "at": [12, 11], "rows": [
+      "pppppp",
+      "vpppppv"
+    ] },
+    { "name": "leftarm", "at": [11, 13], "rows": [
+      "v",
+      "p",
+      "p",
+      "p"
+    ] },
+    { "name": "rightarm", "at": [18, 13], "rows": [
+      "vpp",
+      "..vp",
+      "...vp",
+      "....v"
+    ] },
+    { "name": "hand_on_staff", "at": [20, 16], "rows": [
+      "vv"
+    ] },
+    { "name": "head", "at": [13, 5], "rows": [
+      "sss",
+      "sss",
+      "KsK",
+      "sss",
+      ".s."
+    ] },
+    { "name": "hair", "at": [12, 4], "rows": [
+      "iiiii",
+      "ii.ii",
+      "ij.ji",
+      "j...j"
+    ] },
+    { "name": "staff", "at": [21, 2], "rows": [
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw",
+      "Kw"
+    ] },
+    { "name": "gem", "at": [20, 0], "rows": [
+      ".G.",
+      "gGg",
+      "KgG",
+      ".K."
+    ] }
+  ]
+}

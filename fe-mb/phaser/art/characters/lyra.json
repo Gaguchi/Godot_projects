@@ -1,0 +1,12 @@
+{
+  "id": "lyra",
+  "name": "Lyra",
+  "side": "ally",
+  "class": "mage",
+  "role": "traveling scholar (recruit)",
+  "canon": "Recruitable at Pine Crossing tavern: 'A traveling scholar with a small bag of tricks.'",
+  "appearance": "young traveling scholar; simple worn hooded robe; satchel of scrolls at the hip; an open glowing spellbook; road-dust on the hem",
+  "personality": "clever, curious, faintly mischievous; collects knowledge wherever she goes",
+  "prompt": "1girl, solo, young traveling scholar mage, simple worn hooded robe, satchel of scrolls at the hip, holding an open spellbook with a faint glow, clever curious expression, dark fantasy",
+  "status": "draft"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "garrik",
+  "name": "Garrik",
+  "side": "ally",
+  "class": "knight",
+  "role": "mercenary knight (recruit)",
+  "canon": "Recruitable at Pine Crossing tavern: 'A grizzled veteran looking for steady pay.'",
+  "appearance": "burly grizzled mercenary; battered mismatched iron armor; stubble and scars; broad shoulders; heavy broadsword",
+  "personality": "gruff, pragmatic, in it for the coin but dependable once paid",
+  "prompt": "1man, solo, grizzled mercenary knight, burly broad shoulders, stubble and scars, battered mismatched iron plate armor with a fur-lined collar, holding a heavy broadsword, gruff no-nonsense expression, dark fantasy",
+  "status": "draft"
+}

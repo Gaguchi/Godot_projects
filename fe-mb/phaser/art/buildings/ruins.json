@@ -1,0 +1,9 @@
+{
+  "id": "ruins",
+  "name": "Ruins",
+  "kind": "building",
+  "node": "DUNGEON",
+  "desc": "ruins / event / scenery",
+  "prompt": "crumbling ancient stone ruins, broken weathered pillars and a collapsed archway overgrown with moss and creeping vines, half-buried flagstones, forgotten fantasy ruins",
+  "status": "draft"
+}

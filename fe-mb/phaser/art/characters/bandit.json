@@ -1,0 +1,12 @@
+{
+  "id": "bandit",
+  "name": "Bandit",
+  "side": "enemy",
+  "class": "bandit",
+  "role": "Borderlands road raider",
+  "canon": "Common Borderlands enemy (bandits.json). Bandit Ambush = 2x Bandit + 1x Bandit Archer.",
+  "appearance": "rugged road bandit; patchwork leather armor; fur shoulder pelt; fingerless gloves; heavy notched iron axe; scarred snarling face",
+  "personality": "opportunistic, brutish",
+  "prompt": "1man, solo, rugged bandit road raider, patchwork leather armor, fur shoulder pelt, fingerless gloves, wielding a heavy notched iron axe, scarred snarling menacing face, dark fantasy villain",
+  "status": "draft"
+}

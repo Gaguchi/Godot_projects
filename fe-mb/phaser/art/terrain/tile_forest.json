@@ -1,0 +1,7 @@
+{
+  "id": "tile_forest",
+  "kind": "tile",
+  "desc": "forest / cover",
+  "prompt": "seamless top-down terrain tile of dense forest canopy seen from above, overhead view straight down, rounded pine and oak treetops in rich greens, hints of tan dirt and leaf litter between trunks, Fire Emblem map-tile style, vibrant clean anime-fantasy",
+  "status": "draft"
+}

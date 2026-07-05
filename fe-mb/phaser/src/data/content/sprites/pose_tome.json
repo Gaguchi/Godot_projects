@@ -1,0 +1,89 @@
+{
+  "id": "pose_tome",
+  "w": 64,
+  "h": 64,
+  "scale": 1,
+  "_note": "Silhouette pass — scholar mage reading an open tome. 3/4 stance facing viewer-left, weight on figure's right leg, robe flares wider on the trailing (viewer-right) side, pointed hood bowed forward over an open book held up at chest height in front; the open-book wedge protrudes past the front (left) edge so it breaks the silhouette and reads as a tome. Single fill K, blue ground disc b. One connected mass, robe hem meets the disc.",
+  "palette": {
+    ".": null,
+    "K": "#1a1410",
+    "b": "#7ba6dd"
+  },
+  "parts": [
+    { "name": "base", "at": [19, 57], "rows": [
+      "...bbbbbbbbbbbbbbbbbb...",
+      ".bbbbbbbbbbbbbbbbbbbbbb.",
+      "bbbbbbbbbbbbbbbbbbbbbbbb",
+      "..bbbbbbbbbbbbbbbbbbbb.."
+    ] },
+    { "name": "hood", "at": [25, 5], "rows": [
+      ".........K",
+      "........KK",
+      "........KK",
+      ".......KKK",
+      ".......KKKK",
+      "......KKKKK",
+      ".....KKKKKK",
+      "....KKKKKKK",
+      "...KKKKKKKK",
+      "..KKKKKKKKK",
+      ".KKKKKKKKKK",
+      "KKKKKKKKKKK"
+    ] },
+    { "name": "head", "at": [25, 17], "rows": [
+      "KKKKKKKK",
+      "KKKKKKKK",
+      "KKKKKKKK",
+      ".KKKKKKK"
+    ] },
+    { "name": "shoulders", "at": [22, 21], "rows": [
+      "....KKKKKK..",
+      "..KKKKKKKKK.",
+      ".KKKKKKKKKKK",
+      "KKKKKKKKKKKK"
+    ] },
+    { "name": "tome_open", "at": [13, 25], "rows": [
+      "....KKKKK.KK.",
+      "...KKKKKK.KKK",
+      "..KKKKKKK.KKK",
+      ".KKKKKKKK.KKK",
+      "KKKKKKKKK.KKK",
+      ".KKKKKKKK.KK.",
+      "..KKKKKKK.K.."
+    ] },
+    { "name": "torso", "at": [24, 32], "rows": [
+      "KKKKKKKKKKK",
+      "KKKKKKKKKKK",
+      "KKKKKKKKKKKK",
+      "KKKKKKKKKKKK"
+    ] },
+    { "name": "robe_mid", "at": [23, 36], "rows": [
+      "KKKKKKKKKKKKK",
+      "KKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKK"
+    ] },
+    { "name": "robe_lower", "at": [22, 40], "rows": [
+      "KKKKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKKKK",
+      "KKKKKKKKKKKKKKKK"
+    ] },
+    { "name": "robe_flare", "at": [21, 44], "rows": [
+      "KKKKKKKKKKKKKKKKK.",
+      "KKKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKKK",
+      ".KKKKKKKKKKKKKKKKKK",
+      "..KKKKKKKKKKKKKKKKK"
+    ] },
+    { "name": "robe_hem", "at": [21, 50], "rows": [
+      "..KKKKKKKKKKKKKKKKK",
+      "..KKKKKKKKKKKKKKKKKK",
+      "..KKKKKKKKKKKKKKKKKK",
+      "...KKKKKKKKKKKKKKKKK",
+      "...KKKKKKKKKKKKKKKK.",
+      "....KKKKKKKKKKKKKK.."
+    ] }
+  ]
+}

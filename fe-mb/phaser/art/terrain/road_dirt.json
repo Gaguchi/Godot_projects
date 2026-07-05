@@ -1,0 +1,7 @@
+{
+  "id": "road_dirt",
+  "kind": "road",
+  "desc": "textured fill for the procedural roads",
+  "prompt": "seamless top-down texture of a worn dirt road, overhead view straight down, warm tan-brown packed earth with deep cart ruts, scattered pebbles, dust and faint footprints, dry frontier trail, Fire Emblem map style, vibrant clean anime-fantasy",
+  "status": "draft"
+}

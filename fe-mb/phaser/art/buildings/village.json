@@ -1,0 +1,9 @@
+{
+  "id": "village",
+  "name": "Village",
+  "kind": "building",
+  "node": "TOWN",
+  "desc": "smaller settlement variant",
+  "prompt": "a small rural medieval village, a few thatched-roof timber cottages around a stone well, fenced vegetable gardens, a hay cart, peaceful frontier hamlet",
+  "status": "draft"
+}

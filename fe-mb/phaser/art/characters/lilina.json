@@ -1,0 +1,12 @@
+{
+  "id": "lilina",
+  "name": "Lilina",
+  "side": "ally",
+  "class": "mage",
+  "role": "scholar mage",
+  "canon": "Speaks the prologue; suggests checking taverns for rumors and useful travelers. The diplomatic, knowledge-gathering voice. FE6 homage.",
+  "appearance": "young noblewoman; long flowing pale-blue hair with a hair ornament; blue-and-gold trimmed mage robe; wooden staff topped with a sapphire orb; a small tome at the belt",
+  "personality": "thoughtful, gentle, quietly confident; drawn to lore and people",
+  "prompt": "1girl, solo, young noble mage, long flowing pale-blue hair, hair ornament, elegant blue and gold trimmed mage robe, holding a wooden staff topped with a glowing sapphire orb, a small tome at the belt, gentle confident expression, dark fantasy",
+  "status": "draft"
+}
