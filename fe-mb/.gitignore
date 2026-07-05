@@ -3,7 +3,7 @@
 /android/
 
 # Session/tooling scratch (regenerable)
-.claude/
+/.claude/
 .playwright-mcp/
 .crop/
 _crop/

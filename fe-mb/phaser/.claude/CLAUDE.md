@@ -24,7 +24,21 @@ For research-bearing tasks (procgen rules, RNG strategies, growth math, scaling 
 - `npm test` — Vitest unit tests
 - `npm run test:e2e` — Playwright E2E
 - `npm run typecheck` — tsc --noEmit
+- `npm run lint` — ESLint (5 invariants; note: pre-existing react-hooks debt)
+- `npm run lint:content` — static content checks (broken card/dialogue refs; offense-less classes)
 - `npm run check-context-doc` — CONTEXT.md drift check (CI)
+- `npm run verify` — composite green gate: typecheck + typecheck:cli + lint:content + check-context-doc + unit tests
+- `npm run test:e2e` — Playwright incl. `tests/e2e/visual.spec.ts` (boot/console-error, no-overflow, dialogue-clipping, masked snapshots). If :5173 is taken, `PW_BASE_URL=http://localhost:5174 npx playwright test`; regenerate baselines with `--update-snapshots`.
+
+## Headless CLI (dev tool — `scripts/cli/`, see its README)
+
+Play/simulate game LOGIC in the terminal with no browser (drives the real stores + pure systems via tsx). Use for combat/dialogue/balance; use Playwright for visual/input/layout.
+
+- `npx tsx scripts/cli/play.ts combat` — interactive combat REPL
+- `npx tsx scripts/cli/play.ts combat --seed 7 --cmds "auto; auto" --json` — scripted, deterministic, machine-readable
+- `npm run sim -- --runs 50` — both-AI balance simulation (win-rate / avg turns / stalemate)
+- `npx tsx scripts/cli/play.ts dialogue <id> --cmds "1"` — walk a dialogue tree
+- `npm run typecheck:cli` — typecheck the CLI (`tsconfig.scripts.json`)
 
 ## Architecture Invariants (do not violate)
 
