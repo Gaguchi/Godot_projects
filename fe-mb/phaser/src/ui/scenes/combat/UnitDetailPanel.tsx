@@ -1,6 +1,7 @@
 import React from 'react'
 import { useCombatStore } from '../../../state/combatStore'
 import { Button, Icon } from '../../components'
+import { CharacterPortrait } from '../../components/CharacterPortrait'
 import { ApPips, HpMeter, TeamSigil } from './hudBits'
 import { hpTextClass } from './hpTier'
 
@@ -33,6 +34,7 @@ export function UnitDetailPanel({ pinnedUnitId, onClose }: UnitDetailPanelProps)
     >
       <div className="hud-panel-header flex items-center justify-between px-3 py-2">
         <span className="flex items-center gap-2">
+          <CharacterPortrait speaker={unit.name} size={28} active />
           <TeamSigil enemy={isEnemy} size={16} />
           <span className={`voice-display text-base ${isEnemy ? 'text-enemy' : 'text-amber-100'}`}>
             {unit.name}

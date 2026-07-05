@@ -241,7 +241,7 @@ phaser/src/
 | # | Question | Owner | Decision deadline |
 |---|---|---|---|
 | ~~OQ-1~~ | ~~Dungeon fog-of-war~~ → **CLOSED 2026-05-09**: full reveal at dungeon entry; Event node *contents* hidden until entered. See `docs/research/sts-procgen.md`. |
-| OQ-2 | Overworld procgen vs hand-authoring (Godot has hand-authored JSON; TS can do either) | TBD | next milestone |
+| ~~OQ-2~~ | ~~Overworld procgen vs hand-authoring~~ → **CLOSED 2026-07-06**: hand-authored. Three authored region JSONs (borderlands/thornwood/ashfall) are the shipping overworld; the split-view band+map (spec 2026-06-12) is built around authored node layouts and baked vistas. `procgen/overworldGenerator` stays a stub for post-beta. See `docs/research/procedural_map_gen.md`. |
 | ~~OQ-3~~ | ~~Recruitment cost formula for tavern recruits~~ → **CLOSED 2026-05-22**: `recruitmentCost(classId, level) = base × (1 + (level - 1) × 0.5)` with per-class baseline. See `docs/research/recruitment-cost.md`. |
 | OQ-4 | Animation timing as data — `card.effects[].durationMs` granularity | TBD | combat-rendering milestone |
 | OQ-5 | Save migration ladder activation point — when does player count justify it? | project owner | post-foundation |

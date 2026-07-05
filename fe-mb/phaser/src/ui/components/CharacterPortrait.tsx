@@ -13,8 +13,10 @@ export interface CharacterPortraitProps {
 }
 
 /**
- * Placeholder character portrait. Renders a colored shape with the speaker's
- * initials, plus a subtle breath/idle animation when active.
+ * Character portrait. Renders the authored sprite (head/torso crop of the
+ * full-body ComfyUI unit sprite) when the registry has one; otherwise falls
+ * back to a colored shape with the speaker's initials. Subtle breath/idle
+ * animation when active.
  *
  * Shape varies by character archetype (square = warrior, diamond = mystic,
  * hex = leader/named NPC, circle = generic, triangle = mystic alt). Color is
@@ -31,6 +33,8 @@ export function CharacterPortrait({
 }: CharacterPortraitProps): React.JSX.Element {
   const c = getCharacter(speaker)
   const isNarrator = c.faction === 'narrator'
+  const [spriteFailed, setSpriteFailed] = React.useState(false)
+  const showSprite = !!c.sprite && !spriteFailed && !isNarrator
 
   const shapeClass = SHAPE_CLASSES[c.shape] ?? SHAPE_CLASSES.circle
 
@@ -46,7 +50,7 @@ export function CharacterPortrait({
         role="img"
         aria-label={isNarrator ? 'Narrator' : c.displayName}
         className={
-          'flex items-center justify-center select-none ' +
+          'flex items-center justify-center select-none overflow-hidden ' +
           'border-2 ring-2 ring-offset-2 ring-offset-stone-950 shadow-lg ' +
           'transition-[transform,filter] duration-200 ' +
           c.bgColor + ' ' + c.ringColor + ' ' +
@@ -55,7 +59,18 @@ export function CharacterPortrait({
         }
         style={{ width: size, height: size }}
       >
-        {isNarrator ? (
+        {showSprite ? (
+          // Full-body sprite, cropped to head/torso: the frame shows the top
+          // ~45% of the image, anchored center-top.
+          <img
+            src={c.sprite}
+            alt=""
+            draggable={false}
+            className="w-full h-full object-cover"
+            style={{ objectPosition: '50% 12%', transform: `scale(1.9)`, transformOrigin: '50% 8%' }}
+            onError={() => setSpriteFailed(true)}
+          />
+        ) : isNarrator ? (
           <span className={`${c.textColor} flex`}>
             <Icon name="narrator" size={Math.round(size * 0.5)} />
           </span>
