@@ -1,3 +1,19 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Session/tooling scratch (regenerable)
+.claude/
+.playwright-mcp/
+.crop/
+_crop/
+_review_crops/
+node_modules/
+nul
+
+# Local art-generation tooling (not part of the game)
+pixel_asset_maker/
+*.skill
+
+# Stray working screenshots at repo root
+/*.png

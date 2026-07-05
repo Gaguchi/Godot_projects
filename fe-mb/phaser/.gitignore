@@ -26,3 +26,11 @@ dist-ssr
 
 *storybook.log
 storybook-static
+
+# Playwright output
+test-results/
+playwright-report/
+
+# Sprite-lab candidate galleries (regenerable via ComfyUI)
+public/sprites/lab/
+public/sprites/review/
