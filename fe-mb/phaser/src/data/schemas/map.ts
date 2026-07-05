@@ -23,6 +23,12 @@ export const WorldMapSchema = z.object({
     id: z.string(),
     name: z.string().optional(),
     type: z.enum(['town','camp','dungeon','exit']),
+    /**
+     * Render-only sigil hint for the overworld map glyph. Gameplay stays keyed
+     * off `type`; this only overrides which icon is drawn (e.g. a 'camp'-type
+     * ambush node renders the 'battle' sigil instead of the rest tent).
+     */
+    sigil: z.string().optional(),
     position: z.object({ x: z.number().int(), y: z.number().int() }),
     spawnPoint: z.boolean().optional(),
     encounterTableId: z.string().optional(),

@@ -3,15 +3,15 @@
   "regionId": "borderlands",
   "name": "The Borderlands",
   "width": 2120,
-  "height": 700,
+  "height": 444,
   "nodes": [
     {
       "id": "frontier_camp",
       "name": "Frontier Camp",
       "type": "camp",
       "position": {
-        "x": 100,
-        "y": 400
+        "x": 120,
+        "y": 235
       },
       "spawnPoint": true,
       "encounterTableId": "borderlands_road"
@@ -21,8 +21,8 @@
       "name": "Riverside Market",
       "type": "town",
       "position": {
-        "x": 250,
-        "y": 320
+        "x": 547,
+        "y": 182
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -31,9 +31,10 @@
       "id": "south_road_ambush",
       "name": "South Road Ambush",
       "type": "camp",
+      "sigil": "battle",
       "position": {
-        "x": 240,
-        "y": 510
+        "x": 519,
+        "y": 307
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -42,9 +43,10 @@
       "id": "old_mill_crossing",
       "name": "Old Mill Crossing",
       "type": "camp",
+      "sigil": "waypoint",
       "position": {
-        "x": 400,
-        "y": 260
+        "x": 975,
+        "y": 143
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -53,9 +55,10 @@
       "id": "bandit_hideout",
       "name": "Bandit Hideout",
       "type": "camp",
+      "sigil": "battle",
       "position": {
-        "x": 380,
-        "y": 400
+        "x": 918,
+        "y": 235
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -65,8 +68,8 @@
       "name": "South Junction",
       "type": "town",
       "position": {
-        "x": 380,
-        "y": 540
+        "x": 918,
+        "y": 327
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -75,9 +78,10 @@
       "id": "watchtower_ridge",
       "name": "Watchtower Ridge",
       "type": "camp",
+      "sigil": "fortress",
       "position": {
-        "x": 540,
-        "y": 200
+        "x": 1373,
+        "y": 103
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -87,8 +91,8 @@
       "name": "Pine Crossing",
       "type": "town",
       "position": {
-        "x": 540,
-        "y": 360
+        "x": 1373,
+        "y": 209
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -97,9 +101,10 @@
       "id": "smugglers_cave",
       "name": "Smuggler's Cave",
       "type": "dungeon",
+      "sigil": "dungeon",
       "position": {
-        "x": 520,
-        "y": 540
+        "x": 1316,
+        "y": 327
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -108,9 +113,10 @@
       "id": "border_fortress",
       "name": "Border Fortress",
       "type": "camp",
+      "sigil": "fortress",
       "position": {
-        "x": 680,
-        "y": 280
+        "x": 1772,
+        "y": 156
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -120,8 +126,8 @@
       "name": "Roderick's Camp",
       "type": "camp",
       "position": {
-        "x": 680,
-        "y": 440
+        "x": 1772,
+        "y": 261
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -131,8 +137,8 @@
       "name": "Trader's Rest",
       "type": "camp",
       "position": {
-        "x": 160,
-        "y": 280
+        "x": 291,
+        "y": 156
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -141,9 +147,10 @@
       "id": "north_ridge_path",
       "name": "North Ridge Path",
       "type": "camp",
+      "sigil": "waypoint",
       "position": {
-        "x": 470,
-        "y": 150
+        "x": 1174,
+        "y": 70
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -152,9 +159,10 @@
       "id": "broken_bridge",
       "name": "Broken Bridge",
       "type": "camp",
+      "sigil": "bridge",
       "position": {
-        "x": 460,
-        "y": 620
+        "x": 1145,
+        "y": 380
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"
@@ -163,9 +171,10 @@
       "id": "borderland_shrine",
       "name": "Borderland Shrine",
       "type": "camp",
+      "sigil": "shrine",
       "position": {
-        "x": 760,
-        "y": 180
+        "x": 2000,
+        "y": 90
       },
       "spawnPoint": false,
       "encounterTableId": "borderlands_road"

@@ -32,6 +32,8 @@ export interface RunState {
   starvationDamagePerHop: number
   /** Combat requested from a dialogue or quest effect — OverworldScene routes the next tick. */
   pendingCombat: { enemyGroupId: string } | null
+  /** Days on the road — starts at 1, +1 per overworld hop. Shown in the HUD. */
+  daysElapsed: number
 }
 
 export type RunAction =
@@ -199,6 +201,7 @@ function freshState(): RunState {
     pendingCombat: null,
     oneShotsFired: new Set<string>(),
     starvationDamagePerHop: 3,
+    daysElapsed: 1,
   }
 }
 
@@ -437,6 +440,8 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
         return
       }
       case 'consumeFoodPerHop': {
+        // A day passes with every hop on the road.
+        set(s => ({ daysElapsed: s.daysElapsed + 1 }))
         // Find the first food_rations item in the bag; remove one. If no
         // food remains, deal starvationDamagePerHop HP to each living party
         // member (mirrors Godot starvation rule).

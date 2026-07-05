@@ -3,15 +3,16 @@
   "regionId": "ashfall",
   "name": "Ashfall Peaks",
   "width": 2120,
-  "height": 700,
+  "height": 444,
   "nodes": [
     {
       "id": "mountain_pass",
       "name": "Mountain Pass",
       "type": "camp",
+      "sigil": "waypoint",
       "position": {
-        "x": 1420,
-        "y": 240
+        "x": 120,
+        "y": 140
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -20,9 +21,10 @@
       "id": "ashfall_trail",
       "name": "Ashfall Trail",
       "type": "camp",
+      "sigil": "waypoint",
       "position": {
-        "x": 1420,
-        "y": 460
+        "x": 120,
+        "y": 295
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -32,8 +34,8 @@
       "name": "Ashfall Outpost",
       "type": "town",
       "position": {
-        "x": 1560,
-        "y": 180
+        "x": 531,
+        "y": 98
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -43,8 +45,8 @@
       "name": "Lava Fields",
       "type": "camp",
       "position": {
-        "x": 1560,
-        "y": 340
+        "x": 531,
+        "y": 211
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -54,8 +56,8 @@
       "name": "Scorched Village",
       "type": "camp",
       "position": {
-        "x": 1560,
-        "y": 500
+        "x": 531,
+        "y": 324
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -64,9 +66,10 @@
       "id": "dragons_lookout",
       "name": "Dragon's Lookout",
       "type": "camp",
+      "sigil": "fortress",
       "position": {
-        "x": 1700,
-        "y": 200
+        "x": 943,
+        "y": 112
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -75,9 +78,10 @@
       "id": "iron_mine",
       "name": "Iron Mine",
       "type": "dungeon",
+      "sigil": "dungeon",
       "position": {
-        "x": 1700,
-        "y": 360
+        "x": 943,
+        "y": 225
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -87,8 +91,8 @@
       "name": "Sulfur Springs",
       "type": "camp",
       "position": {
-        "x": 1700,
-        "y": 520
+        "x": 943,
+        "y": 338
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -97,9 +101,10 @@
       "id": "cragmaw_fortress",
       "name": "Cragmaw Fortress",
       "type": "camp",
+      "sigil": "fortress",
       "position": {
-        "x": 1860,
-        "y": 280
+        "x": 1413,
+        "y": 169
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -108,9 +113,10 @@
       "id": "final_approach",
       "name": "Final Approach",
       "type": "camp",
+      "sigil": "waypoint",
       "position": {
-        "x": 1860,
-        "y": 440
+        "x": 1413,
+        "y": 281
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -119,9 +125,10 @@
       "id": "the_iron_throne",
       "name": "The Iron Throne",
       "type": "exit",
+      "sigil": "boss",
       "position": {
-        "x": 2060,
-        "y": 360
+        "x": 2000,
+        "y": 225
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -130,9 +137,10 @@
       "id": "ember_creek",
       "name": "Ember Creek",
       "type": "camp",
+      "sigil": "waypoint",
       "position": {
-        "x": 1490,
-        "y": 290
+        "x": 326,
+        "y": 176
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -141,9 +149,10 @@
       "id": "ruined_chapel",
       "name": "Ruined Chapel",
       "type": "camp",
+      "sigil": "shrine",
       "position": {
-        "x": 1490,
-        "y": 560
+        "x": 326,
+        "y": 366
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -152,9 +161,10 @@
       "id": "obsidian_cavern",
       "name": "Obsidian Cavern",
       "type": "dungeon",
+      "sigil": "dungeon",
       "position": {
-        "x": 1780,
-        "y": 140
+        "x": 1178,
+        "y": 70
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -163,9 +173,10 @@
       "id": "warlords_camp",
       "name": "Warlord's Camp",
       "type": "camp",
+      "sigil": "battle",
       "position": {
-        "x": 1780,
-        "y": 580
+        "x": 1178,
+        "y": 380
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"
@@ -174,9 +185,10 @@
       "id": "ashen_gate",
       "name": "Ashen Gate",
       "type": "camp",
+      "sigil": "fortress",
       "position": {
-        "x": 1950,
-        "y": 360
+        "x": 1677,
+        "y": 225
       },
       "spawnPoint": false,
       "encounterTableId": "ashfall_road"

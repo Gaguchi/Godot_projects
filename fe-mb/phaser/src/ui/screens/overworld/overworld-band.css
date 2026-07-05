@@ -1,0 +1,169 @@
+/*
+ * Travel band animation plumbing (split-view spec 2026-06-12).
+ *
+ * Discipline:
+ *  - Every loop is a CSS @keyframes here — no requestAnimationFrame.
+ *  - All composited motion uses translate3d / rotate only.
+ *  - `traveling` is expressed as a `.is-traveling` class on the band root:
+ *      * scroll strips (scenery) carry `.band-anim-travel` and PAUSE via
+ *        animation-play-state when the class is absent — scenery freezes
+ *        wherever it is, it must not snap.
+ *      * caravan pose loops (legs / wheels / walkers / walk-bob) are only
+ *        DECLARED under `.is-traveling …` — removing the class drops the
+ *        animation entirely so the rig snaps to its neutral standing pose
+ *        (paused mid-swing legs would read as a stumble).
+ *  - `.is-westward` reverses the scroll strips (`.band-scroll`) only; the
+ *    caravan itself is mirrored with scaleX(-1) in JSX, which also flips the
+ *    apparent wheel spin for free.
+ *  - The lantern flicker runs in BOTH states by design (idle camps still
+ *    burn a light).
+ */
+
+.overworld-band {
+  position: relative;
+  overflow: hidden;
+  /* confine the screen-blend embers/lantern glow to the band itself */
+  isolation: isolate;
+}
+
+/* ── keyframes ─────────────────────────────────────────────────────────── */
+
+/* Far vista: loop distance = exactly 2 mirror-tiled image widths. The shift
+   and duration are computed per-mount (they depend on the band height) and
+   injected as --band-shift + an inline animation-duration; the fallbacks
+   match the default 264px band (image 792px wide → 1584px @ 8px/s = 198s). */
+@keyframes band-scroll-far {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(var(--band-shift, -1584px), 0, 0); }
+}
+
+/* Mid silhouettes: loop = one 640px tile. 640 / 30px·s⁻¹ ≈ 21.3s. */
+@keyframes band-scroll-mid {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-640px, 0, 0); }
+}
+
+/* Ground props + wheel ruts: loop = one 640px tile. 640 / 80px·s⁻¹ = 8s. */
+@keyframes band-scroll-ground {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-640px, 0, 0); }
+}
+
+/* Fog: loop = one 600px texture tile, slow drift (~11px/s). */
+@keyframes band-fog-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-600px, 0, 0); }
+}
+
+@keyframes band-wheel-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Horse leg groups swing ±12° from the hip; rear group runs at -50% phase. */
+@keyframes band-leg-swing {
+  0%, 100% { transform: rotate(12deg); }
+  50%      { transform: rotate(-12deg); }
+}
+
+/* Walking figures bob ±1.5px, alternated via animation-delay. */
+@keyframes band-walker-bob {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -1.5px, 0); }
+}
+
+/* Whole-rig gait bob while traveling. */
+@keyframes band-walk-bob {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -1.5px, 0); }
+}
+
+/* Idle breathing: a subtle 2px settle over 3s. */
+@keyframes band-breath-bob {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, 2px, 0); }
+}
+
+/* Lantern glow: candle-like discrete flicker (held steps, not fades). */
+@keyframes band-lantern-flicker {
+  0%, 100% { opacity: 1; }
+  9%   { opacity: 0.84; }
+  16%  { opacity: 0.97; }
+  31%  { opacity: 0.88; }
+  42%  { opacity: 1; }
+  55%  { opacity: 0.8; }
+  63%  { opacity: 0.95; }
+  78%  { opacity: 0.86; }
+  90%  { opacity: 0.99; }
+}
+
+/* Ember motes drift up-left and fade in/out across one loop. */
+@keyframes band-ember-rise {
+  0%   { transform: translate3d(0, 0, 0); opacity: 0; }
+  10%  { opacity: 0.85; }
+  70%  { opacity: 0.45; }
+  100% { transform: translate3d(-56px, -150px, 0); opacity: 0; }
+}
+
+/* Region swap: the keyed content div fades in over the dark band base. */
+@keyframes band-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Arrival flourish: the destination name swells faintly then fades out. Keyed
+   off the arrivalName value (remounts each arrival via React key). */
+@keyframes band-arrival-fade {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  18%  { opacity: 0.5; }
+  60%  { opacity: 0.42; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.04); }
+}
+
+/* ── animated elements ─────────────────────────────────────────────────── */
+
+.band-far-strip    { animation: band-scroll-far 198s linear infinite; will-change: transform; }
+.band-mid-strip    { animation: band-scroll-mid 21.3s linear infinite; will-change: transform; }
+.band-ground-strip { animation: band-scroll-ground 8s linear infinite; will-change: transform; }
+.band-fog          { animation: band-fog-drift 55s linear infinite; }
+.band-ember        { animation: band-ember-rise 6s linear infinite; }
+.band-lantern      { animation: band-lantern-flicker 2.2s steps(1, end) infinite; }
+.band-region       { animation: band-fade-in 600ms ease-out both; }
+.band-arrival      { animation: band-arrival-fade 2600ms ease-out both; }
+
+/* Caravan: breathing while idle… */
+.band-caravan-bob { animation: band-breath-bob 3s ease-in-out infinite; }
+/* …gait while traveling. Pose loops exist ONLY under .is-traveling so idle
+   snaps the rig back to neutral (see header comment). */
+.overworld-band.is-traveling .band-caravan-bob { animation: band-walk-bob 0.7s ease-in-out infinite; }
+.overworld-band.is-traveling .band-leg-front   { animation: band-leg-swing 0.7s ease-in-out infinite; }
+.overworld-band.is-traveling .band-leg-rear    { animation: band-leg-swing 0.7s ease-in-out infinite; animation-delay: -0.35s; }
+.overworld-band.is-traveling .band-wheel       { animation: band-wheel-spin 1s linear infinite; }
+.overworld-band.is-traveling .band-walker      { animation: band-walker-bob 0.7s ease-in-out infinite; }
+.overworld-band.is-traveling .band-walker-late { animation-delay: -0.35s; }
+
+/* ── travel / direction toggles ────────────────────────────────────────── */
+
+/* Scenery freezes in place while idle (3-class selector outranks the
+   1-class shorthand declarations above). */
+.overworld-band:not(.is-traveling) .band-anim-travel { animation-play-state: paused; }
+
+/* Westward journey: scroll strips run in reverse; the caravan mirror is a
+   JSX scaleX(-1), not a CSS concern. */
+.overworld-band.is-westward .band-scroll { animation-direction: reverse; }
+
+/* ── reduced motion ────────────────────────────────────────────────────── */
+
+/* Kill every loop (scrolls, gait, flicker, embers, bobs). The one-shot
+   band-fade-in is deliberately NOT listed — pausing it at opacity:0 would
+   blank the band. !important beats the 3-class .is-traveling declarations. */
+@media (prefers-reduced-motion: reduce) {
+  .overworld-band .band-anim-travel,
+  .overworld-band .band-loop,
+  .overworld-band .band-caravan-bob,
+  .overworld-band.is-traveling .band-leg-front,
+  .overworld-band.is-traveling .band-leg-rear,
+  .overworld-band.is-traveling .band-wheel,
+  .overworld-band.is-traveling .band-walker {
+    animation: none !important;
+  }
+}

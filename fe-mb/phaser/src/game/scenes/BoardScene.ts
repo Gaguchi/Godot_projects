@@ -29,9 +29,28 @@ const GRID_H = 10
 
 interface UnitView {
   container: Phaser.GameObjects.Container
-  body: Phaser.GameObjects.Arc
+  // Shape (not Arc) so allies can be a disc and enemies an angular star —
+  // a non-colour team signal. fillColor / setFillStyle live on Shape.
+  body: Phaser.GameObjects.Shape
   hpBar: Phaser.GameObjects.Rectangle
   glow: Phaser.GameObjects.Arc | null
+  sprite?: Phaser.GameObjects.Sprite | undefined
+}
+
+/** Character sprite ids loaded in preload(); keys are `unit_<id>`. */
+const UNIT_SPRITES = ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'bandit', 'bandit_archer', 'brigand_chief', 'wolf', 'daren'] as const
+
+/** Map a combat unit to its character sprite texture key (or null -> shape token). */
+function unitSpriteKey(name: string, cls: string): string | null {
+  const n = name.toLowerCase()
+  for (const e of ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'daren', 'wolf']) if (n.includes(e)) return `unit_${e}`
+  if (n.includes('archer')) return 'unit_bandit_archer'
+  if (n.includes('brigand') || n.includes('chief')) return 'unit_brigand_chief'
+  if (n.includes('bandit') || cls.includes('bandit')) return 'unit_bandit'
+  if (cls.includes('lord')) return 'unit_roy'
+  if (cls.includes('knight')) return 'unit_marcus'
+  if (cls.includes('mage')) return 'unit_lilina'
+  return null
 }
 
 type CardData = typeof cardsJson[number]
@@ -100,6 +119,12 @@ export class BoardScene extends Phaser.Scene {
   private walkingUnits = new Set<string>()
 
   constructor() { super('combat') }
+
+  preload(): void {
+    // Character sprites for the cast. BootScene was removed (it was a stub),
+    // so 'combat' is the first scene to run — texture loading lives here.
+    for (const u of UNIT_SPRITES) this.load.image(`unit_${u}`, `/sprites/units/${u}.png`)
+  }
 
   create(): void {
     this.runtime = new CombatRuntime()
@@ -179,14 +204,26 @@ export class BoardScene extends Phaser.Scene {
   }
 
   private drawGrid(): void {
+    // Deterministic pseudo-random per-tile so each board feels textured
+    // rather than identical squares. Same seed every load for the same
+    // grid size so it doesn't shimmer on render.
+    const tileTint = (x: number, y: number): number => {
+      const h = ((x * 73856093) ^ (y * 19349663)) >>> 0
+      const base = 0x101622
+      const variance = (h % 8) - 4               // -4 .. +3
+      const r = ((base >> 16) & 0xff) + variance
+      const g = ((base >> 8) & 0xff) + variance
+      const b = (base & 0xff) + Math.floor(variance / 2)
+      return (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b)
+    }
     for (let y = 0; y < GRID_H; y++) {
       for (let x = 0; x < GRID_W; x++) {
         const rect = this.add.rectangle(
           GRID_OFFSET_X + x * TILE + TILE / 2,
           GRID_OFFSET_Y + y * TILE + TILE / 2,
           TILE - 2, TILE - 2,
-          0x0c1018,
-        ).setStrokeStyle(1, 0x333344, 0.6)
+          tileTint(x, y),
+        ).setStrokeStyle(1, 0x2a2e3a, 0.5)
         const tileId = `${x},${y}`
         rect.setInteractive({ useHandCursor: false })
         rect.on('pointerover', () => this.onTileHover(tileId))
@@ -199,11 +236,24 @@ export class BoardScene extends Phaser.Scene {
     }
   }
 
+  // Default tile fill — recomputed in renderTargeting to avoid the
+  // identical-grid look on every reset. Mirrors drawGrid's tint formula.
+  private tileBaseFill(x: number, y: number): number {
+    const h = ((x * 73856093) ^ (y * 19349663)) >>> 0
+    const base = 0x101622
+    const variance = (h % 8) - 4
+    const r = ((base >> 16) & 0xff) + variance
+    const g = ((base >> 8) & 0xff) + variance
+    const b = (base & 0xff) + Math.floor(variance / 2)
+    return (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b)
+  }
+
   private renderTargeting(): void {
     const state = useCombatStore.getState().state
 
-    for (const rect of this.tileRects.values()) {
-      rect.setFillStyle(0x0c1018)
+    for (const [tileId, rect] of this.tileRects.entries()) {
+      const [tx, ty] = tileId.split(',').map(Number)
+      rect.setFillStyle(this.tileBaseFill(tx!, ty!))
     }
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
@@ -458,7 +508,16 @@ export class BoardScene extends Phaser.Scene {
     const unit = state.units[unitIdStr]
     if (!unit || unit.hp.current <= 0) return
 
-    // Always pin the detail panel on click (works for any unit).
+    // During target selection, a click on a unit must TARGET that unit's tile.
+    // The unit's interactive hit-area sits over its tile, so onTileClick would
+    // never fire for an occupied tile — delegate to it here so enemies/allies
+    // can be clicked directly. (Range/validity is enforced inside onTileClick.)
+    if (state.subPhase === 'SELECTING_TARGET' && state.selectedCardId !== null) {
+      if (unit.position) this.onTileClick(unit.position as unknown as string)
+      return
+    }
+
+    // Otherwise, pin the detail panel (works for any unit).
     useCombatUiStore.getState().setPinnedDetailUnit(unitIdStr)
 
     // Existing move-mode behavior only fires for the active party unit.
@@ -579,25 +638,55 @@ export class BoardScene extends Phaser.Scene {
 
       let view = this.unitViews.get(idStr)
       if (!view) {
-        const isEnemy = (unit.classId as unknown as string).startsWith('bandit')
-          || (unit.classId as unknown as string).startsWith('mage_bandit')
-        const color = isEnemy ? 0xcc4444 : 0x6688cc
+        const cls = unit.classId as unknown as string
+        const isEnemy = ['bandit', 'brigand', 'wolf'].some((k) => cls.includes(k))
+        // Team is a SHAPE (disc = ally / spiked star = enemy) AND a colour, so
+        // the read survives colour-blindness — never colour alone.
+        const fill = isEnemy ? 0xd0685c : 0x7ba6dd
+        const rim = isEnemy ? 0x3a1410 : 0x14283c
         const container = this.add.container(0, 0)
-        const body = this.add.circle(0, 0, 16, color).setStrokeStyle(2, 0x000000)
-        const nameText = this.add.text(0, -28, unit.name, {
-          fontFamily: 'monospace', fontSize: '10px', color: '#e0d0a0',
+        const body: Phaser.GameObjects.Shape = isEnemy
+          ? this.add.star(0, 0, 4, 9, 17, fill).setStrokeStyle(2.5, rim)
+          : this.add.circle(0, 0, 16, fill).setStrokeStyle(2.5, rim)
+        // a soft top highlight so the token reads as a lit forged piece
+        const sheen = this.add.circle(-5, -5, isEnemy ? 4 : 5, 0xffffff, 0.18)
+        const nameText = this.add.text(0, -24, unit.name, {
+          fontFamily: 'Cinzel, Georgia, serif',
+          fontSize: '11px',
+          color: '#e8d8c0',
+          stroke: '#000000',
+          strokeThickness: 3,
         }).setOrigin(0.5)
-        const hpBarBg = this.add.rectangle(0, 22, 34, 5, 0x222222)
-        const hpBar = this.add.rectangle(-16, 22, 32, 3, 0x44cc44).setOrigin(0, 0.5)
-        container.add([body, nameText, hpBarBg, hpBar])
-        body.setInteractive({ useHandCursor: true })
-        body.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        // name (~-24) + HP bar (~+20) kept inside one tile pitch so a lower
+        // unit's name no longer collides with the HP bar of the unit above.
+        const hpBarBg = this.add.rectangle(0, 20, 36, 6, 0x0a0806).setStrokeStyle(1, 0x000000, 0.6)
+        const hpBar = this.add.rectangle(-16, 20, 32, 4, 0x6ea96a).setOrigin(0, 0.5)
+        // Transparent >=44px hit target — the visible token (~32px) is below the
+        // accessible minimum, so interactivity lives on a roomier invisible circle.
+        const hit = this.add.circle(0, 0, 22, 0x000000, 0.001)
+        container.add([body, sheen, nameText, hpBarBg, hpBar, hit])
+        // Character sprite replaces the shape token when its texture is loaded;
+        // a team-coloured base ellipse keeps the ally/enemy read colour-blind-safe.
+        const spriteKey = unitSpriteKey(unit.name, cls)
+        let sprite: Phaser.GameObjects.Sprite | undefined
+        if (spriteKey && this.textures.exists(spriteKey)) {
+          body.setVisible(false); sheen.setVisible(false); nameText.setY(-40)
+          const baseRing = this.add.ellipse(0, 14, 28, 10, fill, 0.45).setStrokeStyle(1.5, rim, 0.85)
+          sprite = this.add.sprite(0, 2, spriteKey).setOrigin(0.5, 0.82)
+          sprite.setScale(48 / (this.textures.get(spriteKey).getSourceImage().height || 1216))
+          container.add([baseRing, sprite])
+          container.sendToBack(sprite)
+          container.sendToBack(baseRing)
+        }
+        hit.setInteractive({ useHandCursor: true })
+        hit.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
           if (pointer.rightButtonDown()) return
           this.onUnitClick(idStr)
         })
-        view = { container, body, hpBar, glow: null }
+        view = { container, body, hpBar, glow: null, sprite }
         this.unitViews.set(idStr, view)
       }
+      if (!view) continue
 
       if (unit.position && !this.walkingUnits.has(idStr)) {
         const { x, y } = tileToWorld(unit.position as unknown as string)
@@ -606,13 +695,15 @@ export class BoardScene extends Phaser.Scene {
 
       const hpFraction = unit.hp.current / Math.max(1, unit.hp.max)
       view.hpBar.width = Math.max(0, 32 * hpFraction)
-      view.hpBar.fillColor = hpFraction > 0.5 ? 0x44cc44 : hpFraction > 0.2 ? 0xddaa44 : 0xcc4444
+      // token-driven HP tiers: ok / warn / crit (matches --hp-* CSS tokens)
+      view.hpBar.fillColor = hpFraction > 0.5 ? 0x6ea96a : hpFraction > 0.25 ? 0xd4a72c : 0xc0392b
 
       view.container.setVisible(unit.hp.current > 0)
 
       if (view.glow) { view.glow.destroy(); view.glow = null }
       if (activeId === idStr) {
-        const glow = this.add.circle(0, 0, 22, 0xfacc15, 0.25).setStrokeStyle(2, 0xfacc15, 0.9)
+        // hearth-amber ring marks the active unit
+        const glow = this.add.circle(0, 0, 23, 0xe8a93a, 0.22).setStrokeStyle(2.5, 0xe8a93a, 0.95)
         view.container.add(glow)
         view.container.sendToBack(glow)
         view.glow = glow
@@ -689,14 +780,17 @@ export class BoardScene extends Phaser.Scene {
     } else if (e.kind === 'HitFlash') {
       const view = this.unitViews.get(e.sprite.id)
       if (!view) return
-      const origColor = view.body.fillColor
-      view.body.setFillStyle(0xffffff)
       this.pendingAnimations++
-      this.time.delayedCall(e.durationMs, () => {
-        view.body.setFillStyle(origColor)
-        this.pendingAnimations--
-        this.maybeAnimationsComplete()
-      })
+      const restore = (): void => { this.pendingAnimations--; this.maybeAnimationsComplete() }
+      if (view.sprite) {
+        const s = view.sprite
+        s.setAlpha(0.4)
+        this.time.delayedCall(e.durationMs, () => { s.setAlpha(1); restore() })
+      } else {
+        const origColor = view.body.fillColor
+        view.body.setFillStyle(0xffffff)
+        this.time.delayedCall(e.durationMs, () => { view.body.setFillStyle(origColor); restore() })
+      }
     } else if (e.kind === 'FloatDamage') {
       const tileStr = e.tile as unknown as string
       const { x, y } = tileToWorld(tileStr)

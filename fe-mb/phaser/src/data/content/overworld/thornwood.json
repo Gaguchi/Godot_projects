@@ -3,15 +3,16 @@
   "regionId": "thornwood",
   "name": "Thornwood Wilds",
   "width": 2120,
-  "height": 700,
+  "height": 444,
   "nodes": [
     {
       "id": "thornwood_gate",
       "name": "Thornwood Gate",
       "type": "camp",
+      "sigil": "fortress",
       "position": {
-        "x": 840,
-        "y": 240
+        "x": 164,
+        "y": 156
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -20,9 +21,10 @@
       "id": "southern_trail",
       "name": "Southern Trail",
       "type": "camp",
+      "sigil": "waypoint",
       "position": {
-        "x": 830,
-        "y": 480
+        "x": 120,
+        "y": 314
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -32,8 +34,8 @@
       "name": "Thornwood Chapel",
       "type": "town",
       "position": {
-        "x": 960,
-        "y": 180
+        "x": 688,
+        "y": 116
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -43,8 +45,8 @@
       "name": "Dark Hollow",
       "type": "camp",
       "position": {
-        "x": 960,
-        "y": 340
+        "x": 688,
+        "y": 222
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -54,8 +56,8 @@
       "name": "Cursed Clearing",
       "type": "camp",
       "position": {
-        "x": 960,
-        "y": 500
+        "x": 688,
+        "y": 327
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -64,9 +66,10 @@
       "id": "hermits_tower",
       "name": "Hermit's Tower",
       "type": "camp",
+      "sigil": "fortress",
       "position": {
-        "x": 1100,
-        "y": 200
+        "x": 1300,
+        "y": 129
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -75,9 +78,10 @@
       "id": "wolf_den",
       "name": "Wolf Den",
       "type": "camp",
+      "sigil": "dungeon",
       "position": {
-        "x": 1100,
-        "y": 360
+        "x": 1300,
+        "y": 235
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -87,8 +91,8 @@
       "name": "Witch's Hut",
       "type": "camp",
       "position": {
-        "x": 1100,
-        "y": 520
+        "x": 1300,
+        "y": 340
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -98,8 +102,8 @@
       "name": "Ancient Ruins",
       "type": "dungeon",
       "position": {
-        "x": 1260,
-        "y": 280
+        "x": 2000,
+        "y": 182
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -109,8 +113,8 @@
       "name": "Morgana's Grove",
       "type": "camp",
       "position": {
-        "x": 1260,
-        "y": 440
+        "x": 2000,
+        "y": 288
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -119,9 +123,10 @@
       "id": "foggy_marsh",
       "name": "Foggy Marsh",
       "type": "camp",
+      "sigil": "waypoint",
       "position": {
-        "x": 900,
-        "y": 290
+        "x": 426,
+        "y": 189
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -131,8 +136,8 @@
       "name": "Spider's Nest",
       "type": "camp",
       "position": {
-        "x": 900,
-        "y": 560
+        "x": 426,
+        "y": 367
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -142,8 +147,8 @@
       "name": "Druid's Circle",
       "type": "camp",
       "position": {
-        "x": 1030,
-        "y": 110
+        "x": 994,
+        "y": 70
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -153,8 +158,8 @@
       "name": "Moonlit Glade",
       "type": "camp",
       "position": {
-        "x": 1180,
-        "y": 140
+        "x": 1650,
+        "y": 90
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
@@ -164,8 +169,8 @@
       "name": "Thornwood Depths",
       "type": "dungeon",
       "position": {
-        "x": 1180,
-        "y": 580
+        "x": 1650,
+        "y": 380
       },
       "spawnPoint": false,
       "encounterTableId": "thornwood_road"
