@@ -1,0 +1,7 @@
+[
+  { "id": "pine", "kind": "prop", "prompt": "a single tall pine evergreen tree, dark green layered foliage, thick brown trunk and roots, the whole tree fits inside the frame" },
+  { "id": "tree", "kind": "prop", "prompt": "a single round broadleaf oak tree, lush green leafy canopy, thick brown trunk and roots, the whole tree fits inside the frame" },
+  { "id": "bush", "kind": "prop", "prompt": "a single round leafy green shrub bush with small red berries, the whole bush fits inside the frame" },
+  { "id": "rock", "kind": "prop", "prompt": "a small cluster of three grey granite boulders with green moss patches, the whole rock cluster fits inside the frame" },
+  { "id": "flowers", "kind": "prop", "prompt": "a small cluster of red yellow and blue wildflowers with green stems and leaves, the whole flower cluster fits inside the frame" }
+]

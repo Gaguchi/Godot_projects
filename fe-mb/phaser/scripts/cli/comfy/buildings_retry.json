@@ -1,0 +1,5 @@
+[
+  { "id": "camp", "kind": "building", "prompt": "a traveler's roadside camp on a solid chunky isometric grass-and-earth platform base, bright orange-and-red canvas tents, dark timber poles, a vivid glowing campfire, bedrolls, a cooking pot, a wooden cart, frontier encampment diorama, vivid saturated colors, strong dark shadows, high contrast on a plain white background" },
+  { "id": "dungeon", "kind": "building", "prompt": "a cave entrance in a dark grey rocky hillside on a chunky isometric stone platform base, deep black shadowed opening, dark timber supports, vivid green moss, mossy boulders, frontier dungeon entrance diorama, vivid saturated colors, strong dark shadows, high contrast on a plain white background" },
+  { "id": "bridge", "kind": "building", "prompt": "an old stone arch bridge over a stream on a solid chunky isometric earth platform base, dark grey weathered mossy stonework, vivid green moss, dark wood railings, a dirt road crossing, medieval crossing diorama, vivid saturated colors, strong dark shadows, high contrast on a plain white background" }
+]

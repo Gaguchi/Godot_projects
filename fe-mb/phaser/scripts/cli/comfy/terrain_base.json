@@ -1,0 +1,6 @@
+[
+  { "id": "tile_grass", "kind": "tile", "prompt": "seamless tileable texture of short green grass, top-down flat overhead, one uniform single material, fine even blades, subtle natural variation, flat material swatch, repeating pattern, no objects, no other terrain" },
+  { "id": "tile_dirt", "kind": "tile", "prompt": "seamless tileable texture of bare packed dirt, top-down flat overhead, one uniform tan-brown earth material, fine soil grain and small pebbles, flat material swatch, repeating pattern, no objects, no grass, no water, no other terrain" },
+  { "id": "tile_water", "kind": "tile", "prompt": "seamless tileable texture of calm water surface, top-down flat overhead, one uniform blue-teal water material with gentle ripples and soft highlights, flat material swatch, repeating pattern, no land, no islands, no shore, no objects, no other terrain" },
+  { "id": "tile_stone", "kind": "tile", "prompt": "seamless tileable texture of grey stone ground, top-down flat overhead, one uniform weathered rock and flagstone material, fine cracks and tan dust in the gaps, flat material swatch, repeating pattern, no objects, no grass, no water, no other terrain" }
+]

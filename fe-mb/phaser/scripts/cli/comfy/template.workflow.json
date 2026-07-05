@@ -1,0 +1,180 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "waiIllustriousSDXL_v160.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "2": {
+    "inputs": {
+      "lora_name": "DarkFantasy-PixelSprite-000008.safetensors",
+      "strength_model": 0.8,
+      "strength_clip": 0.8,
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "3": {
+    "inputs": {
+      "seed": 42,
+      "steps": 30,
+      "cfg": 7.0,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 1.0,
+      "model": [
+        "2",
+        0
+      ],
+      "positive": [
+        "4",
+        0
+      ],
+      "negative": [
+        "5",
+        0
+      ],
+      "latent_image": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": "masterpiece, best quality, newest, absurdres, highres, DFSV1, sprite, pixel art,\n1boy, solo, knight, wolf-themed armor, front view, looking at viewer, full body,\nwolf helmet, snarling wolf head helm, pointed wolf ears on helmet, ice-blue glowing eyes visible through visor,\ngrey wolf fur mantle draped over shoulders, thick fur collar,\nweathered silver-grey steel plate armor, claw scratch marks etched on breastplate,\nwolf tail fur trophy hanging from belt, brown leather straps and buckles,\nlongsword held low in right hand, curved blade, wolf-fang pommel,\nround buckler strapped to left forearm,\ncrouched combat stance, knees bent, one foot forward, predatory pose,\nisolated on solid white background, centered, clean edges",
+      "clip": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive Prompt"
+    }
+  },
+  "5": {
+    "inputs": {
+      "text": "worst quality, old, early, low quality, lowres, bad hands, mutated hands, greyscale, simple background, text, signature, patreon logo, artist name, chibi, multiple characters, background characters, complex background, scenery, landscape, multiple views, turnaround sheet, blurry, gradient shading, anti-aliased, smooth, realistic, photograph, 3d render, watermark, jpeg artifacts, deformed, ugly, noisy",
+      "clip": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "6": {
+    "inputs": {
+      "samples": [
+        "3",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "7": {
+    "inputs": {
+      "images": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview (Before BG Removal)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "11": {
+    "inputs": {
+      "model": "isnet-anime: anime illustrations",
+      "providers": "CPU"
+    },
+    "class_type": "RemBGSession+",
+    "_meta": {
+      "title": "\ud83d\udd27 RemBG Session"
+    }
+  },
+  "12": {
+    "inputs": {
+      "rembg_session": [
+        "11",
+        0
+      ],
+      "image": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "ImageRemoveBackground+",
+    "_meta": {
+      "title": "\ud83d\udd27 Image Remove Background"
+    }
+  },
+  "13": {
+    "inputs": {
+      "filename_prefix": "PixelArt/wolf_knight_transparent",
+      "images": [
+        "12",
+        0
+      ],
+      "mask": [
+        "12",
+        1
+      ]
+    },
+    "class_type": "SaveImageWithAlpha",
+    "_meta": {
+      "title": "Save Image With Alpha"
+    }
+  },
+  "14": {
+    "inputs": {
+      "images": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview (After BG Removal)"
+    }
+  }
+}

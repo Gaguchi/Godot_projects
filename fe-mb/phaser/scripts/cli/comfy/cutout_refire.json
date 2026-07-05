@@ -1,0 +1,4 @@
+[
+  { "id": "camp", "kind": "building", "prompt": "one single small traveler's tent camp, a single bright orange-and-red canvas tent with dark timber poles, a glowing campfire with logs in front, a bedroll and a cooking pot, all sitting together on one small chunky isometric grass-and-earth platform base, frontier encampment, vivid saturated colors, bold dark outlines, strong shadows, high contrast" },
+  { "id": "dungeon", "kind": "building", "prompt": "one single dark cave mouth opening in a chunky isometric grey rocky cliff boulder, a deep pitch-black shadowed cave entrance, cracked dark timber support beams across the opening, vivid green moss and vines, a warning skull on a stake, ominous dungeon entrance, vivid saturated colors, bold dark outlines, strong shadows, high contrast" }
+]
