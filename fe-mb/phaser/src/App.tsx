@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { ErrorBoundary } from './ui/ErrorBoundary'
 import { DevHud } from './ui/DevHud'
 import { ViewContext, type View } from './ui/view'
+import { GameStage } from './ui/GameStage'
 import { TitleScreen } from './ui/screens/TitleScreen'
 import { OverworldScene } from './ui/screens/OverworldScene'
 import { TownScene } from './ui/screens/TownScene'
@@ -22,7 +23,15 @@ import { writeSlot, readSlot } from './persistence/saveSlots'
 import { diagLog, diag } from './state/diagLog'
 import { useCombatStore } from './state/combatStore'
 import { useRunStore } from './state/runStore'
+import { buildUnit } from './systems/buildUnit'
 import { asNodeId } from './domain/ids'
+
+/** Starting roster seeded into the run at New Game: [classId, name, stableId]. */
+const STARTING_PARTY: Array<[string, string, string]> = [
+  ['lord', 'Roy', 'roy'],
+  ['knight', 'Marcus', 'marcus'],
+  ['mage', 'Lilina', 'lilina'],
+]
 import { createErrorBus } from './state/errorBus'
 import { createEventBus } from './state/eventBus'
 import { createActionLog } from './state/actionLog'
@@ -66,7 +75,25 @@ export function App(): React.JSX.Element {
   const [pauseMenuOpen, setPauseMenuOpen] = useState(false)
   const [quitModalOpen, setQuitModalOpen] = useState(false)
   const [questLogOpen, setQuestLogOpen] = useState(false)
+  const [townInitialPanel, setTownInitialPanel] = useState<'inn' | 'shop' | 'tavern' | null>(null)
   const dispatchMeta = useMetaStore((s) => s.dispatch)
+
+  // Dev-only: when booting straight into a scene via ?view=, seed a real run
+  // (party + gold + food, NO prologue) so the HUD/party/combat are
+  // representative and manual/Playwright testing skips the ~16-node prologue.
+  // Runs once; the normal title → New Game flow is untouched.
+  useEffect(() => {
+    if (!import.meta.env.DEV || initialView === 'title') return
+    const run = useRunStore.getState()
+    if (run.party.partyOrder.length > 0) return
+    run.dispatch({ type: 'addGold', payload: { amount: 80 } })
+    run.dispatch({ type: 'applyQuestEffects', payload: { effects: [{ kind: 'addFood', amount: 5 }] } })
+    for (const [classId, name, id] of STARTING_PARTY) {
+      const u = buildUnit(classId, 1, name, id)
+      if (u) run.dispatch({ type: 'recruitUnit', payload: { unit: u } })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Q key opens quest log when in overworld/town/dungeon
   useEffect(() => {
@@ -141,6 +168,15 @@ export function App(): React.JSX.Element {
     const run = useRunStore.getState()
     run.dispatch({ type: 'addGold', payload: { amount: 80 } })
     run.dispatch({ type: 'applyQuestEffects', payload: { effects: [{ kind: 'addFood', amount: 5 }] } })
+    // Seed the starting party into the RUN so it's present from the first step
+    // on the overworld (HUD roster) — not only conjured at the first battle.
+    // Guard against double-seeding on a same-session second New Game.
+    if (run.party.partyOrder.length === 0) {
+      for (const [classId, name, id] of STARTING_PARTY) {
+        const u = buildUnit(classId, 1, name, id)
+        if (u) run.dispatch({ type: 'recruitUnit', payload: { unit: u } })
+      }
+    }
     setView('overworld')
     // GP-G1: prologue trigger on first new game. Flag is permanent so it
     // doesn't fire again on subsequent runs.
@@ -235,7 +271,8 @@ export function App(): React.JSX.Element {
   return (
     <ViewContext.Provider value={{ view, setView }}>
       <ErrorBoundary errorBus={errorBus}>
-        <div id="app-root">
+        <GameStage>
+        <div id="app-root" className="relative h-full w-full overflow-hidden">
           {view === 'title' && (
             <TitleScreen
               onNewGame={onNewGame}
@@ -246,7 +283,7 @@ export function App(): React.JSX.Element {
           {view === 'overworld' && (
             <OverworldScene
               onTravelToCombat={() => setView('combat')}
-              onEnterTown={() => setView('town')}
+              onEnterTown={(_nodeId, panel) => { setTownInitialPanel(panel ?? null); setView('town') }}
               onEnterCamp={() => setView('camp')}
               onEnterDungeon={() => setView('dungeon')}
               onWin={() => setView('title')}
@@ -254,13 +291,37 @@ export function App(): React.JSX.Element {
           )}
           {view === 'combat' && (
             <>
-              <div id="game-canvas-container" />
+              {/* Combat backdrop — same atmospheric pattern as overworld/dungeon
+                  sits BEHIND the Phaser canvas so the gridless area no longer
+                  reads as a black void. */}
+              <div
+                aria-hidden
+                className="fixed inset-0 -z-10"
+                style={{
+                  background: [
+                    'radial-gradient(ellipse 70% 50% at 50% 45%, #382818 0%, transparent 60%)',
+                    'linear-gradient(to bottom, #1a1612 0%, #0b0907 55%, #050403 100%)',
+                  ].join(', '),
+                }}
+              />
+              <div
+                aria-hidden
+                className="fixed inset-0 -z-10 pointer-events-none opacity-[0.20] mix-blend-overlay"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.0' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.0 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")`,
+                  backgroundSize: '220px 220px',
+                }}
+              />
+              <div id="game-canvas-container" className="absolute inset-0" />
               <div id="react-shell" />
               <CombatHud />
             </>
           )}
           {view === 'town' && (
-            <TownScene onLeave={() => setView('overworld')} />
+            <TownScene
+              onLeave={() => setView('overworld')}
+              {...(townInitialPanel ? { initialPanel: townInitialPanel } : {})}
+            />
           )}
           {view === 'camp' && (
             <CampScene onLeave={() => setView('overworld')} />
@@ -310,13 +371,43 @@ export function App(): React.JSX.Element {
           />
           <QuestLog open={questLogOpen} onClose={() => setQuestLogOpen(false)} />
           <DialogueModal />
-          {/* Quest log key hint */}
+          {/* Quest log key hint — a small key-hint chip, not raw debug text */}
           {(view === 'overworld' || view === 'town' || view === 'dungeon' || view === 'camp') && !questLogOpen && (
-            <div style={{ position: 'fixed', bottom: 8, left: 8, fontSize: 10, color: '#5a4a30', fontFamily: 'monospace', zIndex: 100 }}>
-              [Q] Quest Log
+            <div
+              style={{
+                position: 'fixed',
+                bottom: 8,
+                left: 8,
+                zIndex: 100,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '2px 8px',
+                fontSize: 11,
+                letterSpacing: '0.04em',
+                color: '#c9985c',
+                background: 'rgba(16,10,5,0.66)',
+                border: '1px solid rgba(201,152,92,0.3)',
+                borderRadius: 4,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '0 4px',
+                  borderRadius: 2,
+                  border: '1px solid rgba(201,152,92,0.45)',
+                  color: '#e8c98a',
+                }}
+              >
+                Q
+              </span>
+              Quest Log
             </div>
           )}
         </div>
+        </GameStage>
       </ErrorBoundary>
     </ViewContext.Provider>
   )
