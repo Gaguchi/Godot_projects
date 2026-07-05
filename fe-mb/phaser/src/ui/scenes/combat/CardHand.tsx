@@ -1,21 +1,49 @@
 import React from 'react'
 import { Card, Tooltip } from '../../components'
+import type { CardType } from '../../components/Card'
 import { useCombatStore } from '../../../state/combatStore'
 import { createRng } from '../../../systems/rng'
 import { asCardId } from '../../../domain/ids'
 import cardsJson from '../../../data/content/cards.json'
 
 const cardsMap = new Map(cardsJson.map((c) => [c.id, c]))
+type CardJson = typeof cardsJson[number]
 
-function getCardDamageBase(card: typeof cardsJson[number]): number | null {
+/** Archetype for the card-type gem (shape = the colour-blind-safe signal). */
+function deriveCardType(card: CardJson): CardType {
+  const dmg = card.effects.find((e) => e.kind === 'Damage')
+  if (dmg) {
+    const dt = (dmg.params as { damageType?: string }).damageType
+    return dt === 'magic' ? 'arcane' : 'attack'
+  }
+  if (card.effects.some((e) => e.kind === 'GrantArmor' || e.kind === 'Heal')) return 'ward'
+  return 'focus' // draw / gain-ap / utility
+}
+
+/** Headline number to print on the card + what kind it is (for colour). */
+function deriveMagnitude(card: CardJson): { magnitude: number | null; magnitudeKind: 'damage' | 'armor' | 'heal' | null } {
   for (const e of card.effects) {
-    if (e.kind === 'Damage' || e.kind === 'Heal') {
-      const params = e.params as { base?: number; amount?: number }
-      const base = params.base ?? params.amount
-      if (typeof base === 'number') return base
+    const p = e.params as { base?: number; amount?: number }
+    if (e.kind === 'Damage' && typeof (p.base ?? p.amount) === 'number') {
+      return { magnitude: (p.base ?? p.amount)!, magnitudeKind: 'damage' }
+    }
+    if (e.kind === 'Heal' && typeof (p.amount ?? p.base) === 'number') {
+      return { magnitude: (p.amount ?? p.base)!, magnitudeKind: 'heal' }
+    }
+    if (e.kind === 'GrantArmor' && typeof p.amount === 'number') {
+      return { magnitude: p.amount, magnitudeKind: 'armor' }
     }
   }
-  return null
+  return { magnitude: null, magnitudeKind: null }
+}
+
+const TARGET_LABEL: Record<string, string> = {
+  enemy: 'one foe',
+  ally: 'an ally',
+  self: 'self',
+  tile: 'a tile',
+  all_enemies: 'all foes',
+  all_allies: 'all allies',
 }
 
 export function CardHand(): React.JSX.Element | null {
@@ -37,12 +65,11 @@ export function CardHand(): React.JSX.Element | null {
   const handIds = deck.hand.slice(0, 5).map((id) => id as unknown as string)
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 items-end pointer-events-auto z-10">
-      {/* No motion.div needed at the row level; lift animation lives on each Card. */}
+    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-end gap-2.5 pointer-events-auto z-10">
       {handIds.map((cardId) => {
         const card = cardsMap.get(cardId)
         if (!card) return null
-        const dmg = getCardDamageBase(card)
+        const mag = deriveMagnitude(card)
         const isSelected =
           selectedId !== null && (selectedId as unknown as string) === cardId
 
@@ -51,6 +78,10 @@ export function CardHand(): React.JSX.Element | null {
             cardName={card.name}
             apCost={card.apCost}
             availableAp={ap}
+            cardType={deriveCardType(card)}
+            magnitude={mag.magnitude}
+            magnitudeKind={mag.magnitudeKind}
+            targetLabel={TARGET_LABEL[card.targetKind] ?? card.targetKind}
             isSelected={isSelected}
             onPress={() => {
               if (subPhase === 'RESOLVING') return
@@ -59,20 +90,7 @@ export function CardHand(): React.JSX.Element | null {
                 createRng(rngState),
               )
             }}
-          >
-            <div className="flex flex-col h-full justify-between text-center">
-              <div className="text-xs leading-tight font-bold">{card.name}</div>
-              {dmg !== null && (
-                <div className="text-2xl text-amber-400">{dmg}</div>
-              )}
-              <div className="flex justify-between text-[10px]">
-                <span className="text-amber-300">{card.apCost} AP</span>
-                <span className="text-stone-500">
-                  {card.targetKind.replace('_', ' ')}
-                </span>
-              </div>
-            </div>
-          </Card>
+          />
         )
 
         if (card.apCost > ap) {

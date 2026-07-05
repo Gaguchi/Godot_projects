@@ -21,7 +21,7 @@ export function InitiativeStrip(): React.JSX.Element | null {
   return (
     <div
       id="initiative-strip"
-      className="absolute top-14 left-1/2 -translate-x-1/2 flex items-end gap-2 px-3 py-2 bg-stone-950/85 border border-amber-900/50 rounded backdrop-blur-sm pointer-events-auto z-[90]"
+      className="hud-panel absolute top-[6.25rem] left-1/2 -translate-x-1/2 flex items-end gap-2 px-3 py-2 pointer-events-auto z-[90]"
       aria-label="Turn order"
     >
       {visible.map((entry) => (
@@ -30,7 +30,7 @@ export function InitiativeStrip(): React.JSX.Element | null {
       {overflow > 0 && (
         <div
           data-testid="initiative-overflow"
-          className="flex items-center justify-center w-10 h-10 rounded-full border border-stone-700 text-stone-400 text-xs font-mono"
+          className="numeral flex items-center justify-center w-10 h-10 rounded-full border border-stone-700 text-stone-400 text-xs"
         >
           +{overflow}
         </div>

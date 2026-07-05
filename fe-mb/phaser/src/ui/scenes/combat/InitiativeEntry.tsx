@@ -1,5 +1,7 @@
 import React from 'react'
 import { CharacterPortrait } from '../../components/CharacterPortrait'
+import { TeamSigil } from './hudBits'
+import { hpTextClass } from './hpTier'
 import type { InitiativeEntry as InitiativeEntryData } from '../../hooks/useInitiativeQueue'
 
 export interface InitiativeEntryProps {
@@ -8,12 +10,11 @@ export interface InitiativeEntryProps {
 
 export function InitiativeEntry({ entry }: InitiativeEntryProps): React.JSX.Element {
   const { unit, isActive, team } = entry
+  const isEnemy = team !== 'party'
   const ringClass = isActive
-    ? team === 'party' ? 'ring-2 ring-amber-300' : 'ring-2 ring-red-500'
-    : team === 'party' ? 'ring-1 ring-amber-700/50' : 'ring-1 ring-red-900/60'
-  const portraitSize = isActive ? 56 : 40
-  const hpPct = unit.hp.current / unit.hp.max
-  const hpColor = hpPct > 0.5 ? 'text-amber-200' : hpPct > 0.25 ? 'text-amber-400' : 'text-red-400'
+    ? isEnemy ? 'ring-2 ring-enemy' : 'ring-2 ring-hearth'
+    : isEnemy ? 'ring-1 ring-red-900/60' : 'ring-1 ring-amber-700/50'
+  const portraitSize = isActive ? 54 : 40
 
   return (
     <div
@@ -21,13 +22,28 @@ export function InitiativeEntry({ entry }: InitiativeEntryProps): React.JSX.Elem
       data-unit-id={unit.id as unknown as string}
       data-active={isActive ? 'true' : 'false'}
       data-team={team}
-      className={`flex flex-col items-center gap-1 motion-safe:transition-transform ${isActive ? 'scale-110' : 'opacity-80'}`}
+      className={`relative flex flex-col items-center gap-1 motion-safe:transition-transform motion-safe:duration-[var(--dur-move)] ${isActive ? 'scale-110' : 'opacity-75'}`}
       aria-label={`${unit.name}, ${unit.classId as unknown as string}, HP ${unit.hp.current} of ${unit.hp.max}${isActive ? ', active turn' : ''}`}
     >
-      <div className={`rounded-full overflow-hidden ${ringClass}`}>
-        <CharacterPortrait speaker={unit.name} size={portraitSize} active={isActive} />
+      {/* active "acts now" caret */}
+      {isActive && (
+        <span
+          aria-hidden
+          className="text-hearth text-[0.6rem] leading-none -mb-0.5 motion-safe:animate-[portraitBreath_2.5s_ease-in-out_infinite]"
+        >
+          ▾
+        </span>
+      )}
+      <div className="relative">
+        <div className={`rounded-full overflow-hidden ${ringClass}`}>
+          <CharacterPortrait speaker={unit.name} size={portraitSize} active={isActive} />
+        </div>
+        {/* team sigil badge — non-colour team signal */}
+        <span className="absolute -bottom-1 -right-1 rounded-full bg-ink/90 p-0.5 ring-1 ring-black/50">
+          <TeamSigil enemy={isEnemy} size={isActive ? 12 : 10} />
+        </span>
       </div>
-      <span className={`text-[10px] font-mono tabular-nums ${hpColor}`}>
+      <span className={`numeral text-[10px] ${hpTextClass(unit.hp.current, unit.hp.max)}`}>
         {unit.hp.current}/{unit.hp.max}
       </span>
     </div>

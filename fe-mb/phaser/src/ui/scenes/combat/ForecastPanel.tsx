@@ -52,19 +52,19 @@ export function ForecastPanel(): React.JSX.Element | null {
   return (
     <div
       id="forecast-panel"
-      className="absolute top-4 right-4 w-80 bg-stone-950/90 border border-amber-900/50 rounded backdrop-blur-sm pointer-events-auto z-[95] font-mono"
+      className="hud-panel absolute top-4 right-4 w-80 pointer-events-auto z-[95]"
       role="dialog"
       aria-label="Damage forecast"
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-stone-800">
-        <span className="text-amber-200 text-sm">{card.name ?? card.id}</span>
+      <div className="hud-panel-header flex items-center justify-between px-3 py-2">
+        <span className="voice-display text-amber-100 text-base">{card.name ?? card.id}</span>
         <div className="flex items-center gap-2">
           {lethal && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-900/70 text-red-200 border border-red-700">
+            <span className="voice-display text-[0.6rem] tracking-[0.15em] px-1.5 py-0.5 rounded bg-red-950/70 text-red-200 border border-red-700/70">
               LETHAL
             </span>
           )}
-          <span className="text-[10px] text-stone-400">{card.apCost} AP</span>
+          <span className="numeral text-[0.7rem] text-parchment-dim">{card.apCost} AP</span>
         </div>
       </div>
 
@@ -94,18 +94,18 @@ export function ForecastPanel(): React.JSX.Element | null {
       <ForecastMathRow forecast={forecast} />
       <ForecastStatusRow statuses={target.statuses} />
 
-      <div className="px-3 py-2 flex gap-2 border-t border-stone-800">
+      <div className="px-3 py-2 flex gap-2 border-t border-[rgba(120,98,60,0.22)]">
         <button
           data-testid="forecast-confirm-btn"
           onClick={onConfirm}
-          className="flex-1 px-3 py-1.5 bg-amber-800 hover:bg-amber-700 text-amber-100 text-xs rounded"
+          className="flex-1 px-3 py-1.5 rounded font-body font-medium text-sm tracking-wide text-amber-50 bg-amber-900/55 border border-amber-700/60 hover:bg-amber-900/75 hover:border-amber-500 transition-colors"
         >
           Confirm
         </button>
         <button
           data-testid="forecast-cancel-btn"
           onClick={onCancel}
-          className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs rounded"
+          className="px-3 py-1.5 rounded font-body text-sm text-stone-300 bg-stone-800/60 border border-stone-600/40 hover:bg-stone-800 transition-colors"
         >
           Cancel
         </button>

@@ -12,10 +12,10 @@ export function ForecastStatusRow({ statuses }: ForecastStatusRowProps): React.J
       {statuses.map((s, i) => (
         <span
           key={i}
-          className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-stone-800 text-amber-300 border border-amber-900/40"
+          className="text-[10px] font-body px-1.5 py-0.5 rounded bg-stone-800 text-amber-300 border border-amber-900/40"
         >
           {s.effectId as unknown as string}
-          {s.stacks > 1 && <span className="text-stone-400"> ×{s.stacks}</span>}
+          {s.stacks > 1 && <span className="text-stone-400"> ×<span className="numeral">{s.stacks}</span></span>}
         </span>
       ))}
     </div>

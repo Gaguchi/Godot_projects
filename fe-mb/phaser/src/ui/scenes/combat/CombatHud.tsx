@@ -8,6 +8,7 @@ import { CaptureBtn } from './CaptureBtn'
 import { InitiativeStrip } from './InitiativeStrip'
 import { ForecastPanel } from './ForecastPanel'
 import { UnitDetailPanel } from './UnitDetailPanel'
+import { PhaseBanner } from './PhaseBanner'
 import { useCombatUiStore } from '../../../state/combatUiStore'
 
 /**
@@ -23,9 +24,10 @@ export function CombatHud(): React.JSX.Element {
   return (
     <div
       id="combat-hud"
-      className="pointer-events-none absolute inset-0 z-[100] font-mono"
+      className="pointer-events-none absolute inset-0 z-[100]"
     >
       <div className="pointer-events-auto"><TopBar /></div>
+      <PhaseBanner />
       <InitiativeStrip />
       <ForecastPanel />
       <ModeLabel />
@@ -36,8 +38,8 @@ export function CombatHud(): React.JSX.Element {
         <MoveBtn />
         <EndTurnBtn />
       </div>
-      <div className="absolute bottom-2 left-2 text-[10px] text-stone-500 font-mono pointer-events-none">
-        [Tab] danger zone · click unit for detail
+      <div className="absolute bottom-2 left-2 text-[11px] italic tracking-wide text-[color:var(--color-text-muted)] pointer-events-none">
+        [Tab] danger zone · click a unit for detail
       </div>
     </div>
   )

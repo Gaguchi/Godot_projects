@@ -1,14 +1,15 @@
 import React from 'react'
 import { useCombatStore } from '../../../state/combatStore'
-import { Button } from '../../components'
+import { Button, Icon } from '../../components'
+import { ApPips, HpMeter, TeamSigil } from './hudBits'
+import { hpTextClass } from './hpTier'
 
 /**
- * Click-pinned panel showing detailed stats / status / class for a single
- * unit. Triggered by clicking a unit on the board (vs. hover which only
- * shows range overlays). Closes via the X button or by clicking elsewhere.
+ * Click-pinned panel showing detailed stats / status / class for one unit.
+ * Triggered by clicking a unit on the board (hover shows range overlays only).
  *
- * State lives in combatStore.state.pinnedDetailUnitId. We derive the unit
- * from the store; if the unit dies or leaves combat, the panel auto-hides.
+ * "Forged & Lit": the shared iron HUD-panel recipe, display-serif name, tabular
+ * numerals for every stat, team SHAPE sigil + colour (never colour alone).
  */
 export interface UnitDetailPanelProps {
   /** ID of the pinned unit; null = panel hidden. */
@@ -16,85 +17,97 @@ export interface UnitDetailPanelProps {
   onClose: () => void
 }
 
+const STAT_KEYS = ['str', 'mag', 'skl', 'spd', 'def', 'res', 'lck'] as const
+
 export function UnitDetailPanel({ pinnedUnitId, onClose }: UnitDetailPanelProps): React.JSX.Element | null {
   const unit = useCombatStore((s) => (pinnedUnitId ? s.state.units[pinnedUnitId] : undefined))
   if (!pinnedUnitId || !unit) return null
 
-  const isEnemy = (unit.classId as unknown as string).includes('bandit')
-    || (unit.classId as unknown as string).includes('brigand')
-    || (unit.classId as unknown as string).includes('wolf')
-  const teamColor = isEnemy ? 'border-red-700/60' : 'border-amber-700/60'
-  const teamText = isEnemy ? 'text-red-300' : 'text-amber-300'
+  const classId = unit.classId as unknown as string
+  const isEnemy = ['bandit', 'brigand', 'wolf'].some((k) => classId.includes(k))
 
   return (
     <div
       id="unit-detail-panel"
-      className={`fixed top-32 right-4 w-[280px] bg-stone-950/95 border ${teamColor} rounded backdrop-blur-sm pointer-events-auto z-[95] font-mono text-sm`}
+      className="hud-panel fixed top-36 right-4 w-[270px] pointer-events-auto z-[95] text-sm"
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-stone-800">
-        <span className={`tracking-widest font-bold ${teamText}`}>{unit.name}</span>
+      <div className="hud-panel-header flex items-center justify-between px-3 py-2">
+        <span className="flex items-center gap-2">
+          <TeamSigil enemy={isEnemy} size={16} />
+          <span className={`voice-display text-base ${isEnemy ? 'text-enemy' : 'text-amber-100'}`}>
+            {unit.name}
+          </span>
+        </span>
         <button
           onClick={onClose}
-          className="text-stone-400 hover:text-amber-300 px-2"
+          className="text-stone-400 hover:text-amber-300 transition-colors"
           aria-label="Close detail panel"
         >
-          ✕
+          <Icon name="cross" size={16} />
         </button>
       </div>
-      <div className="px-3 py-2 space-y-1.5 text-xs">
-        <div className="flex justify-between">
-          <span className="text-stone-400">Class</span>
-          <span>{unit.classId as unknown as string}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-stone-400">Level</span>
-          <span>{unit.level}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-stone-400">HP</span>
-          <span className={unit.hp.current / unit.hp.max < 0.3 ? 'text-red-400' : 'text-amber-200'}>
-            {unit.hp.current} / {unit.hp.max}
+
+      {/* vitals */}
+      <div className="px-3 py-2.5 space-y-2 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-parchment-dim">{classId.replace(/_/g, ' ')}</span>
+          <span className="text-parchment-dim">
+            Lv <span className="numeral text-amber-100">{unit.level}</span>
           </span>
         </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[0.6rem] uppercase tracking-[0.18em] text-parchment-dim w-10">HP</span>
+          <HpMeter current={unit.hp.current} max={unit.hp.max} width="100%" />
+          <span className={`numeral text-xs whitespace-nowrap ${hpTextClass(unit.hp.current, unit.hp.max)}`}>
+            {unit.hp.current}<span className="text-stone-500">/{unit.hp.max}</span>
+          </span>
+        </div>
+
         {unit.armor > 0 && (
-          <div className="flex justify-between">
-            <span className="text-stone-400">Armor</span>
-            <span className="text-amber-700">{unit.armor}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[0.6rem] uppercase tracking-[0.18em] text-parchment-dim w-10">Armor</span>
+            <span className="numeral text-[color:var(--color-gem-ward)]">{unit.armor}</span>
           </div>
         )}
-        <div className="flex justify-between">
-          <span className="text-stone-400">AP</span>
-          <span>{unit.ap} / 3</span>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[0.6rem] uppercase tracking-[0.18em] text-parchment-dim w-10">AP</span>
+          <ApPips current={unit.ap} max={3} />
         </div>
       </div>
-      <div className="px-3 py-2 border-t border-stone-800">
-        <div className="text-stone-400 text-[10px] tracking-widest mb-1">STATS</div>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-          <div><span className="text-stone-500">STR</span> {unit.stats.str}</div>
-          <div><span className="text-stone-500">MAG</span> {unit.stats.mag}</div>
-          <div><span className="text-stone-500">SKL</span> {unit.stats.skl}</div>
-          <div><span className="text-stone-500">SPD</span> {unit.stats.spd}</div>
-          <div><span className="text-stone-500">DEF</span> {unit.stats.def}</div>
-          <div><span className="text-stone-500">RES</span> {unit.stats.res}</div>
-          <div><span className="text-stone-500">LCK</span> {unit.stats.lck}</div>
+
+      {/* stats */}
+      <div className="px-3 py-2 border-t border-[rgba(120,98,60,0.22)]">
+        <div className="text-parchment-dim text-[0.6rem] tracking-[0.2em] uppercase mb-1.5">Stats</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          {STAT_KEYS.map((k) => (
+            <div key={k} className="flex justify-between">
+              <span className="text-stone-500 uppercase">{k}</span>
+              <span className="numeral text-parchment">{unit.stats[k]}</span>
+            </div>
+          ))}
         </div>
       </div>
+
       {unit.statuses.length > 0 && (
-        <div className="px-3 py-2 border-t border-stone-800">
-          <div className="text-stone-400 text-[10px] tracking-widest mb-1">STATUS</div>
+        <div className="px-3 py-2 border-t border-[rgba(120,98,60,0.22)]">
+          <div className="text-parchment-dim text-[0.6rem] tracking-[0.2em] uppercase mb-1.5">Status</div>
           <div className="flex flex-wrap gap-1">
             {unit.statuses.map((s, i) => (
               <span
                 key={`${s.effectId as unknown as string}-${i}`}
-                className="px-1.5 py-0.5 rounded bg-stone-800 text-amber-300 text-[10px]"
+                className="px-1.5 py-0.5 rounded bg-stone-800/80 border border-stone-700/60 text-amber-300 text-[10px]"
               >
-                {s.effectId as unknown as string} ({s.turnsRemaining}t)
+                {(s.effectId as unknown as string).replace(/_/g, ' ')}{' '}
+                <span className="numeral text-stone-400">{s.turnsRemaining}t</span>
               </span>
             ))}
           </div>
         </div>
       )}
-      <div className="px-3 py-2 border-t border-stone-800">
+
+      <div className="px-3 py-2 border-t border-[rgba(120,98,60,0.22)]">
         <Button variant="secondary" onPress={onClose} className="w-full !text-xs">Close</Button>
       </div>
     </div>
