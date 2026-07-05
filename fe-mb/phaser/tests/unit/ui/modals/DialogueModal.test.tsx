@@ -77,7 +77,7 @@ describe('<DialogueModal>', () => {
     })
     render(<DialogueModal />)
     // Single-choice path: click the body text area to advance.
-    const textArea = screen.getByLabelText('Dialogue text. Click to skip reveal.')
+    const textArea = screen.getByLabelText('Dialogue text')
     fireEvent.click(textArea)
     expect(useRunStore.getState().pendingDialogue).toBeNull()
   })
@@ -99,7 +99,7 @@ describe('<DialogueModal>', () => {
       payload: { dialogueId: asDialogueId('greeter'), nodeId: 'start' },
     })
     render(<DialogueModal />)
-    const textArea = screen.getByLabelText('Dialogue text. Click to skip reveal.')
+    const textArea = screen.getByLabelText('Dialogue text')
     fireEvent.click(textArea)
     expect(useRunStore.getState().gold).toBe(50)
   })

@@ -14,10 +14,10 @@ describe('<Heading>', () => {
     expect(screen.getByRole('heading', { name: 'Bigger' }).tagName).toBe('H1')
   })
 
-  it('applies the project font-mono and amber color via class', () => {
+  it('applies the engraved display voice and amber colour via class', () => {
     render(<Heading>Styled</Heading>)
     const h = screen.getByRole('heading', { name: 'Styled' })
-    expect(h.className).toMatch(/font-mono/)
-    expect(h.className).toMatch(/text-amber-200/)
+    expect(h.className).toMatch(/font-display/)
+    expect(h.className).toMatch(/text-amber-100/)
   })
 })

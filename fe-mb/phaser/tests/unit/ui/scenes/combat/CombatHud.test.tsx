@@ -26,7 +26,9 @@ describe('<CombatHud>', () => {
 
   it('renders empty TopBar when no active unit', () => {
     render(<CombatHud />)
-    expect(screen.getByText(/Turn 0/)).toBeInTheDocument()
+    // Herald plaque: "Turn" label + turn-number numeral are now separate spans.
+    expect(screen.getByText('Turn')).toBeInTheDocument()
+    expect(screen.getByText('0')).toBeInTheDocument()
   })
 
   it('shows the active unit name + AP when in combat', () => {
@@ -42,7 +44,10 @@ describe('<CombatHud>', () => {
     }))
     render(<CombatHud />)
     expect(screen.getByText('Roy')).toBeInTheDocument()
-    expect(screen.getByText('Turn 3')).toBeInTheDocument()
-    expect(screen.getByText('YOUR TURN')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument() // turn number numeral
+    // phase label is "Your Turn" (CSS uppercases it; DOM text is title-case)
+    expect(screen.getByText('Your Turn')).toBeInTheDocument()
+    // AP is now pips with an accessible label rather than "AP 2/3" text
+    expect(screen.getByLabelText('2 of 3 action points')).toBeInTheDocument()
   })
 })
