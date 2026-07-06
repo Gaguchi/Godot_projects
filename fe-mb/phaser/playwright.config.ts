@@ -1,8 +1,10 @@
 import { defineConfig } from '@playwright/test';
 
-// Allow overriding where the dev server lives — e.g. when :5173 is taken and
-// Vite falls back to :5174: `PW_BASE_URL=http://localhost:5174 npx playwright test`.
-const baseURL = process.env.PW_BASE_URL ?? 'http://localhost:5173';
+// Allow overriding where the dev server lives:
+// `PW_BASE_URL=http://localhost:5199 npx playwright test`.
+// Default 5183 (vite.config server.port) — NOT 5173, which another local
+// project may occupy (reuseExistingServer would then test the wrong app).
+const baseURL = process.env.PW_BASE_URL ?? 'http://localhost:5183';
 
 export default defineConfig({
   testDir: './tests/e2e',

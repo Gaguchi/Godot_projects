@@ -32,6 +32,8 @@ import { allItemDefs } from './data/itemRegistry'
 import { seedBossBattle } from './game/scenes/seedBossBattle'
 import { seedDungeonBattle } from './game/scenes/seedDungeonBattle'
 import { seedGroupBattle } from './game/scenes/seedGroupBattle'
+import { seedTutorialBattle } from './game/scenes/seedTutorialBattle'
+import { TutorialOverlay } from './ui/overlays/TutorialOverlay'
 import { enemyLevelFor } from './systems/difficulty'
 import { asNodeId } from './domain/ids'
 import type { Unit } from './domain/unit'
@@ -209,6 +211,16 @@ export function App(): React.JSX.Element {
         run.dispatch({ type: 'recruitUnit', payload: { unit: u } })
       }
     }
+    // First game ever → guided tutorial battle (ship plan §12) BEFORE the
+    // overworld. Continue-after-victory routes through onContinueToOverworld,
+    // which fires the prologue.
+    if (!useMetaStore.getState().tutorialSeen) {
+      const rng = deriveRng(createRng(run.rngState), 'battle:tutorial')
+      useCombatStore.getState().dispatch(seedTutorialBattle(rng.state()), rng)
+      useMetaStore.getState().dispatch({ type: 'markTutorialSeen' })
+      setView('combat')
+      return
+    }
     setView('overworld')
     // GP-G1: prologue trigger on first new game. Flag is permanent so it
     // doesn't fire again on subsequent runs.
@@ -351,8 +363,16 @@ export function App(): React.JSX.Element {
       run.dispatch({ type: 'arriveAtNode', payload: { nodeId: asNodeId(nextNode as unknown as string) } })
       run.dispatch({ type: 'startTravelPath', payload: { path: { ...pending, remainingNodeIds: [] } } })
     }
+    const wasTutorial = useCombatStore.getState().state.battleTag === 'tutorial'
     useCombatStore.getState().reset()
     setView('overworld')
+    // Tutorial → overworld handoff fires the prologue (deferred from New Game).
+    if (wasTutorial && !run.flags.has('prologue_seen' as never)) {
+      run.dispatch({
+        type: 'startDialogue',
+        payload: { dialogueId: 'prologue' as never, nodeId: 'start' },
+      })
+    }
   }, [])
 
   return (
@@ -402,6 +422,7 @@ export function App(): React.JSX.Element {
               <div id="game-canvas-container" className="absolute inset-0" />
               <div id="react-shell" />
               <CombatHud />
+              <TutorialOverlay />
             </>
           )}
           {view === 'town' && (

@@ -186,8 +186,11 @@ export class BoardScene extends Phaser.Scene {
         subPhase: s.state.subPhase,
         selectedCardId: s.state.selectedCardId,
         phase: s.state.phase,
+        gridW: s.state.grid.width,
+        gridH: s.state.grid.height,
       }),
       () => {
+        this.ensureGridMatchesState()
         this.renderUnits()
         this.renderTargeting()
         this.maybeRunEnemyTurn()
@@ -204,7 +207,21 @@ export class BoardScene extends Phaser.Scene {
     )
   }
 
+  /** Redraw the tile layer when a new battle changes grid dimensions
+   *  (tutorial 5×5 → standard 14×10). Scene persists across battles. */
+  private lastGridDims = ''
+  private ensureGridMatchesState(): void {
+    const g = useCombatStore.getState().state.grid
+    const dims = `${g.width}x${g.height}`
+    if (dims === this.lastGridDims) return
+    for (const rect of this.tileRects.values()) rect.destroy()
+    this.tileRects.clear()
+    this.drawGrid()
+  }
+
   private drawGrid(): void {
+    const gDims = useCombatStore.getState().state.grid
+    this.lastGridDims = `${gDims.width}x${gDims.height}`
     // Deterministic pseudo-random per-tile so each board feels textured
     // rather than identical squares. Same seed every load for the same
     // grid size so it doesn't shimmer on render.
@@ -217,8 +234,13 @@ export class BoardScene extends Phaser.Scene {
       const b = (base & 0xff) + Math.floor(variance / 2)
       return (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b)
     }
-    for (let y = 0; y < GRID_H; y++) {
-      for (let x = 0; x < GRID_W; x++) {
+    // Draw the ACTUAL battle grid (tutorial is 5×5, standard fights 14×10) —
+    // not the max dimensions.
+    const g = useCombatStore.getState().state.grid
+    const gridW = Math.min(g.width || GRID_W, GRID_W)
+    const gridH = Math.min(g.height || GRID_H, GRID_H)
+    for (let y = 0; y < gridH; y++) {
+      for (let x = 0; x < gridW; x++) {
         const rect = this.add.rectangle(
           GRID_OFFSET_X + x * TILE + TILE / 2,
           GRID_OFFSET_Y + y * TILE + TILE / 2,

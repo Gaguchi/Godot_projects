@@ -4,7 +4,9 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  server: { port: 5173 },
+  // 5183, not the Vite default 5173: another local project often occupies
+  // 5173, and Playwright's reuseExistingServer would silently test THAT app.
+  server: { port: 5183, strictPort: true },
   build: { target: 'es2022' },
   test: {
     environment: 'jsdom',
