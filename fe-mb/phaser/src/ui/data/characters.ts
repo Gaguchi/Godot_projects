@@ -161,6 +161,42 @@ const KNOWN: Record<string, CharacterDef> = {
     faction: 'enemy',
     shape: 'triangle',
   },
+  'Shield Knight': {
+    id: 'Shield Knight', displayName: 'Shield Knight', initials: 'Sk',
+    sprite: '/sprites/units/shield_knight.png',
+    bgColor: 'bg-slate-800', ringColor: 'ring-slate-400 border-slate-400', textColor: 'text-slate-100',
+    faction: 'enemy', shape: 'square',
+  },
+  'Raider Mage': {
+    id: 'Raider Mage', displayName: 'Raider Mage', initials: 'Rm',
+    sprite: '/sprites/units/raider_mage.png',
+    bgColor: 'bg-violet-900', ringColor: 'ring-violet-400 border-violet-400', textColor: 'text-violet-100',
+    faction: 'enemy', shape: 'diamond',
+  },
+  'Raider Cleric': {
+    id: 'Raider Cleric', displayName: 'Raider Cleric', initials: 'Rc',
+    sprite: '/sprites/units/raider_cleric.png',
+    bgColor: 'bg-stone-700', ringColor: 'ring-stone-400 border-stone-400', textColor: 'text-stone-100',
+    faction: 'enemy', shape: 'diamond',
+  },
+  'Bone Dagger Thief': {
+    id: 'Bone Dagger Thief', displayName: 'Thief', initials: 'Th',
+    sprite: '/sprites/units/thief.png',
+    bgColor: 'bg-emerald-950', ringColor: 'ring-emerald-500 border-emerald-500', textColor: 'text-emerald-100',
+    faction: 'enemy', shape: 'triangle',
+  },
+  'Ember Mage': {
+    id: 'Ember Mage', displayName: 'Ember Mage', initials: 'Em',
+    sprite: '/sprites/units/ember_mage.png',
+    bgColor: 'bg-red-950', ringColor: 'ring-orange-500 border-orange-500', textColor: 'text-orange-100',
+    faction: 'enemy', shape: 'diamond',
+  },
+  'Alpha Wolf': {
+    id: 'Alpha Wolf', displayName: 'Alpha Wolf', initials: 'Aw',
+    sprite: '/sprites/units/alpha_wolf.png',
+    bgColor: 'bg-stone-900', ringColor: 'ring-amber-600 border-amber-600', textColor: 'text-amber-100',
+    faction: 'enemy', shape: 'triangle',
+  },
   'The Warlord': {
     id: 'The Warlord',
     displayName: 'The Warlord',

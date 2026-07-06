@@ -39,11 +39,19 @@ interface UnitView {
 }
 
 /** Character sprite ids loaded in preload(); keys are `unit_<id>`. */
-const UNIT_SPRITES = ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'bandit', 'bandit_archer', 'brigand_chief', 'wolf', 'daren', 'warlord'] as const
+const UNIT_SPRITES = ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'bandit', 'bandit_archer', 'brigand_chief', 'wolf', 'daren', 'warlord', 'shield_knight', 'raider_mage', 'raider_cleric', 'thief', 'ember_mage', 'alpha_wolf'] as const
 
 /** Map a combat unit to its character sprite texture key (or null -> shape token). */
 function unitSpriteKey(name: string, cls: string): string | null {
   const n = name.toLowerCase()
+  // Class-specific plates FIRST — the generic name loop below would eat
+  // 'Alpha Wolf' (includes 'wolf') and similar.
+  if (cls === 'alpha_wolf' || n.includes('alpha wolf')) return 'unit_alpha_wolf'
+  if (cls === 'shield_knight') return 'unit_shield_knight'
+  if (cls === 'raider_mage') return 'unit_raider_mage'
+  if (cls === 'raider_cleric') return 'unit_raider_cleric'
+  if (cls === 'ember_mage') return 'unit_ember_mage'
+  if (cls === 'thief' || n.includes('thief')) return 'unit_thief'
   for (const e of ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'daren', 'wolf']) if (n.includes(e)) return `unit_${e}`
   if (n.includes('archer')) return 'unit_bandit_archer'
   if (n.includes('warlord') || cls.includes('warlord')) return 'unit_warlord'
