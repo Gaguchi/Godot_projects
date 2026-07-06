@@ -286,6 +286,8 @@ export function App(): React.JSX.Element {
     // through the reducer chain. For now, restore the run essentials.
     const save = result.save
     if (save.run) {
+      // Full hydration (story 477): flags, quests, RNG, stats, one-shots,
+      // visited/cleared maps all restore atomically alongside the essentials.
       useRunStore.getState().dispatch({
         type: 'hydrateFromSave',
         payload: {
@@ -294,6 +296,15 @@ export function App(): React.JSX.Element {
           partyUnits: save.run.partyUnits as { id: string; [k: string]: unknown }[],
           partyOrder: save.run.partyOrder,
           inventoryItems: save.run.inventoryItems,
+          flags: save.run.flags,
+          questStates: save.run.questStates,
+          rngState: save.run.rngState,
+          daysElapsed: save.run.daysElapsed,
+          runStats: save.run.runStats,
+          oneShotsFired: save.run.oneShotsFired,
+          visitedNodes: save.run.visitedNodes,
+          clearedEncounters: save.run.clearedEncounters,
+          deathLog: save.run.deathLog,
         },
       })
     }

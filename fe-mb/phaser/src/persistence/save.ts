@@ -36,6 +36,8 @@ export function serializeRun(run: RunState | null): SerializedRunState | null {
       unitId: d.unitId as unknown as string, cause: d.cause, turn: d.turn,
     })),
     runStats: { ...run.runStats },
+    daysElapsed: run.daysElapsed,
+    oneShotsFired: Array.from(run.oneShotsFired),
   }
 }
 

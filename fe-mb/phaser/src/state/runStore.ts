@@ -84,6 +84,17 @@ export type RunAction =
       partyUnits: { id: string; [k: string]: unknown }[]
       partyOrder: string[]
       inventoryItems: { itemId: string; gridX: number; gridY: number }[]
+      /** Full-hydration fields (story 477) — optional so lightweight test
+       *  fixtures keep working; absent fields keep their current values. */
+      flags?: import('./flags').SerializedFlag[] | undefined
+      questStates?: Record<string, { currentStage: string; metadata: Record<string, unknown> }> | undefined
+      rngState?: { seed: number; counter: number } | undefined
+      daysElapsed?: number | undefined
+      runStats?: RunState['runStats'] | undefined
+      oneShotsFired?: string[] | undefined
+      visitedNodes?: Record<string, boolean> | undefined
+      clearedEncounters?: Record<string, boolean> | undefined
+      deathLog?: { unitId: string; cause: string; turn: number }[] | undefined
     } }
 
 interface RunStateWithDispatch extends RunState {
@@ -571,6 +582,13 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
       }
       case 'hydrateFromSave': {
         const p = action.payload
+        // Atomic full hydration (story 477): flags/quests/RNG/stats restore
+        // when present in the save; older minimal payloads leave them as-is.
+        if (p.flags) {
+          const store = createFlagStore()
+          store.hydrate(p.flags)
+          set({ flags: store })
+        }
         set({
           gold: p.gold,
           worldPosition: {
@@ -590,6 +608,14 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
               gridY: i.gridY,
             })),
           },
+          ...(p.questStates ? { questStates: { ...p.questStates } } : {}),
+          ...(p.rngState ? { rngState: { ...p.rngState } } : {}),
+          ...(p.daysElapsed !== undefined ? { daysElapsed: p.daysElapsed } : {}),
+          ...(p.runStats ? { runStats: { ...p.runStats } } : {}),
+          ...(p.oneShotsFired ? { oneShotsFired: new Set(p.oneShotsFired) } : {}),
+          ...(p.visitedNodes ? { visitedNodes: { ...p.visitedNodes } } : {}),
+          ...(p.clearedEncounters ? { clearedEncounters: { ...p.clearedEncounters } } : {}),
+          ...(p.deathLog ? { deathLog: p.deathLog.map(d => ({ unitId: d.unitId as unknown as UnitId, cause: d.cause, turn: d.turn })) } : {}),
         })
         return
       }
