@@ -10,6 +10,8 @@ export interface BattleResult {
   xpAwards: Record<string, number>     // keyed by UnitId-as-string
   capturedEnemies: { id: UnitId; classId: ClassId; level: number }[]
   goldEarned: number
+  /** Enemies whose HP hit 0 this battle (run-stats counter). */
+  enemiesDefeated: number
   /** Gear dropped on victory (ship plan §11) — rolled via deriveRng('loot:BATTLE'). */
   loot: ItemId[]
   consumedTravelHop: number | null

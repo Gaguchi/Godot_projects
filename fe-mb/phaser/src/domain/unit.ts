@@ -19,6 +19,9 @@ export interface Unit {
   id: UnitId
   name: string
   classId: ClassId
+  /** Explicit side. Set by seeders; systems/team.ts falls back to a classId
+   *  heuristic when absent (legacy fixtures / old saves). */
+  team?: 'party' | 'enemy'
   level: number
   hp: UnitHp
   stats: UnitStats

@@ -4,14 +4,17 @@ import type { UnitId } from '../domain/ids'
 import type { Unit } from '../domain/unit'
 import type { EnemyAction, EnemyClassAI } from '../domain/enemyAI'
 import { asCardId, asTileId } from '../domain/ids'
+import { isEnemyUnit } from './team'
 import banditAI from '../data/content/enemyAI/bandit.json'
 import banditArcherAI from '../data/content/enemyAI/bandit_archer.json'
 import banditPriestAI from '../data/content/enemyAI/bandit_priest.json'
+import warlordAI from '../data/content/enemyAI/warlord.json'
 
 const AI_BY_CLASS: Record<string, EnemyClassAI> = {
   bandit: banditAI as EnemyClassAI,
   bandit_archer: banditArcherAI as EnemyClassAI,
   bandit_priest: banditPriestAI as EnemyClassAI,
+  warlord: warlordAI as EnemyClassAI,
 }
 
 const tileXY = (t: string): [number, number] => {
@@ -25,12 +28,9 @@ const manhattan = (a: string, b: string): number => {
   return Math.abs(ax - bx) + Math.abs(ay - by)
 }
 
-const isEnemyClass = (classId: string): boolean =>
-  classId.includes('bandit') || classId.includes('brigand') || classId.includes('wolf')
-
 const partyAlive = (state: CombatState): Unit[] =>
   Object.values(state.units).filter(
-    (u) => u.hp.current > 0 && u.position && !isEnemyClass(u.classId as unknown as string),
+    (u) => u.hp.current > 0 && u.position && !isEnemyUnit(u),
   )
 
 const enemiesAlive = (state: CombatState, exceptId?: UnitId): Unit[] =>
@@ -38,7 +38,7 @@ const enemiesAlive = (state: CombatState, exceptId?: UnitId): Unit[] =>
     (u) =>
       u.hp.current > 0
       && u.position
-      && isEnemyClass(u.classId as unknown as string)
+      && isEnemyUnit(u)
       && (!exceptId || (u.id as unknown as string) !== (exceptId as unknown as string)),
   )
 
@@ -279,6 +279,9 @@ export function planTurn(state: CombatState, rng: RNG, enemyId: UnitId): CombatE
         card: {
           apCost: 1,
           ...damageStatField,
+          // AI attacks target foes-of-the-enemy (the party); heals target kin.
+          targetKind: action.kind === 'heal' ? 'ally' : 'enemy',
+          ...(action.aoeRadius ? { aoeRadius: action.aoeRadius } : {}),
           effects: [{ kind: effectKind, params: effectParams }],
         },
       },

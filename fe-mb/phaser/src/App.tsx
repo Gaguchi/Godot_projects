@@ -26,9 +26,13 @@ import { useRunStore } from './state/runStore'
 import { buildStarterParty } from './systems/starterParty'
 import { PartyLoadoutModal } from './ui/modals/PartyLoadoutModal'
 import { resolveBattle } from './systems/battleResolver'
+import { isEnemyUnit } from './systems/team'
 import { createRng, deriveRng } from './systems/rng'
 import { allItemDefs } from './data/itemRegistry'
+import { seedBossBattle } from './game/scenes/seedBossBattle'
+import { seedDungeonBattle } from './game/scenes/seedDungeonBattle'
 import { asNodeId } from './domain/ids'
+import type { Unit } from './domain/unit'
 import { createErrorBus } from './state/errorBus'
 import { createEventBus } from './state/eventBus'
 import { createActionLog } from './state/actionLog'
@@ -143,13 +147,11 @@ export function App(): React.JSX.Element {
       lastPhase = phase
       if (phase !== 'VICTORY' && phase !== 'DEFEAT') return
 
-      const isEnemy = (cid: string): boolean => cid.includes('bandit') || cid.includes('brigand') || cid.includes('wolf')
       const fallenPartyIds: string[] = []
       const partyIds: string[] = []
       const enemyIds: string[] = []
       for (const u of Object.values(s.state.units)) {
-        const cid = u.classId as unknown as string
-        if (isEnemy(cid)) { enemyIds.push(u.id as unknown as string); continue }
+        if (isEnemyUnit(u)) { enemyIds.push(u.id as unknown as string); continue }
         partyIds.push(u.id as unknown as string)
         if (u.hp.current <= 0) fallenPartyIds.push(u.id as unknown as string)
       }
@@ -176,6 +178,14 @@ export function App(): React.JSX.Element {
           lootPool: allItemDefs(),
         })
         run.dispatch({ type: 'applyBattleResult', payload: { result } })
+        // Final boss down → the run is complete (win screen renders off
+        // battleTag; meta records the completion once).
+        if (s.state.battleTag === 'finalBoss') {
+          useMetaStore.getState().dispatch({ type: 'recordRunCompleted', payload: { won: true } })
+        }
+      }
+      if (phase === 'DEFEAT') {
+        useMetaStore.getState().dispatch({ type: 'recordRunCompleted', payload: { won: false } })
       }
     })
     return () => { unsub() }
@@ -275,6 +285,44 @@ export function App(): React.JSX.Element {
     setView('title')
   }, [])
 
+  // Win / game-over → New Run: wipe combat + run state, then run the normal
+  // New Game seeding (fresh party with starter loadouts, gold, food).
+  const onNewRun = useCallback(() => {
+    useCombatStore.getState().reset()
+    useRunStore.getState().dispatch({ type: 'resetRun' })
+    onNewGame()
+  }, [onNewGame])
+
+  /** Current living party, in order — the payload every battle seeder takes. */
+  const livingParty = (): Unit[] => {
+    const run = useRunStore.getState()
+    return run.party.partyOrder
+      .map((id) => run.party.units[id as unknown as string])
+      .filter((u): u is Unit => u !== undefined && u.hp.current > 0)
+  }
+
+  // The Iron Throne (exit node): hand-crafted final boss (ship plan §12).
+  const onChallengeBoss = useCallback(() => {
+    const run = useRunStore.getState()
+    const rng = deriveRng(createRng(run.rngState), 'battle:finalBoss')
+    useCombatStore.getState().dispatch(seedBossBattle(rng.state(), livingParty()), rng)
+    setView('combat')
+  }, [])
+
+  // Dungeon combat rooms seed their room-appropriate enemy group (was: every
+  // dungeon fight fell through to the stub bandit battle).
+  const onDungeonCombat = useCallback((roomType: 'combat' | 'elite' | 'boss') => {
+    const run = useRunStore.getState()
+    const dungeonId = (run.activeDungeon?.dungeonId as unknown as string) ?? 'smugglers_cave'
+    const rng = deriveRng(createRng(run.rngState), `battle:${dungeonId}:${roomType}`)
+    try {
+      useCombatStore.getState().dispatch(seedDungeonBattle(dungeonId, roomType, rng.state(), livingParty()), rng)
+    } catch (e) {
+      diag('route', `dungeon battle seed failed, stub fallback: ${(e as Error).message}`, undefined, 'warn')
+    }
+    setView('combat')
+  }, [])
+
   const onContinueToOverworld = useCallback(() => {
     // Travel encounter resolved successfully — consume pending path and arrive
     const run = useRunStore.getState()
@@ -306,7 +354,7 @@ export function App(): React.JSX.Element {
               onEnterTown={(_nodeId, panel) => { setTownInitialPanel(panel ?? null); setView('town') }}
               onEnterCamp={() => setView('camp')}
               onEnterDungeon={() => setView('dungeon')}
-              onWin={() => setView('title')}
+              onWin={onChallengeBoss}
             />
           )}
           {view === 'combat' && (
@@ -349,7 +397,7 @@ export function App(): React.JSX.Element {
           {view === 'dungeon' && (
             <DungeonScene
               onClearAndExit={() => setView('overworld')}
-              onCombatRoom={() => setView('combat')}
+              onCombatRoom={onDungeonCombat}
               onLeave={() => setView('overworld')}
             />
           )}
@@ -388,6 +436,7 @@ export function App(): React.JSX.Element {
             onRestart={onBattleRestart}
             onReturnToTitle={onReturnToTitle}
             onContinueToOverworld={onContinueToOverworld}
+            onNewRun={onNewRun}
           />
           <QuestLog open={questLogOpen} onClose={() => setQuestLogOpen(false)} />
           <PartyLoadoutModal open={loadoutOpen} onClose={() => setLoadoutOpen(false)} />

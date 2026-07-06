@@ -55,7 +55,7 @@ const ROOM_TYPE_LABEL: Record<DungeonRoom['type'], string> = {
 
 export interface DungeonSceneProps {
   onClearAndExit: () => void
-  onCombatRoom: () => void
+  onCombatRoom: (roomType: 'combat' | 'elite' | 'boss') => void
   onLeave: () => void
 }
 
@@ -100,7 +100,7 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
     dispatchRun({ type: 'advanceDungeonRoom', payload: { roomId: asNodeId(idStr) } })
 
     if (room.type === 'combat' || room.type === 'elite' || room.type === 'boss') {
-      onCombatRoom()
+      onCombatRoom(room.type)
     } else if (room.type === 'rest') {
       // GP-F3: dispatch restParty instead of bypassing the chokepoint with setState
       dispatchRun({ type: 'restParty', payload: { percent: 0.3 } })

@@ -42,9 +42,13 @@ export function resolveBattle(input: ResolveBattleInput): BattleResult {
 
   // Foundation: simple gold reward formula 10 + level*5 per defeated enemy.
   let goldEarned = 0
+  let enemiesDefeated = 0
   for (const id of enemyIds) {
     const u = allUnits[id as unknown as string]
-    if (u && !isAlive(u)) goldEarned += 10 + u.level * 5
+    if (u && !isAlive(u)) {
+      goldEarned += 10 + u.level * 5
+      enemiesDefeated++
+    }
   }
 
   // Foundation: no XP awards yet — leveling lands in next milestone.
@@ -79,6 +83,7 @@ export function resolveBattle(input: ResolveBattleInput): BattleResult {
     xpAwards,
     capturedEnemies: [],   // populated when capture event fires (next milestone)
     goldEarned,
+    enemiesDefeated,
     loot,
     consumedTravelHop,
     emittedEvents,

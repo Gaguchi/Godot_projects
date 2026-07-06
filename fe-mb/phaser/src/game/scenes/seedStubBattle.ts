@@ -50,10 +50,12 @@ export function seedStubBattle(
     cls: typeof lord,
     x: number,
     y: number,
+    team: 'party' | 'enemy' = 'party',
   ): Unit => ({
     id: asUnitId(id),
     name,
     classId: asClassId(cls.id),
+    team,
     level: 1,
     hp: { current: cls.startingHp, max: cls.startingHp },
     stats: { ...cls.baseStats },
@@ -70,7 +72,7 @@ export function seedStubBattle(
   const partyUnits: Unit[] = recruitedParty.length > 0
     ? recruitedParty.slice(0, PARTY_SLOTS.length).map((u, i) => {
         const [x, y] = PARTY_SLOTS[i]!
-        return { ...u, position: asTileId(`${x},${y}`), ap: 3, armor: 0, statuses: [] }
+        return { ...u, team: 'party' as const, position: asTileId(`${x},${y}`), ap: 3, armor: 0, statuses: [] }
       })
     : [
         mk('roy', 'Roy', lord, 2, 4),
@@ -80,9 +82,9 @@ export function seedStubBattle(
 
   const units: Unit[] = [
     ...partyUnits,
-    mk('bandit_a', 'Bandit', bandit, 8, 4),
-    mk('bandit_b', 'Bandit', bandit, 8, 5),
-    mk('bandit_c', 'Bandit', bandit, 9, 4),
+    mk('bandit_a', 'Bandit', bandit, 8, 4, 'enemy'),
+    mk('bandit_b', 'Bandit', bandit, 8, 5, 'enemy'),
+    mk('bandit_c', 'Bandit', bandit, 9, 4, 'enemy'),
   ]
 
   // Gear-as-deck (ship plan §2): deck = class innates + hand-slot gear cards.

@@ -726,7 +726,7 @@ export function OverworldScene({
             } else if (node.type === 'dungeon') {
               actions.push({ id: 'enter', label: 'Enter Dungeon', icon: 'dungeon', onChoose: () => onEnterDungeon(id) })
             } else if (node.type === 'exit') {
-              actions.push({ id: 'exit', label: 'Travel Onward', icon: 'exit', onChoose: () => onWin() })
+              actions.push({ id: 'exit', label: 'Challenge the Iron Throne', icon: 'combat', onChoose: () => onWin() })
             }
             // Travel continuation
             if (hasMoreHops) {

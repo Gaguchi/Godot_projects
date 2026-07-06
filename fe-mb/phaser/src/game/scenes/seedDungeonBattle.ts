@@ -73,6 +73,7 @@ export function seedDungeonBattle(
         id: asUnitId(`${groupId}_${enemyIdx}`),
         name: member.name,
         classId: asClassId(cls.id),
+        team: 'enemy',
         level: member.level,
         hp: { current: cls.startingHp, max: cls.startingHp },
         stats: { ...cls.baseStats },

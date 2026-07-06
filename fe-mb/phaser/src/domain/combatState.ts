@@ -40,12 +40,15 @@ export interface CombatState {
   selectedCardId: CardId | null
   pinnedTargetTile: TileId | null
   effectQueue: CombatEffect[]
+  /** Battle identity tag set at seed time ('finalBoss' completes the run on
+   *  victory; 'boss:<dungeonId>' marks dungeon bosses). null = ordinary. */
+  battleTag: string | null
 }
 
 // --- CombatEvent: dispatched into the reducer ---
 
 export type CombatEvent =
-  | { type: 'startBattle'; payload: { units: Unit[]; grid: CombatGrid; rngSeed: RngState; decks?: Record<string, DeckState> } }
+  | { type: 'startBattle'; payload: { units: Unit[]; grid: CombatGrid; rngSeed: RngState; decks?: Record<string, DeckState>; battleTag?: string } }
   | { type: 'startTurn'; payload: { unitId: UnitId } }
   | { type: 'selectCard'; payload: { cardId: CardId } }
   | { type: 'cancelSelection' }

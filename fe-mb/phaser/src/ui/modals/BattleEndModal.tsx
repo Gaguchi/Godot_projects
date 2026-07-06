@@ -19,14 +19,19 @@ export interface BattleEndModalProps {
   onRestart: () => void
   onReturnToTitle: () => void
   onContinueToOverworld?: () => void
+  /** Wipe run + start a fresh one (win screen / game-over). */
+  onNewRun?: () => void
 }
 
 export function BattleEndModal({
-  onRestart, onReturnToTitle, onContinueToOverworld,
+  onRestart, onReturnToTitle, onContinueToOverworld, onNewRun,
 }: BattleEndModalProps): React.JSX.Element {
   const phase = useCombatStore((s) => s.state.phase)
   const units = useCombatStore((s) => s.state.units)
+  const battleTag = useCombatStore((s) => s.state.battleTag)
   const dispatchRun = useRunStore((s) => s.dispatch)
+  const runStats = useRunStore((s) => s.runStats)
+  const daysElapsed = useRunStore((s) => s.daysElapsed)
   const [victoryEventResolved, setVictoryEventResolved] = useState(false)
   const [activeVictoryEvent, setActiveVictoryEvent] = useState<CheckEvent | null>(null)
 
@@ -105,16 +110,33 @@ export function BattleEndModal({
     )
   }
 
+  // Run-terminal states (ship plan §12): boss victory → win screen; party
+  // wipe → game-over screen. Both summarize the run and offer New Run.
+  const isRunComplete = isVictory && battleTag === 'finalBoss'
+  const isGameOver = phase === 'DEFEAT'
+  const runEnded = isRunComplete || isGameOver
+
+  const stats: Array<[string, number]> = [
+    ['Days on the road', daysElapsed],
+    ['Hops traveled', runStats.hops],
+    ['Battles won', runStats.battlesWon],
+    ['Enemies defeated', runStats.enemiesDefeated],
+    ['Enemies captured', runStats.enemiesCaptured],
+    ['Companions lost', runStats.unitsLost],
+    ['Gold earned', runStats.goldEarned],
+    ['Gear found', runStats.gearFound],
+  ]
+
   return (
     <Dialog
       isOpen={open}
       onOpenChange={() => undefined}
       isDismissable={false}
-      aria-label={isVictory ? 'Victory' : 'Defeat'}
+      aria-label={isRunComplete ? 'Run Complete' : isVictory ? 'Victory' : 'Game Over'}
       className={isVictory ? 'border-amber-700' : 'border-red-900'}
     >
       <div
-        id={isVictory ? 'victory-modal' : 'defeat-modal'}
+        id={isRunComplete ? 'run-complete-modal' : isVictory ? 'victory-modal' : 'defeat-modal'}
         className="flex flex-col gap-5 text-center min-w-[420px]"
       >
         <Heading
@@ -124,31 +146,63 @@ export function BattleEndModal({
             (isVictory ? 'text-amber-400' : 'text-red-600')
           }
         >
-          {phase}
+          {isRunComplete ? 'THE THRONE IS YOURS' : isGameOver ? 'GAME OVER' : 'VICTORY'}
         </Heading>
         <div className="text-stone-500 text-sm">
-          {isVictory ? `Enemies defeated: ${enemiesDefeated}` : 'Your party has fallen.'}
+          {isRunComplete
+            ? 'The Warlord is defeated. The frontier is crossed.'
+            : isGameOver
+              ? 'Your party has fallen. The road claims another company.'
+              : `Enemies defeated: ${enemiesDefeated}`}
         </div>
-        <div className="text-stone-500 text-xs mt-2">
-          Survivors: {partyAlive.map((u) => u.name).join(', ') || 'None'}
-        </div>
+
+        {runEnded ? (
+          <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm mx-auto text-left">
+            {stats.map(([label, value]) => (
+              <React.Fragment key={label}>
+                <span className="text-stone-500">{label}</span>
+                <span className="numeral text-amber-100 text-right">{value}</span>
+              </React.Fragment>
+            ))}
+          </div>
+        ) : (
+          <div className="text-stone-500 text-xs mt-2">
+            Survivors: {partyAlive.map((u) => u.name).join(', ') || 'None'}
+          </div>
+        )}
+
         <div className="flex gap-3 mt-4 justify-center flex-wrap">
-          {isVictory && onContinueToOverworld && (
-            <Button
-              id="battle-end-continue"
-              variant="primary"
-              onPress={onContinueToOverworld}
-              className="tracking-widest"
-            >
-              Continue
-            </Button>
+          {runEnded ? (
+            <>
+              {onNewRun && (
+                <Button id="battle-end-new-run" variant="primary" onPress={onNewRun} className="tracking-widest">
+                  New Run
+                </Button>
+              )}
+              <Button id="battle-end-title-btn" variant="ghost" onPress={onReturnToTitle} className="tracking-widest">
+                Return to Title
+              </Button>
+            </>
+          ) : (
+            <>
+              {isVictory && onContinueToOverworld && (
+                <Button
+                  id="battle-end-continue"
+                  variant="primary"
+                  onPress={onContinueToOverworld}
+                  className="tracking-widest"
+                >
+                  Continue
+                </Button>
+              )}
+              <Button id="battle-end-restart" variant="secondary" onPress={onRestart} className="tracking-widest">
+                Restart
+              </Button>
+              <Button id="battle-end-title-btn" variant="ghost" onPress={onReturnToTitle} className="tracking-widest">
+                Return to Title
+              </Button>
+            </>
           )}
-          <Button id="battle-end-restart" variant="secondary" onPress={onRestart} className="tracking-widest">
-            Restart
-          </Button>
-          <Button id="battle-end-title-btn" variant="ghost" onPress={onReturnToTitle} className="tracking-widest">
-            Return to Title
-          </Button>
         </div>
       </div>
     </Dialog>

@@ -1,0 +1,44 @@
+{
+  "classId": "warlord",
+  "role": "tank",
+  "movement": 4,
+  "actions": [
+    {
+      "id": "crush",
+      "kind": "attack",
+      "range": {
+        "min": 1,
+        "max": 1
+      },
+      "amount": 9,
+      "damageStat": "str",
+      "weight": 60,
+      "situation": "always"
+    },
+    {
+      "id": "warcry_sweep",
+      "kind": "attack",
+      "range": {
+        "min": 1,
+        "max": 1
+      },
+      "amount": 6,
+      "damageStat": "str",
+      "weight": 35,
+      "situation": "always",
+      "aoeRadius": 1
+    },
+    {
+      "id": "executioner",
+      "kind": "attack",
+      "range": {
+        "min": 1,
+        "max": 1
+      },
+      "amount": 13,
+      "damageStat": "str",
+      "weight": 80,
+      "situation": "target_low_hp"
+    }
+  ]
+}

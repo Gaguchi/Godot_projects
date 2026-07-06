@@ -58,7 +58,7 @@ export function PartyLoadoutModal({ open, onClose }: PartyLoadoutModalProps): Re
   const deckBySource = useMemo(() => {
     const groups: Record<CardSource, string[]> = { innate: [], hand_left: [], hand_right: [] }
     if (deck) {
-      for (const id of deck.hand) {
+      for (const id of [...deck.hand, ...deck.draw]) {
         const src = deck.sources?.[id as unknown as string] ?? 'innate'
         groups[src].push(id as unknown as string)
       }
@@ -173,7 +173,7 @@ export function PartyLoadoutModal({ open, onClose }: PartyLoadoutModalProps): Re
 
               <div className="border border-stone-800 rounded p-3">
                 <div className="text-[0.6rem] uppercase tracking-[0.18em] text-parchment-dim mb-2">
-                  Deck next battle · {deck?.hand.length ?? 0} cards
+                  Deck next battle · {(deck?.hand.length ?? 0) + (deck?.draw.length ?? 0)} cards
                 </div>
                 {(Object.keys(deckBySource) as CardSource[]).map((src) =>
                   deckBySource[src].length === 0 ? null : (

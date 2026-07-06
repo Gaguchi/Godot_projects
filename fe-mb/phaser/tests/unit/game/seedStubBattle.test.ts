@@ -68,14 +68,14 @@ describe('seedStubBattle', () => {
     }
   })
 
-  it('builds a deck for every unit with hand populated from innate cards', () => {
+  it('builds a deck for every unit with draw pile populated from innate cards', () => {
     const evt = seedStubBattle({ seed: 42, counter: 0 })
     expect(evt.payload.decks).toBeDefined()
     const decks = evt.payload.decks!
     for (const u of evt.payload.units) {
       const deck = decks[u.id as unknown as string]
       expect(deck).toBeDefined()
-      expect(deck!.hand.length).toBeGreaterThan(0)
+      expect(deck!.draw.length).toBeGreaterThan(0)
       expect(deck!.draw.length).toBeGreaterThan(0)
       expect(deck!.discard).toEqual([])
     }

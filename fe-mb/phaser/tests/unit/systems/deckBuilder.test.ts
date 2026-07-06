@@ -65,7 +65,8 @@ const mkUnit = (handLeft: string | null, handRight: string | null): Unit => ({
 describe('buildDeckForUnit', () => {
   it('composes innate + left + right with source tags (sword + shield)', () => {
     const deck = buildDeckForUnit(mkUnit('iron_sword', 'iron_buckler'), deps)
-    expect(deck.hand).toHaveLength(4 + 3 + 3)
+    expect(deck.draw).toHaveLength(4 + 3 + 3)
+    expect(deck.hand).toHaveLength(0) // dealt by the reducer at startBattle
     expect(deck.sources?.['lord_rally']).toBe('innate')
     expect(deck.sources?.['iron_sword_slash']).toBe('hand_left')
     expect(deck.sources?.['buckler_block']).toBe('hand_right')
@@ -74,13 +75,13 @@ describe('buildDeckForUnit', () => {
 
   it('empty slots contribute nothing (innate-only unit)', () => {
     const deck = buildDeckForUnit(mkUnit(null, null), deps)
-    expect(deck.hand).toHaveLength(4)
+    expect(deck.draw).toHaveLength(4)
     expect(Object.values(deck.sources ?? {}).every(s => s === 'innate')).toBe(true)
   })
 
   it('2H weapon contributes its full card set from the left slot', () => {
     const deck = buildDeckForUnit(mkUnit('iron_greatsword', null), deps)
-    expect(deck.hand).toHaveLength(4 + 6)
+    expect(deck.draw).toHaveLength(4 + 6)
     expect(deck.sources?.['gs_a']).toBe('hand_left')
   })
 
@@ -100,7 +101,7 @@ describe('buildDeckForUnit', () => {
   it('quiver without a bow does nothing', () => {
     const deck = buildDeckForUnit(mkUnit('iron_sword', 'poison_quiver'), deps)
     expect(deck.cardMods).toBeUndefined()
-    expect(deck.hand).toHaveLength(4 + 3) // quiver adds no cards
+    expect(deck.draw).toHaveLength(4 + 3) // quiver adds no cards
   })
 
   it('bow without a quiver has no mods', () => {
@@ -108,10 +109,10 @@ describe('buildDeckForUnit', () => {
     expect(deck.cardMods).toBeUndefined()
   })
 
-  it('returns detached arrays (no aliasing between draw and hand)', () => {
+  it('returns detached arrays (mutating draw leaves nothing aliased)', () => {
     const deck = buildDeckForUnit(mkUnit('iron_sword', null), deps)
     expect(deck.draw).not.toBe(deck.hand)
-    deck.hand.pop()
-    expect(deck.draw).toHaveLength(7)
+    deck.draw.pop()
+    expect(buildDeckForUnit(mkUnit('iron_sword', null), deps).draw).toHaveLength(7)
   })
 })

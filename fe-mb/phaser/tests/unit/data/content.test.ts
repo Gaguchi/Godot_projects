@@ -6,8 +6,8 @@ import itemsJson from '../../../src/data/content/items.json'
 import cardsJson from '../../../src/data/content/cards.json'
 
 describe('representative content', () => {
-  it('classes.json passes ClassSchema (4 classes — 3 player + Bandit enemy)', () => {
-    expect(classesJson.length).toBe(4)
+  it('classes.json passes ClassSchema (player classes + enemy classes incl. warlord boss)', () => {
+    expect(classesJson.length).toBeGreaterThanOrEqual(4)
     for (const c of classesJson) {
       expect(() => ClassSchema.parse(c)).not.toThrow()
     }

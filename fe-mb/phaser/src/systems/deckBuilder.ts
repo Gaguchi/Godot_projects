@@ -65,11 +65,12 @@ export function buildDeckForUnit(unit: Unit, deps: DeckBuildDeps): DeckState {
   }
 
   const deck: DeckState = {
-    // Hand starts with every card available; draw holds a second copy so
-    // DrawCards effects and future reshuffles have fuel (mirrors the
-    // seedStubBattle convention).
+    // All cards start in the DRAW pile; the combat reducer's startBattle
+    // shuffles it with the battle RNG and deals the opening hand (empty hand
+    // = "not yet dealt" sentinel). Played cards discard; the discard pile
+    // reshuffles into draw when it runs dry — the deck CYCLES.
     draw: [...cardIds],
-    hand: [...cardIds],
+    hand: [],
     discard: [],
     sources,
   }

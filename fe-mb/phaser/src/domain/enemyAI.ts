@@ -16,6 +16,8 @@ export interface EnemyAction {
   weight: number
   /** Only consider this action if the situation matches. */
   situation?: 'always' | 'self_low_hp' | 'ally_wounded' | 'target_low_hp'
+  /** Attack splashes to tiles within this radius of the target (boss sweeps). */
+  aoeRadius?: number
 }
 
 export interface EnemyClassAI {

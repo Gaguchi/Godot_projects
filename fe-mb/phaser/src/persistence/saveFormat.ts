@@ -21,6 +21,12 @@ export interface SerializedRunState {
   activeDungeon: unknown
   rngState: { seed: number; counter: number }
   deathLog: { unitId: string; cause: string; turn: number }[]
+  /** Run summary counters (win / game-over screens). Optional: absent in
+   *  pre-0.7 saves; hydration defaults to zeros. */
+  runStats?: {
+    battlesWon: number; enemiesDefeated: number; unitsLost: number
+    goldEarned: number; gearFound: number; enemiesCaptured: number; hops: number
+  }
 }
 
 export interface SerializedMetaState {

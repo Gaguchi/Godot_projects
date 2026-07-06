@@ -35,6 +35,7 @@ export function serializeRun(run: RunState | null): SerializedRunState | null {
     deathLog: run.deathLog.map(d => ({
       unitId: d.unitId as unknown as string, cause: d.cause, turn: d.turn,
     })),
+    runStats: { ...run.runStats },
   }
 }
 

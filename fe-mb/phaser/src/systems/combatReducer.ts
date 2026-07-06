@@ -1,10 +1,11 @@
-import type { CombatState, CombatEvent, CombatEffect } from '../domain/combatState'
+import type { CombatState, CombatEvent, CombatEffect, DeckState } from '../domain/combatState'
 import type { Unit } from '../domain/unit'
 import type { UnitId, TileId, CardId } from '../domain/ids'
 import { asStatusEffectId } from '../domain/ids'
 import type { RNG } from '../domain/rng'
 import { buildInitiativeQueue } from './turnOrder'
 import { getStatusEffect, mergeStatus, isImmobilized, empowerBonus, consumeEmpower } from './statusEffects'
+import { isEnemyUnit as isEnemyTeam } from './team'
 import { applyDamage } from './damage'
 import { createRng } from './rng'
 
@@ -27,25 +28,55 @@ export function initialCombatState(): CombatState {
     selectedCardId: null,
     pinnedTargetTile: null,
     effectQueue: [],
+    battleTag: null,
   }
 }
 
 function teamsOf(units: Record<string, Unit>): UnitTeam {
-  // Convention for foundation: classId containing 'bandit' marks an enemy.
-  // (mage_bandit and similar enemy variants will still match.) Pure 'mage'
-  // is a player class — see classes.json. Real battles will set team
-  // explicitly via Unit metadata; tracked as future refactor.
+  // Explicit unit.team wins; systems/team.ts keeps the classId fallback for
+  // legacy fixtures. (The old inline 'bandit' heuristic missed wolves,
+  // brigand chiefs, and the warlord boss.)
   const partyIds: UnitId[] = []
   const enemyIds: UnitId[] = []
   for (const u of Object.values(units)) {
-    const cid = u.classId as unknown as string
-    if (cid.includes('bandit')) enemyIds.push(u.id)
+    if (isEnemyTeam(u)) enemyIds.push(u.id)
     else partyIds.push(u.id)
   }
   return { partyIds, enemyIds }
 }
 
 function isAlive(u: Unit): boolean { return u.hp.current > 0 }
+
+/** Cards a unit holds at the start of its turn (refill target). */
+export const HAND_SIZE = 5
+
+/**
+ * Draw up to `count` cards from draw→hand, reshuffling the discard pile into
+ * the draw pile (deterministically, via rngState) when it runs dry. Returns
+ * the new deck + advanced rng state. Pure.
+ */
+function drawCards(
+  deck: DeckState,
+  count: number,
+  rngState: CombatState['rng'],
+): { deck: DeckState; rngState: CombatState['rng'] } {
+  let draw = deck.draw.slice()
+  let discard = deck.discard.slice()
+  const hand = deck.hand.slice()
+  let rng = rngState
+  for (let i = 0; i < count; i++) {
+    if (draw.length === 0 && discard.length > 0) {
+      const shuffler = createRng(rng)
+      draw = shuffler.shuffle(discard)
+      discard = []
+      rng = shuffler.state()
+    }
+    const drawn = draw.shift()
+    if (drawn === undefined) break
+    hand.push(drawn)
+  }
+  return { deck: { ...deck, draw, hand, discard }, rngState: rng }
+}
 
 function parseTile(t: TileId): { x: number; y: number } {
   const [x, y] = (t as unknown as string).split(',').map(Number)
@@ -129,15 +160,36 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       const order = buildInitiativeQueue(event.payload.units)
       const first = order[0]!
       const team: 'party' | 'enemy' = teamsOf(units).partyIds.includes(first) ? 'party' : 'enemy'
+
+      // Deal opening hands: decks arriving with an EMPTY hand (deckBuilder
+      // convention) get their draw pile shuffled and HAND_SIZE cards dealt.
+      // Decks with pre-set hands (test fixtures, replays) pass through as-is.
+      let rngState = event.payload.rngSeed
+      const rawDecks = event.payload.decks ?? state.decks
+      const decks: Record<string, DeckState> = {}
+      for (const [uid, deck] of Object.entries(rawDecks)) {
+        if (deck.hand.length === 0 && deck.draw.length > 0) {
+          const shuffler = createRng(rngState)
+          const shuffled = { ...deck, draw: shuffler.shuffle(deck.draw) }
+          rngState = shuffler.state()
+          const dealt = drawCards(shuffled, HAND_SIZE, rngState)
+          decks[uid] = dealt.deck
+          rngState = dealt.rngState
+        } else {
+          decks[uid] = deck
+        }
+      }
+
       const newState: CombatState = {
         ...state,
         phase: 'COMBAT',
         subPhase: 'IDLE',
         turn: { number: 1, unitId: first, team },
         units,
-        decks: event.payload.decks ?? state.decks,
+        decks,
         grid: event.payload.grid,
-        rng: event.payload.rngSeed,
+        rng: rngState,
+        battleTag: event.payload.battleTag ?? null,
       }
       return { state: newState, effects: [] }
     }
@@ -191,6 +243,27 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       const nextUnit = newUnits[nextKey]
       if (nextUnit) newUnits[nextKey] = { ...nextUnit, hasMovedThisTurn: false }
 
+      // Deck cycling (StS model): the ENDING unit discards its whole hand —
+      // no hand clogging, every turn starts fresh — then the unit whose turn
+      // begins draws HAND_SIZE, reshuffling its discard when the pile is dry.
+      let newDecks = tickedState.decks
+      let rngState = tickedState.rng
+      if (endingKey) {
+        const endingDeck = newDecks[endingKey]
+        if (endingDeck && endingDeck.hand.length > 0) {
+          newDecks = {
+            ...newDecks,
+            [endingKey]: { ...endingDeck, hand: [], discard: [...endingDeck.discard, ...endingDeck.hand] },
+          }
+        }
+      }
+      const nextDeck = newDecks[nextKey]
+      if (nextDeck && nextDeck.hand.length < HAND_SIZE) {
+        const refilled = drawCards(nextDeck, HAND_SIZE - nextDeck.hand.length, rngState)
+        newDecks = { ...newDecks, [nextKey]: refilled.deck }
+        rngState = refilled.rngState
+      }
+
       return {
         state: {
           ...tickedState,
@@ -204,6 +277,8 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
             team,
           },
           units: newUnits,
+          decks: newDecks,
+          rng: rngState,
         },
         effects: tickEffects,
       }

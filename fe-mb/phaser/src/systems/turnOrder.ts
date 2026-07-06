@@ -1,17 +1,13 @@
 import type { Unit } from '../domain/unit'
 import type { UnitId } from '../domain/ids'
 import { statusSpdDelta } from './statusEffects'
+import { isEnemyUnit } from './team'
 
 export interface InitiativeModifier {
   unitId: UnitId
   spdDelta: number
 }
 
-const ENEMY_CLASS_FRAGMENTS = ['bandit', 'brigand', 'wolf']
-function isEnemyUnit(u: Unit): boolean {
-  const id = u.classId as unknown as string
-  return ENEMY_CLASS_FRAGMENTS.some((s) => id.includes(s))
-}
 
 /**
  * Build the per-round initiative queue. Order rules (top → bottom):

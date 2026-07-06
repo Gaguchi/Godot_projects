@@ -45,7 +45,8 @@ function unitSpriteKey(name: string, cls: string): string | null {
   const n = name.toLowerCase()
   for (const e of ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'daren', 'wolf']) if (n.includes(e)) return `unit_${e}`
   if (n.includes('archer')) return 'unit_bandit_archer'
-  if (n.includes('brigand') || n.includes('chief')) return 'unit_brigand_chief'
+  // The Warlord boss reuses the brigand chief plate until a bespoke bake lands.
+  if (n.includes('brigand') || n.includes('chief') || n.includes('warlord') || cls.includes('warlord')) return 'unit_brigand_chief'
   if (n.includes('bandit') || cls.includes('bandit')) return 'unit_bandit'
   if (cls.includes('lord')) return 'unit_roy'
   if (cls.includes('knight')) return 'unit_marcus'

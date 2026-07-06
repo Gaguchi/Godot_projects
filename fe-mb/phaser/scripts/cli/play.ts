@@ -18,6 +18,7 @@ import { useCombatStore } from '../../src/state/combatStore'
 import { useRunStore } from '../../src/state/runStore'
 import { seedStubBattle } from '../../src/game/scenes/seedStubBattle'
 import { seedDungeonBattle } from '../../src/game/scenes/seedDungeonBattle'
+import { seedBossBattle } from '../../src/game/scenes/seedBossBattle'
 import { createRng } from '../../src/systems/rng'
 import { getItemDef } from '../../src/data/itemRegistry'
 import { buildStarterParty } from '../../src/systems/starterParty'
@@ -102,6 +103,8 @@ function seedCombat(seed: number, scenario: string, loadout?: string | true): vo
   if (scenario.startsWith('dungeon:')) {
     const [, dungeonId, roomType] = scenario.split(':')
     event = seedDungeonBattle(dungeonId ?? 'smugglers_cave', (roomType as 'combat' | 'elite' | 'boss') ?? 'combat', seedState, party)
+  } else if (scenario === 'boss') {
+    event = seedBossBattle(seedState, party)
   } else {
     event = seedStubBattle(seedState, party)
   }

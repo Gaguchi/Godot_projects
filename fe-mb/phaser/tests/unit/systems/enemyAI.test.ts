@@ -22,7 +22,7 @@ const baseState = (units: Unit[]): CombatState => {
     turn: { number: 1, unitId: enemyId ?? null, team: 'enemy' },
     units: unitsMap,
     decks: {}, grid: { width: 14, height: 10, obstacles: new Set() },
-    rng: { seed: 0, counter: 0 }, selectedCardId: null, pinnedTargetTile: null, effectQueue: [],
+    rng: { seed: 0, counter: 0 }, selectedCardId: null, pinnedTargetTile: null, effectQueue: [], battleTag: null,
   }
 }
 

@@ -10,6 +10,8 @@ export const EnemyActionSchema = z.object({
   damageStat: z.enum(['str', 'mag', 'skl']).nullable(),
   weight: z.number().int().nonnegative(),
   situation: z.enum(['always', 'self_low_hp', 'ally_wounded', 'target_low_hp']).optional(),
+  /** Attack splashes to tiles within this radius of the target (boss sweeps). */
+  aoeRadius: z.number().int().min(0).optional(),
 })
 
 export const EnemyClassAISchema = z.object({

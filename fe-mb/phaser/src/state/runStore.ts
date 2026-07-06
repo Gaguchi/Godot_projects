@@ -36,6 +36,17 @@ export interface RunState {
   pendingCombat: { enemyGroupId: string } | null
   /** Days on the road — starts at 1, +1 per overworld hop. Shown in the HUD. */
   daysElapsed: number
+  /** Run summary counters (win / game-over screens). Updated by
+   *  applyBattleResult and consumeTravelHop. */
+  runStats: {
+    battlesWon: number
+    enemiesDefeated: number
+    unitsLost: number
+    goldEarned: number
+    gearFound: number
+    enemiesCaptured: number
+    hops: number
+  }
 }
 
 export type RunAction =
@@ -61,6 +72,7 @@ export type RunAction =
   | { type: 'applyQuestEffects'; payload: { effects: QuestEffect[] } }
   | { type: 'startDialogue'; payload: { dialogueId: DialogueId; nodeId: string } }
   | { type: 'endDialogue' }
+  | { type: 'resetRun' }
   | { type: 'clearPendingCombat' }
   | { type: 'markEncounterFired'; payload: { encounterId: string } }
   | { type: 'consumeFoodPerHop' }
@@ -206,6 +218,10 @@ function freshState(): RunState {
     oneShotsFired: new Set<string>(),
     starvationDamagePerHop: 3,
     daysElapsed: 1,
+    runStats: {
+      battlesWon: 0, enemiesDefeated: 0, unitsLost: 0,
+      goldEarned: 0, gearFound: 0, enemiesCaptured: 0, hops: 0,
+    },
   }
 }
 
@@ -446,6 +462,7 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
             if (placed) items = placed
             else diag('store.run', 'battle loot dropped — bag full', { loot: r.loot }, 'warn')
           }
+          const won = r.outcome === 'victory'
           return {
             gold: s.gold + r.goldEarned,
             inventory: items === s.inventory.items ? s.inventory : { items },
@@ -453,6 +470,15 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
               ...s.deathLog,
               ...r.fallen.map(unitId => ({ unitId, cause: 'battle', turn: 0 })),
             ],
+            runStats: {
+              ...s.runStats,
+              battlesWon: s.runStats.battlesWon + (won ? 1 : 0),
+              enemiesDefeated: s.runStats.enemiesDefeated + r.enemiesDefeated,
+              unitsLost: s.runStats.unitsLost + r.fallen.length,
+              goldEarned: s.runStats.goldEarned + r.goldEarned,
+              gearFound: s.runStats.gearFound + r.loot.length,
+              enemiesCaptured: s.runStats.enemiesCaptured + r.capturedEnemies.length,
+            },
           }
         })
         return
@@ -468,6 +494,10 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
         return
       case 'endDialogue':
         set({ pendingDialogue: null })
+        return
+      case 'resetRun':
+        // New Run from win/game-over: wipe the whole run state atomically.
+        set(freshState())
         return
       case 'clearPendingCombat':
         set({ pendingCombat: null })
@@ -501,7 +531,10 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
       }
       case 'consumeFoodPerHop': {
         // A day passes with every hop on the road.
-        set(s => ({ daysElapsed: s.daysElapsed + 1 }))
+        set(s => ({
+          daysElapsed: s.daysElapsed + 1,
+          runStats: { ...s.runStats, hops: s.runStats.hops + 1 },
+        }))
         // Find the first food_rations item in the bag; remove one. If no
         // food remains, deal starvationDamagePerHop HP to each living party
         // member (mirrors Godot starvation rule).
