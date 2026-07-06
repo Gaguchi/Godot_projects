@@ -92,6 +92,7 @@ export class BoardScene extends Phaser.Scene {
   private unsubState: (() => void) | null = null
   private unitViews = new Map<string, UnitView>()
   private tileRects = new Map<string, Phaser.GameObjects.Rectangle>()
+  private tileSprites: Phaser.GameObjects.Image[] = []
   private aoePreview: Phaser.GameObjects.Graphics | null = null
   private damagePreview: Phaser.GameObjects.Text | null = null
   private koSkull: Phaser.GameObjects.Text | null = null
@@ -125,6 +126,10 @@ export class BoardScene extends Phaser.Scene {
     // Character sprites for the cast. BootScene was removed (it was a stub),
     // so 'combat' is the first scene to run — texture loading lives here.
     for (const u of UNIT_SPRITES) this.load.image(`unit_${u}`, `/sprites/units/${u}.png`)
+    // Board floor: baked painted terrain variants (story 282 — tiles read as
+    // ground, not flat rects). Darkened via tint to keep the moody board.
+    for (let i = 1; i <= 8; i++) this.load.image(`board_grass_${i}`, `/art/terrain/grass_${i}.png`)
+    for (let i = 1; i <= 4; i++) this.load.image(`board_dirt_${i}`, `/art/terrain/dirt_${i}.png`)
   }
 
   create(): void {
@@ -216,6 +221,8 @@ export class BoardScene extends Phaser.Scene {
     if (dims === this.lastGridDims) return
     for (const rect of this.tileRects.values()) rect.destroy()
     this.tileRects.clear()
+    for (const img of this.tileSprites) img.destroy()
+    this.tileSprites = []
     this.drawGrid()
   }
 
@@ -241,11 +248,23 @@ export class BoardScene extends Phaser.Scene {
     const gridH = Math.min(g.height || GRID_H, GRID_H)
     for (let y = 0; y < gridH; y++) {
       for (let x = 0; x < gridW; x++) {
+        // Painted ground variant under the interactive rect (deterministic pick).
+        const th = ((x * 2654435761) ^ (y * 40503)) >>> 0
+        const texKey = th % 5 === 0 ? `board_dirt_${(th % 4) + 1}` : `board_grass_${(th % 8) + 1}`
+        if (this.textures.exists(texKey)) {
+          const img = this.add.image(
+            GRID_OFFSET_X + x * TILE + TILE / 2,
+            GRID_OFFSET_Y + y * TILE + TILE / 2,
+            texKey,
+          ).setDisplaySize(TILE - 2, TILE - 2).setTint(0x6f7890)
+          this.tileSprites.push(img)
+        }
         const rect = this.add.rectangle(
           GRID_OFFSET_X + x * TILE + TILE / 2,
           GRID_OFFSET_Y + y * TILE + TILE / 2,
           TILE - 2, TILE - 2,
           tileTint(x, y),
+          0.35,
         ).setStrokeStyle(1, 0x2a2e3a, 0.5)
         const tileId = `${x},${y}`
         rect.setInteractive({ useHandCursor: false })
@@ -276,7 +295,7 @@ export class BoardScene extends Phaser.Scene {
 
     for (const [tileId, rect] of this.tileRects.entries()) {
       const [tx, ty] = tileId.split(',').map(Number)
-      rect.setFillStyle(this.tileBaseFill(tx!, ty!))
+      rect.setFillStyle(this.tileBaseFill(tx!, ty!), 0.35)
     }
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
@@ -315,7 +334,7 @@ export class BoardScene extends Phaser.Scene {
       }, blocked)
       for (const t of valid) {
         const rect = this.tileRects.get(t as unknown as string)
-        if (rect) rect.setFillStyle(0x1f4a5a)
+        if (rect) rect.setFillStyle(0x1f4a5a, 0.7)
       }
       return
     }
@@ -337,7 +356,7 @@ export class BoardScene extends Phaser.Scene {
     )
     for (const t of valid) {
       const rect = this.tileRects.get(t as unknown as string)
-      if (rect) rect.setFillStyle(0x4a3a20)
+      if (rect) rect.setFillStyle(0x4a3a20, 0.7)
     }
   }
 
@@ -364,7 +383,7 @@ export class BoardScene extends Phaser.Scene {
     const moveColor = isEnemy ? 0x4a2a4a : 0x1f4a5a
     for (const t of reachable) {
       const rect = this.tileRects.get(t as unknown as string)
-      if (rect) rect.setFillStyle(moveColor)
+      if (rect) rect.setFillStyle(moveColor, 0.72)
     }
     // Attack ring: tiles 1 step beyond reachable (basic melee threat)
     const attackTiles = new Set<string>()
@@ -383,7 +402,7 @@ export class BoardScene extends Phaser.Scene {
     const attackColor = isEnemy ? 0x6a1a1a : 0x6a3a1a
     for (const t of attackTiles) {
       const rect = this.tileRects.get(t)
-      if (rect) rect.setFillStyle(attackColor)
+      if (rect) rect.setFillStyle(attackColor, 0.72)
     }
   }
 
@@ -427,7 +446,7 @@ export class BoardScene extends Phaser.Scene {
       if (rect) {
         // Soft purple — only overrides default-empty tiles, lets selection
         // overlays win when both fire.
-        rect.setFillStyle(0x3a1a3a)
+        rect.setFillStyle(0x3a1a3a, 0.72)
       }
     }
   }

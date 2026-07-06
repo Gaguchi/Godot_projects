@@ -1,0 +1,12 @@
+{
+  "id": "warlord",
+  "name": "The Warlord",
+  "side": "enemy",
+  "class": "warlord",
+  "role": "final boss — holds the Iron Throne",
+  "canon": "The threat at the end of the frontier road. A juggernaut in obsidian plate who executes the weakest first; his throne room is the run's final battle.",
+  "appearance": "hulking middle-aged man; scarred jaw; horned iron crown-helm; heavy black obsidian plate with ember-red trim; wolf-fur mantle; enormous notched greatsword",
+  "personality": "patient, contemptuous, absolute",
+  "prompt": "1boy, solo, hulking warlord, middle-aged, scarred jaw, horned iron crown helmet, heavy black obsidian plate armor with glowing ember-red trim, wolf fur mantle, enormous notched two-handed greatsword held point-down, menacing regal stance, dark fantasy villain",
+  "status": "draft"
+}
