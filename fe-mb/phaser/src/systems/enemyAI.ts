@@ -9,12 +9,26 @@ import banditAI from '../data/content/enemyAI/bandit.json'
 import banditArcherAI from '../data/content/enemyAI/bandit_archer.json'
 import banditPriestAI from '../data/content/enemyAI/bandit_priest.json'
 import warlordAI from '../data/content/enemyAI/warlord.json'
+import wolfAI from '../data/content/enemyAI/wolf.json'
+import alphaWolfAI from '../data/content/enemyAI/alpha_wolf.json'
+import shieldKnightAI from '../data/content/enemyAI/shield_knight.json'
+import raiderMageAI from '../data/content/enemyAI/raider_mage.json'
+import raiderClericAI from '../data/content/enemyAI/raider_cleric.json'
+import thiefAI from '../data/content/enemyAI/thief.json'
+import emberMageAI from '../data/content/enemyAI/ember_mage.json'
 
-const AI_BY_CLASS: Record<string, EnemyClassAI> = {
+export const AI_BY_CLASS: Record<string, EnemyClassAI> = {
   bandit: banditAI as EnemyClassAI,
   bandit_archer: banditArcherAI as EnemyClassAI,
   bandit_priest: banditPriestAI as EnemyClassAI,
   warlord: warlordAI as EnemyClassAI,
+  wolf: wolfAI as EnemyClassAI,
+  alpha_wolf: alphaWolfAI as EnemyClassAI,
+  shield_knight: shieldKnightAI as EnemyClassAI,
+  raider_mage: raiderMageAI as EnemyClassAI,
+  raider_cleric: raiderClericAI as EnemyClassAI,
+  thief: thiefAI as EnemyClassAI,
+  ember_mage: emberMageAI as EnemyClassAI,
 }
 
 const tileXY = (t: string): [number, number] => {

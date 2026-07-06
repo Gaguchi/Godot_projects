@@ -4,6 +4,11 @@ import bandits from '../../data/content/enemyGroups/bandits.json'
 import wolves from '../../data/content/enemyGroups/wolves.json'
 import brigands from '../../data/content/enemyGroups/brigands.json'
 import darens from '../../data/content/enemyGroups/darens_gang.json'
+import shieldWall from '../../data/content/enemyGroups/shield_wall.json'
+import mageCircle from '../../data/content/enemyGroups/mage_circle.json'
+import wolfAlphaPack from '../../data/content/enemyGroups/wolf_alpha_pack.json'
+import thornwoodAmbush from '../../data/content/enemyGroups/thornwood_ambush.json'
+import ashfallRaiders from '../../data/content/enemyGroups/ashfall_raiders.json'
 import { asUnitId, asClassId, asTileId } from '../../domain/ids'
 import type { Unit } from '../../domain/unit'
 import type { CombatEvent, CombatGrid, DeckState } from '../../domain/combatState'
@@ -18,6 +23,11 @@ export const ENEMY_GROUPS: Record<string, EnemyGroup> = {
   wolves: wolves as EnemyGroup,
   brigands: brigands as EnemyGroup,
   darens_gang: darens as EnemyGroup,
+  shield_wall: shieldWall as EnemyGroup,
+  mage_circle: mageCircle as EnemyGroup,
+  wolf_alpha_pack: wolfAlphaPack as EnemyGroup,
+  thornwood_ambush: thornwoodAmbush as EnemyGroup,
+  ashfall_raiders: ashfallRaiders as EnemyGroup,
 }
 
 const DAMAGE_CARD_IDS = new Set(

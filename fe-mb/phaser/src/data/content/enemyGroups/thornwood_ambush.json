@@ -1,0 +1,8 @@
+{
+  "id": "thornwood_ambush",
+  "name": "Thornwood Ambush",
+  "members": [
+    { "name": "Bone Dagger Thief", "classId": "thief", "level": 3, "count": 2 },
+    { "name": "Darkwood Archer", "classId": "bandit_archer", "level": 4, "count": 1 }
+  ]
+}

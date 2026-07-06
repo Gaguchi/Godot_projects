@@ -1,0 +1,8 @@
+{
+  "id": "wolf_alpha_pack",
+  "name": "Wolf Alpha Pack",
+  "members": [
+    { "name": "Wolf", "classId": "wolf", "level": 2, "count": 4 },
+    { "name": "Alpha Wolf", "classId": "alpha_wolf", "level": 2, "count": 1 }
+  ]
+}

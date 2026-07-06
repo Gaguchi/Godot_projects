@@ -7,42 +7,60 @@
       "weight": 10,
       "oneShot": false,
       "conditions": [],
-      "outcome": { "kind": "dialogue", "dialogueId": "road_merchant" }
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "road_merchant"
+      }
     },
     {
       "id": "bandit_threat",
       "weight": 8,
       "oneShot": false,
       "conditions": [],
-      "outcome": { "kind": "dialogue", "dialogueId": "bandit_threat" }
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "bandit_threat"
+      }
     },
     {
       "id": "wounded_traveler",
       "weight": 6,
       "oneShot": false,
       "conditions": [],
-      "outcome": { "kind": "dialogue", "dialogueId": "wounded_traveler" }
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "wounded_traveler"
+      }
     },
     {
       "id": "bandit_ambush",
       "weight": 8,
       "oneShot": false,
       "conditions": [],
-      "outcome": { "kind": "battle", "enemyGroupId": "bandits_small" }
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "bandits_small"
+      }
     },
     {
       "id": "wolf_pack",
       "weight": 6,
       "oneShot": false,
       "conditions": [],
-      "outcome": { "kind": "battle", "enemyGroupId": "wolves" }
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "wolves"
+      }
     },
     {
       "id": "brigand_raiders",
       "weight": 4,
       "oneShot": false,
       "conditions": [],
-      "outcome": { "kind": "battle", "enemyGroupId": "brigands" }
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "brigands"
+      }
     },
     {
       "id": "stuck_caravan",
@@ -59,10 +77,19 @@
             {
               "id": "help_push",
               "text": "Help push the wagon free.",
-              "check": { "kind": "stat", "stat": "str", "threshold": 6 },
+              "check": {
+                "kind": "stat",
+                "stat": "str",
+                "threshold": 6
+              },
               "onPass": {
                 "narration": "You shoulder the wheel free; the merchant tips you in gratitude.",
-                "effects": [{ "kind": "addGold", "amount": 25 }]
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": 25
+                  }
+                ]
               },
               "onFail": {
                 "narration": "You strain but the wheel won't move. The merchant shrugs.",
@@ -72,10 +99,19 @@
             {
               "id": "negotiate",
               "text": "Talk him into letting you detour.",
-              "check": { "kind": "stat", "stat": "skl", "threshold": 7 },
+              "check": {
+                "kind": "stat",
+                "stat": "skl",
+                "threshold": 7
+              },
               "onPass": {
                 "narration": "He laughs and waves you onto a hidden path. He even tosses a small purse.",
-                "effects": [{ "kind": "addGold", "amount": 15 }]
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": 15
+                  }
+                ]
               },
               "onFail": {
                 "narration": "He waves you off, returning to his oxen.",
@@ -87,7 +123,12 @@
               "text": "Wait it out.",
               "onPass": {
                 "narration": "Two hours later, the road clears. You've used some of your supplies.",
-                "effects": [{ "kind": "addFood", "amount": -1 }]
+                "effects": [
+                  {
+                    "kind": "addFood",
+                    "amount": -1
+                  }
+                ]
               }
             }
           ]
@@ -109,10 +150,19 @@
             {
               "id": "investigate",
               "text": "Investigate the smoke.",
-              "check": { "kind": "stat", "stat": "spd", "threshold": 7 },
+              "check": {
+                "kind": "stat",
+                "stat": "spd",
+                "threshold": 7
+              },
               "onPass": {
                 "narration": "You scout ahead silently. A small abandoned camp; you scavenge useful supplies.",
-                "effects": [{ "kind": "addFood", "amount": 2 }]
+                "effects": [
+                  {
+                    "kind": "addFood",
+                    "amount": 2
+                  }
+                ]
               },
               "onFail": {
                 "narration": "You stumble in the brush; whoever was there packed up before you arrived.",
@@ -122,10 +172,19 @@
             {
               "id": "magic_sight",
               "text": "Scry the camp from a distance.",
-              "check": { "kind": "stat", "stat": "mag", "threshold": 7 },
+              "check": {
+                "kind": "stat",
+                "stat": "mag",
+                "threshold": 7
+              },
               "onPass": {
-                "narration": "Your sight pierces the smoke — a hidden cache of gold lies abandoned.",
-                "effects": [{ "kind": "addGold", "amount": 30 }]
+                "narration": "Your sight pierces the smoke \u2014 a hidden cache of gold lies abandoned.",
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": 30
+                  }
+                ]
               },
               "onFail": {
                 "narration": "The vision flickers and fades. Nothing useful gleaned.",
@@ -145,11 +204,186 @@
       }
     },
     {
+      "id": "shield_wall_patrol",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "shield_wall"
+      }
+    },
+    {
+      "id": "wolf_alpha_pack",
+      "weight": 5,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "wolf_alpha_pack"
+      }
+    },
+    {
+      "id": "wandering_blacksmith",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "event": {
+          "id": "wandering_blacksmith",
+          "title": "A wandering blacksmith hails you from his cart.",
+          "description": "His portable forge still glows in its iron cradle. \"Road's been cruel to your kit, by the look of it. Sixty gold and I'll set it all right \u2014 dents hammered, edges honed, straps mended.\"",
+          "choices": [
+            {
+              "id": "pay_for_work",
+              "text": "Pay 60 gold for his best work.",
+              "check": {
+                "kind": "gold",
+                "amount": 60
+              },
+              "onPass": {
+                "narration": "He works through the afternoon, humming over the anvil. Your gear sits better than it has in weeks, and the party's aches fade with the load off their shoulders.",
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": -60
+                  },
+                  {
+                    "kind": "healParty",
+                    "percent": 0.3
+                  },
+                  {
+                    "kind": "setFlag",
+                    "key": "blacksmith_patronized",
+                    "value": true,
+                    "scope": "run"
+                  }
+                ]
+              },
+              "onFail": {
+                "narration": "Your purse comes up short. He shrugs, not unkindly, and stokes his forge for the next traveler.",
+                "effects": []
+              }
+            },
+            {
+              "id": "trade_stories",
+              "text": "Trade stories of the road instead.",
+              "check": {
+                "kind": "stat",
+                "stat": "lck",
+                "threshold": 5
+              },
+              "onPass": {
+                "narration": "He laughs at your best tale and shares his supper \u2014 good bread, better sausage. \"For the company,\" he says.",
+                "effects": [
+                  {
+                    "kind": "addFood",
+                    "amount": 1
+                  }
+                ]
+              },
+              "onFail": {
+                "narration": "He listens politely, then returns to his bellows. The road calls you both onward.",
+                "effects": []
+              }
+            },
+            {
+              "id": "walk_on",
+              "text": "Walk on.",
+              "onPass": {
+                "narration": "You nod to him and keep moving. The ring of his hammer follows you down the road.",
+                "effects": []
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "injured_knight",
+      "weight": 3,
+      "oneShot": true,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "event": {
+          "id": "injured_knight",
+          "title": "An injured knight slumps against a milestone.",
+          "description": "His shield arm is bound in bloody rags and his horse is nowhere in sight. \"Bandits,\" he rasps. \"A meal and I might live to repay you.\"",
+          "choices": [
+            {
+              "id": "help_him",
+              "text": "Spend a ration to feed him and bind his wounds.",
+              "check": {
+                "kind": "food",
+                "amount": 1
+              },
+              "onPass": {
+                "narration": "He eats like a man back from the dead. When he can stand, he presses his purse into your hands and swears his sword to your cause, once his arm mends. \"Look for me on the road ahead.\"",
+                "effects": [
+                  {
+                    "kind": "addFood",
+                    "amount": -1
+                  },
+                  {
+                    "kind": "addGold",
+                    "amount": 40
+                  },
+                  {
+                    "kind": "setFlag",
+                    "key": "injured_knight_helped",
+                    "value": true,
+                    "scope": "permanent"
+                  }
+                ]
+              },
+              "onFail": {
+                "narration": "You have nothing to spare. He nods, understanding, and waves you on before his eyes close.",
+                "effects": []
+              }
+            },
+            {
+              "id": "loot_him",
+              "text": "Strip his gear and leave him.",
+              "onPass": {
+                "narration": "His sword and pauldrons fetch a fair price in your pack. He watches you take them, too weak to curse.",
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": 25
+                  },
+                  {
+                    "kind": "setFlag",
+                    "key": "injured_knight_looted",
+                    "value": true,
+                    "scope": "permanent"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "ride_past",
+              "text": "Ride past.",
+              "onPass": {
+                "narration": "The road is full of dying men. You do not look back.",
+                "effects": []
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "id": "sq_blood_ties_encounter",
       "weight": 100,
       "oneShot": true,
       "conditions": [
-        { "kind": "questStage", "questId": "sq_blood_ties", "stage": "find_daren" }
+        {
+          "kind": "questStage",
+          "questId": "sq_blood_ties",
+          "stage": "find_daren"
+        }
       ],
       "outcome": {
         "kind": "battle",
@@ -163,6 +397,85 @@
             "killedFlag": "daren_killed"
           }
         ]
+      }
+    },
+    {
+      "id": "deserter_plea",
+      "weight": 5,
+      "oneShot": true,
+      "conditions": [
+        {
+          "kind": "notFlag",
+          "key": "deserter_helped"
+        },
+        {
+          "kind": "notFlag",
+          "key": "deserter_turned_in"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "deserter_plea"
+      }
+    },
+    {
+      "id": "deserter_repays",
+      "weight": 60,
+      "oneShot": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "key": "deserter_helped",
+          "equals": true
+        },
+        {
+          "kind": "notFlag",
+          "key": "deserter_repaid"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "deserter_repays"
+      }
+    },
+    {
+      "id": "deserters_brothers",
+      "weight": 60,
+      "oneShot": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "key": "deserter_turned_in",
+          "equals": true
+        },
+        {
+          "kind": "notFlag",
+          "key": "deserter_brothers_met"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "deserters_brothers"
+      }
+    },
+    {
+      "id": "sq_caravan_wreck",
+      "weight": 90,
+      "oneShot": true,
+      "conditions": [
+        {
+          "kind": "questStage",
+          "questId": "sq_missing_caravan",
+          "stage": "find_supplies"
+        },
+        {
+          "kind": "notFlag",
+          "key": "caravan_supplies_found"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "sq_caravan_found"
       }
     }
   ]

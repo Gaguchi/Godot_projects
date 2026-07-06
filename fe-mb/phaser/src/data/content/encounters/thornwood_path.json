@@ -7,21 +7,30 @@
       "weight": 10,
       "oneShot": false,
       "conditions": [],
-      "outcome": { "kind": "battle", "enemyGroupId": "brigands" }
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "brigands"
+      }
     },
     {
       "id": "thornwood_wolf_pack",
       "weight": 8,
       "oneShot": false,
       "conditions": [],
-      "outcome": { "kind": "battle", "enemyGroupId": "wolves" }
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "wolves"
+      }
     },
     {
       "id": "thornwood_merchant",
       "weight": 4,
       "oneShot": false,
       "conditions": [],
-      "outcome": { "kind": "dialogue", "dialogueId": "road_merchant" }
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "road_merchant"
+      }
     },
     {
       "id": "thornwood_bandit_parley",
@@ -33,12 +42,16 @@
         "event": {
           "id": "bandit_parley",
           "title": "Three bandits block the road, blades drawn but no orders given.",
-          "description": "Their captain — leaner, more thoughtful than the rest — raises a hand. He'll talk before he fights.",
+          "description": "Their captain \u2014 leaner, more thoughtful than the rest \u2014 raises a hand. He'll talk before he fights.",
           "choices": [
             {
               "id": "intimidate",
               "text": "Show them why they should fear you.",
-              "check": { "kind": "stat", "stat": "str", "threshold": 6 },
+              "check": {
+                "kind": "stat",
+                "stat": "str",
+                "threshold": 6
+              },
               "onPass": {
                 "narration": "The captain spits, but waves them off. The road clears.",
                 "effects": []
@@ -51,10 +64,18 @@
             {
               "id": "pay_toll",
               "text": "Pay the toll. 30 gold.",
-              "check": { "kind": "gold", "amount": 30 },
+              "check": {
+                "kind": "gold",
+                "amount": 30
+              },
               "onPass": {
                 "narration": "They step aside, all smiles. The captain even nods you a good evening.",
-                "effects": [{ "kind": "addGold", "amount": -30 }]
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": -30
+                  }
+                ]
               },
               "onFail": {
                 "narration": "Your purse comes up short. They take it as insult.",
@@ -64,13 +85,191 @@
             {
               "id": "smooth_talk",
               "text": "Talk your way through.",
-              "check": { "kind": "stat", "stat": "skl", "threshold": 7 },
+              "check": {
+                "kind": "stat",
+                "stat": "skl",
+                "threshold": 7
+              },
               "onPass": {
                 "narration": "Whatever you said worked. They wave you on, almost embarrassed.",
                 "effects": []
               },
               "onFail": {
                 "narration": "The captain's eyes harden. \"Enough talk.\"",
+                "effects": []
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "thornwood_ambush_battle",
+      "weight": 6,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "thornwood_ambush"
+      }
+    },
+    {
+      "id": "mage_circle_battle",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "mage_circle"
+      }
+    },
+    {
+      "id": "ambush_toll",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "event": {
+          "id": "ambush_toll",
+          "title": "Rope snaps taut across the path \u2014 an ambush.",
+          "description": "Figures drop from the branches, daggers already out. \"Thirty gold,\" one hisses through a cloth mask, \"and you keep your blood.\"",
+          "choices": [
+            {
+              "id": "pay_toll",
+              "text": "Pay the toll. 30 gold.",
+              "check": {
+                "kind": "gold",
+                "amount": 30
+              },
+              "onPass": {
+                "narration": "Coin changes hands. The ropes go slack and the trees swallow them whole, as if they were never there.",
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": -30
+                  }
+                ]
+              },
+              "onFail": {
+                "narration": "Your purse is too light, and they take that personally.",
+                "effects": [
+                  {
+                    "kind": "startCombat",
+                    "enemyGroupId": "thornwood_ambush"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "fight",
+              "text": "Draw steel.",
+              "onPass": {
+                "narration": "\"Wrong answer,\" the masked one sighs \u2014 and the thicket comes alive.",
+                "effects": [
+                  {
+                    "kind": "startCombat",
+                    "enemyGroupId": "thornwood_ambush"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "slip_away",
+              "text": "Scatter into the underbrush.",
+              "check": {
+                "kind": "stat",
+                "stat": "spd",
+                "threshold": 8
+              },
+              "onPass": {
+                "narration": "You break formation and melt into the thicket before they can close the net. Their curses fade behind you.",
+                "effects": []
+              },
+              "onFail": {
+                "narration": "A tripline catches an ankle. By the time you're up, they're on you.",
+                "effects": [
+                  {
+                    "kind": "startCombat",
+                    "enemyGroupId": "thornwood_ambush"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "thieves_crossroads",
+      "weight": 3,
+      "oneShot": true,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "event": {
+          "id": "thieves_crossroads",
+          "title": "Carved marks scar the crossroads post \u2014 thieves' cant.",
+          "description": "Somebody left instructions here for those who can read them. A shadow shifts at the treeline, watching to see what you do.",
+          "choices": [
+            {
+              "id": "old_signs",
+              "text": "Answer with the old signs.",
+              "check": {
+                "kind": "class",
+                "classId": "thief"
+              },
+              "onPass": {
+                "narration": "The shadow steps out grinning, clasps arms with your thief, and presses a share of last week's take into their hands. \"For keeping the cant alive.\"",
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": 60
+                  }
+                ]
+              },
+              "onFail": {
+                "narration": "Nobody in your company knows the signs. You fumble a guess \u2014 and pay for the insult when a sling stone takes your coin pouch clean off its cord.",
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": -20
+                  }
+                ]
+              }
+            },
+            {
+              "id": "knife_game",
+              "text": "Play their game of knives.",
+              "check": {
+                "kind": "stat",
+                "stat": "skl",
+                "threshold": 8
+              },
+              "onPass": {
+                "narration": "Five throws, five hits. The watcher whistles low and tosses you the stake purse before vanishing into the trees.",
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": 40
+                  }
+                ]
+              },
+              "onFail": {
+                "narration": "Your third throw goes wide. The stake purse \u2014 with your coin in it \u2014 disappears into the canopy with a laugh.",
+                "effects": [
+                  {
+                    "kind": "addGold",
+                    "amount": -25
+                  }
+                ]
+              }
+            },
+            {
+              "id": "pass_by",
+              "text": "Keep to the road.",
+              "onPass": {
+                "narration": "You leave the post and its marks behind. The shadow loses interest.",
                 "effects": []
               }
             }
@@ -93,14 +292,28 @@
             {
               "id": "cross_carefully",
               "text": "Send the most agile across first to scout.",
-              "check": { "kind": "stat", "stat": "spd", "threshold": 8 },
+              "check": {
+                "kind": "stat",
+                "stat": "spd",
+                "threshold": 8
+              },
               "onPass": {
                 "narration": "The lead scout makes it. The party crosses with whispered footing. You save a day.",
-                "effects": [{ "kind": "addFood", "amount": 2 }]
+                "effects": [
+                  {
+                    "kind": "addFood",
+                    "amount": 2
+                  }
+                ]
               },
               "onFail": {
                 "narration": "A plank gives way mid-cross. You haul them up, but the party loses a day backtracking.",
-                "effects": [{ "kind": "addFood", "amount": -1 }]
+                "effects": [
+                  {
+                    "kind": "addFood",
+                    "amount": -1
+                  }
+                ]
               }
             },
             {
@@ -113,6 +326,26 @@
             }
           ]
         }
+      }
+    },
+    {
+      "id": "sq_caravan_wreck_tw",
+      "weight": 90,
+      "oneShot": true,
+      "conditions": [
+        {
+          "kind": "questStage",
+          "questId": "sq_missing_caravan",
+          "stage": "find_supplies"
+        },
+        {
+          "kind": "notFlag",
+          "key": "caravan_supplies_found"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "sq_caravan_found"
       }
     }
   ]

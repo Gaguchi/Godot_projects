@@ -1,0 +1,8 @@
+{
+  "id": "mage_circle",
+  "name": "Mage Circle",
+  "members": [
+    { "name": "Raider Mage", "classId": "raider_mage", "level": 3, "count": 2 },
+    { "name": "Raider Cleric", "classId": "raider_cleric", "level": 3, "count": 1 }
+  ]
+}

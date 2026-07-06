@@ -91,3 +91,70 @@ spec.
   across items (name duplication is precedented: two "Charge" cards exist).
 - Card ids follow `<item_snake_case>_<card_snake_case>` (the older `gs_*` /
   `buckler_*` / `crossbow_*` short prefixes are grandfathered, not extended).
+
+## Phase 45 content deviations
+
+Date: 2026-07-06
+Scope: §13 enemy roster expansion (stories 465/466) + travel-event expansion
+(story 469) — `enemyGroups/*.json`, `classes.json` (append-only),
+`enemyAI/*.json`, region encounter tables.
+
+### Enemy roster (§13 "Additional Enemy Groups")
+
+- **Poison daggers (Thornwood Ambush thieves)** — the `enemyAI` action schema
+  supports only `kind: attack|heal`; `planTurn` synthesizes cards with a bare
+  `Damage`/`Heal` effect, so an AI action cannot carry `ApplyStatus: poison`.
+  Shipped as str attacks with poison-flavored action ids (`envenomed_stab`,
+  `twist_the_blade`). The `thief` class innates DO include the real
+  `bone_dagger_stab`/`bone_dagger_lacerate` poison cards, but the enemy AI
+  planner plays synthesized actions, not deck cards — poison never actually
+  fires. Needs: status support on `EnemyActionSchema` (or deck-driven enemy AI).
+- **Burn DOT (Ashfall Raiders ember mage)** — same limitation; approximated
+  with higher flat `mag` amounts (`ember_bolt` 7 / `conflagrate` 10). The
+  `ember_mage` class innates carry the real `ember_tome_*` burn cards for
+  parity if enemy AI ever goes deck-driven.
+- **Alpha wolf "howl buffs pack SPD"** — no buff/status action kind exists in
+  the enemyAI schema. Approximated as `howl_swipe`: an `aoeRadius: 1` sweep
+  (warlord `warcry_sweep` precedent) on a `tank`-role, high-HP (38) unit.
+  Needs: an AI buff action kind.
+- **"Raider archer" / "darkwood archer" members** use a NEW `bandit_archer`
+  class entry in classes.json, which binds to the PRE-EXISTING (already
+  registered but previously classless) `enemyAI/bandit_archer.json`. Ashfall
+  "obsidian axe fighters" reuse the `bandit` class for generic melee, per the
+  existing convention (brigands/darens_gang name members over `bandit`).
+- `AI_BY_CLASS` in `src/systems/enemyAI.ts` is now `export`ed so
+  `tests/unit/data/roster.test.ts` can assert group→class→AI coverage.
+
+### Travel events (§13 "Additional Travel Events")
+
+Authored INLINE in the region encounter tables (the `EncounterOutcomeSchema`
+`checkEvent` arm embeds the full `CheckEventSchema`; there is no id-referenced
+registry for encounter events — standalone `checkEvents/*.json` files are only
+looked up for enemy-group `victoryEvent` refs in `BattleEndModal`).
+
+- **Wandering Blacksmith** ("buy 1 random Uncommon gear at discount") — no
+  `addItem`/grant-gear QuestEffect kind exists. Approximated as a 60g
+  gear-maintenance service: `addGold -60` + `healParty 0.3` + run-scoped flag
+  `blacksmith_patronized`. Needs: an `addItem` QuestEffect.
+- **Injured Knight** ("heal for recruitment chance or loot their gear") — the
+  `recruitUnit` QuestEffect parses but is a runtime no-op stub
+  (`runStore.applyQuestEffect` case `'recruitUnit'` returns without creating a
+  unit), so shipping it would silently give nothing. Approximated: help branch
+  = `addFood -1` + `addGold 40` + permanent flag `injured_knight_helped`
+  (future recruitment content can key off the flag); loot branch = `addGold
+  25` + `injured_knight_looted` (no gear effect exists).
+- **Ancient Shrine** ("sacrifice HP for a temporary innate card for N
+  battles") — no temporary-card QuestEffect exists. Approximated as
+  `damageParty 3` + `addFood 3` + permanent flag `ancient_shrine_blessed` for
+  future blessing content. Needs: a timed card-grant effect.
+- **Thieves' Crossroads** fail branches use ungated negative `addGold`
+  (-20/-25); `runStore` does not clamp gold at 0, so gold can go negative in
+  the broke-party edge case. (Design explicitly asks for gold loss on fail;
+  gating with a second check per choice isn't expressible.)
+- **`addFood` with negative amounts is a runtime no-op** (the interpreter's
+  append loop doesn't run for `amount < 0`) — pre-existing engine behavior;
+  the new events follow the existing content pattern (`stuck_caravan` already
+  ships `addFood -1`). Needs: food-decrement handling in `applyQuestEffect`.
+- **Ambush Toll** "fight for loot" branch grants no extra loot beyond normal
+  battle rewards — no loot-bonus effect exists; the fight routes through
+  `startCombat: thornwood_ambush` (also used on failed pay/flee branches).

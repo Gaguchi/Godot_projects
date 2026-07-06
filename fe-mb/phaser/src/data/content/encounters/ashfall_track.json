@@ -15,6 +15,62 @@
       "oneShot": false,
       "conditions": [],
       "outcome": { "kind": "battle", "enemyGroupId": "bandits_small" }
+    },
+    {
+      "id": "ashfall_raiders_battle",
+      "weight": 8,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": { "kind": "battle", "enemyGroupId": "ashfall_raiders" }
+    },
+    {
+      "id": "ancient_shrine",
+      "weight": 3,
+      "oneShot": true,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "event": {
+          "id": "ancient_shrine",
+          "title": "An ancient shrine juts from the ash.",
+          "description": "Heat shimmers over a basalt altar older than the mountain's anger. A groove runs down its center, stained dark. It wants blood.",
+          "choices": [
+            {
+              "id": "offer_blood",
+              "text": "Open a palm over the groove.",
+              "onPass": {
+                "narration": "The stone drinks, and the pain is worse than the cut. But when your vision clears, the altar bowl brims with dense waybread that was not there before, and something old walks with you now.",
+                "effects": [
+                  { "kind": "damageParty", "amount": 3 },
+                  { "kind": "addFood", "amount": 3 },
+                  { "kind": "setFlag", "key": "ancient_shrine_blessed", "value": true, "scope": "permanent" }
+                ]
+              }
+            },
+            {
+              "id": "search_offerings",
+              "text": "Search for old offerings.",
+              "check": { "kind": "stat", "stat": "lck", "threshold": 6 },
+              "onPass": {
+                "narration": "Under a cracked slab you find coins fused by ancient heat — but still gold.",
+                "effects": [{ "kind": "addGold", "amount": 35 }]
+              },
+              "onFail": {
+                "narration": "Ash and dust. The shrine's silence feels pointed.",
+                "effects": []
+              }
+            },
+            {
+              "id": "leave_it",
+              "text": "Leave it be.",
+              "onPass": {
+                "narration": "Some bargains are best left unstruck. You give the altar a wide berth.",
+                "effects": []
+              }
+            }
+          ]
+        }
+      }
     }
   ]
 }
