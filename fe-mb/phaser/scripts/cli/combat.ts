@@ -144,34 +144,96 @@ export function runEnemyTurns(): string[] {
 }
 
 /** Greedy one party-unit turn: attack an in-range foe, else close distance, else end. */
+/**
+ * Greedy-plus party turn (story 474): heal the wounded, empower before big
+ * hits, focus the weakest reachable foe with the HIGHEST-damage card, armor
+ * up when engaged, cycle with draw effects, then advance. Still far below
+ * human play, but strong enough that sim outcomes track balance rather than
+ * AI helplessness.
+ */
 function autoPartyTurn(): string[] {
   const log: string[] = []
   let guard = 0
-  while (guard++ < 12) {
+  while (guard++ < 14) {
     const s = cstate()
     if (s.phase !== 'COMBAT' || s.turn.team !== 'party') break
     const unit = activeUnit()
     if (!unit || !unit.position) { log.push(...applyCommand('end')); break }
     const deck = s.decks[unit.id as unknown as string]
+    if (!deck) { log.push(...applyCommand('end')); break }
 
-    // 1) best affordable damage card with an in-range enemy
-    let attacked = false
-    if (deck) {
-      for (let i = 0; i < deck.hand.length; i++) {
-        const card = cardsById.get(deck.hand[i] as unknown as string)
-        if (!card || card.apCost > unit.ap) continue
-        if (!card.effects.some((e) => e.kind === 'Damage')) continue
-        const tiles = cardTargetTiles(unit, card)
-        if (tiles.length === 0) continue
-        const target = tiles.sort((a, b) => manhattan(unit.position!, asTileId(a)) - manhattan(unit.position!, asTileId(b)))[0]!
-        log.push(...applyCommand(`play ${i} ${target}`))
-        attacked = true
-        break
+    type Play = { idx: number; tile: string; score: number }
+    const plays: Play[] = []
+    const hand = deck.hand.map((id) => cardsById.get(id as unknown as string))
+
+    const dmgOf = (card: CardJson): number => {
+      const eff = card.effects.find((e) => e.kind === 'Damage')
+      if (!eff) return 0
+      const base = (eff.params as { base?: number }).base ?? 0
+      const stat = card.damageStat === 'mag' ? unit.stats.mag : card.damageStat === 'skl' ? unit.stats.skl : unit.stats.str
+      return base + stat
+    }
+    const engaged = Object.values(s.units).some((u) =>
+      isEnemyUnit(u) && u.hp.current > 0 && u.position && manhattan(unit.position!, u.position) === 1)
+    const woundedAllies = Object.values(s.units).filter((u) =>
+      !isEnemyUnit(u) && u.hp.current > 0 && u.hp.current / u.hp.max < 0.6)
+    const hasEmpower = unit.statuses.some((st) => (st.effectId as unknown as string) === 'empower')
+
+    for (let i = 0; i < hand.length; i++) {
+      const card = hand[i]
+      if (!card || card.apCost > unit.ap) continue
+      const tiles = cardTargetTiles(unit, card)
+      if (tiles.length === 0) continue
+
+      const isHeal = card.effects.some((e) => e.kind === 'Heal')
+      const isDamage = card.effects.some((e) => e.kind === 'Damage')
+      const isArmor = card.effects.some((e) => e.kind === 'GrantArmor')
+      const isDraw = card.effects.some((e) => e.kind === 'DrawCards')
+      const isEmpower = card.effects.some((e) =>
+        e.kind === 'ApplyStatus' && (e.params as { effectId?: string }).effectId === 'empower')
+
+      if (isHeal && woundedAllies.length > 0) {
+        // Heal the MOST wounded reachable ally.
+        const best = tiles
+          .map((t) => ({ t, u: unitAt(t) }))
+          .filter((x) => x.u && !isEnemyUnit(x.u))
+          .sort((a, b) => (a.u!.hp.current / a.u!.hp.max) - (b.u!.hp.current / b.u!.hp.max))[0]
+        if (best && best.u!.hp.current / best.u!.hp.max < 0.75) {
+          plays.push({ idx: i, tile: best.t, score: 90 + (1 - best.u!.hp.current / best.u!.hp.max) * 30 })
+        }
+        continue
+      }
+      if (isDamage) {
+        // Kill-priority: lowest-HP foe in range; lethal hits jump the queue.
+        const foes = tiles.map((t) => ({ t, u: unitAt(t) })).filter((x) => x.u && isEnemyUnit(x.u))
+        if (foes.length === 0) continue
+        const dmg = dmgOf(card) + (hasEmpower ? 4 : 0)
+        const target = foes.sort((a, b) => a.u!.hp.current - b.u!.hp.current)[0]!
+        const lethal = dmg >= target.u!.hp.current + target.u!.armor
+        plays.push({ idx: i, tile: target.t, score: (lethal ? 80 : 50) + dmg - card.apCost * 2 })
+        continue
+      }
+      if (isEmpower && unit.ap >= card.apCost + 1 && !hasEmpower) {
+        plays.push({ idx: i, tile: unit.position as unknown as string, score: 60 })
+        continue
+      }
+      if (isArmor && engaged && unit.armor < 4) {
+        plays.push({ idx: i, tile: tiles[0]!, score: 40 })
+        continue
+      }
+      if (isDraw && unit.ap >= card.apCost) {
+        plays.push({ idx: i, tile: unit.position as unknown as string, score: 15 })
+        continue
       }
     }
-    if (attacked) continue
 
-    // 2) no attack available → step toward the nearest enemy (once)
+    if (plays.length > 0) {
+      const best = plays.sort((a, b) => b.score - a.score)[0]!
+      log.push(...applyCommand(`play ${best.idx} ${best.tile}`))
+      continue
+    }
+
+    // No useful play → step toward the nearest foe (once per turn)
     const enemies = Object.values(s.units).filter((u) => isEnemyUnit(u) && u.hp.current > 0 && u.position)
     if (enemies.length > 0 && !unit.hasMovedThisTurn) {
       const reach = tilesReachable(unit.position, movRange(unit.classId as unknown as string), gridState(), blockedTiles(unit.id as unknown as string))
@@ -183,7 +245,6 @@ function autoPartyTurn(): string[] {
       }
     }
 
-    // 3) nothing useful → end turn
     log.push(...applyCommand('end'))
     break
   }
