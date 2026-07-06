@@ -20,6 +20,7 @@ import { seedStubBattle } from '../../src/game/scenes/seedStubBattle'
 import { seedDungeonBattle } from '../../src/game/scenes/seedDungeonBattle'
 import { createRng } from '../../src/systems/rng'
 import { buildUnit } from '../../src/systems/buildUnit'
+import { getItemDef } from '../../src/data/itemRegistry'
 import { bootstrapDialogues } from '../../src/state/dialogueBootstrap'
 import { getDialogue, listDialogueIds } from '../../src/state/dialogueRegistry'
 import { predicateStateFromRun } from '../../src/state/runStore'
@@ -58,16 +59,51 @@ function starterParty(): Unit[] {
   return STARTERS.map(([cls, name, id]) => buildUnit(cls, 1, name, id)).filter((u): u is Unit => u !== null)
 }
 
-function seedCombat(seed: number, scenario: string): void {
+/**
+ * Gear loadout spec → hand slots on the starter party (story 452).
+ * Format: "roy=iron_sword+iron_buckler;marcus=iron_greatsword" (right slot
+ * optional). "default" = ship-plan starter loadouts. Bypasses the bag —
+ * simulation-only convenience; the real game equips through runStore.
+ */
+const DEFAULT_LOADOUT = 'roy=iron_sword+iron_buckler;marcus=iron_lance+iron_buckler;lilina=fire_tome'
+function applyLoadout(units: Unit[], spec: string | true | undefined): Unit[] {
+  if (spec === undefined) return units
+  const raw = spec === true || spec === 'default' ? DEFAULT_LOADOUT : spec
+  const slots = new Map<string, { left: string | null; right: string | null }>()
+  for (const part of raw.split(';')) {
+    const [unitId, gear] = part.split('=')
+    if (!unitId || !gear) continue
+    const [left, right] = gear.split('+')
+    for (const g of [left, right]) {
+      if (g && !getItemDef(g)) console.error(`[loadout] unknown item '${g}' — skipping`)
+    }
+    slots.set(unitId.trim(), {
+      left: left && getItemDef(left) ? left.trim() : null,
+      right: right && getItemDef(right) ? right.trim() : null,
+    })
+  }
+  return units.map((u) => {
+    const s = slots.get(u.id as unknown as string)
+    if (!s) return u
+    return {
+      ...u,
+      handLeft: s.left as unknown as import('../../src/domain/ids').ItemId | null,
+      handRight: s.right as unknown as import('../../src/domain/ids').ItemId | null,
+    }
+  })
+}
+
+function seedCombat(seed: number, scenario: string, loadout?: string | true): void {
   const store = useCombatStore.getState()
   store.reset()
   const seedState = { seed, counter: 0 }
+  const party = applyLoadout(starterParty(), loadout)
   let event
   if (scenario.startsWith('dungeon:')) {
     const [, dungeonId, roomType] = scenario.split(':')
-    event = seedDungeonBattle(dungeonId ?? 'smugglers_cave', (roomType as 'combat' | 'elite' | 'boss') ?? 'combat', seedState, starterParty())
+    event = seedDungeonBattle(dungeonId ?? 'smugglers_cave', (roomType as 'combat' | 'elite' | 'boss') ?? 'combat', seedState, party)
   } else {
-    event = seedStubBattle(seedState, starterParty())
+    event = seedStubBattle(seedState, party)
   }
   store.dispatch(event, createRng(seedState))
 }
@@ -96,32 +132,45 @@ function splitCmds(raw: string): string[] {
   return raw.split(/[;\n]/).map((c) => c.trim()).filter((c) => c.length > 0)
 }
 
-/** Balance sweep: run autobattle over many seeds per scenario, print a table. */
+/**
+ * Balance sweep: run autobattle over many seeds per scenario, print a table.
+ * --loadout accepts a |-separated MATRIX ("none|default|roy=iron_greatsword")
+ * so gear configurations can be compared side by side (story 452).
+ */
 function reportMode(flags: Record<string, string | true>): void {
   const seeds = Number(flags.seeds ?? 30)
   const scenarios = typeof flags.scenario === 'string'
     ? [flags.scenario]
     : ['stub', 'dungeon:smugglers_cave:combat', 'dungeon:smugglers_cave:elite', 'dungeon:smugglers_cave:boss']
+  const loadouts: Array<string | true | undefined> =
+    typeof flags.loadout === 'string' && flags.loadout.includes('|')
+      ? flags.loadout.split('|').map(l => (l === 'none' ? undefined : l))
+      : [flags.loadout]
   console.log(`balance report — ${seeds} seeds/scenario, greedy party AI vs enemy AI\n`)
   console.log('scenario'.padEnd(36) + 'win%   loss%  stale%  avg-turns')
-  for (const sc of scenarios) {
-    let v = 0, d = 0, s = 0, turns = 0, ok = 0
-    let err = ''
-    for (let i = 0; i < seeds; i++) {
-      try {
-        seedCombat(i + 1, sc)
-        autoBattle()
-        const o = battleOutcome()
-        if (o === 'VICTORY') v++
-        else if (o === 'DEFEAT') d++
-        else s++
-        turns += cstate().turn.number
-        ok++
-      } catch (e) { err = (e as Error).message; break }
+  for (const lo of loadouts) {
+    if (loadouts.length > 1) {
+      console.log(`── loadout: ${lo === undefined ? 'none' : lo === true ? 'default' : lo}`)
     }
-    if (err) { console.log(sc.padEnd(36) + 'error: ' + err.slice(0, 50)); continue }
-    const pct = (n: number): string => `${Math.round((100 * n) / Math.max(1, ok))}%`.padStart(5)
-    console.log(sc.padEnd(36) + `${pct(v)}  ${pct(d)}  ${pct(s)}   ${(turns / Math.max(1, ok)).toFixed(1)}`)
+    for (const sc of scenarios) {
+      let v = 0, d = 0, s = 0, turns = 0, ok = 0
+      let err = ''
+      for (let i = 0; i < seeds; i++) {
+        try {
+          seedCombat(i + 1, sc, lo)
+          autoBattle()
+          const o = battleOutcome()
+          if (o === 'VICTORY') v++
+          else if (o === 'DEFEAT') d++
+          else s++
+          turns += cstate().turn.number
+          ok++
+        } catch (e) { err = (e as Error).message; break }
+      }
+      if (err) { console.log(sc.padEnd(36) + 'error: ' + err.slice(0, 50)); continue }
+      const pct = (n: number): string => `${Math.round((100 * n) / Math.max(1, ok))}%`.padStart(5)
+      console.log(sc.padEnd(36) + `${pct(v)}  ${pct(d)}  ${pct(s)}   ${(turns / Math.max(1, ok)).toFixed(1)}`)
+    }
   }
 }
 
@@ -129,7 +178,8 @@ async function combatMode(flags: Record<string, string | true>): Promise<void> {
   if (flags.report) { reportMode(flags); return }
   const seed = Number(flags.seed ?? 1)
   const scenario = typeof flags.scenario === 'string' ? flags.scenario : 'stub'
-  seedCombat(seed, scenario)
+  const loadout = flags.loadout
+  seedCombat(seed, scenario, loadout)
 
   // Balance sim: both sides AI, optionally many runs.
   if (flags.autobattle) {
@@ -137,7 +187,7 @@ async function combatMode(flags: Record<string, string | true>): Promise<void> {
     const results: Record<string, number> = {}
     let totalTurns = 0
     for (let r = 0; r < runs; r++) {
-      seedCombat(seed + r, scenario)
+      seedCombat(seed + r, scenario, loadout)
       const log = autoBattle()
       const res = battleOutcome()
       results[res] = (results[res] ?? 0) + 1
@@ -254,7 +304,7 @@ async function main(): Promise<void> {
   const { positional, flags } = parseArgs(process.argv.slice(2))
   const mode = positional[0] ?? 'combat'
   if (flags.help || mode === 'help') {
-    console.log('usage: tsx scripts/cli/play.ts <combat|dialogue> [id] [--seed N] [--scenario stub|dungeon:<id>:<room>] [--cmds "a; b"] [--autobattle --runs N] [--json]')
+    console.log('usage: tsx scripts/cli/play.ts <combat|dialogue> [id] [--seed N] [--scenario stub|dungeon:<id>:<room>] [--loadout default|"roy=iron_sword+iron_buckler;..."] [--cmds "a; b"] [--autobattle --runs N] [--json]')
     return
   }
   if (mode === 'combat') await combatMode(flags)
