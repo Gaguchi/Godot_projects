@@ -7,19 +7,18 @@ test('boot smoke — title screen renders by default', async ({ page }) => {
   await expect(page.locator('#title-new-game')).toBeVisible()
   await expect(page.locator('#title-load-game')).toBeVisible()
   await expect(page.locator('#title-quit')).toBeVisible()
-  // DevHud renders in dev mode regardless of active view
-  await expect(page.locator('text=Dev HUD')).toBeVisible({ timeout: 2000 })
+  // DevHud is toggle-hidden by default now (backtick key) — no persistent
+  // stamp on the title screen. Just assert the app booted without errors.
 })
 
-test('new game click → overworld scene mounts', async ({ page }) => {
+test('new game click → first-run tutorial battle mounts', async ({ page }) => {
   await page.goto('/')
   await page.locator('#title-new-game').click()
-  // Title screen unmounted; overworld scene now visible (not combat — that needs a travel encounter)
+  // Title screen unmounted; FIRST run routes to the guided tutorial battle
+  // (ship plan §12) — the overworld comes after tutorial victory.
   await expect(page.locator('#title-screen')).toHaveCount(0)
-  await expect(page.locator('#overworld-scene')).toBeVisible({ timeout: 5000 })
-  await expect(page.locator('#node-pine_crossing')).toBeVisible()
-  // DevHud renders in dev mode regardless of active view
-  await expect(page.locator('text=Dev HUD')).toBeVisible()
+  await expect(page.locator('#tutorial-overlay')).toBeVisible({ timeout: 10_000 })
+  await expect(page.locator('canvas')).toBeVisible()
 })
 
 test('load game click → modal opens with empty state → close', async ({ page }) => {

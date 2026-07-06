@@ -39,7 +39,7 @@ export async function fireMouse(page: Page, x: number, y: number): Promise<void>
 }
 
 export async function bootCombat(page: Page): Promise<void> {
-  await page.goto('http://localhost:5173?view=combat')
+  await page.goto('/?view=combat')  // relative → playwright baseURL (5183)
   await page.waitForFunction(() => window.__debug?.combatStore?.getState().state.phase === 'COMBAT')
   await page.waitForFunction(() => document.querySelector('canvas') !== null)
 }

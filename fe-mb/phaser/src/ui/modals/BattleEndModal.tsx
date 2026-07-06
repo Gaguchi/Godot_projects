@@ -43,6 +43,12 @@ export function BattleEndModal({
   // its `victoryEvent` reference.
   useEffect(() => {
     if (!isVictory || victoryEventResolved) return
+    // Tutorial and final-boss victories go straight to their end screens —
+    // no post-battle interrogation event.
+    if (battleTag === 'tutorial' || battleTag === 'finalBoss') {
+      setVictoryEventResolved(true)
+      return
+    }
     const pendingBattle = useRunStore.getState().pendingTravelPath
     void pendingBattle
     // Inspect units to find the bandit group; pull victoryEvent ref from
