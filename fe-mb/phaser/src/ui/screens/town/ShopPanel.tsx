@@ -3,21 +3,24 @@ import { useRunStore } from '../../../state/runStore'
 import itemsJson from '../../../data/content/items.json'
 import { asItemId } from '../../../domain/ids'
 import type { TownDef } from '../../../domain/town'
+import type { Item } from '../../../domain/item'
 import { Button, Heading } from '../../components'
+import { shopStockFor } from '../../../systems/shopStock'
+import { RARITY_TEXT, RARITY_BORDER } from '../../rarity'
 
 export interface ShopPanelProps {
   town: TownDef
 }
+
+const ALL_ITEMS = itemsJson as unknown as Item[]
 
 export function ShopPanel({ town }: ShopPanelProps): React.JSX.Element {
   const dispatchRun = useRunStore((s) => s.dispatch)
   const gold = useRunStore((s) => s.gold)
   const inventoryItems = useRunStore((s) => s.inventory.items)
 
-  const shopStock = itemsJson.filter((i) =>
-    town.shopStockIds.includes(i.id)
-    || (i.region === town.regionId && (i.rarity === 'common' || i.rarity === 'uncommon')),
-  )
+  // Regional rarity gates (ship plan §5): borderlands C+U; thornwood/ashfall U+R.
+  const shopStock = shopStockFor(town, ALL_ITEMS)
 
   const onBuy = (itemId: string, price: number): void => {
     dispatchRun({ type: 'buyItem', payload: { itemId: asItemId(itemId), price } })
@@ -27,28 +30,34 @@ export function ShopPanel({ town }: ShopPanelProps): React.JSX.Element {
     dispatchRun({ type: 'sellItem', payload: { itemId: asItemId(itemId), sellPrice } })
   }
 
+  const gearMeta = (item: Item): string => {
+    let meta = `${item.kind} · ${item.rarity}`
+    if (item.gearCardIds) meta += ` · ${item.gearCardIds.length} cards`
+    if (item.twoHanded) meta += ' · 2H'
+    if (item.quiverModifier) meta += ` · ${item.quiverModifier.kind}`
+    return meta
+  }
+
   return (
     <div id="shop-panel">
       <Heading level={1} className="text-2xl tracking-widest m-0">The Shop</Heading>
-      <p className="text-stone-500 mt-2">Borderlands gear and supplies.</p>
+      <p className="text-stone-500 mt-2">Gear and supplies. Press I to manage loadouts.</p>
 
       <h3 className="mt-6 text-sm tracking-widest text-amber-200">STOCK</h3>
       <div className="grid grid-cols-2 gap-3 mt-3">
         {shopStock.map((item) => (
           <div
-            key={item.id}
-            className="p-3 border border-stone-800 flex justify-between items-center"
+            key={item.id as unknown as string}
+            className={`p-3 border flex justify-between items-center ${RARITY_BORDER[item.rarity]}`}
           >
             <div>
-              <div className={item.rarity === 'uncommon' ? 'text-emerald-400' : 'text-amber-100'}>
-                {item.name}
-              </div>
-              <div className="text-[10px] text-stone-500">{item.kind} · {item.rarity}</div>
+              <div className={RARITY_TEXT[item.rarity]}>{item.name}</div>
+              <div className="text-[10px] text-stone-500">{gearMeta(item)}</div>
             </div>
             <Button
               variant="secondary"
               isDisabled={gold < item.buyPrice}
-              onPress={() => onBuy(item.id, item.buyPrice)}
+              onPress={() => onBuy(item.id as unknown as string, item.buyPrice)}
               className="!px-3 !py-1.5 !text-xs"
             >
               Buy {item.buyPrice}g
@@ -63,20 +72,20 @@ export function ShopPanel({ town }: ShopPanelProps): React.JSX.Element {
       )}
       <div className="grid grid-cols-2 gap-3 mt-3">
         {inventoryItems.map((bagItem, idx) => {
-          const item = itemsJson.find((i) => i.id === (bagItem.itemId as unknown as string))
+          const item = ALL_ITEMS.find((i) => (i.id as unknown as string) === (bagItem.itemId as unknown as string))
           if (!item) return null
           return (
             <div
-              key={`${item.id}-${idx}`}
-              className="p-3 border border-stone-800 flex justify-between items-center"
+              key={`${item.id as unknown as string}-${idx}`}
+              className={`p-3 border flex justify-between items-center ${RARITY_BORDER[item.rarity]}`}
             >
               <div>
-                <div>{item.name}</div>
-                <div className="text-[10px] text-stone-500">{item.kind}</div>
+                <div className={RARITY_TEXT[item.rarity]}>{item.name}</div>
+                <div className="text-[10px] text-stone-500">{gearMeta(item)}</div>
               </div>
               <Button
                 variant="secondary"
-                onPress={() => onSell(item.id, item.sellPrice)}
+                onPress={() => onSell(item.id as unknown as string, item.sellPrice)}
                 className="!px-3 !py-1.5 !text-xs"
               >
                 Sell {item.sellPrice}g
