@@ -27,7 +27,7 @@
       "lord_command"
     ],
     "startingMov": 5,
-    "startingHp": 22
+    "startingHp": 26
   },
   {
     "id": "knight",
@@ -57,7 +57,7 @@
       "knight_shield_expertise"
     ],
     "startingMov": 4,
-    "startingHp": 28
+    "startingHp": 32
   },
   {
     "id": "mage",
@@ -87,7 +87,7 @@
       "mage_elemental_mastery"
     ],
     "startingMov": 5,
-    "startingHp": 18
+    "startingHp": 22
   },
   {
     "id": "bandit",

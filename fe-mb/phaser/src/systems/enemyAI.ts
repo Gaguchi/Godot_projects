@@ -74,13 +74,23 @@ interface RoleTargets {
   desiredPosition: string | null
 }
 
+/** Party units holding an active taunt — they MUST be attacked first. */
+function tauntersOf(units: Unit[]): Unit[] {
+  return units.filter(u => u.statuses.some(
+    st => (st.effectId as unknown as string) === 'taunt' && st.turnsRemaining > 0,
+  ))
+}
+
 function pickRoleTargets(state: CombatState, ai: EnemyClassAI, self: Unit): RoleTargets {
   const myPos = self.position as unknown as string
   switch (ai.role) {
     case 'rusher':
     case 'tank': {
-      const enemies = partyAlive(state)
+      let enemies = partyAlive(state)
       if (enemies.length === 0) return { primary: null, desiredPosition: null }
+      // Taunt (Knight anchor role): taunting units draw ALL melee attention.
+      const taunters = tauntersOf(enemies)
+      if (taunters.length > 0) enemies = taunters
       // Lowest-HP first, then closest
       let best = enemies[0]!
       let bestScore = best.hp.current * 100 + manhattan(myPos, best.position as unknown as string)
@@ -102,8 +112,10 @@ function pickRoleTargets(state: CombatState, ai: EnemyClassAI, self: Unit): Role
       return { primary: best, desiredPosition: neighbours[0] ?? null }
     }
     case 'archer': {
-      const enemies = partyAlive(state)
+      let enemies = partyAlive(state)
       if (enemies.length === 0) return { primary: null, desiredPosition: null }
+      const taunters = tauntersOf(enemies)
+      if (taunters.length > 0) enemies = taunters
       let best = enemies[0]!
       let bestDist = manhattan(myPos, best.position as unknown as string)
       for (const u of enemies.slice(1)) {

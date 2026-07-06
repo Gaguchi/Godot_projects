@@ -1,12 +1,27 @@
-# FE_MB Phaser — Vertical Slice (Godot Parity)
+# FE_MB Phaser — Beta
 
 TypeScript + Phaser 4 + React 19 + Vite + Zustand + Zod tactical roguelite. Migrated from a Godot 4.6 prototype.
 
-## Run
+## Play the beta
 
 ```bash
 npm install
-npm run dev               # Vite dev server :5173
+npm run dev               # → http://localhost:5183
+```
+
+**New Game** starts a guided tutorial fight, then the overworld. The loop:
+travel the node map (encounters roll per hop, food burns per day) → fight
+card-battles where your **gear IS your deck** (press **I** for the loadout
+screen; every weapon/shield/tome contributes its cards) → buy/sell in towns,
+take tavern quests, brave dungeons → cross all three regions and challenge
+**the Iron Throne**. Permadeath is real; save from the pause menu (Esc).
+Keys: **I** loadout · **Q** quest log · **Tab** danger zones (combat) ·
+**Esc** pause/cancel · backtick dev HUD.
+
+## Dev commands
+
+```bash
+npm run dev               # Vite dev server :5183 (5173 is NOT ours)
 npm test                  # Vitest unit tests (~140)
 npm run test:e2e          # Playwright smoke
 npm run typecheck

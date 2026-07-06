@@ -450,6 +450,25 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
               sprite: { id: tStr },
               durationMs: 80,
             })
+            // Riposte: melee (adjacent) physical attackers take the stance's
+            // stacks back as straight damage — the sword's answer.
+            const riposte = updated.statuses.find(
+              st => (st.effectId as unknown as string) === 'riposte' && st.turnsRemaining > 0,
+            )
+            if (
+              riposte && damageType !== 'magic' && afterDr > 0 &&
+              updated.position && src.position && isAdjacentTile(updated.position, src.position)
+            ) {
+              const sKey = srcId as unknown as string
+              const liveAtk = newUnits[sKey] ?? src
+              newUnits[sKey] = {
+                ...liveAtk,
+                hp: { ...liveAtk.hp, current: Math.max(0, liveAtk.hp.current - riposte.stacks) },
+              }
+              if (liveAtk.position) {
+                effects.push({ kind: 'FloatDamage', tile: liveAtk.position, amount: riposte.stacks, damageKind: 'physical' })
+              }
+            }
           }
         } else if (eff.kind === 'Heal') {
           const amount = (params.amount as number | undefined) ?? 0

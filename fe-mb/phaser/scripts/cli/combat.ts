@@ -221,6 +221,14 @@ function autoPartyTurn(): string[] {
         plays.push({ idx: i, tile: tiles[0]!, score: 40 })
         continue
       }
+      // Anchor stances: taunt draws focus-fire onto the tank; riposte
+      // punishes the melee swarm. Play them when engaged.
+      const isStance = card.effects.some((e) =>
+        e.kind === 'ApplyStatus' && ['taunt', 'riposte'].includes(String((e.params as { effectId?: string }).effectId)))
+      if (isStance && engaged) {
+        plays.push({ idx: i, tile: unit.position as unknown as string, score: 45 })
+        continue
+      }
       if (isDraw && unit.ap >= card.apCost) {
         plays.push({ idx: i, tile: unit.position as unknown as string, score: 15 })
         continue

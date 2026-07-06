@@ -15,8 +15,8 @@ describe('buildUnit', () => {
     expect(u.stats.str).toBe(7)
     expect(u.stats.def).toBe(8)
     expect(u.stats.mag).toBe(0) // zero stats stay zero (no +lvl lift)
-    expect(u.hp.current).toBe(28)
-    expect(u.hp.max).toBe(28)
+    expect(u.hp.current).toBe(32)
+    expect(u.hp.max).toBe(32)
     expect(u.level).toBe(1)
   })
 
@@ -25,8 +25,8 @@ describe('buildUnit', () => {
     expect(u.stats.str).toBe(9)   // 7 + 2
     expect(u.stats.def).toBe(10)  // 8 + 2
     expect(u.stats.mag).toBe(0)   // stays 0
-    expect(u.hp.current).toBe(34) // 28 + 6
-    expect(u.hp.max).toBe(34)
+    expect(u.hp.current).toBe(38) // 32 + 6
+    expect(u.hp.max).toBe(38)
     expect(u.level).toBe(3)
   })
 
