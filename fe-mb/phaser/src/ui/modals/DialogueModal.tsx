@@ -33,6 +33,33 @@ export function DialogueModal(): React.JSX.Element {
   const dispatch = useRunStore((s) => s.dispatch)
   const [pickerChoice, setPickerChoice] = useState<DialogueChoice | null>(null)
 
+  // JRPG bust slots: speakers claim a side on first line and KEEP it for the
+  // whole conversation (VN/FE convention). A third speaker replaces whichever
+  // slot is not currently talking. Narrator lines dim both busts.
+  const [slots, setSlots] = useState<{ left: string | null; right: string | null }>({ left: null, right: null })
+  useEffect(() => {
+    // fresh conversation → empty stage
+    setSlots({ left: null, right: null })
+  }, [pending?.dialogueId])
+  const speakerForSlots = (() => {
+    if (!pending) return null
+    const t = getDialogue(pending.dialogueId as unknown as string)
+    const n = t?.nodes[pending.nodeId]
+    const sp = n?.speaker ?? ''
+    return sp && getCharacter(sp).faction !== 'narrator' ? sp : null
+  })()
+  useEffect(() => {
+    if (!speakerForSlots) return
+    setSlots((prev) => {
+      if (prev.left === speakerForSlots || prev.right === speakerForSlots) return prev
+      if (prev.left === null) return { ...prev, left: speakerForSlots }
+      if (prev.right === null) return { ...prev, right: speakerForSlots }
+      // both occupied: replace the side that is NOT speaking now (keep the
+      // other participant on stage)
+      return prev.left === speakerForSlots ? prev : { ...prev, right: speakerForSlots }
+    })
+  }, [speakerForSlots])
+
   // onEnter side-effects: fire QuestEffects when dialogueId+nodeId changes.
   // Top-level useEffect to satisfy rules-of-hooks (must run unconditionally).
   useEffect(() => {
@@ -180,6 +207,55 @@ export function DialogueModal(): React.JSX.Element {
   const isNarrator = character.faction === 'narrator'
   const speakerLabel = isNarrator ? '' : character.displayName
 
+  /**
+   * One JRPG bust slot (VN / FE-talk convention): the full-body sprite stands
+   * ON the text band, feet at its top edge. The active speaker is lit and
+   * leans in; the listener dims and drops back. Characters without an
+   * authored sprite fall back to a large portrait token.
+   */
+  const renderBust = (side: 'left' | 'right'): React.JSX.Element | null => {
+    const name = slots[side]
+    if (!name) return null
+    const c = getCharacter(name)
+    const speaking = !isNarrator && name === node.speaker
+    const flip = side === 'right' // busts face inward
+    return (
+      <div
+        aria-hidden
+        className={
+          'absolute bottom-full pointer-events-none select-none flex items-end ' +
+          (side === 'left' ? 'left-6' : 'right-6') + ' ' +
+          'motion-safe:transition-[filter,transform,opacity] motion-safe:duration-300'
+        }
+        style={{
+          height: 0,
+          filter: speaking ? 'none' : 'brightness(0.45) saturate(0.55)',
+          transform: speaking ? 'translateY(0) scale(1)' : 'translateY(6px) scale(0.95)',
+          zIndex: speaking ? 2 : 1,
+        }}
+      >
+        {c.sprite ? (
+          <img
+            src={c.sprite}
+            alt=""
+            draggable={false}
+            className="object-contain"
+            style={{
+              height: 300,
+              marginBottom: -8,
+              transform: flip ? 'scaleX(-1)' : undefined,
+              filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.7))',
+            }}
+          />
+        ) : (
+          <div style={{ marginBottom: 8 }}>
+            <CharacterPortrait speaker={name} active={speaking} size={120} />
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <Dialog
       isOpen
@@ -190,18 +266,25 @@ export function DialogueModal(): React.JSX.Element {
     >
       <div
         id="dialogue-modal"
-        className={`relative mx-auto max-w-5xl px-8 ${isNarrator ? 'pt-8' : 'pt-14'} pb-6`}
+        className="relative mx-auto max-w-5xl px-8 pt-9 pb-6"
       >
-        {/* Floating portrait — overhangs the panel's top edge, aligned to the
-            text column (not the full-width panel edge). */}
+        {/* The talk stage: persistent busts standing on the band */}
+        {renderBust('left')}
+        {renderBust('right')}
+
+        {/* Name plate rides the band's top edge on the speaker's side */}
         {!isNarrator && (
-          <div className="absolute -top-12 left-8 z-10 flex flex-col items-center gap-1">
-            <CharacterPortrait speaker={node.speaker} active size={88} />
+          <div
+            className={
+              'absolute -top-4 z-10 ' +
+              (slots.right === node.speaker ? 'right-10' : 'left-10')
+            }
+          >
             <div
               className={
-                `voice-display text-xs tracking-[0.15em] px-2 py-0.5 rounded-sm ` +
-                `bg-stone-950/95 border ${character.ringColor.split(' ').filter(c => c.startsWith('border-')).join(' ')} ` +
-                `${character.textColor}`
+                `voice-display text-sm tracking-[0.18em] px-4 py-1 rounded-sm ` +
+                `bg-stone-950 border ${character.ringColor.split(' ').filter(cl => cl.startsWith('border-')).join(' ')} ` +
+                `${character.textColor} shadow-[0_2px_8px_rgba(0,0,0,0.8)]`
               }
             >
               {speakerLabel.toUpperCase()}
