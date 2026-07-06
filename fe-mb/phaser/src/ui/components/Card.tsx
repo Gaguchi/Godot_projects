@@ -16,6 +16,9 @@ export interface CardProps {
   magnitudeKind?: 'damage' | 'armor' | 'heal' | null
   /** Short target descriptor, e.g. "one enemy", "self", "an ally". */
   targetLabel: string
+  /** Deck provenance (gear-as-deck): hand_left/hand_right show a subtle L/R
+   *  chip so players can trace a card back to the item that grants it. */
+  source?: 'innate' | 'hand_left' | 'hand_right' | null
   isSelected?: boolean
   className?: string
 }
@@ -90,6 +93,7 @@ export function Card({
   magnitude,
   magnitudeKind,
   targetLabel,
+  source,
   isSelected,
   className,
 }: CardProps): React.JSX.Element {
@@ -185,6 +189,21 @@ export function Card({
         >
           {apCost}
         </span>
+
+        {/* gear-source chip: L/R = which hand's item grants this card */}
+        {(source === 'hand_left' || source === 'hand_right') && (
+          <span
+            aria-label={source === 'hand_left' ? 'from left-hand gear' : 'from right-hand gear'}
+            className="absolute -left-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-sm text-[0.55rem] font-bold text-amber-100"
+            style={{
+              background: 'linear-gradient(to bottom, #4a4038, #221c16)',
+              border: '1px solid rgba(201,152,92,0.4)',
+              boxShadow: '0 1px 3px #000',
+            }}
+          >
+            {source === 'hand_left' ? 'L' : 'R'}
+          </span>
+        )}
 
         {/* unaffordable: "spent" hatch — reads as "can't afford yet", not "broken" */}
         {!affordable && (

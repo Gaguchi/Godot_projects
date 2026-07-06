@@ -612,9 +612,12 @@ export class BoardScene extends Phaser.Scene {
     const cardPayload: {
       apCost: number
       damageStat?: 'str' | 'mag' | 'skl'
+      targetKind?: string
+      aoeRadius?: number
       effects: Array<{ kind: string; params: Record<string, unknown> }>
-    } = { apCost: card.apCost, effects: card.effects }
+    } = { apCost: card.apCost, effects: card.effects, targetKind: card.targetKind }
     if (card.damageStat) cardPayload.damageStat = card.damageStat as 'str' | 'mag' | 'skl'
+    if (card.aoeRadius) cardPayload.aoeRadius = card.aoeRadius
 
     cs.dispatch({
       type: 'playCard',

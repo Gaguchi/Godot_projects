@@ -82,6 +82,7 @@ export function CardHand(): React.JSX.Element | null {
             magnitude={mag.magnitude}
             magnitudeKind={mag.magnitudeKind}
             targetLabel={TARGET_LABEL[card.targetKind] ?? card.targetKind}
+            source={deck.sources?.[cardId] ?? null}
             isSelected={isSelected}
             onPress={() => {
               if (subPhase === 'RESOLVING') return

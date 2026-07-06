@@ -29,12 +29,17 @@ export function ForecastPanel(): React.JSX.Element | null {
     const cardPayload: {
       apCost: number
       damageStat?: 'str' | 'mag' | 'skl'
+      targetKind?: string
+      aoeRadius?: number
       effects: Array<{ kind: string; params: Record<string, unknown> }>
     } = {
       apCost: card.apCost,
       effects: card.effects.map((e) => ({ kind: e.kind, params: e.params as Record<string, unknown> })),
     }
     if (card.damageStat) cardPayload.damageStat = card.damageStat
+    const extra = card as { targetKind?: string; aoeRadius?: number }
+    if (extra.targetKind) cardPayload.targetKind = extra.targetKind
+    if (extra.aoeRadius) cardPayload.aoeRadius = extra.aoeRadius
     dispatch({
       type: 'playCard',
       payload: {

@@ -60,9 +60,13 @@ export type CombatEvent =
         // Optional inline card definition for full resolution. If absent, reducer
         // emits a WaitForAnimations stub (legacy/test path). Production callers
         // (CombatScene) supply this so the reducer can apply damage + AP cost.
+        // targetKind routes beneficial riders (GrantArmor/Heal on enemy-target
+        // cards go to the SOURCE); aoeRadius expands targets at resolution.
         card?: {
           apCost: number
           damageStat?: 'str' | 'mag' | 'skl'
+          targetKind?: string
+          aoeRadius?: number
           effects: Array<{ kind: string; params: Record<string, unknown> }>
         }
       }

@@ -24,6 +24,7 @@ import { diagLog, diag } from './state/diagLog'
 import { useCombatStore } from './state/combatStore'
 import { useRunStore } from './state/runStore'
 import { buildStarterParty } from './systems/starterParty'
+import { PartyLoadoutModal } from './ui/modals/PartyLoadoutModal'
 import { resolveBattle } from './systems/battleResolver'
 import { createRng, deriveRng } from './systems/rng'
 import { allItemDefs } from './data/itemRegistry'
@@ -71,6 +72,7 @@ export function App(): React.JSX.Element {
   const [pauseMenuOpen, setPauseMenuOpen] = useState(false)
   const [quitModalOpen, setQuitModalOpen] = useState(false)
   const [questLogOpen, setQuestLogOpen] = useState(false)
+  const [loadoutOpen, setLoadoutOpen] = useState(false)
   const [townInitialPanel, setTownInitialPanel] = useState<'inn' | 'shop' | 'tavern' | null>(null)
   const dispatchMeta = useMetaStore((s) => s.dispatch)
 
@@ -96,6 +98,9 @@ export function App(): React.JSX.Element {
       if (e.key.toLowerCase() === 'q' && (view === 'overworld' || view === 'town' || view === 'dungeon' || view === 'camp')) {
         setQuestLogOpen((prev) => !prev)
       }
+      if (e.key.toLowerCase() === 'i' && (view === 'overworld' || view === 'town' || view === 'dungeon' || view === 'camp')) {
+        setLoadoutOpen((prev) => !prev)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -112,6 +117,7 @@ export function App(): React.JSX.Element {
       if (saveModalOpen) { setSaveModalOpen(false); return }
       if (loadModalOpen) { setLoadModalOpen(false); return }
       if (questLogOpen) { setQuestLogOpen(false); return }
+      if (loadoutOpen) { setLoadoutOpen(false); return }
       // In combat, cancel-selection takes priority when something's active.
       if (view === 'combat') {
         const cs = useCombatStore.getState()
@@ -384,6 +390,7 @@ export function App(): React.JSX.Element {
             onContinueToOverworld={onContinueToOverworld}
           />
           <QuestLog open={questLogOpen} onClose={() => setQuestLogOpen(false)} />
+          <PartyLoadoutModal open={loadoutOpen} onClose={() => setLoadoutOpen(false)} />
           <DialogueModal />
           {/* Quest log key hint — a small key-hint chip, not raw debug text */}
           {(view === 'overworld' || view === 'town' || view === 'dungeon' || view === 'camp') && !questLogOpen && (
@@ -418,6 +425,20 @@ export function App(): React.JSX.Element {
                 Q
               </span>
               Quest Log
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '0 4px',
+                  borderRadius: 2,
+                  border: '1px solid rgba(201,152,92,0.45)',
+                  color: '#e8c98a',
+                  marginLeft: 8,
+                }}
+              >
+                I
+              </span>
+              Loadout
             </div>
           )}
         </div>

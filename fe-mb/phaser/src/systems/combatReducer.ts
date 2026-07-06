@@ -298,10 +298,29 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
         if (u) targetUnits.push(u)
       }
 
+      // AOE: expand the target set to every living unit within aoeRadius of
+      // each target tile (manhattan, matching targeting.tilesInAoe). Which of
+      // the expanded units an effect touches is decided per effect kind below.
+      const aoeRadius = card.aoeRadius ?? 0
+      if (aoeRadius > 0) {
+        for (const t of targets) {
+          const pt = parseTile(t)
+          for (const u of Object.values(newUnits)) {
+            if (!u.position || !isAlive(u)) continue
+            if (targetUnits.some(x => x.id === u.id)) continue
+            const pu = parseTile(u.position)
+            if (Math.abs(pu.x - pt.x) + Math.abs(pu.y - pt.y) <= aoeRadius) targetUnits.push(u)
+          }
+        }
+      }
+
       const { partyIds: srcPartyIds } = teamsOf(newUnits)
       const srcIsParty = srcPartyIds.includes(srcId)
       const isFoeOfSrc = (u: Unit): boolean =>
         srcPartyIds.includes(u.id) !== srcIsParty
+      const foeTargets = targetUnits.filter(isFoeOfSrc)
+      const allyTargets = targetUnits.filter(u => !isFoeOfSrc(u))
+      const enemyTargetCard = card.targetKind === 'enemy'
 
       const applyStatusTo = (target: Unit, effectId: string, stacks: number, turns: number): void => {
         const tStr = target.id as unknown as string
@@ -330,7 +349,9 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
             statBonus += empBonus
             newUnits[srcId as unknown as string] = { ...liveSrc, statuses: consumeEmpower(liveSrc.statuses) }
           }
-          for (const target of targetUnits) {
+          // Damage never friendly-fires: only foes among the (possibly
+          // AOE-expanded) target set take hits.
+          for (const target of foeTargets) {
             const dr = damageType === 'magic'
               ? Math.floor(target.stats.res / 2)
               : Math.floor(target.stats.def / 2)
@@ -357,7 +378,10 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
           }
         } else if (eff.kind === 'Heal') {
           const amount = (params.amount as number | undefined) ?? 0
-          for (const target of targetUnits) {
+          // Heal riders on enemy-target cards are lifesteal → heal the source.
+          const liveSelf = newUnits[srcId as unknown as string] ?? src
+          const healRecipients = enemyTargetCard || allyTargets.length === 0 ? [liveSelf] : allyTargets
+          for (const target of healRecipients) {
             const newCurrent = Math.min(target.hp.max, target.hp.current + amount)
             const tStr = target.id as unknown as string
             const updated: Unit = { ...target, hp: { ...target.hp, current: newCurrent } }
@@ -371,12 +395,36 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
           }
         } else if (eff.kind === 'GrantArmor') {
           const amount = (params.amount as number | undefined) ?? 0
-          // Self-target if no targetUnits (e.g. self cards)
-          const recipients = targetUnits.length > 0 ? targetUnits : [src]
+          // Armor riders on enemy-target cards (Brace family) armor the
+          // SOURCE; ally-target cards armor the ally; self cards the source.
+          const recipients = enemyTargetCard || allyTargets.length === 0 ? [src] : allyTargets
           for (const target of recipients) {
             const tStr = target.id as unknown as string
-            const updated: Unit = { ...target, armor: target.armor + amount }
-            newUnits[tStr] = updated
+            const live = newUnits[tStr] ?? target
+            newUnits[tStr] = { ...live, armor: live.armor + amount }
+          }
+        } else if (eff.kind === 'RemoveStatus') {
+          const removeKind = String(params.kind ?? '')
+          if (removeKind === 'armor') {
+            // Armor shred (Guard Break / Shatter / Rend family).
+            const amount = (params.amount as number | undefined) ?? 0
+            for (const target of foeTargets) {
+              const tStr = target.id as unknown as string
+              const live = newUnits[tStr] ?? target
+              newUnits[tStr] = { ...live, armor: Math.max(0, live.armor - amount) }
+            }
+          } else if (removeKind === 'debuff') {
+            // Cleanse (Purify family): strip harmful statuses from allies/self.
+            const HARMFUL = new Set(['poison', 'burn', 'slow', 'immobilize'])
+            const recipients = allyTargets.length > 0 ? allyTargets : [src]
+            for (const target of recipients) {
+              const tStr = target.id as unknown as string
+              const live = newUnits[tStr] ?? target
+              newUnits[tStr] = {
+                ...live,
+                statuses: live.statuses.filter(st => !HARMFUL.has(st.effectId as unknown as string)),
+              }
+            }
           }
         } else if (eff.kind === 'GainAp') {
           const amount = (params.amount as number | undefined) ?? 0
@@ -388,7 +436,11 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
           const stacks = (params.value as number | undefined) ?? 1
           const turns = (params.turns as number | undefined) ?? 1
           if (effectId) {
-            const primary = targetUnits.length > 0 ? targetUnits : [src]
+            // Enemy-target cards afflict foes only (AOE never debuffs allies);
+            // other cards hit whatever was targeted, defaulting to self.
+            const primary = enemyTargetCard
+              ? foeTargets
+              : targetUnits.length > 0 ? targetUnits : [src]
             for (const t of primary) applyStatusTo(t, effectId, stacks, turns)
             if (params.splash === 'adjacent') {
               for (const t of targetUnits) {
@@ -425,7 +477,7 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       // Quiver modifier baked onto this card at deck-build time (ship plan §8).
       const cardMod = state.decks[srcStr0]?.cardMods?.[cardId as unknown as string]
       if (cardMod) {
-        for (const target of targetUnits) {
+        for (const target of foeTargets) {
           const tStr = target.id as unknown as string
           const live = newUnits[tStr] ?? target
           switch (cardMod.kind) {

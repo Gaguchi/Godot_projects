@@ -51,11 +51,14 @@ function blockedTiles(exceptId?: string): Set<string> {
 }
 
 type CardJson = typeof cardsJson[number]
-function cardPayloadOf(card: CardJson): { apCost: number; damageStat?: 'str' | 'mag' | 'skl'; effects: CardJson['effects'] } {
+function cardPayloadOf(card: CardJson): { apCost: number; damageStat?: 'str' | 'mag' | 'skl'; targetKind?: string; aoeRadius?: number; effects: CardJson['effects'] } {
+  const c = card as CardJson & { aoeRadius?: number }
   return {
     apCost: card.apCost,
     effects: card.effects,
+    targetKind: card.targetKind,
     ...(card.damageStat ? { damageStat: card.damageStat as 'str' | 'mag' | 'skl' } : {}),
+    ...(c.aoeRadius ? { aoeRadius: c.aoeRadius } : {}),
   }
 }
 
