@@ -1,4 +1,4 @@
-import type { UnitId, ClassId, TileId, StatusEffectId } from './ids'
+import type { UnitId, ClassId, TileId, StatusEffectId, ItemId } from './ids'
 
 export interface UnitStats {
   str: number; mag: number; skl: number
@@ -31,4 +31,9 @@ export interface Unit {
   // fixtures (which omit it) round-trip safely; reducer treats undefined as
   // "has not moved".
   hasMovedThisTurn?: boolean
+  // Equipment-card hand slots (ship plan §3). Owned at run level; combat unit
+  // copies carry them read-only. undefined ≡ null ≡ empty slot. A two-handed
+  // item sits in handLeft and locks handRight (must stay empty).
+  handLeft?: ItemId | null
+  handRight?: ItemId | null
 }

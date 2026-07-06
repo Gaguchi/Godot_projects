@@ -1,10 +1,12 @@
 import type { CombatState, CombatEvent, CombatEffect } from '../domain/combatState'
 import type { Unit } from '../domain/unit'
-import type { UnitId } from '../domain/ids'
+import type { UnitId, TileId, CardId } from '../domain/ids'
+import { asStatusEffectId } from '../domain/ids'
 import type { RNG } from '../domain/rng'
 import { buildInitiativeQueue } from './turnOrder'
-import { getStatusEffect } from './statusEffects'
+import { getStatusEffect, mergeStatus, isImmobilized, empowerBonus, consumeEmpower } from './statusEffects'
 import { applyDamage } from './damage'
+import { createRng } from './rng'
 
 interface UnitTeam { partyIds: UnitId[]; enemyIds: UnitId[] }
 
@@ -44,6 +46,65 @@ function teamsOf(units: Record<string, Unit>): UnitTeam {
 }
 
 function isAlive(u: Unit): boolean { return u.hp.current > 0 }
+
+function parseTile(t: TileId): { x: number; y: number } {
+  const [x, y] = (t as unknown as string).split(',').map(Number)
+  return { x: x ?? 0, y: y ?? 0 }
+}
+
+/** 4-directional adjacency ("adjacent" in card text = orthogonal neighbors). */
+function isAdjacentTile(a: TileId, b: TileId): boolean {
+  const pa = parseTile(a)
+  const pb = parseTile(b)
+  return Math.abs(pa.x - pb.x) + Math.abs(pa.y - pb.y) === 1
+}
+
+/** Alive units (other than `exclude`) standing orthogonally adjacent to `tile`. */
+function unitsAdjacentTo(
+  units: Record<string, Unit>,
+  tile: TileId,
+  excludeId: UnitId,
+): Unit[] {
+  return Object.values(units).filter(
+    u => u.id !== excludeId && isAlive(u) && u.position !== null && isAdjacentTile(u.position, tile),
+  )
+}
+
+/**
+ * End-of-turn status tick for ONE unit (ship plan §9: DOT fires at the end of
+ * the afflicted unit's turn). Applies onTurnEnd damage, decrements durations,
+ * drops expired statuses. Pure — returns the updated unit + render effects.
+ */
+function tickUnitStatuses(unit: Unit): { unit: Unit; effects: CombatEffect[] } {
+  if (unit.statuses.length === 0) return { unit, effects: [] }
+  const effects: CombatEffect[] = []
+  let hp = unit.hp.current
+  let armor = unit.armor
+  for (const s of unit.statuses) {
+    const def = getStatusEffect(s.effectId)
+    if (!def?.onTurnEnd) continue
+    for (const e of def.onTurnEnd({ selfUnitId: unit.id, selfStacks: s.stacks, selfTurnsRemaining: s.turnsRemaining })) {
+      if (e.kind !== 'Damage') continue
+      if (e.armorPiercing) {
+        hp = Math.max(0, hp - e.amount)
+      } else {
+        const split = applyDamage({ hp: { current: hp, max: unit.hp.max }, armor }, e.amount, e.damageType)
+        hp = split.newHp
+        armor = split.newArmor
+      }
+      if (unit.position) {
+        effects.push({ kind: 'FloatDamage', tile: unit.position, amount: e.amount, damageKind: e.damageType })
+      }
+    }
+  }
+  const remaining = unit.statuses
+    .map(s => ({ ...s, turnsRemaining: s.turnsRemaining - 1 }))
+    .filter(s => s.turnsRemaining > 0)
+  return {
+    unit: { ...unit, hp: { ...unit.hp, current: hp }, armor, statuses: remaining },
+    effects,
+  }
+}
 
 function checkEnd(state: CombatState): CombatState['phase'] {
   const { partyIds, enemyIds } = teamsOf(state.units)
@@ -92,44 +153,59 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
     }
 
     case 'endTurn': {
-      const aliveUnits = Object.values(state.units).filter(isAlive)
+      // End-of-turn status tick for the unit whose turn is ending (ship plan
+      // §9: poison/burn fire at the end of the afflicted unit's turn).
+      const tickEffects: CombatEffect[] = []
+      let tickedUnits = state.units
+      const endingKey = state.turn.unitId as unknown as string | null
+      const endingUnit = endingKey ? state.units[endingKey] : undefined
+      if (endingUnit && isAlive(endingUnit)) {
+        const ticked = tickUnitStatuses(endingUnit)
+        if (ticked.unit !== endingUnit) {
+          tickedUnits = { ...state.units, [endingKey!]: ticked.unit }
+          tickEffects.push(...ticked.effects)
+        }
+      }
+      const tickedState: CombatState = tickedUnits === state.units ? state : { ...state, units: tickedUnits }
+
+      const aliveUnits = Object.values(tickedState.units).filter(isAlive)
       if (aliveUnits.length === 0) {
         // Edge: nobody alive — just check end condition and exit.
-        const phase = checkEnd(state)
-        return { state: { ...state, phase }, effects: [] }
+        const phase = checkEnd(tickedState)
+        return { state: { ...tickedState, phase }, effects: tickEffects }
       }
       const order = buildInitiativeQueue(aliveUnits)
-      const currentIdx = order.findIndex(id => id === state.turn.unitId)
+      const currentIdx = order.findIndex(id => id === tickedState.turn.unitId)
       const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % order.length
       const wrapped = currentIdx !== -1 && nextIdx === 0
       const nextId = order[nextIdx]!
-      const team: 'party' | 'enemy' = teamsOf(state.units).partyIds.includes(nextId) ? 'party' : 'enemy'
+      const team: 'party' | 'enemy' = teamsOf(tickedState.units).partyIds.includes(nextId) ? 'party' : 'enemy'
 
-      const phase = checkEnd(state)
-      if (phase !== 'COMBAT') return { state: { ...state, phase }, effects: [] }
+      const phase = checkEnd(tickedState)
+      if (phase !== 'COMBAT') return { state: { ...tickedState, phase }, effects: tickEffects }
 
       // Reset hasMovedThisTurn for the unit whose turn is starting so they can
       // use their free move again.
       const nextKey = nextId as unknown as string
-      const newUnits = { ...state.units }
+      const newUnits = { ...tickedState.units }
       const nextUnit = newUnits[nextKey]
       if (nextUnit) newUnits[nextKey] = { ...nextUnit, hasMovedThisTurn: false }
 
       return {
         state: {
-          ...state,
+          ...tickedState,
           phase: 'COMBAT',
           subPhase: 'IDLE',
           selectedCardId: null,
           pinnedTargetTile: null,
           turn: {
-            number: wrapped ? state.turn.number + 1 : state.turn.number,
+            number: wrapped ? tickedState.turn.number + 1 : tickedState.turn.number,
             unitId: nextId,
             team,
           },
           units: newUnits,
         },
-        effects: [],
+        effects: tickEffects,
       }
     }
 
@@ -192,6 +268,25 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
 
       const newUnits: Record<string, Unit> = { ...state.units }
       const effects: CombatEffect[] = []
+      let rngState = state.rng
+
+      // Discard the played card up front so draw effects can never draw the
+      // card that is still being resolved (unless a reshuffle recycles it).
+      const srcStr0 = srcId as unknown as string
+      const newDecks = { ...state.decks }
+      const srcDeck = newDecks[srcStr0]
+      if (srcDeck) {
+        const handIdx = srcDeck.hand.findIndex((c) => (c as unknown as string) === (cardId as unknown as string))
+        if (handIdx !== -1) {
+          const newHand = srcDeck.hand.slice()
+          const removed = newHand.splice(handIdx, 1)
+          newDecks[srcStr0] = {
+            ...srcDeck,
+            hand: newHand,
+            discard: [...srcDeck.discard, ...removed],
+          }
+        }
+      }
 
       // Find a target unit at each target tile (if any)
       const targetUnits: Unit[] = []
@@ -201,6 +296,20 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
           (cand) => cand.position && (cand.position as unknown as string) === tileStr,
         )
         if (u) targetUnits.push(u)
+      }
+
+      const { partyIds: srcPartyIds } = teamsOf(newUnits)
+      const srcIsParty = srcPartyIds.includes(srcId)
+      const isFoeOfSrc = (u: Unit): boolean =>
+        srcPartyIds.includes(u.id) !== srcIsParty
+
+      const applyStatusTo = (target: Unit, effectId: string, stacks: number, turns: number): void => {
+        const tStr = target.id as unknown as string
+        const cur = newUnits[tStr] ?? target
+        newUnits[tStr] = {
+          ...cur,
+          statuses: mergeStatus(cur.statuses, asStatusEffectId(effectId), stacks, turns, srcId),
+        }
       }
 
       // Resolve each effect against each target
@@ -214,6 +323,13 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
           if (stat === 'str') statBonus = src.stats.str
           else if (stat === 'mag') statBonus = src.stats.mag
           else if (stat === 'skl') statBonus = src.stats.skl
+          // Empower ("next attack +X"): consume the buff on this damage card.
+          const liveSrc = newUnits[srcId as unknown as string] ?? src
+          const empBonus = empowerBonus(liveSrc)
+          if (empBonus > 0) {
+            statBonus += empBonus
+            newUnits[srcId as unknown as string] = { ...liveSrc, statuses: consumeEmpower(liveSrc.statuses) }
+          }
           for (const target of targetUnits) {
             const dr = damageType === 'magic'
               ? Math.floor(target.stats.res / 2)
@@ -267,28 +383,91 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
           const tStr = (src.id as unknown as string)
           const updatedSrc = newUnits[tStr] ?? src
           newUnits[tStr] = { ...updatedSrc, ap: updatedSrc.ap + amount }
-        }
-      }
-
-      // Decrement source AP and discard the played card
-      const srcStr = srcId as unknown as string
-      const updatedSrc = newUnits[srcStr] ?? src
-      newUnits[srcStr] = { ...updatedSrc, ap: Math.max(0, updatedSrc.ap - card.apCost) }
-
-      const newDecks = { ...state.decks }
-      const srcDeck = newDecks[srcStr]
-      if (srcDeck) {
-        const handIdx = srcDeck.hand.findIndex((c) => (c as unknown as string) === (cardId as unknown as string))
-        if (handIdx !== -1) {
-          const newHand = srcDeck.hand.slice()
-          const removed = newHand.splice(handIdx, 1)
-          newDecks[srcStr] = {
-            ...srcDeck,
-            hand: newHand,
-            discard: [...srcDeck.discard, ...removed],
+        } else if (eff.kind === 'ApplyStatus') {
+          const effectId = String(params.effectId ?? '')
+          const stacks = (params.value as number | undefined) ?? 1
+          const turns = (params.turns as number | undefined) ?? 1
+          if (effectId) {
+            const primary = targetUnits.length > 0 ? targetUnits : [src]
+            for (const t of primary) applyStatusTo(t, effectId, stacks, turns)
+            if (params.splash === 'adjacent') {
+              for (const t of targetUnits) {
+                if (!t.position) continue
+                for (const adj of unitsAdjacentTo(newUnits, t.position, t.id)) {
+                  if (isFoeOfSrc(adj)) applyStatusTo(adj, effectId, stacks, turns)
+                }
+              }
+            }
+          }
+        } else if (eff.kind === 'DrawCards') {
+          const count = (params.count as number | undefined) ?? 1
+          const deck = newDecks[srcStr0]
+          if (deck && count > 0) {
+            let draw = deck.draw.slice()
+            let discard = deck.discard.slice()
+            const hand = deck.hand.slice()
+            for (let i = 0; i < count; i++) {
+              if (draw.length === 0 && discard.length > 0) {
+                const shuffleRng = createRng(rngState)
+                draw = shuffleRng.shuffle(discard) as CardId[]
+                discard = []
+                rngState = shuffleRng.state()
+              }
+              const drawn = draw.shift()
+              if (drawn === undefined) break
+              hand.push(drawn)
+            }
+            newDecks[srcStr0] = { ...deck, draw, hand, discard }
           }
         }
       }
+
+      // Quiver modifier baked onto this card at deck-build time (ship plan §8).
+      const cardMod = state.decks[srcStr0]?.cardMods?.[cardId as unknown as string]
+      if (cardMod) {
+        for (const target of targetUnits) {
+          const tStr = target.id as unknown as string
+          const live = newUnits[tStr] ?? target
+          switch (cardMod.kind) {
+            case 'poison':
+              applyStatusTo(live, 'poison', cardMod.value, cardMod.turns)
+              break
+            case 'slow':
+              applyStatusTo(live, 'slow', cardMod.value, cardMod.turns)
+              break
+            case 'thunder': {
+              // Bonus magic damage that ignores armor entirely.
+              newUnits[tStr] = {
+                ...live,
+                hp: { ...live.hp, current: Math.max(0, live.hp.current - cardMod.value) },
+              }
+              if (live.position) {
+                effects.push({ kind: 'FloatDamage', tile: live.position, amount: cardMod.value, damageKind: 'magic' })
+              }
+              break
+            }
+            case 'explosive': {
+              if (!live.position) break
+              for (const adj of unitsAdjacentTo(newUnits, live.position, live.id)) {
+                if (!isFoeOfSrc(adj)) continue
+                const aStr = adj.id as unknown as string
+                const cur = newUnits[aStr] ?? adj
+                const split = applyDamage(cur, cardMod.value, 'physical')
+                newUnits[aStr] = { ...cur, hp: { ...cur.hp, current: split.newHp }, armor: split.newArmor }
+                if (cur.position) {
+                  effects.push({ kind: 'FloatDamage', tile: cur.position, amount: cardMod.value, damageKind: 'physical' })
+                }
+              }
+              break
+            }
+          }
+        }
+      }
+
+      // Decrement source AP (card already moved to discard above)
+      const srcStr = srcId as unknown as string
+      const updatedSrc = newUnits[srcStr] ?? src
+      newUnits[srcStr] = { ...updatedSrc, ap: Math.max(0, updatedSrc.ap - card.apCost) }
 
       // Tween source toward first target tile, if any
       if (targets.length > 0) {
@@ -313,6 +492,7 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
         ...state,
         units: newUnits,
         decks: newDecks,
+        rng: rngState,
         subPhase: 'RESOLVING',
         selectedCardId: null,
         pinnedTargetTile: null,
@@ -336,6 +516,8 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       if (!u) return { state, effects: [] }
       // Free move per turn: refuse if already used.
       if (u.hasMovedThisTurn) return { state, effects: [] }
+      // Immobilize (ship plan §9): MOV = 0 while the status is active.
+      if (isImmobilized(u)) return { state, effects: [] }
       const newUnits: Record<string, Unit> = {
         ...state.units,
         [unitId as unknown as string]: { ...u, position: tileId, hasMovedThisTurn: true },

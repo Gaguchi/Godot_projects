@@ -1,5 +1,6 @@
 import type { Unit } from '../domain/unit'
 import type { UnitId } from '../domain/ids'
+import { statusSpdDelta } from './statusEffects'
 
 export interface InitiativeModifier {
   unitId: UnitId
@@ -18,8 +19,8 @@ function isEnemyUnit(u: Unit): boolean {
  *   2. On SPD tie, party units beat enemy units (FE GBA-era convention).
  *   3. On further tie, alphabetic by unit id (deterministic).
  *
- * `modifiers` adds situational SPD deltas (not currently wired but kept
- * for future Haste / Slow effects).
+ * `modifiers` adds situational SPD deltas on top of the automatic
+ * status-derived deltas (Slow subtracts its stacks while active).
  */
 export function buildInitiativeQueue(
   units: Unit[],
@@ -30,7 +31,7 @@ export function buildInitiativeQueue(
   )
   const enriched = units.map((u) => ({
     id: u.id,
-    spd: u.stats.spd + (modBySpd.get(u.id as unknown as string) ?? 0),
+    spd: u.stats.spd + statusSpdDelta(u) + (modBySpd.get(u.id as unknown as string) ?? 0),
     isEnemy: isEnemyUnit(u),
     tieBreaker: u.id as unknown as string,
   }))

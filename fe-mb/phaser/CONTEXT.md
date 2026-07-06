@@ -53,6 +53,8 @@ Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, 
 **`runStore` actions** (`RunAction` union in `state/runStore.ts`):
 - `recruitUnit { unit }`
 - `fallenUnit { unitId, cause, turn }`
+- `equipItem { unitId, itemId, slot }` — atomic bag→hand-slot equip via `planEquip` (2H locks off-hand; swap returns old item to bag; rejected plans no-op with a diag warning)
+- `unequipItem { unitId, slot }` — hand-slot→bag via `planUnequip`; no-op if bag full
 - `sweepFallenUnits { unitIds }` — removes the listed units from `party.units` + `party.partyOrder`; no-op for empty list or unknown ids. Dispatched on VICTORY for permadeath cleanup.
 - `moveItemInBag { itemId, x, y }`
 - `buyItem { itemId, price }` — atomic gold-deduction + add-to-first-empty-slot; no-op if gold insufficient or bag full
@@ -166,7 +168,7 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `domain/rng.ts` — `RngState`, `RNG` interface. Impl in `systems/rng.ts` (Mulberry32 + `deriveRng`). **Active.**
 - `data/schemas/card.ts` ↔ `Card` (`CardSchema`, `WeaponTypeSchema`). **Active.**
 - `data/schemas/unit.ts` ↔ `Unit` (`UnitSchema`, `UnitStatsSchema`). **Active.**
-- `data/schemas/item.ts` ↔ `Item` (`ItemSchema`). **Active.**
+- `data/schemas/item.ts` ↔ `Item` (`ItemSchema`, `QuiverModifierSchema`). Gear-as-deck (ship plan §2-8): `ItemKind` spans consumables + gear (weapon/shield/quiver/tome/staff), `WeaponClass` + `QuiverModifierKind`/`QuiverModifier` types, `gearCardIds`, `twoHanded`; `HAND_SLOT_KINDS` + `isHandSlotItem` helpers. `data/itemRegistry.ts` exposes `getItemDef`/`allItemDefs`. Hand-slot rules in `systems/equipment.ts` (`planEquip`/`planUnequip`); deck composition in `systems/deckBuilder.ts` (`buildDeckForUnit` — innate + gear cards, source tags, quiver `cardMods` on `DeckState`). Unit gains `handLeft`/`handRight`. **Active.**
 - `data/schemas/class.ts` ↔ `ClassDef` (`ClassSchema`). **Active.**
 - `data/schemas/statusEffect.ts` ↔ `StatusEffectDef` (`StatusEffectDataSchema` — JSON-shape only; function hooks live in code registry). **Active.**
 - `data/schemas/map.ts` ↔ `WorldMap | BattleMap` (DungeonGraph schema TBD with generator). **Active.**
@@ -181,7 +183,7 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/dungeonDef.ts` ↔ `DungeonDef` (5 dungeon JSONs; consumed by `game/scenes/seedDungeonBattle.ts`). **Active.**
 - `data/schemas/predicate.ts` ↔ `Predicate` (recursive via `z.lazy`). **Active.**
 - `data/schemas/check.ts` ↔ `CheckRequirement` (discriminated union: `stat | class | gold | food`; `StatKey` covers all 7 stats incl. `lck`). Domain types in `domain/check.ts`: `CheckRequirement`, `CheckAttempt`, `CheckCandidate`, `StatKey`. **Active.**
-- `persistence/saveFormat.ts` ↔ `SaveFile` (`SAVE_VERSION = '0.6.0-cards-only'`, `SerializedRunState`, `SerializedMetaState`). **Active.**
+- `persistence/saveFormat.ts` ↔ `SaveFile` (`SAVE_VERSION = '0.7.0-gear'`, `SerializedRunState`, `SerializedMetaState`). Party units serialize whole, so hand slots round-trip. **Active.**
 - `persistence/contentAliases.ts` ↔ `ContentAliases` (`cardId | itemId | flagKey | questId | stageId | dungeonId | mapId` maps, `resolveAlias`). **Active.**
 - `persistence/saveSlots.ts` ↔ `SaveSlotMeta` + `SaveSlotsMeta` shapes; 3-slot localStorage manager (`NUM_SLOTS = 3`). Exports `listSlots` / `readSlot` / `writeSlot` / `deleteSlot` / `isSlotEmpty`. Data at `fe-mb:save:slot:N`; sidecar meta at `fe-mb:save:meta` for fast list-rendering. Consumed by `<SaveGameModal>`, `<LoadGameModal>`, and the pause-menu Save flow. **Active.**
 

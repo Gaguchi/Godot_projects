@@ -1,6 +1,6 @@
 import type { CardId, UnitId, StatusEffectId, TileId } from './ids'
 
-export type WeaponType = 'sword'|'lance'|'axe'|'bow'|'crossbow'|'tome'|'staff'
+export type WeaponType = 'sword'|'lance'|'axe'|'bow'|'crossbow'|'tome'|'staff'|'greatsword'|'dagger'|'shield'
 
 export type DamageKind = 'physical' | 'magic'
 

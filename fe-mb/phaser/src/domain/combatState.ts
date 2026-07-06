@@ -1,6 +1,7 @@
 import type { UnitId, CardId, TileId } from './ids'
 import type { Unit } from './unit'
-import type { CardEffect } from './card'
+import type { CardEffect, CardSource } from './card'
+import type { QuiverModifier } from './item'
 import type { RngState } from './rng'
 
 export type CombatPhase = 'BOOT' | 'DEPLOY' | 'COMBAT' | 'VICTORY' | 'DEFEAT'
@@ -10,6 +11,10 @@ export interface DeckState {
   draw: CardId[]
   hand: CardId[]
   discard: CardId[]
+  /** Card provenance set at deck-build time (innate / hand_left / hand_right). */
+  sources?: Record<string, CardSource>
+  /** Quiver modifiers keyed by CardId — applied when the card resolves. */
+  cardMods?: Record<string, QuiverModifier>
 }
 
 export interface CombatGrid {

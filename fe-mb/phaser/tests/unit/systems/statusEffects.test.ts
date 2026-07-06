@@ -31,6 +31,7 @@ describe('statusEffects registry', () => {
   })
 
   it('exposes registry as iterable', () => {
-    expect(STATUS_EFFECTS.length).toBe(2)
+    // poison, burn, slow, immobilize, taunt, riposte, empower
+    expect(STATUS_EFFECTS.length).toBe(7)
   })
 })

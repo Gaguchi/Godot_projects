@@ -7,6 +7,8 @@ import type { BattleResult, PendingTravelPath } from '../contracts'
 import type { DungeonGraph } from '../domain/map'
 import type { RngState } from '../domain/rng'
 import type { PredicateState } from '../systems/predicates'
+import { planEquip, planUnequip } from '../systems/equipment'
+import { getItemDef } from '../data/itemRegistry'
 import { diag } from './diagLog'
 
 export interface RunState {
@@ -41,6 +43,8 @@ export type RunAction =
   | { type: 'fallenUnit'; payload: { unitId: UnitId; cause: string; turn: number } }
   | { type: 'sweepFallenUnits'; payload: { unitIds: UnitId[] } }
   | { type: 'moveItemInBag'; payload: { itemId: ItemId; x: number; y: number } }
+  | { type: 'equipItem'; payload: { unitId: UnitId; itemId: ItemId; slot: 'left' | 'right' } }
+  | { type: 'unequipItem'; payload: { unitId: UnitId; slot: 'left' | 'right' } }
   | { type: 'buyItem'; payload: { itemId: ItemId; price: number } }
   | { type: 'sellItem'; payload: { itemId: ItemId; sellPrice: number } }
   | { type: 'addGold'; payload: { amount: number } }
@@ -277,6 +281,52 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
             ),
           },
         }))
+        return
+      }
+      case 'equipItem': {
+        const { unitId, itemId, slot } = action.payload
+        set(s => {
+          const unit = s.party.units[unitId as unknown as string]
+          if (!unit) return s
+          const plan = planEquip(unit, slot, itemId, s.inventory.items, getItemDef)
+          if (!plan.ok) {
+            diag('store.run', `equipItem rejected: ${plan.reason}`, { unitId, itemId, slot }, 'warn')
+            return s
+          }
+          return {
+            party: {
+              ...s.party,
+              units: {
+                ...s.party.units,
+                [unitId as unknown as string]: { ...unit, handLeft: plan.handLeft, handRight: plan.handRight },
+              },
+            },
+            inventory: { items: plan.bag },
+          }
+        })
+        return
+      }
+      case 'unequipItem': {
+        const { unitId, slot } = action.payload
+        set(s => {
+          const unit = s.party.units[unitId as unknown as string]
+          if (!unit) return s
+          const plan = planUnequip(unit, slot, s.inventory.items, getItemDef)
+          if (!plan.ok) {
+            diag('store.run', `unequipItem rejected: ${plan.reason}`, { unitId, slot }, 'warn')
+            return s
+          }
+          return {
+            party: {
+              ...s.party,
+              units: {
+                ...s.party.units,
+                [unitId as unknown as string]: { ...unit, handLeft: plan.handLeft, handRight: plan.handRight },
+              },
+            },
+            inventory: { items: plan.bag },
+          }
+        })
         return
       }
       case 'buyItem': {

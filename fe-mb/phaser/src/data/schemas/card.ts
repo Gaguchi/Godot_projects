@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const WeaponTypeSchema = z.enum(['sword','lance','axe','bow','crossbow','tome','staff'])
+export const WeaponTypeSchema = z.enum(['sword','lance','axe','bow','crossbow','tome','staff','greatsword','dagger','shield'])
 
 export const CardSchema = z.object({
   id: z.string(),

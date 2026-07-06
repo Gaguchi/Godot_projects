@@ -1,8 +1,15 @@
 import classesJson from '../../data/content/classes.json'
-import { asUnitId, asClassId, asCardId, asTileId } from '../../domain/ids'
+import cardsJson from '../../data/content/cards.json'
+import { asUnitId, asClassId, asTileId } from '../../domain/ids'
 import type { Unit } from '../../domain/unit'
 import type { CombatEvent, CombatGrid, DeckState } from '../../domain/combatState'
 import type { RngState } from '../../domain/rng'
+import { buildDeckForUnit } from '../../systems/deckBuilder'
+import { getItemDef } from '../../data/itemRegistry'
+
+const DAMAGE_CARD_IDS = new Set(
+  cardsJson.filter(c => c.effects.some(e => e.kind === 'Damage')).map(c => c.id),
+)
 
 /**
  * Stub battle bootstrapper. Returns a `startBattle` CombatEvent with party
@@ -78,8 +85,8 @@ export function seedStubBattle(
     mk('bandit_c', 'Bandit', bandit, 9, 4),
   ]
 
-  // Build a starter deck for each unit from class.innateCardIds. Hand =
-  // innate cards (4-5); draw pile is one extra copy so reshuffle has fuel.
+  // Gear-as-deck (ship plan §2): deck = class innates + hand-slot gear cards.
+  // Units without gear naturally fall back to innate-only decks.
   const decks: Record<string, DeckState> = {}
   const classFor = (classId: string): typeof lord => {
     const c = classMap.get(classId)
@@ -88,12 +95,11 @@ export function seedStubBattle(
   }
   for (const u of units) {
     const cls = classFor(u.classId as unknown as string)
-    const cardIds = cls.innateCardIds.map((id) => asCardId(id))
-    decks[u.id as unknown as string] = {
-      draw: [...cardIds],
-      hand: [...cardIds],
-      discard: [],
-    }
+    decks[u.id as unknown as string] = buildDeckForUnit(u, {
+      itemById: getItemDef,
+      innateCardIds: cls.innateCardIds,
+      cardDealsDamage: id => DAMAGE_CARD_IDS.has(id),
+    })
   }
 
   const grid: CombatGrid = {

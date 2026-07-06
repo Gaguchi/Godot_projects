@@ -8,12 +8,19 @@ import bandits from '../../data/content/enemyGroups/bandits.json'
 import wolves from '../../data/content/enemyGroups/wolves.json'
 import brigands from '../../data/content/enemyGroups/brigands.json'
 import darens from '../../data/content/enemyGroups/darens_gang.json'
-import { asUnitId, asClassId, asCardId, asTileId } from '../../domain/ids'
+import cardsJson from '../../data/content/cards.json'
+import { asUnitId, asClassId, asTileId } from '../../domain/ids'
 import type { Unit } from '../../domain/unit'
 import type { CombatEvent, CombatGrid, DeckState } from '../../domain/combatState'
 import type { RngState } from '../../domain/rng'
 import type { DungeonDef } from '../../domain/dungeon'
 import type { EnemyGroup } from '../../domain/encounter'
+import { buildDeckForUnit } from '../../systems/deckBuilder'
+import { getItemDef } from '../../data/itemRegistry'
+
+const DAMAGE_CARD_IDS = new Set(
+  cardsJson.filter(c => c.effects.some(e => e.kind === 'Damage')).map(c => c.id),
+)
 
 const DUNGEONS: Record<string, DungeonDef> = {
   smugglers_cave: smugglers as DungeonDef,
@@ -78,16 +85,17 @@ export function seedDungeonBattle(
     }
   }
 
+  // Gear-as-deck: party decks include hand-slot gear cards; enemies are
+  // innate-only until enemy gear content lands (Phase 45).
   const decks: Record<string, DeckState> = {}
   for (const u of [...party, ...enemies]) {
     const cls = classMap.get(u.classId as unknown as string)
     if (!cls) continue
-    const cardIds = cls.innateCardIds.map(id => asCardId(id))
-    decks[u.id as unknown as string] = {
-      draw: [...cardIds],
-      hand: [...cardIds],
-      discard: [],
-    }
+    decks[u.id as unknown as string] = buildDeckForUnit(u, {
+      itemById: getItemDef,
+      innateCardIds: cls.innateCardIds,
+      cardDealsDamage: id => DAMAGE_CARD_IDS.has(id),
+    })
   }
 
   const grid: CombatGrid = {

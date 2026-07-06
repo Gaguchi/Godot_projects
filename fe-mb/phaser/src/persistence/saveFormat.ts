@@ -2,7 +2,7 @@ import type { CombatState } from '../domain/combatState'
 import type { ActionLogEntry } from '../state/actionLog'
 import type { SerializedFlag } from '../state/flags'
 
-export const SAVE_VERSION = '0.6.0-cards-only' as const
+export const SAVE_VERSION = '0.7.0-gear' as const
 export type SaveVersion = typeof SAVE_VERSION
 
 export interface SerializedRunState {

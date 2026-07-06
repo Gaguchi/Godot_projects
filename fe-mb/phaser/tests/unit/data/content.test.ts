@@ -13,11 +13,12 @@ describe('representative content', () => {
     }
   })
 
-  it('items.json passes ItemSchema (consumables only after GP-A1)', () => {
-    expect(itemsJson.length).toBe(3)
+  it('items.json passes ItemSchema (consumables + gear)', () => {
+    expect(itemsJson.length).toBeGreaterThanOrEqual(3)
+    const kinds = new Set(itemsJson.map(i => i.kind))
+    expect(kinds.has('food')).toBe(true)
     for (const i of itemsJson) {
       expect(() => ItemSchema.parse(i)).not.toThrow()
-      expect(['food', 'potion']).toContain(i.kind)
     }
   })
 

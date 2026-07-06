@@ -5,7 +5,10 @@
     "kind": "food",
     "rarity": "common",
     "region": "none",
-    "gridSize": { "width": 1, "height": 2 },
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
     "buyPrice": 50,
     "sellPrice": 25
   },
@@ -15,7 +18,10 @@
     "kind": "potion",
     "rarity": "common",
     "region": "none",
-    "gridSize": { "width": 1, "height": 1 },
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
     "buyPrice": 30,
     "sellPrice": 15
   },
@@ -25,8 +31,73 @@
     "kind": "potion",
     "rarity": "uncommon",
     "region": "none",
-    "gridSize": { "width": 1, "height": 1 },
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
     "buyPrice": 80,
     "sellPrice": 40
+  },
+  {
+    "id": "iron_sword",
+    "name": "Iron Sword",
+    "kind": "weapon",
+    "weaponClass": "sword",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "buyPrice": 80,
+    "sellPrice": 40,
+    "gearCardIds": [
+      "iron_sword_slash",
+      "iron_sword_thrust",
+      "iron_sword_guard_break",
+      "iron_sword_riposte"
+    ]
+  },
+  {
+    "id": "iron_buckler",
+    "name": "Iron Buckler",
+    "kind": "shield",
+    "weaponClass": "shield",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "buyPrice": 60,
+    "sellPrice": 30,
+    "gearCardIds": [
+      "buckler_block",
+      "buckler_parry",
+      "buckler_deflect"
+    ]
+  },
+  {
+    "id": "iron_greatsword",
+    "name": "Iron Greatsword",
+    "kind": "weapon",
+    "weaponClass": "greatsword",
+    "twoHanded": true,
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 2,
+      "height": 3
+    },
+    "buyPrice": 150,
+    "sellPrice": 75,
+    "gearCardIds": [
+      "gs_heavy_slash",
+      "gs_cleave",
+      "gs_overhead_blow",
+      "gs_whirlwind",
+      "gs_power_stance",
+      "gs_guard"
+    ]
   }
 ]
