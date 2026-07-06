@@ -35,6 +35,7 @@ import { seedGroupBattle } from './game/scenes/seedGroupBattle'
 import { seedTutorialBattle } from './game/scenes/seedTutorialBattle'
 import { TutorialOverlay } from './ui/overlays/TutorialOverlay'
 import { enemyLevelFor } from './systems/difficulty'
+import { setMusicContext, sfx, unlockAudio, setMuted } from './audio/engine'
 import { asNodeId } from './domain/ids'
 import type { Unit } from './domain/unit'
 import { createErrorBus } from './state/errorBus'
@@ -99,6 +100,28 @@ export function App(): React.JSX.Element {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Audio: unlock on first gesture (autoplay policy), ambient bed follows the
+  // active view, master mute follows metaStore.
+  useEffect(() => {
+    const unlock = (): void => unlockAudio()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+  useEffect(() => {
+    setMusicContext(
+      view === 'combat' ? 'combat'
+        : view === 'town' ? 'town'
+          : view === 'overworld' || view === 'camp' || view === 'dungeon' ? 'overworld'
+            : 'none',
+    )
+  }, [view])
+  const audioMuted = useMetaStore((s) => s.audioMuted)
+  useEffect(() => { setMuted(audioMuted) }, [audioMuted])
 
   // Q key opens quest log when in overworld/town/dungeon
   useEffect(() => {
@@ -187,9 +210,11 @@ export function App(): React.JSX.Element {
         if (s.state.battleTag === 'finalBoss') {
           useMetaStore.getState().dispatch({ type: 'recordRunCompleted', payload: { won: true } })
         }
+        sfx('victory')
       }
       if (phase === 'DEFEAT') {
         useMetaStore.getState().dispatch({ type: 'recordRunCompleted', payload: { won: false } })
+        sfx('defeat')
       }
     })
     return () => { unsub() }

@@ -4,6 +4,7 @@ export type MetaAction =
   | { type: 'startNewRun' }
   | { type: 'recordRunCompleted'; payload: { won: boolean } }
   | { type: 'markTutorialSeen' }
+  | { type: 'setAudioMuted'; payload: { muted: boolean } }
 
 interface MetaState {
   gameStarted: boolean
@@ -12,11 +13,13 @@ interface MetaState {
   runsLost: number
   /** First-run tutorial battle shown (persists across runs). */
   tutorialSeen: boolean
+  /** Master audio mute (synth engine; persists across runs, not across reload yet). */
+  audioMuted: boolean
   dispatch: (action: MetaAction) => void
   __reset: () => void
 }
 
-const initial = { gameStarted: false, totalRuns: 0, runsWon: 0, runsLost: 0, tutorialSeen: false }
+const initial = { gameStarted: false, totalRuns: 0, runsWon: 0, runsLost: 0, tutorialSeen: false, audioMuted: false }
 
 export const useMetaStore = create<MetaState>((set) => ({
   ...initial,
@@ -32,6 +35,9 @@ export const useMetaStore = create<MetaState>((set) => ({
         return
       case 'markTutorialSeen':
         set({ tutorialSeen: true })
+        return
+      case 'setAudioMuted':
+        set({ audioMuted: action.payload.muted })
         return
     }
   },

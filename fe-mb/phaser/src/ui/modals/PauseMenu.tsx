@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Dialog, Button, Heading } from '../components'
+import { useMetaStore } from '../../state/metaStore'
 
 export interface PauseMenuProps {
   open: boolean
@@ -24,6 +25,8 @@ export interface PauseMenuProps {
 export function PauseMenu({
   open, canSave, onClose, onResume, onSaveGame, onLoadGame, onReturnToTitle, onQuit,
 }: PauseMenuProps): React.JSX.Element {
+  const audioMuted = useMetaStore((st) => st.audioMuted)
+  const dispatchMeta = useMetaStore((st) => st.dispatch)
   const [confirmTitle, setConfirmTitle] = useState(false)
 
   React.useEffect(() => {
@@ -55,6 +58,14 @@ export function PauseMenu({
           <div className="flex flex-col gap-2">
             <Button id="pause-resume" variant="primary" onPress={onResume} className="w-full">
               Resume
+            </Button>
+            <Button
+              id="pause-sound"
+              variant="secondary"
+              onPress={() => dispatchMeta({ type: 'setAudioMuted', payload: { muted: !audioMuted } })}
+              className="w-full"
+            >
+              {audioMuted ? 'Sound: Off' : 'Sound: On'}
             </Button>
             <Button
               id="pause-save"

@@ -6,6 +6,7 @@ import { useRunStore } from '../../state/runStore'
 import { CombatRuntime } from '../runtime/CombatRuntime'
 import { createRng } from '../../systems/rng'
 import { seedStubBattle } from './seedStubBattle'
+import { sfx } from '../../audio/engine'
 import { tilesInRange, tilesInAoe, tilesReachable, findMovePath } from '../../systems/targeting'
 import { planTurn } from '../../systems/enemyAI'
 import { computeForecast, type ForecastCard } from '../../systems/damage'
@@ -839,6 +840,7 @@ export class BoardScene extends Phaser.Scene {
     } else if (e.kind === 'FloatDamage') {
       const tileStr = e.tile as unknown as string
       const { x, y } = tileToWorld(tileStr)
+      sfx(e.damageKind === 'heal' ? 'heal' : e.damageKind === 'magic' ? 'hitMagic' : 'hitPhysical')
       const color = e.damageKind === 'heal' ? '#44dd66'
         : e.damageKind === 'magic' ? '#88aaff'
           : '#ff6644'
