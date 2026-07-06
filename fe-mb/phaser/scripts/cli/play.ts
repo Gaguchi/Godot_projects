@@ -19,8 +19,8 @@ import { useRunStore } from '../../src/state/runStore'
 import { seedStubBattle } from '../../src/game/scenes/seedStubBattle'
 import { seedDungeonBattle } from '../../src/game/scenes/seedDungeonBattle'
 import { createRng } from '../../src/systems/rng'
-import { buildUnit } from '../../src/systems/buildUnit'
 import { getItemDef } from '../../src/data/itemRegistry'
+import { buildStarterParty } from '../../src/systems/starterParty'
 import { bootstrapDialogues } from '../../src/state/dialogueBootstrap'
 import { getDialogue, listDialogueIds } from '../../src/state/dialogueRegistry'
 import { predicateStateFromRun } from '../../src/state/runStore'
@@ -50,24 +50,24 @@ function parseArgs(argv: string[]): { positional: string[]; flags: Record<string
   return { positional, flags }
 }
 
-const STARTERS: Array<[string, string, string]> = [
-  ['lord', 'Roy', 'roy'],
-  ['knight', 'Marcus', 'marcus'],
-  ['mage', 'Lilina', 'lilina'],
-]
+/** Starter party WITH ship-plan loadouts — mirrors the real New Game flow. */
 function starterParty(): Unit[] {
-  return STARTERS.map(([cls, name, id]) => buildUnit(cls, 1, name, id)).filter((u): u is Unit => u !== null)
+  return buildStarterParty()
 }
 
 /**
  * Gear loadout spec → hand slots on the starter party (story 452).
  * Format: "roy=iron_sword+iron_buckler;marcus=iron_greatsword" (right slot
- * optional). "default" = ship-plan starter loadouts. Bypasses the bag —
+ * optional). "default" = ship-plan starter loadouts (the no-flag default too);
+ * "none" strips all gear (innate-only baseline). Bypasses the bag —
  * simulation-only convenience; the real game equips through runStore.
  */
 const DEFAULT_LOADOUT = 'roy=iron_sword+iron_buckler;marcus=iron_lance+iron_buckler;lilina=fire_tome'
 function applyLoadout(units: Unit[], spec: string | true | undefined): Unit[] {
   if (spec === undefined) return units
+  if (spec === 'none') {
+    return units.map((u) => ({ ...u, handLeft: null, handRight: null }))
+  }
   const raw = spec === true || spec === 'default' ? DEFAULT_LOADOUT : spec
   const slots = new Map<string, { left: string | null; right: string | null }>()
   for (const part of raw.split(';')) {
@@ -144,7 +144,7 @@ function reportMode(flags: Record<string, string | true>): void {
     : ['stub', 'dungeon:smugglers_cave:combat', 'dungeon:smugglers_cave:elite', 'dungeon:smugglers_cave:boss']
   const loadouts: Array<string | true | undefined> =
     typeof flags.loadout === 'string' && flags.loadout.includes('|')
-      ? flags.loadout.split('|').map(l => (l === 'none' ? undefined : l))
+      ? flags.loadout.split('|')
       : [flags.loadout]
   console.log(`balance report — ${seeds} seeds/scenario, greedy party AI vs enemy AI\n`)
   console.log('scenario'.padEnd(36) + 'win%   loss%  stale%  avg-turns')

@@ -23,15 +23,11 @@ import { writeSlot, readSlot } from './persistence/saveSlots'
 import { diagLog, diag } from './state/diagLog'
 import { useCombatStore } from './state/combatStore'
 import { useRunStore } from './state/runStore'
-import { buildUnit } from './systems/buildUnit'
+import { buildStarterParty } from './systems/starterParty'
+import { resolveBattle } from './systems/battleResolver'
+import { createRng, deriveRng } from './systems/rng'
+import { allItemDefs } from './data/itemRegistry'
 import { asNodeId } from './domain/ids'
-
-/** Starting roster seeded into the run at New Game: [classId, name, stableId]. */
-const STARTING_PARTY: Array<[string, string, string]> = [
-  ['lord', 'Roy', 'roy'],
-  ['knight', 'Marcus', 'marcus'],
-  ['mage', 'Lilina', 'lilina'],
-]
 import { createErrorBus } from './state/errorBus'
 import { createEventBus } from './state/eventBus'
 import { createActionLog } from './state/actionLog'
@@ -88,9 +84,8 @@ export function App(): React.JSX.Element {
     if (run.party.partyOrder.length > 0) return
     run.dispatch({ type: 'addGold', payload: { amount: 80 } })
     run.dispatch({ type: 'applyQuestEffects', payload: { effects: [{ kind: 'addFood', amount: 5 }] } })
-    for (const [classId, name, id] of STARTING_PARTY) {
-      const u = buildUnit(classId, 1, name, id)
-      if (u) run.dispatch({ type: 'recruitUnit', payload: { unit: u } })
+    for (const u of buildStarterParty()) {
+      run.dispatch({ type: 'recruitUnit', payload: { unit: u } })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -128,20 +123,30 @@ export function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKey)
   }, [view, saveModalOpen, loadModalOpen, questLogOpen])
 
-  // F-26: Permadeath sync. When combat phase becomes VICTORY/DEFEAT, walk
-  // the units and record fallen party members in runStore.deathLog. On
-  // VICTORY, also remove them from runStore.party so subsequent battles
-  // are seeded without them.
+  // F-26 + story 458: battle-end sync, fired ONCE per phase transition (the
+  // previous every-change subscription re-dispatched fallenUnit on every
+  // store update during VICTORY). On VICTORY/DEFEAT: record fallen party in
+  // deathLog; on VICTORY additionally sweep the fallen from the party and
+  // pay out the BattleResult (gold per §11 formula + gear loot rolled via
+  // deriveRng('loot:BATTLE')) through the atomic applyBattleResult action.
   useEffect(() => {
+    let lastPhase: string = useCombatStore.getState().state.phase
     const unsub = useCombatStore.subscribe((s) => {
-      if (s.state.phase !== 'VICTORY' && s.state.phase !== 'DEFEAT') return
+      const phase = s.state.phase
+      if (phase === lastPhase) return
+      lastPhase = phase
+      if (phase !== 'VICTORY' && phase !== 'DEFEAT') return
+
+      const isEnemy = (cid: string): boolean => cid.includes('bandit') || cid.includes('brigand') || cid.includes('wolf')
       const fallenPartyIds: string[] = []
+      const partyIds: string[] = []
+      const enemyIds: string[] = []
       for (const u of Object.values(s.state.units)) {
-        if (u.hp.current > 0) continue
-        if ((u.classId as unknown as string).includes('bandit')) continue
-        fallenPartyIds.push(u.id as unknown as string)
+        const cid = u.classId as unknown as string
+        if (isEnemy(cid)) { enemyIds.push(u.id as unknown as string); continue }
+        partyIds.push(u.id as unknown as string)
+        if (u.hp.current <= 0) fallenPartyIds.push(u.id as unknown as string)
       }
-      if (fallenPartyIds.length === 0) return
       const turn = s.state.turn.number
       for (const id of fallenPartyIds) {
         useRunStore.getState().dispatch({
@@ -149,12 +154,22 @@ export function App(): React.JSX.Element {
           payload: { unitId: id as never, cause: 'battle', turn },
         })
       }
-      // On VICTORY, sweep dead party from runStore.party so they don't reseed
-      if (s.state.phase === 'VICTORY') {
-        useRunStore.getState().dispatch({
-          type: 'sweepFallenUnits',
-          payload: { unitIds: fallenPartyIds as never[] },
+      if (phase === 'VICTORY') {
+        const run = useRunStore.getState()
+        if (fallenPartyIds.length > 0) {
+          run.dispatch({ type: 'sweepFallenUnits', payload: { unitIds: fallenPartyIds as never[] } })
+        }
+        const battleId = `${run.worldPosition.nodeId as unknown as string}:d${run.daysElapsed}`
+        const result = resolveBattle({
+          state: s.state,
+          battleId,
+          partyIds: partyIds as never[],
+          enemyIds: enemyIds as never[],
+          consumedTravelHop: null,
+          lootRng: deriveRng(createRng(run.rngState), `loot:${battleId}`),
+          lootPool: allItemDefs(),
         })
+        run.dispatch({ type: 'applyBattleResult', payload: { result } })
       }
     })
     return () => { unsub() }
@@ -172,9 +187,8 @@ export function App(): React.JSX.Element {
     // on the overworld (HUD roster) — not only conjured at the first battle.
     // Guard against double-seeding on a same-session second New Game.
     if (run.party.partyOrder.length === 0) {
-      for (const [classId, name, id] of STARTING_PARTY) {
-        const u = buildUnit(classId, 1, name, id)
-        if (u) run.dispatch({ type: 'recruitUnit', payload: { unit: u } })
+      for (const u of buildStarterParty()) {
+        run.dispatch({ type: 'recruitUnit', payload: { unit: u } })
       }
     }
     setView('overworld')

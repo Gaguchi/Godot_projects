@@ -7,7 +7,7 @@ import type { BattleResult, PendingTravelPath } from '../contracts'
 import type { DungeonGraph } from '../domain/map'
 import type { RngState } from '../domain/rng'
 import type { PredicateState } from '../systems/predicates'
-import { planEquip, planUnequip } from '../systems/equipment'
+import { planEquip, planUnequip, placeInBag } from '../systems/equipment'
 import { getItemDef } from '../data/itemRegistry'
 import { diag } from './diagLog'
 
@@ -438,13 +438,23 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
       }
       case 'applyBattleResult': {
         const r = action.payload.result
-        set(s => ({
-          gold: s.gold + r.goldEarned,
-          deathLog: [
-            ...s.deathLog,
-            ...r.fallen.map(unitId => ({ unitId, cause: 'battle', turn: 0 })),
-          ],
-        }))
+        set(s => {
+          // Loot into the bag at first-free cells; overflow is dropped with a warning.
+          let items = s.inventory.items
+          if (r.loot.length > 0) {
+            const placed = placeInBag(items, r.loot)
+            if (placed) items = placed
+            else diag('store.run', 'battle loot dropped — bag full', { loot: r.loot }, 'warn')
+          }
+          return {
+            gold: s.gold + r.goldEarned,
+            inventory: items === s.inventory.items ? s.inventory : { items },
+            deathLog: [
+              ...s.deathLog,
+              ...r.fallen.map(unitId => ({ unitId, cause: 'battle', turn: 0 })),
+            ],
+          }
+        })
         return
       }
       case 'applyQuestEffects': {

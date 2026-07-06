@@ -1,8 +1,11 @@
 import type { CombatState } from '../domain/combatState'
 import type { BattleResult } from '../contracts'
 import type { Unit } from '../domain/unit'
+import type { Item } from '../domain/item'
 import type { UnitId } from '../domain/ids'
+import type { RNG } from '../domain/rng'
 import type { DomainEvent } from '../contracts'
+import { rollBattleLoot } from './loot'
 
 export interface ResolveBattleInput {
   state: CombatState
@@ -10,12 +13,15 @@ export interface ResolveBattleInput {
   partyIds: UnitId[]
   enemyIds: UnitId[]
   consumedTravelHop: number | null
+  /** When provided (deriveRng('loot:BATTLE')), victory rolls gear loot (§11). */
+  lootRng?: RNG
+  lootPool?: readonly Item[]
 }
 
 function isAlive(u: Unit): boolean { return u.hp.current > 0 }
 
 export function resolveBattle(input: ResolveBattleInput): BattleResult {
-  const { state, battleId, partyIds, enemyIds, consumedTravelHop } = input
+  const { state, battleId, partyIds, enemyIds, consumedTravelHop, lootRng, lootPool } = input
 
   const allUnits = state.units
   const survivors: UnitId[] = []
@@ -45,6 +51,17 @@ export function resolveBattle(input: ResolveBattleInput): BattleResult {
   const xpAwards: Record<string, number> = {}
   for (const id of survivors) xpAwards[id as unknown as string] = 0
 
+  // Loot: victory only; rarity weighted by the strongest defeated enemy.
+  let loot: BattleResult['loot'] = []
+  if (outcome === 'victory' && lootRng && lootPool) {
+    let maxLevel = 1
+    for (const id of enemyIds) {
+      const u = allUnits[id as unknown as string]
+      if (u && !isAlive(u)) maxLevel = Math.max(maxLevel, u.level)
+    }
+    loot = rollBattleLoot(maxLevel, lootRng, lootPool)
+  }
+
   const battleOutcomeEvent: DomainEvent = outcome === 'defeat'
     ? { type: 'BattleDefeat', payload: { battleId } }
     : { type: 'BattleVictory', payload: { battleId, survivors, capturedIds: [] } }
@@ -62,6 +79,7 @@ export function resolveBattle(input: ResolveBattleInput): BattleResult {
     xpAwards,
     capturedEnemies: [],   // populated when capture event fires (next milestone)
     goldEarned,
+    loot,
     consumedTravelHop,
     emittedEvents,
   }

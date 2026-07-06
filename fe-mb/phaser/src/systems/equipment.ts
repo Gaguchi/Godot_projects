@@ -48,7 +48,14 @@ function firstFreeCell(bag: BagEntry[]): { x: number; y: number } | null {
   return null
 }
 
-/** Append items to the bag at the first free cells; null if they don't all fit. */
+/**
+ * Append items to the bag at the first free cells; null if they don't all fit.
+ * Exported for loot/reward insertion (applyBattleResult, treasure rooms).
+ */
+export function placeInBag(bag: readonly BagEntry[], ids: ItemId[]): BagEntry[] | null {
+  return returnToBag(bag.slice(), ids)
+}
+
 function returnToBag(bag: BagEntry[], ids: ItemId[]): BagEntry[] | null {
   let next = bag.slice()
   for (const id of ids) {
