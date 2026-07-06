@@ -31,6 +31,8 @@ import { createRng, deriveRng } from './systems/rng'
 import { allItemDefs } from './data/itemRegistry'
 import { seedBossBattle } from './game/scenes/seedBossBattle'
 import { seedDungeonBattle } from './game/scenes/seedDungeonBattle'
+import { seedGroupBattle } from './game/scenes/seedGroupBattle'
+import { enemyLevelFor } from './systems/difficulty'
 import { asNodeId } from './domain/ids'
 import type { Unit } from './domain/unit'
 import { createErrorBus } from './state/errorBus'
@@ -323,6 +325,23 @@ export function App(): React.JSX.Element {
     setView('combat')
   }, [])
 
+  // Travel-encounter battles: seed the ROLLED enemy group scaled to the
+  // region's difficulty band (was: every travel fight was 3 stub bandits).
+  const onTravelToCombat = useCallback((nodeId: unknown, enemyGroupId?: string) => {
+    if (enemyGroupId) {
+      const run = useRunStore.getState()
+      const mapId = run.worldPosition.mapId as unknown as string
+      const level = enemyLevelFor(mapId, `${mapId}:${String(nodeId)}:${run.daysElapsed}`)
+      const rng = deriveRng(createRng(run.rngState), `battle:${enemyGroupId}:${String(nodeId)}`)
+      try {
+        useCombatStore.getState().dispatch(seedGroupBattle(enemyGroupId, level, rng.state(), livingParty()), rng)
+      } catch (e) {
+        diag('route', `group battle seed failed, stub fallback: ${(e as Error).message}`, undefined, 'warn')
+      }
+    }
+    setView('combat')
+  }, [])
+
   const onContinueToOverworld = useCallback(() => {
     // Travel encounter resolved successfully — consume pending path and arrive
     const run = useRunStore.getState()
@@ -350,7 +369,7 @@ export function App(): React.JSX.Element {
           )}
           {view === 'overworld' && (
             <OverworldScene
-              onTravelToCombat={() => setView('combat')}
+              onTravelToCombat={onTravelToCombat}
               onEnterTown={(_nodeId, panel) => { setTownInitialPanel(panel ?? null); setView('town') }}
               onEnterCamp={() => setView('camp')}
               onEnterDungeon={() => setView('dungeon')}

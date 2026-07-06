@@ -63,7 +63,7 @@ const REGIONS = Object.fromEntries(
 export type TownPanel = 'inn' | 'shop' | 'tavern'
 
 export interface OverworldSceneProps {
-  onTravelToCombat: (nodeId: NodeId) => void
+  onTravelToCombat: (nodeId: NodeId, enemyGroupId?: string) => void
   onEnterTown: (nodeId: NodeId, panel?: TownPanel) => void
   onEnterCamp: (nodeId: NodeId) => void
   onEnterDungeon: (nodeId: NodeId) => void
@@ -199,8 +199,9 @@ export function OverworldScene({
   useEffect(() => {
     if (!pendingCombat) return
     if (pendingDialogue) return
+    const groupId = pendingCombat.enemyGroupId
     dispatchRun({ type: 'clearPendingCombat' })
-    _onTravelToCombat(asNodeId(currentNodeId))
+    _onTravelToCombat(asNodeId(currentNodeId), groupId)
   }, [pendingCombat, pendingDialogue, currentNodeId, _onTravelToCombat, dispatchRun])
 
   // ── Multi-hop travel via pendingTravelPath ──────────────────────
@@ -327,7 +328,7 @@ export function OverworldScene({
         }
         if (result.outcome.kind === 'battle') {
           // Combat suspends; player resumes from overworld after victory.
-          _onTravelToCombat(asNodeId(nextNodeId))
+          _onTravelToCombat(asNodeId(nextNodeId), result.outcome.enemyGroupId)
           return
         }
         if (result.outcome.kind === 'checkEvent') {
