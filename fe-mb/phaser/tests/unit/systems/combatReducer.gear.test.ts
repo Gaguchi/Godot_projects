@@ -268,3 +268,64 @@ describe('turn order: slow', () => {
     expect(s.turn.unitId).toBe(asUnitId('bandit'))
   })
 })
+
+describe('endTurn: turn-start restoration (the playtest bug — AP never reset)', () => {
+  it('restores the next unit to full AP and a full hand each round', () => {
+    // two units so turns alternate: roy (spd 5) then bandit (spd 4)
+    const roy = mk('roy', '2,4', 'lord', { stats: { str: 5, mag: 0, skl: 4, spd: 5, def: 0, res: 0, lck: 0 } })
+    const bandit = mk('bandit', '9,9', 'bandit', { stats: { str: 4, mag: 0, skl: 3, spd: 4, def: 0, res: 0, lck: 0 } })
+    let s = reduce(initialCombatState(), {
+      type: 'startBattle',
+      payload: {
+        units: [roy, bandit],
+        grid: { width: 14, height: 10, obstacles: new Set() },
+        rngSeed: { seed: 7, counter: 0 },
+        decks: {
+          roy: { draw: [asCardId('a'), asCardId('b'), asCardId('c'), asCardId('d'), asCardId('e'), asCardId('f'), asCardId('g')], hand: [], discard: [] },
+          bandit: { draw: [asCardId('x'), asCardId('y')], hand: [], discard: [] },
+        },
+      },
+    }, rng()).state
+    expect(s.turn.unitId).toBe(asUnitId('roy'))
+    expect(s.decks['roy']!.hand).toHaveLength(5)
+
+    // roy burns AP on two cards, then ends
+    for (const _ of [1, 2]) {
+      const cardId = s.decks['roy']!.hand[0]!
+      s = reduce(s, {
+        type: 'playCard',
+        payload: { cardId, srcId: asUnitId('roy'), targets: [], card: { apCost: 1, targetKind: 'self', effects: [] } },
+      }, rng()).state
+      s = reduce(s, { type: 'animationsCompleted' }, rng()).state
+    }
+    expect(s.units['roy']!.ap).toBe(1)
+    s = reduce(s, { type: 'endTurn' }, rng()).state       // → bandit
+    s = reduce(s, { type: 'endTurn' }, rng()).state       // → roy, round 2
+
+    const royBack = s.units['roy']!
+    expect(s.turn.unitId).toBe(asUnitId('roy'))
+    expect(royBack.ap).toBe(3)                            // ← THE BUG: was stuck at 1
+    expect(s.decks['roy']!.hand).toHaveLength(5)          // fresh hand
+  })
+
+  it('reshuffles the discard into draw across many rounds without card loss', () => {
+    const roy = mk('roy', '2,4', 'lord')
+    const bandit = mk('bandit', '9,9', 'bandit', { stats: { str: 4, mag: 0, skl: 3, spd: 4, def: 0, res: 0, lck: 0 } })
+    let s = reduce(initialCombatState(), {
+      type: 'startBattle',
+      payload: {
+        units: [roy, bandit],
+        grid: { width: 14, height: 10, obstacles: new Set() },
+        rngSeed: { seed: 3, counter: 0 },
+        decks: { roy: { draw: [asCardId('a'), asCardId('b'), asCardId('c'), asCardId('d'), asCardId('e'), asCardId('f')], hand: [], discard: [] } },
+      },
+    }, rng()).state
+    for (let round = 0; round < 6; round++) {
+      s = reduce(s, { type: 'endTurn' }, rng()).state     // roy ends (hand → discard)
+      s = reduce(s, { type: 'endTurn' }, rng()).state     // bandit ends → roy refills
+      const d = s.decks['roy']!
+      expect(d.hand.length).toBe(5)
+      expect(d.hand.length + d.draw.length + d.discard.length).toBe(6) // no card loss
+    }
+  })
+})

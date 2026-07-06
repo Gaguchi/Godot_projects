@@ -59,7 +59,7 @@ export function TownScene({ onLeave, initialPanel }: TownSceneProps): React.JSX.
       <div aria-hidden className="hearth-glow absolute inset-0" />
       <div aria-hidden className="iron-grain absolute inset-0 opacity-[0.05]" />
 
-      <GameHud regionName={regionLabel} location={town.name} partySide="right" />
+      <GameHud regionName={regionLabel} location={town.name} showParty={false} />
 
       {/* sidebar = carved iron signboard */}
       <aside

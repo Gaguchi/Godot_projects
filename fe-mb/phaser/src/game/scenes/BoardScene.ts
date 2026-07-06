@@ -36,6 +36,7 @@ interface UnitView {
   hpBar: Phaser.GameObjects.Rectangle
   glow: Phaser.GameObjects.Arc | null
   sprite?: Phaser.GameObjects.Sprite | undefined
+  nameText: Phaser.GameObjects.Text
 }
 
 /** Character sprite ids loaded in preload(); keys are `unit_<id>`. */
@@ -737,7 +738,7 @@ export class BoardScene extends Phaser.Scene {
           if (pointer.rightButtonDown()) return
           this.onUnitClick(idStr)
         })
-        view = { container, body, hpBar, glow: null, sprite }
+        view = { container, body, hpBar, glow: null, sprite, nameText }
         this.unitViews.set(idStr, view)
       }
       if (!view) continue
@@ -746,6 +747,11 @@ export class BoardScene extends Phaser.Scene {
         const { x, y } = tileToWorld(unit.position as unknown as string)
         view.container.setPosition(x, y)
       }
+      // Painter's order: lower rows render in front, so tall sprites never
+      // get sliced by the unit below. Names show only for the ACTIVE unit —
+      // a wall of floating labels was the #1 clutter in playtest.
+      view.container.setDepth(view.container.y)
+      view.nameText.setVisible(activeId === idStr)
 
       const hpFraction = unit.hp.current / Math.max(1, unit.hp.max)
       view.hpBar.width = Math.max(0, 32 * hpFraction)

@@ -50,6 +50,9 @@ function isAlive(u: Unit): boolean { return u.hp.current > 0 }
 /** Cards a unit holds at the start of its turn (refill target). */
 export const HAND_SIZE = 5
 
+/** Action points restored at the start of every unit's turn. */
+export const AP_PER_TURN = 3
+
 /**
  * Draw up to `count` cards from draw→hand, reshuffling the discard pile into
  * the draw pile (deterministically, via rngState) when it runs dry. Returns
@@ -236,12 +239,13 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       const phase = checkEnd(tickedState)
       if (phase !== 'COMBAT') return { state: { ...tickedState, phase }, effects: tickEffects }
 
-      // Reset hasMovedThisTurn for the unit whose turn is starting so they can
-      // use their free move again.
+      // Turn-start restoration for the unit whose turn begins: free move
+      // back, and AP restored to full — without this every unit bled to
+      // 0 AP by round 2-3 and combat died (the playtest bug).
       const nextKey = nextId as unknown as string
       const newUnits = { ...tickedState.units }
       const nextUnit = newUnits[nextKey]
-      if (nextUnit) newUnits[nextKey] = { ...nextUnit, hasMovedThisTurn: false }
+      if (nextUnit) newUnits[nextKey] = { ...nextUnit, hasMovedThisTurn: false, ap: AP_PER_TURN }
 
       // Deck cycling (StS model): the ENDING unit discards its whole hand —
       // no hand clogging, every turn starts fresh — then the unit whose turn

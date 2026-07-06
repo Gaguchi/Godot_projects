@@ -37,6 +37,9 @@ export interface GameHudProps {
    * shadow for a band-safe inset bevel.
    */
   surface?: 'dark' | 'parchment'
+  /** Hide the floating party roster (town panels — it overlapped shop rows;
+   *  the loadout screen (I) carries party detail there). */
+  showParty?: boolean
 }
 
 function hpFill(c: number, m: number): string {
@@ -69,6 +72,7 @@ export function GameHud({
   location,
   regionName,
   partySide = 'left',
+  showParty = true,
   partyClassName,
   surface = 'dark',
 }: GameHudProps): React.JSX.Element {
@@ -108,7 +112,7 @@ export function GameHud({
   return (
     <>
       {/* Party roster */}
-      {order.length > 0 && (
+      {showParty && order.length > 0 && (
         <div className={rosterClass} style={rosterStyle}>
           <div className="mb-2 flex items-center justify-between px-0.5">
             <span

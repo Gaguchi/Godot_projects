@@ -651,9 +651,20 @@ export function OverworldScene({
                     by cameraX), so clamp its on-screen X into the viewport, then
                     convert back to pan-layer left. */}
                 {quickMenuNode?.id !== node.id && (() => {
+                  // CENTER the 160px label box on the disc (the old left-edge
+                  // anchoring floated every name ~80px right of its node), and
+                  // alternate above/below placement by a stable id hash so
+                  // clustered nodes don't stack their labels (QA sweep).
+                  const idStr2 = node.id as unknown as string
+                  let h = 0
+                  for (let ci = 0; ci < idStr2.length; ci++) h = (h * 31 + idStr2.charCodeAt(ci)) >>> 0
+                  const below = h % 2 === 0
                   const screenX = node.position.x + cameraX
-                  const clampedScreenX = Math.min(STAGE_W - 166, Math.max(6, screenX))
-                  const labelLeft = clampedScreenX - cameraX
+                  // Off-screen discs get NO label — the old edge-clamping
+                  // squeezed every off-view name into one overlapping column.
+                  if (screenX < 40 || screenX > STAGE_W - 40) return null
+                  const clampedScreenX = Math.min(STAGE_W - 86, Math.max(86, screenX))
+                  const labelLeft = clampedScreenX - cameraX - 80
                   return (
                     <div
                       className={
@@ -662,9 +673,9 @@ export function OverworldScene({
                       }
                       style={{
                         left: labelLeft,
-                        top: node.position.y + 30,
+                        top: below ? node.position.y + 28 : node.position.y - 44,
                         width: 160,
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: isCurrent ? 700 : 600,
                         color: isCurrent ? pal.accent : pal.ink,
                         opacity: 1,

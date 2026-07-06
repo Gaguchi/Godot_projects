@@ -154,9 +154,17 @@ const BEDS: Record<Exclude<MusicContext, 'none'>, { root: number; fifth: number;
   town:      { root: 98.0,  fifth: 146.83, pulse: false, bright: 900 },  // G2 — warmer hearth
 }
 
+/**
+ * Ambient beds are DISABLED per playtest feedback ("kill the droning music")
+ * — the generative drones read as noise, not atmosphere. SFX remain. Real
+ * composed tracks can re-enable this by flipping MUSIC_ENABLED.
+ */
+const MUSIC_ENABLED = false
+
 export function setMusicContext(context: MusicContext): void {
   if (context === st.musicContext) return
   st.musicContext = context
+  if (!MUSIC_ENABLED) { stopMusic(); return }
   const ctx = ensureCtx()
   if (!ctx || !st.musicGain) return
   stopMusic()

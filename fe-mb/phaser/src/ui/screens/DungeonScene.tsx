@@ -198,15 +198,15 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
         id="dungeon-leave-btn"
         variant="danger"
         onPress={onLeave}
-        className="!absolute !top-4 !right-4 !text-xs"
+        className="!absolute !top-4 !right-16 !text-xs"
       >
         Retreat
       </Button>
 
       <div className="mt-8 text-stone-500 text-xs tracking-wider">
         {currentNodeId
-          ? `at: ${currentNodeId}  ·  click an adjacent room to advance`
-          : 'enter the dungeon by clicking the lowest row'}
+          ? 'click a connected room to advance'
+          : 'enter the dungeon by clicking a room on the lowest row'}
       </div>
 
       <div className="relative mt-8" style={{ width: mapWidth, height: mapHeight + 64 }}>
@@ -293,7 +293,7 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
         )}
       </div>
 
-      <div className="mt-6 text-[11px] text-stone-500 flex gap-4">
+      <div className="fixed bottom-3 right-4 z-[70] text-[11px] text-stone-500 flex gap-4 px-3 py-1.5 rounded bg-stone-950/80 border border-stone-800">
         <span className="text-red-500 flex items-center gap-1"><Icon name="combat" size={14} /> Combat</span>
         <span className="text-purple-400 flex items-center gap-1"><Icon name="event" size={14} /> Event</span>
         <span className="text-emerald-400 flex items-center gap-1"><Icon name="rest" size={14} /> Rest</span>
