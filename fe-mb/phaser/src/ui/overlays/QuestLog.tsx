@@ -16,6 +16,14 @@ const QUEST_DESCRIPTIONS: Record<string, { name: string; stages: Record<string, 
       __complete__: 'Quest complete.',
     },
   },
+  sq_missing_caravan: {
+    name: 'The Missing Caravan',
+    stages: {
+      find_supplies: 'Search the south roads for the lost guild caravan.',
+      return_reward: 'Return to Riverside Market with the manifest.',
+      __complete__: 'Quest complete.',
+    },
+  },
 }
 
 export function QuestLog({ open, onClose }: QuestLogProps): React.JSX.Element {

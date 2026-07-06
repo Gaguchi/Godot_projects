@@ -20,6 +20,7 @@ export type QuestEffect =
   | { kind: 'startDialogue'; treeId: DialogueId }
   | { kind: 'completeQuest'; questId: QuestId }
   | { kind: 'addGold'; amount: number }
+  | { kind: 'addItem'; itemId: string }
   | { kind: 'addFood'; amount: number }
   | { kind: 'damageParty'; amount: number }
   | { kind: 'healParty'; percent: number }

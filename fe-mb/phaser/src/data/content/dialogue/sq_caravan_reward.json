@@ -1,0 +1,26 @@
+{
+  "id": "sq_caravan_reward",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "The manifest... then it's true, and my people are gone. You've given the guild its answer, grim as it is. The promised blade is yours — Thornwood serpent-steel.",
+      "onEnter": [
+        { "kind": "setFlag", "key": "caravan_reward_claimed", "value": true, "scope": "permanent" },
+        { "kind": "addItem", "itemId": "serpent_blade" },
+        { "kind": "addGold", "amount": 40 },
+        { "kind": "completeQuest", "questId": "sq_missing_caravan" }
+      ],
+      "choices": [
+        { "id": "continue", "text": "Continue", "effects": [], "next": "end" }
+      ],
+      "speaker": "Guildmistress Anya"
+    },
+    "end": {
+      "id": "end",
+      "text": "Anya bows her head over the manifest.",
+      "choices": [],
+      "speaker": ""
+    }
+  }
+}

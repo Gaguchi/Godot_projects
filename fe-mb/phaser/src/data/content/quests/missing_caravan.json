@@ -1,0 +1,42 @@
+{
+  "id": "sq_missing_caravan",
+  "name": "The Missing Caravan",
+  "initialStage": "find_supplies",
+  "stages": {
+    "find_supplies": {
+      "id": "find_supplies",
+      "onEnter": [],
+      "listeners": [
+        {
+          "on": "FlagSet",
+          "predicate": { "kind": "flag", "key": "caravan_supplies_found", "equals": true },
+          "emit": [
+            { "kind": "advanceQuestStage", "questId": "sq_missing_caravan", "toStage": "return_reward" }
+          ]
+        }
+      ],
+      "transitions": [
+        {
+          "when": { "kind": "flag", "key": "caravan_supplies_found", "equals": true },
+          "to": "return_reward"
+        }
+      ],
+      "onExit": []
+    },
+    "return_reward": {
+      "id": "return_reward",
+      "onEnter": [],
+      "listeners": [
+        {
+          "on": "FlagSet",
+          "predicate": { "kind": "flag", "key": "caravan_reward_claimed", "equals": true },
+          "emit": [
+            { "kind": "completeQuest", "questId": "sq_missing_caravan" }
+          ]
+        }
+      ],
+      "transitions": [],
+      "onExit": []
+    }
+  }
+}

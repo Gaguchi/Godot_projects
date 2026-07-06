@@ -1,0 +1,104 @@
+{
+  "id": "deserter_plea",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "A gaunt man in the torn colors of the border legion stumbles from the treeline, hands raised. \"Mercy, travelers. I walked away from the war. There's a bounty on deserters \u2014 but I only wanted to go home.\"",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "Give him coin for the road. (30 gold)",
+          "effects": [],
+          "check": {
+            "kind": "gold",
+            "amount": 30
+          },
+          "onPass": "helped",
+          "onFail": "no_coin"
+        },
+        {
+          "id": "c1",
+          "text": "Turn him in at the next fort. (+60 gold)",
+          "effects": [
+            {
+              "kind": "addGold",
+              "amount": 60
+            },
+            {
+              "kind": "setFlag",
+              "key": "deserter_turned_in",
+              "value": true,
+              "scope": "permanent"
+            }
+          ],
+          "next": "turned_in"
+        },
+        {
+          "id": "c2",
+          "text": "Walk on.",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Deserter"
+    },
+    "helped": {
+      "id": "helped",
+      "text": "He clasps your hand, coin disappearing into a threadbare sleeve. \"The legion taught me scouting before it taught me killing. If our roads cross again, I'll remember this.\"",
+      "onEnter": [
+        {
+          "kind": "addGold",
+          "amount": -30
+        },
+        {
+          "kind": "setFlag",
+          "key": "deserter_helped",
+          "value": true,
+          "scope": "permanent"
+        }
+      ],
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Deserter"
+    },
+    "no_coin": {
+      "id": "no_coin",
+      "text": "Your purse is too light to spare anything. The deserter reads your face and slips back into the trees without a word.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Deserter"
+    },
+    "turned_in": {
+      "id": "turned_in",
+      "text": "He doesn't fight the rope. \"My brothers won't forget this,\" he says quietly. The fort pays its bounty in worn silver.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": "Deserter"
+    },
+    "end": {
+      "id": "end",
+      "text": "The road bends on.",
+      "choices": [],
+      "speaker": ""
+    }
+  }
+}

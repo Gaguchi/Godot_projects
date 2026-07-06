@@ -1,0 +1,61 @@
+{
+  "id": "sq_caravan_found",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "Broken wheels in the bracken. Torn silk, scattered salt \u2014 the guild caravan, stripped to the axles. Under a smashed dowry chest, the guild's sealed manifest survives.",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "Search the wreck and take the manifest.",
+          "effects": [
+            {
+              "kind": "setFlag",
+              "key": "caravan_supplies_found",
+              "value": true,
+              "scope": "permanent"
+            },
+            {
+              "kind": "advanceQuestStage",
+              "questId": "sq_missing_caravan",
+              "toStage": "return_reward"
+            }
+          ],
+          "next": "searched"
+        },
+        {
+          "id": "c1",
+          "text": "Leave it for the crows.",
+          "effects": [],
+          "next": "end"
+        }
+      ],
+      "speaker": ""
+    },
+    "searched": {
+      "id": "searched",
+      "text": "Among the ruin you salvage the manifest and a strongbox the raiders missed. Anya will want to see this.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [
+            {
+              "kind": "addGold",
+              "amount": 30
+            }
+          ],
+          "next": "end"
+        }
+      ],
+      "speaker": ""
+    },
+    "end": {
+      "id": "end",
+      "text": "The road waits.",
+      "choices": [],
+      "speaker": ""
+    }
+  }
+}

@@ -38,15 +38,15 @@ interface UnitView {
 }
 
 /** Character sprite ids loaded in preload(); keys are `unit_<id>`. */
-const UNIT_SPRITES = ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'bandit', 'bandit_archer', 'brigand_chief', 'wolf', 'daren'] as const
+const UNIT_SPRITES = ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'bandit', 'bandit_archer', 'brigand_chief', 'wolf', 'daren', 'warlord'] as const
 
 /** Map a combat unit to its character sprite texture key (or null -> shape token). */
 function unitSpriteKey(name: string, cls: string): string | null {
   const n = name.toLowerCase()
   for (const e of ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'daren', 'wolf']) if (n.includes(e)) return `unit_${e}`
   if (n.includes('archer')) return 'unit_bandit_archer'
-  // The Warlord boss reuses the brigand chief plate until a bespoke bake lands.
-  if (n.includes('brigand') || n.includes('chief') || n.includes('warlord') || cls.includes('warlord')) return 'unit_brigand_chief'
+  if (n.includes('warlord') || cls.includes('warlord')) return 'unit_warlord'
+  if (n.includes('brigand') || n.includes('chief')) return 'unit_brigand_chief'
   if (n.includes('bandit') || cls.includes('bandit')) return 'unit_bandit'
   if (cls.includes('lord')) return 'unit_roy'
   if (cls.includes('knight')) return 'unit_marcus'

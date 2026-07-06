@@ -13,6 +13,7 @@ export const QuestEffectSchema: z.ZodType<unknown> = z.lazy(() =>
     z.object({ kind: z.literal('startDialogue'), treeId: z.string() }),
     z.object({ kind: z.literal('completeQuest'), questId: z.string() }),
     z.object({ kind: z.literal('addGold'), amount: z.number().int() }),
+    z.object({ kind: z.literal('addItem'), itemId: z.string() }),
     z.object({ kind: z.literal('addFood'), amount: z.number().int() }),
     z.object({ kind: z.literal('damageParty'), amount: z.number().int().min(0) }),
     z.object({ kind: z.literal('healParty'), percent: z.number().min(0).max(1) }),

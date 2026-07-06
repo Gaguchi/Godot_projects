@@ -132,6 +132,19 @@ function applyQuestEffect(
     case 'addGold':
       set(s => ({ gold: s.gold + effect.amount }))
       return
+    case 'addItem': {
+      // Gear/consumable reward into the first free bag cell; dropped with a
+      // warning when the bag is full (quest rewards shouldn't hard-block).
+      set(s => {
+        const placed = placeInBag(s.inventory.items, [effect.itemId as unknown as ItemId])
+        if (!placed) {
+          diag('store.run', 'quest reward dropped — bag full', { itemId: effect.itemId }, 'warn')
+          return s
+        }
+        return { inventory: { items: placed } }
+      })
+      return
+    }
     case 'addFood': {
       // Food = food_rations item charges. Each food_rations item is +1 charge
       // for now (GP-C6 may switch to a charges field). Naively append items.

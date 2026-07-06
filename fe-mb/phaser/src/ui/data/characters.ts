@@ -161,6 +161,17 @@ const KNOWN: Record<string, CharacterDef> = {
     faction: 'enemy',
     shape: 'triangle',
   },
+  'The Warlord': {
+    id: 'The Warlord',
+    displayName: 'The Warlord',
+    initials: 'Wl',
+    sprite: '/sprites/units/warlord.png',
+    bgColor: 'bg-red-950',
+    ringColor: 'ring-red-500 border-red-500',
+    textColor: 'text-red-100',
+    faction: 'enemy',
+    shape: 'hex',
+  },
   'Bandit Leader': {
     id: 'Bandit Leader',
     displayName: 'Bandit Leader',

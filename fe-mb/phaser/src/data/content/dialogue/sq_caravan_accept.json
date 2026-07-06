@@ -1,0 +1,49 @@
+{
+  "id": "sq_caravan_accept",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "text": "You've the look of road-hardened folk. My caravan left for the Thornwood eleven days ago — silks, salt, and my sister's dowry chest. It never arrived.",
+      "choices": [
+        { "id": "continue", "text": "Continue", "effects": [], "next": "offer" }
+      ],
+      "speaker": "Guildmistress Anya"
+    },
+    "offer": {
+      "id": "offer",
+      "text": "Find what became of it. Whatever bandits left behind, the guild will trade you steel worth keeping for its return. A serpent-forged blade, Thornwood work.",
+      "choices": [
+        { "id": "c0", "text": "We'll find your caravan.", "effects": [], "next": "accept" },
+        { "id": "c1", "text": "Not our trouble.", "effects": [], "next": "decline" }
+      ],
+      "speaker": "Guildmistress Anya"
+    },
+    "accept": {
+      "id": "accept",
+      "text": "The drivers favored the south road toward the Thornwood eaves. Search the waysides — and if my people still breathe, tell them the guild hasn't forgotten them.",
+      "onEnter": [
+        { "kind": "advanceQuestStage", "questId": "sq_missing_caravan", "toStage": "find_supplies" },
+        { "kind": "setFlag", "key": "sq_caravan_active", "value": true, "scope": "permanent" }
+      ],
+      "choices": [
+        { "id": "continue", "text": "Continue", "effects": [], "next": "end" }
+      ],
+      "speaker": "Guildmistress Anya"
+    },
+    "decline": {
+      "id": "decline",
+      "text": "Then drink your drink and mind the roads. They've grown hungry of late.",
+      "choices": [
+        { "id": "continue", "text": "Continue", "effects": [], "next": "end" }
+      ],
+      "speaker": "Guildmistress Anya"
+    },
+    "end": {
+      "id": "end",
+      "text": "Anya returns to her ledgers.",
+      "choices": [],
+      "speaker": ""
+    }
+  }
+}

@@ -14,7 +14,47 @@
     "I heard there's good coin to be made clearing the roads of brigands.",
     "A traveling healer passed through last week. Sold potions at a fair price."
   ],
-  "tavernQuests": [],
+  "tavernQuests": [
+    {
+      "questId": "sq_missing_caravan",
+      "npcName": "Guildmistress Anya",
+      "npcDescription": "The merchant guild's mistress, ledgers spread before her, eyes red from lack of sleep.",
+      "dialogueId": "sq_caravan_accept",
+      "visibleIf": {
+        "kind": "allOf",
+        "preds": [
+          {
+            "kind": "notFlag",
+            "key": "sq_caravan_active"
+          },
+          {
+            "kind": "notFlag",
+            "key": "caravan_reward_claimed"
+          }
+        ]
+      }
+    },
+    {
+      "questId": "sq_missing_caravan",
+      "npcName": "Guildmistress Anya",
+      "npcDescription": "Anya looks up sharply \u2014 you carry news of her caravan.",
+      "dialogueId": "sq_caravan_reward",
+      "visibleIf": {
+        "kind": "allOf",
+        "preds": [
+          {
+            "kind": "questStage",
+            "questId": "sq_missing_caravan",
+            "stage": "return_reward"
+          },
+          {
+            "kind": "notFlag",
+            "key": "caravan_reward_claimed"
+          }
+        ]
+      }
+    }
+  ],
   "blacksmithEnabled": true,
   "arenaLocked": true,
   "arenaLockedText": "The arena is closed for repairs."

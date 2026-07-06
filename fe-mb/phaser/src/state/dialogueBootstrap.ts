@@ -9,6 +9,12 @@ import bloodTiesAccept from '../data/content/dialogue/sq_blood_ties_accept.json'
 import bloodTiesDarenCaptured from '../data/content/dialogue/sq_blood_ties_daren_captured.json'
 import bloodTiesDarenKilled from '../data/content/dialogue/sq_blood_ties_daren_killed.json'
 import testCrossroads from '../data/content/dialogue/test_event_crossroads.json'
+import caravanAccept from '../data/content/dialogue/sq_caravan_accept.json'
+import caravanFound from '../data/content/dialogue/sq_caravan_found.json'
+import caravanReward from '../data/content/dialogue/sq_caravan_reward.json'
+import deserterPlea from '../data/content/dialogue/deserter_plea.json'
+import deserterRepays from '../data/content/dialogue/deserter_repays.json'
+import desertersBrothers from '../data/content/dialogue/deserters_brothers.json'
 
 /**
  * Loads the 8 ported Godot dialogue trees into the in-memory registry.
@@ -20,6 +26,8 @@ export function bootstrapDialogues(): void {
     prologue, roadMerchant, woundedTraveler, banditThreat,
     bloodTiesAccept, bloodTiesDarenCaptured, bloodTiesDarenKilled,
     testCrossroads,
+    caravanAccept, caravanFound, caravanReward,
+    deserterPlea, deserterRepays, desertersBrothers,
   ]
   for (const t of trees) {
     registerDialogue(t as DialogueTree)
