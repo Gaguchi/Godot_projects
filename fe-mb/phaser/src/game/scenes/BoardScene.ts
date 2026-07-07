@@ -24,7 +24,7 @@ function movementRangeForClass(classId: string): number {
 
 const TILE: typeof GEO_TILE = GEO_TILE
 // Geometry lives in domain/boardGeometry (shared with the HUD's card drag).
-import { TILE as GEO_TILE, GRID_OFFSET_X as GEO_OX, GRID_OFFSET_Y as GEO_OY } from '../../domain/boardGeometry'
+import { TILE as GEO_TILE, GRID_OFFSET_X as GEO_OX, GRID_OFFSET_Y as GEO_OY, tileAtStagePoint } from '../../domain/boardGeometry'
 const GRID_OFFSET_X = GEO_OX
 const GRID_OFFSET_Y = GEO_OY
 const GRID_W = 14
@@ -103,6 +103,17 @@ export class BoardScene extends Phaser.Scene {
   private unsubEffects: (() => void) | null = null
   private unsubState: (() => void) | null = null
   private unitViews = new Map<string, UnitView>()
+  /** Chess-style unit drag (press → drag → drop on a reachable tile). */
+  private unitPress: {
+    unitId: string
+    startX: number
+    startY: number
+    originX: number
+    originY: number
+    dragging: boolean
+  } | null = null
+  /** Tile currently under a unit drag — brightened in renderTargeting. */
+  private dragHoverTile: string | null = null
   private tileRects = new Map<string, Phaser.GameObjects.Rectangle>()
   private tileSprites: Phaser.GameObjects.Image[] = []
   private aoePreview: Phaser.GameObjects.Graphics | null = null
@@ -170,6 +181,11 @@ export class BoardScene extends Phaser.Scene {
         cs2.dispatch({ type: 'cancelSelection' }, createRng(cs2.state.rng))
       }
     })
+
+    // Chess-style unit dragging: press tracking is per-unit; the move/up
+    // phase is scene-level so the drag survives leaving the hit circle.
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => this.onUnitDragMove(pointer))
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => this.onUnitDragEnd(pointer))
 
     // Tab toggles the global enemy threat overlay.
     this.input.keyboard?.on('keydown-TAB', (event: KeyboardEvent) => {
@@ -323,6 +339,16 @@ export class BoardScene extends Phaser.Scene {
     // it doesn't fight the hover layer).
     if (state.subPhase === 'IDLE' && this.globalDangerZone) {
       this.renderGlobalDangerZone(state)
+    }
+
+    // FE convention: the ACTIVE unit's movement range is visible from the
+    // moment its turn starts — no Move-button ceremony. Softer tint than
+    // explicit move-mode; suppressed while a card is being targeted.
+    if (state.subPhase === 'IDLE') {
+      for (const t of this.reachableForActive()) {
+        const rect = this.tileRects.get(t)
+        if (rect) rect.setFillStyle(0x1f4a5a, t === this.dragHoverTile ? 0.95 : 0.4)
+      }
     }
 
     if (state.subPhase === 'SELECTING_MOVE') {
@@ -587,51 +613,139 @@ export class BoardScene extends Phaser.Scene {
     cs.dispatch({ type: 'enterMoveMode', payload: { unitId: unit.id } }, createRng(state.rng))
   }
 
+  private beginUnitPress(unitIdStr: string, pointer: Phaser.Input.Pointer): void {
+    const view = this.unitViews.get(unitIdStr)
+    this.unitPress = {
+      unitId: unitIdStr,
+      startX: pointer.worldX,
+      startY: pointer.worldY,
+      originX: view?.container.x ?? pointer.worldX,
+      originY: view?.container.y ?? pointer.worldY,
+      dragging: false,
+    }
+  }
+
+  private onUnitDragMove(pointer: Phaser.Input.Pointer): void {
+    const press = this.unitPress
+    if (!press) return
+    const state = useCombatStore.getState().state
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+    const unit = state.units[press.unitId]
+    const draggable =
+      state.phase === 'COMBAT' && state.turn.team === 'party' &&
+      state.subPhase === 'IDLE' && activeId === press.unitId &&
+      !!unit && !unit.hasMovedThisTurn
+    if (!press.dragging) {
+      const dist = Math.hypot(pointer.worldX - press.startX, pointer.worldY - press.startY)
+      if (dist <= 10 || !draggable) return
+      press.dragging = true
+    }
+    const view = this.unitViews.get(press.unitId)
+    if (view) {
+      view.container.setPosition(pointer.worldX, pointer.worldY - 10)
+      view.container.setDepth(10000)
+    }
+    const tile = tileAtStagePoint(pointer.worldX, pointer.worldY, state.grid.width, state.grid.height)
+    const next = tile && this.reachableForActive().has(tile) ? tile : null
+    if (next !== this.dragHoverTile) {
+      this.dragHoverTile = next
+      this.renderTargeting()
+    }
+  }
+
+  private onUnitDragEnd(pointer: Phaser.Input.Pointer): void {
+    const press = this.unitPress
+    this.unitPress = null
+    if (!press) return
+    if (!press.dragging) {
+      // plain click → original unit-click semantics (pin / target / move-mode)
+      this.onUnitClick(press.unitId)
+      return
+    }
+    this.dragHoverTile = null
+    const state = useCombatStore.getState().state
+    const tile = tileAtStagePoint(pointer.worldX, pointer.worldY, state.grid.width, state.grid.height)
+    const view = this.unitViews.get(press.unitId)
+    // Return the piece to its origin square first: on a legal drop the walk
+    // animation carries it to the destination; on an illegal one it just
+    // snaps home (chess piece behavior).
+    if (view) {
+      view.container.setPosition(press.originX, press.originY)
+      view.container.setDepth(press.originY)
+    }
+    if (tile) this.tryMoveActiveUnit(tile)
+    this.renderTargeting()
+  }
+
+  /** Reachable tiles for the ACTIVE unit this turn (FE movement range).
+   *  Empty when it isn't a party turn, the unit moved, or combat is over. */
+  private reachableForActive(): Set<string> {
+    const state = useCombatStore.getState().state
+    if (state.phase !== 'COMBAT' || state.turn.team !== 'party') return new Set()
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+    if (!activeId) return new Set()
+    const u = state.units[activeId]
+    if (!u?.position || u.hasMovedThisTurn) return new Set()
+    const blocked = new Set<string>()
+    for (const o of Object.values(state.units)) {
+      if (o.hp.current <= 0 || !o.position) continue
+      if ((o.id as unknown as string) === activeId) continue
+      blocked.add(o.position as unknown as string)
+    }
+    const valid = tilesReachable(
+      asTileId(u.position as unknown as string),
+      movementRangeForClass(u.classId as unknown as string),
+      { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
+      blocked,
+    )
+    return new Set(valid.map((t) => t as unknown as string))
+  }
+
+  /** Move the active unit to `tileId` with the walk animation (shared by
+   *  move-mode clicks, FE direct clicks, and chess-style unit drags). */
+  private tryMoveActiveUnit(tileId: string): boolean {
+    const cs = useCombatStore.getState()
+    const state = cs.state
+    const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
+    if (!activeId) return false
+    const activeUnit = state.units[activeId]
+    if (!activeUnit?.position || activeUnit.hasMovedThisTurn) return false
+    if (!this.reachableForActive().has(tileId)) return false
+    const sourceTileId = activeUnit.position as unknown as string
+    const blocked = new Set<string>()
+    for (const u of Object.values(state.units)) {
+      if (u.hp.current <= 0 || !u.position) continue
+      if ((u.id as unknown as string) === activeId) continue
+      blocked.add(u.position as unknown as string)
+    }
+    const path = findMovePath(
+      asTileId(sourceTileId),
+      asTileId(tileId),
+      movementRangeForClass(activeUnit.classId as unknown as string),
+      { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
+      blocked,
+    )
+    if (path && path.length > 0) {
+      this.pendingMovePath = { unitId: activeId, path: path.map((t) => t as unknown as string) }
+      this.walkingUnits.add(activeId)
+    }
+    cs.dispatch({
+      type: 'moveUnit',
+      payload: { unitId: asUnitId(activeId), tileId: asTileId(tileId) },
+    }, createRng(state.rng))
+    return true
+  }
+
   private onTileClick(tileId: string): void {
     const cs = useCombatStore.getState()
     const state = cs.state
 
+    // FE direct move: with the range already showing in IDLE, clicking a
+    // reachable tile just moves — the Move button/mode remains as a fallback.
+    if (state.subPhase === 'IDLE' && this.tryMoveActiveUnit(tileId)) return
+
     if (state.subPhase === 'SELECTING_MOVE') {
-      const activeId = state.turn.unitId === null ? null : (state.turn.unitId as unknown as string)
-      if (!activeId) return
-      const activeUnit = state.units[activeId]
-      if (!activeUnit?.position || activeUnit.hasMovedThisTurn) return
-      const sourceTileId = activeUnit.position as unknown as string
-      const range = movementRangeForClass(activeUnit.classId as unknown as string)
-      const blocked = new Set<string>()
-      for (const u of Object.values(state.units)) {
-        if (u.hp.current <= 0 || !u.position) continue
-        if ((u.id as unknown as string) === activeId) continue
-        blocked.add(u.position as unknown as string)
-      }
-      const valid = tilesReachable(asTileId(sourceTileId), range, {
-        width: state.grid.width,
-        height: state.grid.height,
-        obstacles: state.grid.obstacles,
-      }, blocked)
-      if (!new Set(valid.map((t) => t as unknown as string)).has(tileId)) return
-      // Compute the path from source to destination so the visual tween can
-      // walk it tile-by-tile. The reducer still teleports the position.
-      const path = findMovePath(
-        asTileId(sourceTileId),
-        asTileId(tileId),
-        range,
-        { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
-        blocked,
-      )
-      if (path && path.length > 0) {
-        this.pendingMovePath = { unitId: activeId, path: path.map((t) => t as unknown as string) }
-        // Mark BEFORE dispatch so the synchronous renderUnits subscription
-        // sees walkingUnits.has(activeId) and skips snapping the container
-        // to the new logical position. handleEffect's walkAlongPath then
-        // animates from origin → destination. Without this, renderUnits
-        // teleports first, walkAlongPath has nothing to animate.
-        this.walkingUnits.add(activeId)
-      }
-      cs.dispatch({
-        type: 'moveUnit',
-        payload: { unitId: asUnitId(activeId), tileId: asTileId(tileId) },
-      }, createRng(state.rng))
+      this.tryMoveActiveUnit(tileId)
       return
     }
 
@@ -743,7 +857,7 @@ export class BoardScene extends Phaser.Scene {
         hit.setInteractive({ useHandCursor: true })
         hit.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
           if (pointer.rightButtonDown()) return
-          this.onUnitClick(idStr)
+          this.beginUnitPress(idStr, pointer)
         })
         view = { container, body, hpBar, glow: null, sprite, nameText }
         this.unitViews.set(idStr, view)

@@ -39,7 +39,7 @@ export function TutorialOverlay(): React.JSX.Element | null {
   } else if (subPhase === 'SELECTING_TARGET') {
     step = { n: 3, text: 'Now click the bandit to strike. The forecast shows the damage before you commit.' }
   } else if (roy && !roy.hasMovedThisTurn) {
-    step = { n: 1, text: 'Every unit gets one free MOVE per turn. Click Roy, then click a highlighted tile to advance toward the bandit.' }
+    step = { n: 1, text: 'Every unit gets one free MOVE per turn. Drag Roy like a chess piece — or click a blue tile — to advance toward the bandit.' }
   } else {
     step = { n: 2, text: 'Pick a card from your hand below. The amber coin is its ACTION POINT cost — you have 3 AP each turn.' }
   }
