@@ -22,6 +22,10 @@ const STAT_KEYS = ['str', 'mag', 'skl', 'spd', 'def', 'res', 'lck'] as const
 
 export function UnitDetailPanel({ pinnedUnitId, onClose }: UnitDetailPanelProps): React.JSX.Element | null {
   const unit = useCombatStore((s) => (pinnedUnitId ? s.state.units[pinnedUnitId] : undefined))
+  const targeting = useCombatStore((s) => s.state.subPhase === 'SELECTING_TARGET')
+  // While a card is selected, unit interaction means TARGETING — the detail
+  // panel stays out of the way entirely (playtest feedback).
+  if (targeting) return null
   if (!pinnedUnitId || !unit) return null
 
   const classId = unit.classId as unknown as string

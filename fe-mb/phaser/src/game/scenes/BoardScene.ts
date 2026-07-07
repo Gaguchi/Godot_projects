@@ -22,9 +22,11 @@ function movementRangeForClass(classId: string): number {
   return classMovMap.get(classId) ?? 4
 }
 
-const TILE = 48
-const GRID_OFFSET_X = 240
-const GRID_OFFSET_Y = 120
+const TILE: typeof GEO_TILE = GEO_TILE
+// Geometry lives in domain/boardGeometry (shared with the HUD's card drag).
+import { TILE as GEO_TILE, GRID_OFFSET_X as GEO_OX, GRID_OFFSET_Y as GEO_OY } from '../../domain/boardGeometry'
+const GRID_OFFSET_X = GEO_OX
+const GRID_OFFSET_Y = GEO_OY
 const GRID_W = 14
 const GRID_H = 10
 
@@ -646,7 +648,12 @@ export class BoardScene extends Phaser.Scene {
       card.range.max,
       { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
     )
-    if (!new Set(valid.map((t) => t as unknown as string)).has(tileId)) return
+    if (!new Set(valid.map((t) => t as unknown as string)).has(tileId)) {
+      // Clicking an INVALID tile/unit mid-targeting cancels the selection —
+      // silent dead clicks made targeting feel broken (playtest feedback).
+      cs.dispatch({ type: 'cancelSelection' }, createRng(state.rng))
+      return
+    }
 
     // Pin-then-play: first click pins the target (opens forecast panel);
     // a second click on the same tile confirms and plays the card.

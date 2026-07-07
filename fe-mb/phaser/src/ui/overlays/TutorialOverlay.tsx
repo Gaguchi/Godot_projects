@@ -47,7 +47,7 @@ export function TutorialOverlay(): React.JSX.Element | null {
   return (
     <div
       id="tutorial-overlay"
-      className="fixed left-1/2 top-28 -translate-x-1/2 z-[90] pointer-events-auto hud-panel px-4 py-3 max-w-[520px] border border-amber-700/60"
+      className="fixed right-5 top-32 z-[90] pointer-events-auto hud-panel px-4 py-3 w-[320px] border border-amber-700/60"
     >
       <div className="flex items-start gap-3">
         <span className="numeral text-amber-400 text-lg leading-none mt-0.5">{step.n > 0 ? step.n : '•'}</span>
