@@ -111,6 +111,13 @@ export function OverworldScene({
   const pendingCombat = useRunStore((s) => s.pendingCombat)
   const inventoryItems = useRunStore((s) => s.inventory.items)
   const [activeCheckEvent, setActiveCheckEvent] = useState<CheckEvent | null>(null)
+  // One encounter roll per hop, max. When a rolled encounter suspends the hop
+  // (dialogue / check event), the RETRIED hop must not roll again — the RNG
+  // derives from an unchanged rngState, so a re-roll reproduces the same
+  // encounter forever (event re-fires in an endless loop, travel never
+  // completes). Keyed by edge; the key clears once the hop actually lands so
+  // revisiting the edge later in the run can roll fresh.
+  const rolledHopsRef = useRef<Set<string>>(new Set())
   // M&B-style quick-action menu shown when arriving at / clicking a town,
   // camp, dungeon, or exit node. Replaces the prior auto-enter behavior.
   const [quickMenuNode, setQuickMenuNode] = useState<{ id: string; type: string } | null>(null)
@@ -235,6 +242,7 @@ export function OverworldScene({
     if (!pendingTravelPath || pendingTravelPath.remainingNodeIds.length === 0) return
     if (pendingDialogue) return
     if (quickMenuNode) return       // quick-action menu pauses travel
+    if (activeCheckEvent) return    // check-event modal pauses travel; resume on clear
     if (advancingRef.current) return
     advancingRef.current = true
     const timer = setTimeout(() => {
@@ -247,7 +255,7 @@ export function OverworldScene({
       advancingRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingTravelPath, pendingDialogue, quickMenuNode])
+  }, [pendingTravelPath, pendingDialogue, quickMenuNode, activeCheckEvent])
 
   /**
    * Execute a single hop: consume food, possibly roll encounter, and either
@@ -294,11 +302,15 @@ export function OverworldScene({
     )
     const rollChance = edge?.rollChance ?? 0.3
 
-    // Towns / dungeons / exits never roll travel encounters.
+    // Towns / dungeons / exits never roll travel encounters. A hop that
+    // already rolled (and was suspended by its encounter) never rolls twice.
+    const hopKey = `${currentNodeId}->${nextNodeId}`
     const shouldRoll = hopRng.next() < rollChance
       && type !== 'town' && type !== 'dungeon' && type !== 'exit'
+      && !rolledHopsRef.current.has(hopKey)
 
     if (shouldRoll) {
+      rolledHopsRef.current.add(hopKey)
       const encounterRng = deriveRng(parent, `encounter:${mapId}:${currentNodeId}->${nextNodeId}`)
       const oneShots = useRunStore.getState().oneShotsFired
       const tableForRegion = ENCOUNTER_TABLES[map.regionId ?? 'borderlands'] ?? ENCOUNTER_TABLES['borderlands']!
@@ -340,6 +352,7 @@ export function OverworldScene({
     }
 
     // No encounter (or roll missed) → arrive normally
+    rolledHopsRef.current.delete(hopKey)
     dispatchRun({ type: 'arriveAtNode', payload: { nodeId: asNodeId(nextNodeId) } })
     consumeHopHead()
 

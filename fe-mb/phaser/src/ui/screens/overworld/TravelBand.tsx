@@ -540,7 +540,7 @@ export function TravelBand({
               whiteSpace: 'nowrap',
             }}
           >
-            {`→ ${journey.nextName} · ${journey.hopsLeft} hops`}
+            {`→ ${journey.nextName} · ${journey.hopsLeft} ${journey.hopsLeft === 1 ? 'hop' : 'hops'}`}
           </div>
         )}
         {arrivalName !== null && arrivalName !== '' && (

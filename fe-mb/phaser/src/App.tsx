@@ -416,6 +416,17 @@ export function App(): React.JSX.Element {
       <ErrorBoundary errorBus={errorBus}>
         <GameStage>
         <div id="app-root" className="relative h-full w-full overflow-hidden">
+          {/* Phaser canvas host. Must stay mounted for the app's lifetime:
+              main.tsx parents the canvas into this div ONCE at boot. If this
+              div unmounts (it used to render only while view === 'combat'),
+              React destroys the canvas with it and every battle after the
+              first draws into a detached canvas — an invisible board. Hidden,
+              never unmounted, outside combat. */}
+          <div
+            id="game-canvas-container"
+            className="absolute inset-0"
+            style={{ visibility: view === 'combat' ? 'visible' : 'hidden' }}
+          />
           {view === 'title' && (
             <TitleScreen
               onNewGame={onNewGame}
@@ -455,7 +466,6 @@ export function App(): React.JSX.Element {
                   backgroundSize: '220px 220px',
                 }}
               />
-              <div id="game-canvas-container" className="absolute inset-0" />
               <div id="react-shell" />
               <CombatHud />
               <TutorialOverlay />
