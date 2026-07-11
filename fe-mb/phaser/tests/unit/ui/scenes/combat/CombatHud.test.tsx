@@ -50,4 +50,33 @@ describe('<CombatHud>', () => {
     // AP is now pips with an accessible label rather than "AP 2/3" text
     expect(screen.getByLabelText('2 of 3 action points')).toBeInTheDocument()
   })
+
+  it.each(['VICTORY', 'DEFEAT'] as const)(
+    'goes neutral when the battle ends (%s): Battle Ended plate, no command zone',
+    (phase) => {
+      const roy = mkUnit('roy', 'Roy')
+      useCombatStore.setState((prev) => ({
+        ...prev,
+        state: {
+          ...prev.state,
+          phase,
+          turn: { number: 5, unitId: roy.id, team: 'party' },
+          units: { roy },
+        },
+      }))
+      render(<CombatHud />)
+      // TopBar swaps to the neutral terminal plate: turn count + Battle Ended.
+      expect(screen.getByText('Battle Ended')).toBeInTheDocument()
+      expect(screen.getByText('5')).toBeInTheDocument()
+      // No stale "act now" chrome behind the battle-end modal.
+      expect(screen.queryByText('Roy')).not.toBeInTheDocument()
+      expect(screen.queryByText('Your Turn')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText(/action points/)).not.toBeInTheDocument()
+      expect(screen.queryByLabelText(/health/)).not.toBeInTheDocument()
+      // Command zone (Move / End Turn / danger-zone chip) is unmounted.
+      expect(screen.queryByText('End Turn')).not.toBeInTheDocument()
+      expect(screen.queryByText('Move')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('Toggle danger zones')).not.toBeInTheDocument()
+    },
+  )
 })

@@ -4,6 +4,7 @@ export interface CombatStateShape {
   phase: string
   subPhase: string
   selectedCardId: string | null
+  grid: { width: number; height: number; obstacles?: string[] }
   turn: { number: number; unitId: string | null; team: string }
   units: Record<string, {
     id: string

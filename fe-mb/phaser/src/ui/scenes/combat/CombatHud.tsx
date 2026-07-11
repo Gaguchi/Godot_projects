@@ -11,6 +11,7 @@ import { UnitDetailPanel } from './UnitDetailPanel'
 import { PhaseBanner } from './PhaseBanner'
 import { Keycap } from './hudBits'
 import { Button } from '../../components/Button'
+import { useCombatStore } from '../../../state/combatStore'
 import { useCombatUiStore } from '../../../state/combatUiStore'
 
 /**
@@ -82,16 +83,53 @@ function DangerZoneToggle(): React.JSX.Element {
   )
 }
 
+/** Total command-zone exit budget: card drop (~160ms via --dur-quick) plus
+ *  the 4-card stagger tail, with a little slack before the hard unmount.
+ *  The battle-end Dialog opens ~250ms after phase flips, so the exit reads
+ *  as a handoff — cards bow out, then the verdict takes the stage. */
+const COMMAND_EXIT_MS = 380
+
+/** Keep the command zone mounted just long enough to play its exit
+ *  (cards drop + fade with a stagger, buttons/chips fade), then unmount so
+ *  nothing stale lingers behind the battle-end modal's scrim. */
+function useCommandZoneExit(active: boolean): { mounted: boolean; exiting: boolean } {
+  const [mounted, setMounted] = React.useState(active)
+  React.useEffect(() => {
+    if (active) {
+      setMounted(true)
+      return
+    }
+    const t = window.setTimeout(() => setMounted(false), COMMAND_EXIT_MS)
+    return () => window.clearTimeout(t)
+  }, [active])
+  return { mounted: mounted || active, exiting: mounted && !active }
+}
+
+/** Accelerating fade for the button/chip clusters — an exit, not an entrance.
+ *  Rides --dur-quick so reduced motion collapses it to an instant hide. */
+const ZONE_FADE_CLASS =
+  'transition-opacity [transition-duration:var(--dur-quick)] ease-[cubic-bezier(0.32,0,0.67,0)]'
+
 /**
  * Top-level combat HUD overlay rendered over the Phaser canvas.
  *
  * The outer wrapper has `pointer-events: none` so the canvas underneath
  * receives clicks for tile/unit picking. Each interactive HUD element wraps
  * itself in `pointer-events: auto`.
+ *
+ * The command zone (card hand, Move/End Turn, capture actions, danger-zone
+ * chip) only exists while phase === 'COMBAT' — when the battle resolves it
+ * plays a short exit and unmounts, handing the screen to the battle-end
+ * modal. TopBar stays (it swaps itself to a neutral "Battle Ended" plate).
  */
 export function CombatHud(): React.JSX.Element {
   const pinnedDetailUnitId = useCombatUiStore((s) => s.pinnedDetailUnitId)
   const setPinned = useCombatUiStore((s) => s.setPinnedDetailUnit)
+  const inCombat = useCombatStore((s) => s.state.phase === 'COMBAT')
+  const { mounted: commandMounted, exiting: commandExiting } = useCommandZoneExit(inCombat)
+  const zoneFade = `${ZONE_FADE_CLASS} ${
+    commandExiting ? 'opacity-0 pointer-events-none' : 'pointer-events-auto'
+  }`
   return (
     <div
       id="combat-hud"
@@ -107,16 +145,23 @@ export function CombatHud(): React.JSX.Element {
       </div>
       <PhaseBanner />
       <ForecastPanel />
-      <CardHand />
-      <CaptureBtn />
+      {commandMounted && <CardHand exiting={commandExiting} />}
+      {/* Hard-gated (no fade): its inner pointer-events-auto would stay
+          clickable through a fading wrapper, and it is almost always already
+          null when the battle resolves (no live adjacent enemies). */}
+      {inCombat && <CaptureBtn />}
       <UnitDetailPanel pinnedUnitId={pinnedDetailUnitId} onClose={() => setPinned(null)} />
-      <div className="absolute bottom-4 right-4 flex gap-3 pointer-events-auto">
-        <MoveBtn />
-        <EndTurnBtn />
-      </div>
-      <div className="absolute bottom-3 left-3 pointer-events-auto">
-        <DangerZoneToggle />
-      </div>
+      {commandMounted && (
+        <div className={`absolute bottom-4 right-4 flex gap-3 ${zoneFade}`}>
+          <MoveBtn />
+          <EndTurnBtn />
+        </div>
+      )}
+      {commandMounted && (
+        <div className={`absolute bottom-3 left-3 ${zoneFade}`}>
+          <DangerZoneToggle />
+        </div>
+      )}
     </div>
   )
 }

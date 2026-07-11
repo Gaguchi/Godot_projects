@@ -96,7 +96,14 @@ interface DragState {
   active: boolean   // true once movement passes the drag threshold
 }
 
-export function CardHand(): React.JSX.Element | null {
+/** Per-card exit: drop + fade, accelerating (ease-in) with a small stagger —
+ *  an exit, not an entrance. Durations ride the motion tokens so reduced
+ *  motion collapses this to an instant hide. */
+const CARD_EXIT_CLASS =
+  'transition-[transform,opacity] [transition-duration:var(--dur-quick)] ease-[cubic-bezier(0.32,0,0.67,0)]'
+const CARD_EXIT_STAGGER_MS = 40
+
+export function CardHand({ exiting = false }: { exiting?: boolean } = {}): React.JSX.Element | null {
   const dispatch = useCombatStore((s) => s.dispatch)
   const activeId = useCombatStore((s) => s.state.turn.unitId)
   const team = useCombatStore((s) => s.state.turn.team)
@@ -253,13 +260,21 @@ export function CardHand(): React.JSX.Element | null {
         <circle cx={drag.x} cy={drag.y} r={2.5} fill="#e8a93a" />
       </svg>
     )}
-    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-end gap-2.5 pointer-events-auto z-10">
-      {handIds.map((cardId) => {
+    <div
+      className={`absolute bottom-5 left-1/2 -translate-x-1/2 flex items-end gap-2.5 z-10 ${
+        exiting ? 'pointer-events-none' : 'pointer-events-auto'
+      }`}
+    >
+      {handIds.map((cardId, idx) => {
         const card = cardsMap.get(cardId)
         if (!card) return null
         const mag = deriveMagnitude(card)
         const isSelected =
           selectedId !== null && (selectedId as unknown as string) === cardId
+        const exitClass = `${CARD_EXIT_CLASS} ${exiting ? 'opacity-0 translate-y-8' : ''}`
+        const exitStyle = exiting
+          ? { transitionDelay: `${idx * CARD_EXIT_STAGGER_MS}ms` }
+          : undefined
 
         const cardEl = (
           <Card
@@ -285,18 +300,22 @@ export function CardHand(): React.JSX.Element | null {
 
         if (card.apCost > ap) {
           return (
-            <Tooltip
-              key={cardId}
-              trigger={cardEl}
-              content={`Needs ${card.apCost} AP, you have ${ap}`}
-            />
+            <div key={cardId} className={exitClass} style={exitStyle}>
+              <Tooltip
+                trigger={cardEl}
+                content={`Needs ${card.apCost} AP, you have ${ap}`}
+              />
+            </div>
           )
         }
         return (
           <div
             key={cardId}
-            className="touch-none"
-            style={drag?.active && drag.cardId === cardId ? { opacity: 0.35 } : undefined}
+            className={`touch-none ${exitClass}`}
+            style={{
+              ...(drag?.active && drag.cardId === cardId ? { opacity: 0.35 } : undefined),
+              ...exitStyle,
+            }}
             onPointerDownCapture={(e) => beginDrag(cardId, e)}
           >
             {cardEl}

@@ -5,6 +5,7 @@ import { createRng } from '../../../systems/rng'
 
 export function MoveBtn(): React.JSX.Element {
   const dispatch = useCombatStore((s) => s.dispatch)
+  const phase = useCombatStore((s) => s.state.phase)
   const subPhase = useCombatStore((s) => s.state.subPhase)
   const team = useCombatStore((s) => s.state.turn.team)
   const activeId = useCombatStore((s) => s.state.turn.unitId)
@@ -15,7 +16,8 @@ export function MoveBtn(): React.JSX.Element {
 
   const selecting = subPhase === 'SELECTING_MOVE'
   const enabled =
-    team === 'party'
+    phase === 'COMBAT'
+    && team === 'party'
     && unit !== undefined
     && unit.hp.current > 0
     && !unit.hasMovedThisTurn

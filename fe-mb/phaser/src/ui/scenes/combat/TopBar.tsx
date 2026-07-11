@@ -12,13 +12,43 @@ import { hpTextClass } from './hpTier'
  *   - HP is a quiet token meter + numeral,
  *   - "Turn N" is demoted to a small label chip,
  *   - team is a SHAPE sigil (shield/fangs) + colour, never colour alone.
+ *
+ * When the battle resolves (phase VICTORY/DEFEAT) the plaque goes neutral:
+ * "Battle Ended" in small caps + the turn count. No name, no phase label, no
+ * HP meter, no lit AP pips — the battle-end Dialog owns the screen's focus,
+ * so nothing up here may still shout "act now".
  */
 export function TopBar(): React.JSX.Element {
   const turnNumber = useCombatStore((s) => s.state.turn.number)
   const activeId = useCombatStore((s) => s.state.turn.unitId)
   const team = useCombatStore((s) => s.state.turn.team)
+  const phase = useCombatStore((s) => s.state.phase)
   const unit = useCombatStore((s) => (activeId ? s.state.units[activeId as unknown as string] : null))
   const isEnemy = team !== 'party'
+
+  if (phase === 'VICTORY' || phase === 'DEFEAT') {
+    return (
+      <div
+        id="combat-topbar"
+        className="hud-panel relative flex items-center gap-4 px-4 py-2"
+      >
+        {/* Turn count — the one number still worth reading after the fight */}
+        <div className="flex flex-col items-center leading-none">
+          <span className="text-[0.55rem] uppercase tracking-[0.22em] text-parchment-dim">Turn</span>
+          <span className="numeral text-lg text-parchment">{turnNumber}</span>
+        </div>
+
+        <div className="hud-divider" />
+
+        <span
+          className="voice-display text-base tracking-[0.08em] text-parchment-dim"
+          style={{ fontVariantCaps: 'small-caps' }}
+        >
+          Battle Ended
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div
