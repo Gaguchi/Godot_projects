@@ -24,9 +24,11 @@ function movementRangeForClass(classId: string): number {
 
 const TILE: typeof GEO_TILE = GEO_TILE
 // Geometry lives in domain/boardGeometry (shared with the HUD's card drag).
-import { TILE as GEO_TILE, GRID_OFFSET_X as GEO_OX, GRID_OFFSET_Y as GEO_OY, tileAtStagePoint } from '../../domain/boardGeometry'
-const GRID_OFFSET_X = GEO_OX
-const GRID_OFFSET_Y = GEO_OY
+import { TILE as GEO_TILE, gridOriginX, gridOriginY, tileAtStagePoint } from '../../domain/boardGeometry'
+// Current board origin — recomputed per battle in drawGrid from the actual
+// grid dimensions so every board centers on the stage (boardGeometry math).
+let GRID_OFFSET_X = gridOriginX(14)
+let GRID_OFFSET_Y = gridOriginY(10)
 const GRID_W = 14
 const GRID_H = 10
 
@@ -243,6 +245,7 @@ export class BoardScene extends Phaser.Scene {
   /** Redraw the tile layer when a new battle changes grid dimensions
    *  (tutorial 5×5 → standard 14×10). Scene persists across battles. */
   private lastGridDims = ''
+  private boardDecor: Phaser.GameObjects.GameObject[] = []
   private ensureGridMatchesState(): void {
     const g = useCombatStore.getState().state.grid
     const dims = `${g.width}x${g.height}`
@@ -251,6 +254,8 @@ export class BoardScene extends Phaser.Scene {
     this.tileRects.clear()
     for (const img of this.tileSprites) img.destroy()
     this.tileSprites = []
+    for (const d of this.boardDecor) d.destroy()
+    this.boardDecor = []
     this.drawGrid()
   }
 
@@ -259,21 +264,29 @@ export class BoardScene extends Phaser.Scene {
     this.lastGridDims = `${gDims.width}x${gDims.height}`
     // Deterministic pseudo-random per-tile so each board feels textured
     // rather than identical squares. Same seed every load for the same
-    // grid size so it doesn't shimmer on render.
-    const tileTint = (x: number, y: number): number => {
-      const h = ((x * 73856093) ^ (y * 19349663)) >>> 0
-      const base = 0x101622
-      const variance = (h % 8) - 4               // -4 .. +3
-      const r = ((base >> 16) & 0xff) + variance
-      const g = ((base >> 8) & 0xff) + variance
-      const b = (base & 0xff) + Math.floor(variance / 2)
-      return (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b)
-    }
+    // grid size so it doesn't shimmer on render. Warm ink base with a subtle
+    // chess-read alternation so tiles are countable at a glance (the old
+    // cold navy noise fought the warm Forged & Lit chrome).
+    const tileTint = (x: number, y: number): number => this.tileBaseFill(x, y)
     // Draw the ACTUAL battle grid (tutorial is 5×5, standard fights 14×10) —
     // not the max dimensions.
     const g = useCombatStore.getState().state.grid
     const gridW = Math.min(g.width || GRID_W, GRID_W)
     const gridH = Math.min(g.height || GRID_H, GRID_H)
+    // Center the board for THIS battle (shared math with the HUD's picking).
+    GRID_OFFSET_X = gridOriginX(gridW)
+    GRID_OFFSET_Y = gridOriginY(gridH)
+    // The field sits ON something: a soft ground-shadow slab under the grid
+    // and a forged-iron frame just outside it (created first = drawn below).
+    const bw = gridW * TILE
+    const bh = gridH * TILE
+    const cx = GRID_OFFSET_X + bw / 2
+    const cy = GRID_OFFSET_Y + bh / 2
+    this.boardDecor.push(
+      this.add.rectangle(cx, cy + 10, bw + 36, bh + 36, 0x000000, 0.35),
+      this.add.rectangle(cx, cy, bw + 14, bh + 14, 0x15110d, 0.55)
+        .setStrokeStyle(2, 0x5a4a36, 0.85),
+    )
     for (let y = 0; y < gridH; y++) {
       for (let x = 0; x < gridW; x++) {
         // Painted ground variant under the interactive rect (deterministic pick).
@@ -284,7 +297,7 @@ export class BoardScene extends Phaser.Scene {
             GRID_OFFSET_X + x * TILE + TILE / 2,
             GRID_OFFSET_Y + y * TILE + TILE / 2,
             texKey,
-          ).setDisplaySize(TILE - 2, TILE - 2).setTint(0x6f7890)
+          ).setDisplaySize(TILE - 2, TILE - 2).setTint(0x9c8b74)
           this.tileSprites.push(img)
         }
         const rect = this.add.rectangle(
@@ -292,8 +305,8 @@ export class BoardScene extends Phaser.Scene {
           GRID_OFFSET_Y + y * TILE + TILE / 2,
           TILE - 2, TILE - 2,
           tileTint(x, y),
-          0.35,
-        ).setStrokeStyle(1, 0x2a2e3a, 0.5)
+          0.30,
+        ).setStrokeStyle(1, 0x3a3226, 0.55)
         const tileId = `${x},${y}`
         rect.setInteractive({ useHandCursor: false })
         rect.on('pointerover', () => this.onTileHover(tileId))
@@ -307,11 +320,14 @@ export class BoardScene extends Phaser.Scene {
   }
 
   // Default tile fill — recomputed in renderTargeting to avoid the
-  // identical-grid look on every reset. Mirrors drawGrid's tint formula.
+  // identical-grid look on every reset. Warm ink family (the old cold navy
+  // fought the amber chrome) with a subtle chess alternation so tiles are
+  // countable at a glance, plus per-tile variance so the field feels worn.
   private tileBaseFill(x: number, y: number): number {
     const h = ((x * 73856093) ^ (y * 19349663)) >>> 0
-    const base = 0x101622
-    const variance = (h % 8) - 4
+    const base = 0x1a1410 // --color-ink
+    const checker = (x + y) % 2 === 0 ? 5 : -3
+    const variance = ((h % 7) - 3) + checker
     const r = ((base >> 16) & 0xff) + variance
     const g = ((base >> 8) & 0xff) + variance
     const b = (base & 0xff) + Math.floor(variance / 2)
@@ -323,7 +339,7 @@ export class BoardScene extends Phaser.Scene {
 
     for (const [tileId, rect] of this.tileRects.entries()) {
       const [tx, ty] = tileId.split(',').map(Number)
-      rect.setFillStyle(this.tileBaseFill(tx!, ty!), 0.35)
+      rect.setFillStyle(this.tileBaseFill(tx!, ty!), 0.30)
     }
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }

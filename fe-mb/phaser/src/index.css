@@ -132,6 +132,49 @@ body,
   text-rendering: optimizeLegibility;
 }
 
+/* ---- Game-surface discipline: no browser furniture leaks ----------------- */
+/* Text selection, I-beam cursors, drag ghosts and rubber-banding read as a
+   web page, not a game. Inputs opt back in. */
+html,
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+img,
+canvas,
+svg {
+  -webkit-user-drag: none;
+}
+/* Native OS scrollbars → thin iron rails, everywhere a panel scrolls. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 98, 60, 0.45) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(120, 98, 60, 0.45);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 98, 60, 0.7);
+}
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* =========================================================================
    Reusable material + voice utilities (composite recipes — cleaner than
    spraying 6 box-shadow layers across className strings).
@@ -231,6 +274,106 @@ body,
 }
 .ap-pip--empty {
   background: rgba(0, 0, 0, 0.35);
+}
+
+/* Forged buttons — chrome you ACT on. Button.tsx consumes these recipes;
+   never hand-roll a <button> style. The variants share one physical body
+   (iron slab, top catchlight, dark under-seam) and differ only in accent:
+   primary = hearth-lit, secondary = plain iron, ghost = etched on hover,
+   danger = ember-forged. RAC sets the data-* state attributes. */
+.btn-forged {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(168deg, var(--iron-700) 0%, var(--iron-900) 100%);
+  border: 1px solid rgba(120, 98, 60, 0.45);
+  border-top-color: rgba(170, 140, 92, 0.5);
+  border-bottom-color: rgba(0, 0, 0, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.1),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.35),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+  color: var(--color-parchment);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  font-size: 0.8rem;
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    box-shadow var(--dur-quick) ease,
+    border-color var(--dur-quick) ease,
+    background-color var(--dur-quick) ease,
+    color var(--dur-quick) ease,
+    filter var(--dur-quick) ease;
+}
+.btn-forged[data-hovered] {
+  border-color: rgba(201, 152, 92, 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.16),
+    inset 0 0 10px rgba(232, 169, 58, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+}
+.btn-forged[data-pressed] {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.btn-forged[data-focus-visible] {
+  box-shadow: var(--focus-ring);
+}
+.btn-forged[data-disabled] {
+  opacity: 0.45;
+  filter: saturate(0.4);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-forged--primary {
+  background: linear-gradient(
+    168deg,
+    color-mix(in oklab, var(--color-hearth) 22%, var(--iron-700)),
+    color-mix(in oklab, var(--color-hearth) 7%, var(--iron-900))
+  );
+  border-color: color-mix(in oklab, var(--color-hearth) 55%, transparent);
+  color: color-mix(in oklab, var(--color-parchment) 82%, var(--color-hearth));
+}
+.btn-forged--primary[data-hovered] {
+  border-color: var(--color-hearth);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 200, 140, 0.18),
+    0 0 12px rgba(232, 169, 58, 0.32),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+}
+.btn-forged--danger {
+  background: linear-gradient(
+    168deg,
+    color-mix(in oklab, var(--color-ember) 18%, var(--iron-700)),
+    color-mix(in oklab, var(--color-ember) 6%, var(--iron-900))
+  );
+  border-color: color-mix(in oklab, var(--color-ember) 50%, transparent);
+  color: color-mix(in oklab, var(--color-parchment) 80%, var(--color-ember));
+}
+.btn-forged--danger[data-hovered] {
+  border-color: var(--color-ember);
+  box-shadow:
+    0 0 12px rgba(192, 57, 43, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+}
+.btn-forged--ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--color-parchment-dim);
+}
+.btn-forged--ghost[data-hovered] {
+  background: color-mix(in oklab, var(--color-hearth) 8%, transparent);
+  border-color: rgba(120, 98, 60, 0.4);
+  color: var(--color-parchment);
+  box-shadow: none;
+}
+/* Opt-out for buttons whose label is prose (dialogue choices, event options):
+   sentence case at reading size. Declared after .btn-forged so it wins. */
+.btn-prose {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+  font-size: 0.95rem;
 }
 
 /* Forged combat card — iron frame, bevel, hearth-lit states. Transforms stay

@@ -7,7 +7,7 @@ import { createRng } from '../../../systems/rng'
 import { tilesInRange } from '../../../systems/targeting'
 import { isEnemyUnit } from '../../../systems/team'
 import { asCardId, asTileId, asUnitId } from '../../../domain/ids'
-import { clientToStage, tileAtStagePoint } from '../../../domain/boardGeometry'
+import { clientToStage, tileAtStagePoint, HAND_TOP_Y } from '../../../domain/boardGeometry'
 import cardsJson from '../../../data/content/cards.json'
 
 const cardsMap = new Map(cardsJson.map((c) => [c.id, c]))
@@ -39,6 +39,40 @@ function deriveMagnitude(card: CardJson): { magnitude: number | null; magnitudeK
     }
   }
   return { magnitude: null, magnitudeKind: null }
+}
+
+/** Player-fiction names for status effects on card summaries. */
+const STATUS_WORD: Record<string, (v?: number, t?: number) => string> = {
+  taunt: (_v, t) => `Taunt ${t ?? 1}t`,
+  riposte: (v) => `Riposte ${v ?? ''}`.trim(),
+  empower: (v) => `Empower ${v ?? ''}`.trim(),
+  immobilize: (_v, t) => `Root ${t ?? 1}t`,
+  slow: (v) => `Slow ${v ?? ''}`.trim(),
+  poison: (v) => `Poison ${v ?? ''}`.trim(),
+}
+
+/** One-line effect summary for cards with no headline number — the art well
+ *  must never read as an empty socket ("Rally" showing only a dim gem). */
+function deriveEffectSummary(card: CardJson): string | null {
+  const parts: string[] = []
+  for (const e of card.effects) {
+    const p = e.params as { count?: number; gainAp?: number; amount?: number; target?: string; effectId?: string; value?: number; turns?: number; kind?: string; distance?: number }
+    if (e.kind === 'DrawCards' && p.count) {
+      parts.push(`Draw ${p.count}`)
+      if (p.gainAp) parts.push(`+${p.gainAp} AP`)
+    } else if (e.kind === 'GainAp' && p.amount) {
+      parts.push(p.target === 'ally' ? `Ally +${p.amount} AP` : `+${p.amount} AP`)
+    } else if (e.kind === 'ApplyStatus' && p.effectId) {
+      const word = STATUS_WORD[p.effectId]
+      parts.push(word ? word(p.value, p.turns) : p.effectId)
+    } else if (e.kind === 'RemoveStatus') {
+      parts.push('Cleanse')
+    } else if (e.kind === 'Move' && p.distance) {
+      parts.push(`Shift ${p.distance}`)
+    }
+    if (parts.length >= 2) break
+  }
+  return parts.length ? parts.join(' · ') : null
 }
 
 const TARGET_LABEL: Record<string, string> = {
@@ -173,7 +207,7 @@ export function CardHand(): React.JSX.Element | null {
       const tile = pt ? tileAtStagePoint(pt.x, pt.y, s.grid.width, s.grid.height) : null
       if (card && card.targetKind === 'self') {
         // StS skill convention: release above the hand plays a self card.
-        if (pt && pt.y < 560) { playAt(d.cardId, null); return }
+        if (pt && pt.y < HAND_TOP_Y) { playAt(d.cardId, null); return }
         useCombatStore.getState().dispatch({ type: 'cancelSelection' }, createRng(s.rng))
         return
       }
@@ -235,6 +269,7 @@ export function CardHand(): React.JSX.Element | null {
             cardType={deriveCardType(card)}
             magnitude={mag.magnitude}
             magnitudeKind={mag.magnitudeKind}
+            effectSummary={mag.magnitude == null ? deriveEffectSummary(card) : null}
             targetLabel={TARGET_LABEL[card.targetKind] ?? card.targetKind}
             source={deck.sources?.[cardId] ?? null}
             isSelected={isSelected}

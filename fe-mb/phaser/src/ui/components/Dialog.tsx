@@ -17,6 +17,12 @@ export interface DialogProps {
    * dim is lighter for 'bottom' to preserve the place-sense.
    */
   position?: 'center' | 'bottom'
+  /** 'veil' keeps the world readable behind the modal (lighter dim + blur) —
+   *  pause/interrupt surfaces where the game holds its breath rather than
+   *  disappears. Default 'heavy' is the standard center-modal dim. */
+  backdrop?: 'heavy' | 'veil'
+  /** Panel owns its own interior padding (full-bleed headers/dividers). */
+  unpadded?: boolean
 }
 
 export function Dialog({
@@ -24,6 +30,8 @@ export function Dialog({
   'aria-label': ariaLabel,
   isDismissable = true,
   position = 'center',
+  backdrop = 'heavy',
+  unpadded = false,
 }: DialogProps): React.JSX.Element {
   // Backdrop fades in/out via RAC data-entering/exiting (motion-safe only).
   const overlayBase =
@@ -31,21 +39,25 @@ export function Dialog({
     'motion-safe:data-[entering]:opacity-0 motion-safe:data-[exiting]:opacity-0 '
   const overlayClass = position === 'bottom'
     ? overlayBase + 'items-end bg-black/55 backdrop-blur-[1px]'
-    : overlayBase + 'items-center bg-black/70'
+    : overlayBase + (backdrop === 'veil'
+      ? 'items-center bg-black/55 backdrop-blur-[2px]'
+      : 'items-center bg-black/70')
 
   // Panel rises (bottom) / scales (center) on enter; iron-framed for the dark
   // candlelit identity. Numbers/prose inside use the body serif.
   const motionCommon =
     'motion-safe:transition-[opacity,transform] motion-safe:duration-200 motion-safe:ease-[var(--ease-out-quart)] '
   const dialogClass = position === 'bottom'
-    ? 'bg-stone-950/95 border-t-2 border-amber-900/60 text-amber-100 ' +
+    ? 'relative bg-stone-950/95 text-[color:var(--color-parchment)] ' +
       'font-body w-full outline-none shadow-[0_-12px_40px_rgba(0,0,0,0.8)] ' +
+      // stacked top fillet: amber seam + catchlight (a forged edge, not a border)
+      '[box-shadow:0_-12px_40px_rgba(0,0,0,0.8),inset_0_2px_0_rgba(146,64,14,0.6),inset_0_3px_0_rgba(255,235,190,0.08)] ' +
       motionCommon +
       'motion-safe:data-[entering]:translate-y-5 motion-safe:data-[entering]:opacity-0 ' +
       'motion-safe:data-[exiting]:translate-y-5 motion-safe:data-[exiting]:opacity-0 ' +
       (className ?? '')
-    : 'surface-iron text-amber-100 ' +
-      'font-body p-6 min-w-[400px] max-w-[80vw] outline-none rounded-md ' +
+    : 'surface-iron text-[color:var(--color-parchment)] ' +
+      `font-body ${unpadded ? '' : 'p-6 '}min-w-[400px] max-w-[80vw] outline-none rounded-md ` +
       motionCommon +
       'motion-safe:data-[entering]:translate-y-3 motion-safe:data-[entering]:scale-95 motion-safe:data-[entering]:opacity-0 ' +
       'motion-safe:data-[exiting]:scale-95 motion-safe:data-[exiting]:opacity-0 ' +

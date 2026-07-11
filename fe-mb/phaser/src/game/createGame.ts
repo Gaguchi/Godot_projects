@@ -7,7 +7,11 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     parent,
     width: 1280,
     height: 720,
-    backgroundColor: '#0a0a0f',
+    // Transparent canvas: the warm-lit DOM backdrop (radial hearth pool +
+    // grain, already rendered behind the canvas in App.tsx) becomes the
+    // battle atmosphere instead of a flat black void.
+    transparent: true,
+    disableContextMenu: true,
     // BootScene was a stub that delayed-call'd scene.start('combat'). The
     // delayedCall was unreliable under React StrictMode double-mount and
     // also prevented the tween manager from ticking on combat. Skip it:

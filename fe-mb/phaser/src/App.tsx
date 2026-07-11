@@ -466,6 +466,16 @@ export function App(): React.JSX.Element {
                   backgroundSize: '220px 220px',
                 }}
               />
+              {/* Vignette OVER the (transparent) canvas, under the HUD —
+                  focuses the eye on the board without touching input. */}
+              <div
+                aria-hidden
+                className="fixed inset-0 pointer-events-none"
+                style={{
+                  background:
+                    'radial-gradient(ellipse 120% 100% at 50% 45%, transparent 55%, rgba(0,0,0,0.30) 80%, rgba(0,0,0,0.60) 100%)',
+                }}
+              />
               <div id="react-shell" />
               <CombatHud />
               <TutorialOverlay />

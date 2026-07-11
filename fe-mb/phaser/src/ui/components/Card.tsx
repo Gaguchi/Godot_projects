@@ -16,6 +16,9 @@ export interface CardProps {
   magnitudeKind?: 'damage' | 'armor' | 'heal' | null
   /** Short target descriptor, e.g. "one enemy", "self", "an ally". */
   targetLabel: string
+  /** One-line effect summary shown in the art well when there is no headline
+   *  magnitude (e.g. "Draw 2", "+2 AP") — the well is never an empty socket. */
+  effectSummary?: string | null
   /** Deck provenance (gear-as-deck): hand_left/hand_right show a subtle L/R
    *  chip so players can trace a card back to the item that grants it. */
   source?: 'innate' | 'hand_left' | 'hand_right' | null
@@ -93,6 +96,7 @@ export function Card({
   magnitude,
   magnitudeKind,
   targetLabel,
+  effectSummary,
   source,
   isSelected,
   className,
@@ -138,14 +142,17 @@ export function Card({
           className="relative flex h-full flex-col overflow-hidden rounded-[4px]"
           style={{ background: 'radial-gradient(120% 82% at 50% 0%, #36291c 0%, #120d09 78%)' }}
         >
-          {/* header banner: gem + name (fixed 2-line height so gems/baselines
-              align across the hand even when a name wraps) */}
+          {/* header banner: gem + name. A floated spacer reserves the AP
+              coin's overhang, so text lines WRAP around the coin instead of
+              running under it (pr alone can't wrap a single long word like
+              "Command"). min-height keeps gems aligned across the hand. */}
           <div
-            className="flex min-h-[2.2em] items-start gap-1 px-1.5 pb-1 pt-1.5"
+            className="min-h-[2.2em] px-1.5 pb-1 pt-1.5 leading-[1.05]"
             style={{ background: `linear-gradient(to bottom, color-mix(in oklab, ${gemColor} 34%, transparent), transparent)` }}
           >
-            <span className="mt-px shrink-0"><Gem type={cardType} size={13} /></span>
-            <span className="voice-display text-[0.62rem] leading-[1.05] text-amber-50">{cardName}</span>
+            <span aria-hidden className="float-right h-5 w-4" />
+            <span className="mr-1 inline-block align-[-2px]"><Gem type={cardType} size={13} /></span>
+            <span className="voice-display text-[0.62rem] text-[color:var(--color-parchment)]">{cardName}</span>
           </div>
 
           {/* art well: faint procedural sigil with the headline magnitude over it */}
@@ -167,6 +174,14 @@ export function Card({
                 style={{ color: magnitudeKind ? MAG_COLOR[magnitudeKind] : 'var(--color-parchment)', textShadow: '0 1px 4px #000' }}
               >
                 {magnitude}
+              </span>
+            )}
+            {magnitude == null && effectSummary && (
+              <span
+                className="relative px-1 text-center font-body text-[0.68rem] leading-tight text-[color:var(--color-parchment)]"
+                style={{ textShadow: '0 1px 3px #000' }}
+              >
+                {effectSummary}
               </span>
             )}
           </div>

@@ -169,7 +169,7 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 
 - `domain/ids.ts` — 17 branded ID types + `as*()` casts. **Active.**
 - `domain/rng.ts` — `RngState`, `RNG` interface. Impl in `systems/rng.ts` (Mulberry32 + `deriveRng`). **Active.**
-- `domain/boardGeometry.ts` — shared board math for canvas + HUD: `TILE`, `GRID_OFFSET_X`, `GRID_OFFSET_Y`, `tileAtStagePoint` (stage point → tile id), `clientToStage` (viewport → stage coords under the GameStage scale). Powers the card drag-to-target. **Active.**
+- `domain/boardGeometry.ts` — shared board math for canvas + HUD: `TILE`, `gridOriginX(w)`/`gridOriginY(h)` (per-battle board origin — grids center on the stage between top chrome and the hand; replaced the fixed `GRID_OFFSET_X/Y`), `HAND_TOP_Y` (command-zone top / self-play drop threshold), `tileAtStagePoint` (stage point → tile id), `clientToStage` (viewport → stage coords under the GameStage scale). Powers the card drag-to-target. **Active.**
 - `data/schemas/card.ts` ↔ `Card` (`CardSchema`, `WeaponTypeSchema`). **Active.**
 - `data/schemas/unit.ts` ↔ `Unit` (`UnitSchema`, `UnitStatsSchema`). **Active.**
 - `data/schemas/item.ts` ↔ `Item` (`ItemSchema`, `QuiverModifierSchema`). Gear-as-deck (ship plan §2-8): `ItemKind` spans consumables + gear (weapon/shield/quiver/tome/staff), `WeaponClass` + `QuiverModifierKind`/`QuiverModifier` types, `gearCardIds`, `twoHanded`; `HAND_SLOT_KINDS` + `isHandSlotItem` helpers. `data/itemRegistry.ts` exposes `getItemDef`/`allItemDefs`. Hand-slot rules in `systems/equipment.ts` (`planEquip`/`planUnequip`); deck composition in `systems/deckBuilder.ts` (`buildDeckForUnit` — innate + gear cards, source tags, quiver `cardMods` on `DeckState`). Unit gains `handLeft`/`handRight`. **Active.**
