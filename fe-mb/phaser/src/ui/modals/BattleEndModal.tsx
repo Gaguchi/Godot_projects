@@ -11,6 +11,66 @@ const CHECK_EVENTS: Record<string, CheckEvent> = {
 }
 
 /**
+ * Ceremony motion (scoped to this modal): the heading lands with a back-out
+ * settle, then children rise in staggered. Pure CSS entrance — skippable by
+ * nature, and fully collapsed under prefers-reduced-motion.
+ */
+const CEREMONY_CSS = `
+@keyframes battleEndHeadingIn {
+  from { opacity: 0; transform: scale(1.15); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes battleEndRiseIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.battle-end-heading { animation: battleEndHeadingIn 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.battle-end-rise { animation: battleEndRiseIn var(--dur-move) var(--ease-out-quart) both; }
+@media (prefers-reduced-motion: reduce) {
+  .battle-end-heading, .battle-end-rise { animation: none; }
+}
+`
+
+/** Staggered-child entrance delay — 60ms steps after the heading lands. */
+function riseDelay(step: number): string {
+  return `${240 + step * 60}ms`
+}
+
+/** Small-caps muted label under a tally numeral / above a chip row. */
+const LABEL_CLASS = 'text-[0.65rem] uppercase tracking-[0.18em]'
+const LABEL_STYLE: React.CSSProperties = { color: 'var(--color-text-muted)' }
+
+/** 2–3 ember motes drifting up from the hearth pool (victory mood only). */
+function VictoryEmbers(): React.JSX.Element {
+  const embers = [
+    { left: '38%', delay: '0.4s', drift: '12px', size: 3, dur: '6.5s' },
+    { left: '52%', delay: '2.2s', drift: '-10px', size: 2, dur: '7.5s' },
+    { left: '64%', delay: '1.1s', drift: '8px', size: 2, dur: '6s' },
+  ]
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 motion-reduce:hidden">
+      {embers.map((e, i) => (
+        <span
+          key={i}
+          className="absolute bottom-8 rounded-full"
+          style={{
+            left: e.left,
+            width: e.size,
+            height: e.size,
+            background: 'radial-gradient(circle, var(--color-hearth) 0%, transparent 70%)',
+            boxShadow: '0 0 6px color-mix(in oklab, var(--color-hearth) 80%, transparent)',
+            // @ts-expect-error custom property consumed by the emberRise keyframe
+            '--ember-drift': e.drift,
+            animation: `emberRise ${e.dur} linear infinite`,
+            animationDelay: e.delay,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/**
  * Victory / Defeat overlay shown when combatStore.state.phase becomes
  * VICTORY or DEFEAT. Subscribes to the store directly; mounted at App
  * root so it renders regardless of the active view.
@@ -122,8 +182,8 @@ export function BattleEndModal({
   const isGameOver = phase === 'DEFEAT'
   const runEnded = isRunComplete || isGameOver
 
+  // Run tally: days is the headline; the rest read as the ledger beneath.
   const stats: Array<[string, number]> = [
-    ['Days on the road', daysElapsed],
     ['Hops traveled', runStats.hops],
     ['Battles won', runStats.battlesWon],
     ['Enemies defeated', runStats.enemiesDefeated],
@@ -132,6 +192,8 @@ export function BattleEndModal({
     ['Gold earned', runStats.goldEarned],
     ['Gear found', runStats.gearFound],
   ]
+  const rowBaseDelay = 240 + 2 * 60
+  const buttonDelay = runEnded ? rowBaseDelay + stats.length * 40 + 60 : 240 + 3 * 60
 
   return (
     <Dialog
@@ -139,76 +201,180 @@ export function BattleEndModal({
       onOpenChange={() => undefined}
       isDismissable={false}
       aria-label={isRunComplete ? 'Run Complete' : isVictory ? 'Victory' : 'Game Over'}
-      className={isVictory ? 'border-amber-700' : 'border-red-900'}
+      className="relative overflow-hidden"
+      unpadded
     >
       <div
         id={isRunComplete ? 'run-complete-modal' : isVictory ? 'victory-modal' : 'defeat-modal'}
-        className="flex flex-col gap-5 text-center min-w-[420px]"
+        className="relative min-w-[460px] max-w-[560px] overflow-hidden px-10 pb-8 pt-9 text-center"
       >
-        <Heading
-          level={1}
-          className={
-            'text-4xl tracking-[0.4em] m-0 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] ' +
-            (isVictory ? 'text-amber-400' : 'text-red-600')
-          }
-        >
-          {isRunComplete ? 'THE THRONE IS YOURS' : isGameOver ? 'GAME OVER' : 'VICTORY'}
-        </Heading>
-        <div className="text-stone-500 text-sm">
-          {isRunComplete
-            ? 'The Warlord is defeated. The frontier is crossed.'
-            : isGameOver
-              ? 'Your party has fallen. The road claims another company.'
-              : `Enemies defeated: ${enemiesDefeated}`}
-        </div>
+        <style>{CEREMONY_CSS}</style>
 
-        {runEnded ? (
-          <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm mx-auto text-left">
-            {stats.map(([label, value]) => (
-              <React.Fragment key={label}>
-                <span className="text-stone-500">{label}</span>
-                <span className="numeral text-amber-100 text-right">{value}</span>
-              </React.Fragment>
-            ))}
-          </div>
+        {/* Outcome mood layer: victory = hearth pool + ember motes rising;
+            defeat = cold rust bleed from above + ash vignette. Tinted inner
+            seam replaces the old stock-color border. */}
+        {isVictory ? (
+          <>
+            <div
+              aria-hidden
+              className="hearth-glow-strong pointer-events-none absolute inset-0"
+              style={{
+                boxShadow: 'inset 0 0 0 1px color-mix(in oklab, var(--color-hearth) 32%, transparent)',
+              }}
+            />
+            <VictoryEmbers />
+          </>
         ) : (
-          <div className="text-stone-500 text-xs mt-2">
-            Survivors: {partyAlive.map((u) => u.name).join(', ') || 'None'}
-          </div>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(ellipse 100% 65% at 50% -8%, color-mix(in oklab, var(--color-enemy) 13%, transparent) 0%, transparent 62%), ' +
+                'radial-gradient(ellipse 130% 100% at 50% 45%, transparent 52%, color-mix(in oklab, var(--color-ash) 78%, transparent) 100%)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in oklab, var(--color-enemy) 26%, transparent)',
+            }}
+          />
         )}
 
-        <div className="flex gap-3 mt-4 justify-center flex-wrap">
+        <div className="relative flex flex-col gap-5">
+          <Heading
+            level={1}
+            className={
+              'battle-end-heading m-0 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] ' +
+              (isRunComplete ? 'text-3xl tracking-[0.3em] pl-[0.3em]' : 'text-4xl tracking-[0.4em] pl-[0.4em]')
+            }
+          >
+            <span style={{ color: isVictory ? 'var(--color-hearth)' : 'var(--hp-crit-text)' }}>
+              {isRunComplete ? 'THE THRONE IS YOURS' : isGameOver ? 'GAME OVER' : 'VICTORY'}
+            </span>
+          </Heading>
+
+          <div
+            className="battle-end-rise font-body text-sm italic"
+            style={{ animationDelay: riseDelay(0), color: 'var(--color-text-muted)' }}
+          >
+            {isRunComplete
+              ? 'The Warlord is defeated. The frontier is crossed.'
+              : isGameOver
+                ? 'Your party has fallen. The road claims another company.'
+                : 'The field is yours. The road goes on.'}
+          </div>
+
           {runEnded ? (
-            <>
-              {onNewRun && (
-                <Button id="battle-end-new-run" variant="primary" onPress={onNewRun} className="tracking-widest">
-                  New Run
-                </Button>
-              )}
-              <Button id="battle-end-title-btn" variant="ghost" onPress={onReturnToTitle} className="tracking-widest">
-                Return to Title
-              </Button>
-            </>
+            <div className="mx-auto flex w-[300px] flex-col items-stretch gap-3">
+              {/* Headline: the run's length is the story number. */}
+              <div className="battle-end-rise flex flex-col items-center gap-1" style={{ animationDelay: riseDelay(1) }}>
+                <span className="numeral text-3xl leading-none" style={{ color: 'var(--color-parchment)' }}>
+                  {daysElapsed}
+                </span>
+                <span className={LABEL_CLASS} style={LABEL_STYLE}>Days on the Road</span>
+              </div>
+              <div
+                aria-hidden
+                className="battle-end-rise h-px"
+                style={{
+                  animationDelay: `${rowBaseDelay - 20}ms`,
+                  background: isVictory
+                    ? 'linear-gradient(to right, transparent, color-mix(in oklab, var(--color-hearth-soft) 40%, transparent), transparent)'
+                    : 'linear-gradient(to right, transparent, color-mix(in oklab, var(--color-text-muted) 35%, transparent), transparent)',
+                }}
+              />
+              {/* Ledger rows — zero rows dim to a dash so the real story carries the eye. */}
+              <div className="flex flex-col gap-1.5 text-sm">
+                {stats.map(([label, value], i) => {
+                  const zero = value === 0
+                  return (
+                    <div
+                      key={label}
+                      className="battle-end-rise flex items-baseline justify-between gap-8"
+                      style={{ animationDelay: `${rowBaseDelay + i * 40}ms`, opacity: zero ? 0.45 : undefined }}
+                    >
+                      <span style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+                      <span
+                        className="numeral text-base"
+                        style={{ color: zero ? 'var(--color-text-muted)' : 'var(--color-parchment)' }}
+                      >
+                        {zero ? '—' : value}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           ) : (
             <>
-              {isVictory && onContinueToOverworld && (
-                <Button
-                  id="battle-end-continue"
-                  variant="primary"
-                  onPress={onContinueToOverworld}
-                  className="tracking-widest"
-                >
-                  Continue
-                </Button>
-              )}
-              <Button id="battle-end-restart" variant="secondary" onPress={onRestart} className="tracking-widest">
-                Restart
-              </Button>
-              <Button id="battle-end-title-btn" variant="ghost" onPress={onReturnToTitle} className="tracking-widest">
-                Return to Title
-              </Button>
+              {/* Designed tally: the payoff number is the largest text on the panel. */}
+              <div className="battle-end-rise flex flex-col items-center gap-1" style={{ animationDelay: riseDelay(1) }}>
+                <span className="numeral text-3xl leading-none" style={{ color: 'var(--color-parchment)' }}>
+                  {enemiesDefeated}
+                </span>
+                <span className={LABEL_CLASS} style={LABEL_STYLE}>
+                  {enemiesDefeated === 1 ? 'Enemy Defeated' : 'Enemies Defeated'}
+                </span>
+              </div>
+              {/* Survivors as unit chips with ally diamond markers. */}
+              <div className="battle-end-rise flex flex-col items-center gap-2" style={{ animationDelay: riseDelay(2) }}>
+                <span className={LABEL_CLASS} style={LABEL_STYLE}>Survivors</span>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {partyAlive.length > 0 ? (
+                    partyAlive.map((u) => (
+                      <span
+                        key={u.id as unknown as string}
+                        className="voice-display inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 text-sm"
+                        style={{
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          border: '1px solid color-mix(in oklab, var(--color-hearth-soft) 28%, transparent)',
+                          color: 'var(--color-parchment)',
+                        }}
+                      >
+                        <span
+                          aria-hidden
+                          className="inline-block h-1.5 w-1.5 rotate-45"
+                          style={{ background: 'var(--color-ally)' }}
+                        />
+                        {u.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm" style={{ color: 'var(--color-text-muted)', opacity: 0.6 }}>—</span>
+                  )}
+                </div>
+              </div>
             </>
           )}
+
+          <div
+            className="battle-end-rise mt-2 flex flex-wrap justify-center gap-3"
+            style={{ animationDelay: `${buttonDelay}ms` }}
+          >
+            {runEnded ? (
+              <>
+                {onNewRun && (
+                  <Button id="battle-end-new-run" variant="primary" onPress={onNewRun}>
+                    New Run
+                  </Button>
+                )}
+                <Button id="battle-end-title-btn" variant="ghost" onPress={onReturnToTitle}>
+                  Return to Title
+                </Button>
+              </>
+            ) : (
+              <>
+                {isVictory && onContinueToOverworld && (
+                  <Button id="battle-end-continue" variant="primary" onPress={onContinueToOverworld}>
+                    Continue
+                  </Button>
+                )}
+                <Button id="battle-end-restart" variant="secondary" onPress={onRestart}>
+                  Restart
+                </Button>
+                <Button id="battle-end-title-btn" variant="ghost" onPress={onReturnToTitle}>
+                  Return to Title
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </Dialog>

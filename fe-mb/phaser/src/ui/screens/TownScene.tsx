@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import pineCrossingTown from '../../data/content/towns/pine_crossing.json'
 import riversideMarketTown from '../../data/content/towns/riverside_market.json'
@@ -42,6 +42,12 @@ export interface TownSceneProps {
 
 export function TownScene({ onLeave, initialPanel }: TownSceneProps): React.JSX.Element {
   const [activePanel, setActivePanel] = useState<Panel>(initialPanel ?? 'inn')
+  const mainRef = useRef<HTMLElement | null>(null)
+  const switchPanel = (p: Panel): void => {
+    setActivePanel(p)
+    // A new room always opens at its threshold — never mid-scroll from the last.
+    if (mainRef.current) mainRef.current.scrollTop = 0
+  }
   const worldPosition = useRunStore((s) => s.worldPosition)
   const townId = worldPosition.nodeId as unknown as string
   const town = TOWN_REGISTRY[townId] ?? (pineCrossingTown as TownDef)
@@ -52,8 +58,11 @@ export function TownScene({ onLeave, initialPanel }: TownSceneProps): React.JSX.
   return (
     <div
       id="town-scene"
-      className="relative flex h-full w-full overflow-hidden font-body text-amber-100"
-      style={{ background: 'linear-gradient(to bottom, #221a10 0%, #15100a 58%, #0b0806 100%)' }}
+      className="relative flex h-full w-full overflow-hidden font-body text-parchment"
+      style={{
+        background:
+          'linear-gradient(to bottom, color-mix(in oklab, var(--color-hearth) 6%, var(--color-ink)) 0%, color-mix(in oklab, var(--color-ash) 45%, var(--color-ink)) 58%, var(--color-ash) 100%)',
+      }}
     >
       {/* warm hearth + faint grain — a tavern at dusk, not a flat panel */}
       <div aria-hidden className="hearth-glow absolute inset-0" />
@@ -73,7 +82,7 @@ export function TownScene({ onLeave, initialPanel }: TownSceneProps): React.JSX.
             key={p}
             id={`town-${p}-btn`}
             variant={activePanel === p ? 'primary' : 'secondary'}
-            onPress={() => setActivePanel(p)}
+            onPress={() => switchPanel(p)}
             className="!justify-start text-left"
           >
             {PANEL_LABELS[p]}
@@ -84,13 +93,15 @@ export function TownScene({ onLeave, initialPanel }: TownSceneProps): React.JSX.
           id="town-leave-btn"
           variant="ghost"
           onPress={onLeave}
-          className="!justify-start text-left text-parchment-dim data-[hovered]:text-amber-100"
+          className="!justify-start text-left"
         >
           {PANEL_LABELS.leave}
         </Button>
       </aside>
 
-      <main className="relative z-10 flex-1 overflow-auto p-8">
+      {/* pt-24 reserves vertical space for the fixed GameHud plate (top-4 + ~72px
+          tall) so panel headings never flow underneath it. */}
+      <main ref={mainRef} className="relative z-10 flex-1 overflow-auto p-8 pt-24">
         {activePanel === 'inn' && <InnPanel />}
         {activePanel === 'shop' && <ShopPanel town={town} />}
         {activePanel === 'tavern' && <TavernPanel town={town} />}

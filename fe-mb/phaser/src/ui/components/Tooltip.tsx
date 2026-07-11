@@ -34,13 +34,16 @@ export function Tooltip({
         placement={placement}
         {...(container ? { UNSTABLE_portalContainer: container } : {})}
         className={
-          'bg-stone-950 border border-amber-900/60 text-amber-100 ' +
-          'font-body text-xs px-2 py-1 rounded shadow-lg max-w-xs'
+          'hud-panel text-[color:var(--color-parchment)] ' +
+          'font-body text-xs px-2 py-1 max-w-xs'
         }
       >
         <OverlayArrow>
           <svg width={8} height={8} viewBox="0 0 8 8">
-            <path d="M0 0 L4 4 L8 0 Z" className="fill-stone-950 stroke-amber-900/60" />
+            <path
+              d="M0 0 L4 4 L8 0 Z"
+              style={{ fill: 'var(--color-ink)', stroke: 'var(--iron-edge)' }}
+            />
           </svg>
         </OverlayArrow>
         {content}

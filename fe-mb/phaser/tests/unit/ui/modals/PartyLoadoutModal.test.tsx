@@ -81,8 +81,10 @@ describe('<PartyLoadoutModal>', () => {
       payload: { unitId: asUnitId('roy'), itemId: 'iron_sword' as never, slot: 'left' },
     })
     render(<PartyLoadoutModal open onClose={noop} />)
-    expect(screen.getByText(/Class:/)).toBeInTheDocument()
-    expect(screen.getByText(/Left hand:/)).toBeInTheDocument()
+    // Source group headers live inside the deck preview panel (card chips per group).
+    const deckPanel = document.querySelector('#deck-preview')!
+    expect(deckPanel.textContent).toContain('Class')
+    expect(deckPanel.textContent).toContain('Left hand')
     expect(screen.getByText(/Deck next battle · 8 cards/)).toBeInTheDocument()
   })
 })

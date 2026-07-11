@@ -2,6 +2,7 @@ import React from 'react'
 import { useRunStore } from '../../../state/runStore'
 import type { Unit } from '../../../domain/unit'
 import { Button, Heading } from '../../components'
+import { SectionLabel } from './townUi'
 
 export const HEAL_COST_PER_UNIT = 8
 
@@ -26,16 +27,34 @@ export function InnPanel(): React.JSX.Element {
   return (
     <div id="inn-panel">
       <Heading level={1} className="text-2xl tracking-widest m-0">The Inn</Heading>
-      <p className="text-stone-500 max-w-lg mt-2">
-        Rest your party. Heals all wounded units to full HP. Costs {HEAL_COST_PER_UNIT}g per wounded unit.
+      <p className="mt-2 max-w-lg text-[color:var(--color-text-muted)]">
+        Warm beds and a hot meal — {HEAL_COST_PER_UNIT}g a head, and the wounded wake whole.
       </p>
-      <div className="mt-6">
-        <strong>Wounded units:</strong>{' '}
-        {wounded.length === 0
-          ? 'none'
-          : wounded.map((u) => `${u.name} (${u.hp.current}/${u.hp.max})`).join(', ')}
-      </div>
-      <div className="mt-4">Cost: {totalHealCost}g</div>
+
+      <SectionLabel className="mt-6">Wounded</SectionLabel>
+      {wounded.length === 0 ? (
+        <div className="mt-2 text-[color:var(--color-text-muted)]">Everyone is rested and whole.</div>
+      ) : (
+        <div className="mt-2 max-w-sm space-y-1.5">
+          {wounded.map((u) => (
+            <div
+              key={u.id as unknown as string}
+              className="flex items-baseline justify-between border-b border-[rgba(120,98,60,0.18)] pb-1"
+            >
+              <span className="font-body text-parchment">{u.name}</span>
+              <span className="numeral text-sm text-[color:var(--color-damage-text)]">
+                {u.hp.current}
+                <span className="opacity-60">/{u.hp.max}</span>
+              </span>
+            </div>
+          ))}
+          <div className="flex items-baseline justify-between pt-1">
+            <span className="text-sm text-[color:var(--color-text-muted)]">Board and care</span>
+            <span className="numeral text-base text-[color:var(--color-hearth-soft)]">{totalHealCost}g</span>
+          </div>
+        </div>
+      )}
+
       <Button
         id="inn-heal-btn"
         variant="primary"

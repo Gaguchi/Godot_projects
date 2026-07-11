@@ -3,16 +3,97 @@ import { useRunStore } from '../../../state/runStore'
 import itemsJson from '../../../data/content/items.json'
 import { asItemId } from '../../../domain/ids'
 import type { TownDef } from '../../../domain/town'
-import type { Item } from '../../../domain/item'
+import type { Item, ItemKind, QuiverModifierKind } from '../../../domain/item'
 import { Button, Heading } from '../../components'
 import { shopStockFor } from '../../../systems/shopStock'
-import { RARITY_TEXT, RARITY_BORDER } from '../../rarity'
+import { RARITY_TEXT, RARITY_EDGE } from '../../rarity'
+import { CardsGlyph, EmptyState, KindSocket, SatchelGlyph, SectionLabel } from './townUi'
 
 export interface ShopPanelProps {
   town: TownDef
 }
 
 const ALL_ITEMS = itemsJson as unknown as Item[]
+
+const KIND_LABEL: Record<ItemKind, string> = {
+  food: 'Rations',
+  potion: 'Potion',
+  weapon: 'Weapon',
+  shield: 'Shield',
+  quiver: 'Quiver',
+  tome: 'Tome',
+  staff: 'Staff',
+}
+
+const QUIVER_LABEL: Record<QuiverModifierKind, string> = {
+  poison: 'Poisoned',
+  slow: 'Slowing',
+  thunder: 'Thunder',
+  explosive: 'Explosive',
+}
+
+/** Small-caps trait line under the item name — rarity lives in color, not words. */
+function itemTraits(item: Item): string {
+  const parts: string[] = [KIND_LABEL[item.kind]]
+  if (item.twoHanded) parts.push('Two-handed')
+  if (item.quiverModifier) parts.push(QUIVER_LABEL[item.quiverModifier.kind])
+  return parts.join(' · ')
+}
+
+interface StockRowProps {
+  item: Item
+  price: number
+  /** Buy rows: gold >= price. Sell rows: always true. */
+  affordable: boolean
+  actionLabel: string
+  actionDisabled: boolean
+  onAction: () => void
+}
+
+/** A shop row as a physical object: socketed glyph, named gear, carved price. */
+function StockRow({ item, price, affordable, actionLabel, actionDisabled, onAction }: StockRowProps): React.JSX.Element {
+  const cardCount = item.gearCardIds?.length ?? 0
+  return (
+    <div
+      className={`surface-iron flex items-center gap-3 rounded-[var(--radius-md)] border-l-2 p-3 ${RARITY_EDGE[item.rarity]}`}
+    >
+      <KindSocket kind={item.kind} />
+      <div className="min-w-0 flex-1">
+        <div className={`font-body text-[0.95rem] leading-tight ${RARITY_TEXT[item.rarity]}`}>{item.name}</div>
+        <div className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+          {itemTraits(item)}
+        </div>
+      </div>
+      {cardCount > 0 && (
+        <span
+          className="flex shrink-0 items-center gap-1 rounded-[var(--radius-sm)] bg-black/30 px-1.5 py-1 text-parchment-dim"
+          aria-label={`grants ${cardCount} cards`}
+        >
+          <CardsGlyph size={13} />
+          <span className="numeral text-[0.7rem]">{cardCount}</span>
+        </span>
+      )}
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        <span
+          className={`numeral text-lg leading-none ${
+            affordable ? 'text-[color:var(--color-hearth-soft)]' : 'text-[color:var(--color-damage-text)]'
+          }`}
+        >
+          {price}
+          <span className="text-[0.7rem] opacity-80">g</span>
+        </span>
+        <Button
+          variant="secondary"
+          isDisabled={actionDisabled}
+          onPress={onAction}
+          className="!px-3 !py-1 !text-[0.65rem]"
+        >
+          {actionLabel}
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function ShopPanel({ town }: ShopPanelProps): React.JSX.Element {
   const dispatchRun = useRunStore((s) => s.dispatch)
@@ -30,67 +111,53 @@ export function ShopPanel({ town }: ShopPanelProps): React.JSX.Element {
     dispatchRun({ type: 'sellItem', payload: { itemId: asItemId(itemId), sellPrice } })
   }
 
-  const gearMeta = (item: Item): string => {
-    let meta = `${item.kind} · ${item.rarity}`
-    if (item.gearCardIds) meta += ` · ${item.gearCardIds.length} cards`
-    if (item.twoHanded) meta += ' · 2H'
-    if (item.quiverModifier) meta += ` · ${item.quiverModifier.kind}`
-    return meta
-  }
-
   return (
     <div id="shop-panel">
       <Heading level={1} className="text-2xl tracking-widest m-0">The Shop</Heading>
-      <p className="text-stone-500 mt-2">Gear and supplies. Press I to manage loadouts.</p>
+      <p className="mt-2 text-[color:var(--color-text-muted)]">Steel, salves, and traveling rations.</p>
 
-      <h3 className="mt-6 text-sm tracking-widest text-amber-200">STOCK</h3>
-      <div className="grid grid-cols-2 gap-3 mt-3">
-        {shopStock.map((item) => (
-          <div
-            key={item.id as unknown as string}
-            className={`p-3 border flex justify-between items-center ${RARITY_BORDER[item.rarity]}`}
-          >
-            <div>
-              <div className={RARITY_TEXT[item.rarity]}>{item.name}</div>
-              <div className="text-[10px] text-stone-500">{gearMeta(item)}</div>
-            </div>
-            <Button
-              variant="secondary"
-              isDisabled={gold < item.buyPrice}
-              onPress={() => onBuy(item.id as unknown as string, item.buyPrice)}
-              className="!px-3 !py-1.5 !text-xs"
-            >
-              Buy {item.buyPrice}g
-            </Button>
-          </div>
-        ))}
+      <SectionLabel className="mt-6">Stock</SectionLabel>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        {shopStock.map((item) => {
+          const affordable = gold >= item.buyPrice
+          return (
+            <StockRow
+              key={item.id as unknown as string}
+              item={item}
+              price={item.buyPrice}
+              affordable={affordable}
+              actionLabel={affordable ? 'Buy' : `Need ${item.buyPrice}g`}
+              actionDisabled={!affordable}
+              onAction={() => onBuy(item.id as unknown as string, item.buyPrice)}
+            />
+          )
+        })}
       </div>
 
-      <h3 className="mt-8 text-sm tracking-widest text-amber-200">YOUR BAG ({inventoryItems.length} items)</h3>
+      <SectionLabel>
+        Your Bag{inventoryItems.length > 0 ? ` · ${inventoryItems.length}` : ''}
+      </SectionLabel>
       {inventoryItems.length === 0 && (
-        <div className="text-stone-500 italic mt-2">Empty.</div>
+        <EmptyState
+          glyph={<SatchelGlyph />}
+          line="Your satchel is empty."
+          hint="Spoils of the road and market buys gather here."
+        />
       )}
-      <div className="grid grid-cols-2 gap-3 mt-3">
+      <div className="mt-3 grid grid-cols-2 gap-3">
         {inventoryItems.map((bagItem, idx) => {
           const item = ALL_ITEMS.find((i) => (i.id as unknown as string) === (bagItem.itemId as unknown as string))
           if (!item) return null
           return (
-            <div
+            <StockRow
               key={`${item.id as unknown as string}-${idx}`}
-              className={`p-3 border flex justify-between items-center ${RARITY_BORDER[item.rarity]}`}
-            >
-              <div>
-                <div className={RARITY_TEXT[item.rarity]}>{item.name}</div>
-                <div className="text-[10px] text-stone-500">{gearMeta(item)}</div>
-              </div>
-              <Button
-                variant="secondary"
-                onPress={() => onSell(item.id as unknown as string, item.sellPrice)}
-                className="!px-3 !py-1.5 !text-xs"
-              >
-                Sell {item.sellPrice}g
-              </Button>
-            </div>
+              item={item}
+              price={item.sellPrice}
+              affordable
+              actionLabel="Sell"
+              actionDisabled={false}
+              onAction={() => onSell(item.id as unknown as string, item.sellPrice)}
+            />
           )
         })}
       </div>

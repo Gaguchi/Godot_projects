@@ -7,9 +7,17 @@ import type { TownDef, TavernRecruitEntry } from '../../../domain/town'
 import { Button, Heading } from '../../components'
 import { recruitmentCost } from '../../../systems/recruitmentCost'
 import { buildUnit } from '../../../systems/buildUnit'
+import { BoardGlyph, EmptyState, SectionLabel, TankardGlyph } from './townUi'
 
 export interface TavernPanelProps {
   town: TownDef
+}
+
+/** Display layer over class ids — the player never reads snake_case. */
+function classDisplayName(classId: unknown): string {
+  return String(classId)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 export function TavernPanel({ town }: TavernPanelProps): React.JSX.Element {
@@ -45,23 +53,27 @@ export function TavernPanel({ town }: TavernPanelProps): React.JSX.Element {
   return (
     <div id="tavern-panel">
       <Heading level={1} className="text-2xl tracking-widest m-0">The Drunken Boar</Heading>
-      <p className="text-stone-500 mt-2">Rumors, quests, and bounties.</p>
+      <p className="mt-2 text-[color:var(--color-text-muted)]">Rumors, quests, and bounties.</p>
 
-      <h3 className="mt-6 text-sm tracking-widest text-amber-200">RUMORS</h3>
-      <ul className="text-stone-500 leading-relaxed list-disc pl-5">
+      <SectionLabel className="mt-6">Rumors</SectionLabel>
+      <div className="mt-3 max-w-xl space-y-2.5">
         {town.rumors.map((r, i) => (
-          <li key={i}>"{r}"</li>
+          <p key={i} className="m-0 font-body leading-relaxed text-[color:var(--color-parchment-dim)]">
+            <span className="opacity-60">&ldquo;</span>
+            {r}
+            <span className="opacity-60">&rdquo;</span>
+          </p>
         ))}
-      </ul>
+      </div>
 
-      <h3 className="mt-6 text-sm tracking-widest text-amber-200">QUEST BOARD</h3>
+      <SectionLabel>Quest Board</SectionLabel>
       {visibleQuests.length === 0 ? (
-        <div className="mt-3 text-stone-500">No quests on the board today.</div>
+        <div className="mt-3 text-[color:var(--color-text-muted)]">No one is asking for help today.</div>
       ) : (
         visibleQuests.map((q) => (
-          <div key={q.questId} className="p-4 border border-stone-800 mt-3">
-            <strong>{q.npcName}</strong>
-            <p className="text-xs text-stone-500 mt-1">{q.npcDescription}</p>
+          <div key={q.questId} className="surface-iron mt-3 max-w-xl rounded-[var(--radius-md)] p-4">
+            <div className="font-body text-[1.05rem] text-parchment">{q.npcName}</div>
+            <p className="mt-1 text-sm leading-snug text-[color:var(--color-text-muted)]">{q.npcDescription}</p>
             <Button
               id={`tavern-talk-${q.questId}`}
               variant="primary"
@@ -79,18 +91,27 @@ export function TavernPanel({ town }: TavernPanelProps): React.JSX.Element {
         ))
       )}
       {Object.keys(questStates).length > 0 && (
-        <div className="mt-3 text-stone-500">
+        <div className="mt-3 text-sm text-[color:var(--color-text-muted)]">
           Active quest: Blood Ties (in progress)
         </div>
       )}
-      <h3 className="mt-6 text-sm tracking-widest text-amber-200">BOUNTY BOARD</h3>
-      <div className="text-stone-500 italic">The board is empty today.</div>
 
-      <h3 className="mt-6 text-sm tracking-widest text-amber-200">RECRUITMENT</h3>
+      <SectionLabel>Bounty Board</SectionLabel>
+      <EmptyState
+        glyph={<BoardGlyph />}
+        line="Nothing nailed up today — the roads must be quiet."
+        hint="Bounties post as word of trouble reaches town."
+      />
+
+      <SectionLabel>Recruitment</SectionLabel>
       {visibleRecruits.length === 0 ? (
-        <div className="text-stone-500 italic">No recruits today.</div>
+        <EmptyState
+          glyph={<TankardGlyph />}
+          line="No swords for hire tonight."
+          hint="Sellswords drift in as your company's name travels."
+        />
       ) : (
-        <div className="grid grid-cols-1 gap-3 mt-2">
+        <div className="mt-3 grid max-w-xl grid-cols-1 gap-3">
           {visibleRecruits.map((r) => {
             const cost = costFor(r)
             const canAfford = gold >= cost
@@ -98,24 +119,38 @@ export function TavernPanel({ town }: TavernPanelProps): React.JSX.Element {
               <div
                 key={r.id}
                 id={`tavern-recruit-${r.id}`}
-                className="p-3 border border-stone-800 flex justify-between items-center"
+                className="surface-iron flex items-center justify-between gap-3 rounded-[var(--radius-md)] p-3"
               >
-                <div>
-                  <strong>{r.name}</strong>
-                  <span className="ml-2 text-[10px] text-stone-500">{r.classId} · L{r.level}</span>
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-body text-[0.95rem] text-parchment">{r.name}</span>
+                    <span className="text-[0.62rem] uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                      {classDisplayName(r.classId)} · Lv <span className="numeral">{r.level}</span>
+                    </span>
+                  </div>
                   {r.description && (
-                    <p className="text-xs text-stone-500 mt-1">{r.description}</p>
+                    <p className="mt-1 text-xs leading-snug text-[color:var(--color-text-muted)]">{r.description}</p>
                   )}
                 </div>
-                <Button
-                  id={`tavern-recruit-btn-${r.id}`}
-                  variant="primary"
-                  isDisabled={!canAfford}
-                  onPress={() => onRecruit(r)}
-                  className="!text-xs"
-                >
-                  {canAfford ? `Hire ${cost}g` : `Need ${cost}g`}
-                </Button>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span
+                    className={`numeral text-lg leading-none ${
+                      canAfford ? 'text-[color:var(--color-hearth-soft)]' : 'text-[color:var(--color-damage-text)]'
+                    }`}
+                  >
+                    {cost}
+                    <span className="text-[0.7rem] opacity-80">g</span>
+                  </span>
+                  <Button
+                    id={`tavern-recruit-btn-${r.id}`}
+                    variant="primary"
+                    isDisabled={!canAfford}
+                    onPress={() => onRecruit(r)}
+                    className="!px-3 !py-1 !text-[0.65rem]"
+                  >
+                    {canAfford ? 'Hire' : `Need ${cost}g`}
+                  </Button>
+                </div>
               </div>
             )
           })}
