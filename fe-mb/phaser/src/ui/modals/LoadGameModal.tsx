@@ -1,16 +1,35 @@
 import React, { useEffect, useState } from 'react'
-import { Dialog, Button, Heading } from '../components'
+import { Dialog, Button, Heading, Icon } from '../components'
 import { listSlots, isSlotEmpty, type SaveSlotMeta } from '../../persistence/saveSlots'
+import { SlotCard, ModalRule } from './SaveGameModal'
+
+/** Open book, blank pages — Icon.tsx has no chronicle glyph, so a local
+ *  inline SVG in the set's stroke family carries the empty-state silhouette. */
+function UnwrittenChronicleGlyph(): React.JSX.Element {
+  return (
+    <svg
+      width={48}
+      height={48}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 6.2 C10.2 4.8 7.2 4.6 4.8 5.6 V17.6 C7.2 16.6 10.2 16.8 12 18.2 C13.8 16.8 16.8 16.6 19.2 17.6 V5.6 C16.8 4.6 13.8 4.8 12 6.2 Z" />
+      <path d="M12 6.2 V18.2" />
+      <path d="M7 9 c1.2 -0.3 2.4 -0.3 3.4 0.1" opacity={0.55} />
+      <path d="M7 11.5 c1.2 -0.3 2.4 -0.3 3.4 0.1" opacity={0.35} />
+    </svg>
+  )
+}
 
 export interface LoadGameModalProps {
   open: boolean
   onClose: () => void
   onSelect: (slotId: string) => void
-}
-
-function formatDate(ts: number): string {
-  if (ts === 0) return ''
-  return new Date(ts).toLocaleString()
 }
 
 export function LoadGameModal({ open, onClose, onSelect }: LoadGameModalProps): React.JSX.Element {
@@ -22,56 +41,61 @@ export function LoadGameModal({ open, onClose, onSelect }: LoadGameModalProps): 
   const allEmpty = slots.every(isSlotEmpty)
 
   return (
-    <Dialog isOpen={open} onOpenChange={(o) => { if (!o) onClose() }} aria-label="Load Game">
-      <div id="load-game-modal" className="flex flex-col gap-4 min-w-[440px] max-h-[70vh]">
-        <div className="flex justify-between items-center border-b border-stone-800 pb-3">
-          <Heading level={2} className="text-xl tracking-widest m-0">Load Game</Heading>
-          <Button id="load-game-close" variant="ghost" onPress={onClose} className="text-amber-400 px-3 py-1" aria-label="Close">
-            ×
-          </Button>
+    <Dialog
+      isOpen={open}
+      onOpenChange={(o) => { if (!o) onClose() }}
+      aria-label="Load Game"
+      backdrop="veil"
+    >
+      <div id="load-game-modal" className="flex max-h-[70vh] min-w-[440px] cursor-default select-none flex-col gap-4">
+        <div>
+          <div className="flex items-center justify-between pb-2">
+            <Heading
+              level={2}
+              className="voice-display m-0 text-lg uppercase tracking-[0.24em] text-[color:var(--color-parchment)]"
+            >
+              Load Game
+            </Heading>
+            <Button
+              id="load-game-close"
+              variant="ghost"
+              onPress={onClose}
+              className="px-2 py-1"
+              aria-label="Close"
+            >
+              <Icon name="cross" size={16} />
+            </Button>
+          </div>
+          <ModalRule />
         </div>
+
         {allEmpty ? (
-          <div id="load-game-empty" className="text-center py-8 text-stone-500 italic">
-            No saved games yet.
+          // Designed empty state: dimmed silhouette + in-voice copy + a
+          // pointer to the action that fills it. (Copy keeps the
+          // "No saved games" phrase — e2e boot contract.)
+          <div id="load-game-empty" className="flex flex-col items-center gap-2 px-6 py-8 text-center">
+            <span className="opacity-30 text-[color:var(--color-parchment-dim)]">
+              <UnwrittenChronicleGlyph />
+            </span>
+            <p className="m-0 font-body text-sm text-[color:var(--color-text-muted)]">
+              No saved games yet — the chronicle is unwritten.
+            </p>
+            <p className="m-0 font-body text-xs text-[color:var(--color-text-muted)] opacity-75">
+              Save from the pause menu, out on the road.
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             {slots.map((slot) => {
               const empty = isSlotEmpty(slot)
               return (
-                <button
+                <SlotCard
                   key={slot.slotId}
-                  data-testid={`load-slot-${slot.slotId}`}
-                  data-empty={empty ? 'true' : 'false'}
-                  disabled={empty}
-                  onClick={() => onSelect(slot.slotId)}
-                  className={
-                    'text-left px-4 py-3 rounded border transition-colors '
-                    + (empty
-                      ? 'border-stone-800 bg-stone-900/30 opacity-50 cursor-not-allowed'
-                      : 'border-stone-700 bg-stone-900/60 hover:bg-stone-900/90 hover:border-amber-700 cursor-pointer')
-                  }
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={empty ? 'text-stone-500' : 'font-bold text-amber-200'}>
-                      Slot {Number(slot.slotId) + 1}
-                    </span>
-                    {empty
-                      ? <span className="text-stone-500 italic text-xs">empty</span>
-                      : <span className="text-stone-400 text-xs">{formatDate(slot.savedAt)}</span>}
-                  </div>
-                  {!empty && slot.summary && (
-                    <div className="mt-1 text-xs text-stone-400 flex gap-3">
-                      <span>{slot.summary.partyCount} party</span>
-                      <span>·</span>
-                      <span>{slot.summary.gold}g</span>
-                      <span>·</span>
-                      <span>{slot.summary.foodCount} food</span>
-                      <span>·</span>
-                      <span className="truncate flex-1">{slot.summary.location}</span>
-                    </div>
-                  )}
-                </button>
+                  slot={slot}
+                  testId={`load-slot-${slot.slotId}`}
+                  isDisabled={empty}
+                  onPress={() => onSelect(slot.slotId)}
+                />
               )
             })}
           </div>

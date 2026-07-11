@@ -21,13 +21,13 @@ test('new game click → first-run tutorial battle mounts', async ({ page }) => 
   await expect(page.locator('canvas')).toBeVisible()
 })
 
-test('load game click → modal opens with empty state → close', async ({ page }) => {
+test('load game with no saves → button disabled with reason (never a dead-end modal)', async ({ page }) => {
   await page.goto('/')
-  await page.locator('#title-load-game').click()
-  await expect(page.locator('#load-game-modal')).toBeVisible({ timeout: 2000 })
-  await expect(page.locator('#load-game-empty')).toContainText('No saved games')
-  await page.locator('#load-game-close').click()
-  await expect(page.locator('#load-game-modal')).toHaveCount(0)
+  // New contract (UI overhaul): with no chronicles to load, Load Game is
+  // disabled-with-reason (tooltip) instead of opening an empty modal.
+  const load = page.locator('#title-load-game')
+  await expect(load).toBeVisible({ timeout: 5000 })
+  await expect(load).toBeDisabled()
 })
 
 test('quit click → fallback modal in browser → back to title', async ({ page }) => {

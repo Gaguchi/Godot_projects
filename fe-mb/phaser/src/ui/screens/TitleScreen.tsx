@@ -1,5 +1,8 @@
-import React from 'react'
-import { Button } from '../components'
+import React, { useState } from 'react'
+import { Focusable } from 'react-aria-components'
+import { Button, Tooltip } from '../components'
+import { GAME_TITLE, GAME_TAGLINE } from '../strings'
+import { listSlots, isSlotEmpty } from '../../persistence/saveSlots'
 
 /**
  * Title screen — first thing the player sees on boot.
@@ -9,6 +12,8 @@ import { Button } from '../components'
  * amber emissive edge that flickers like firelight; embers drift up from the
  * hearth pool behind it. New Game is the single primary (hearth-lit) action;
  * Load/Quit are demoted to ghosts so the eye lands on the one thing you do here.
+ * All three share ONE voice: display caps with tracking — hierarchy comes from
+ * the hearth light, not from switching typefaces mid-menu.
  *
  * Buttons remain <Button> wrappers (RAC state machines: hover/press/focus +
  * keyboard activation). All motion is transform/opacity-only and respects
@@ -40,8 +45,9 @@ function Embers(): React.JSX.Element {
             left: e.left,
             width: e.size,
             height: e.size,
-            background: 'radial-gradient(circle, #f3c46a 0%, #e8a93a 50%, transparent 70%)',
-            boxShadow: '0 0 6px rgba(232,169,58,0.8)',
+            background:
+              'radial-gradient(circle, color-mix(in oklab, var(--color-parchment) 35%, var(--color-hearth)) 0%, var(--color-hearth) 50%, transparent 70%)',
+            boxShadow: '0 0 6px color-mix(in oklab, var(--color-hearth) 80%, transparent)',
             // @ts-expect-error custom property for the keyframe drift
             '--ember-drift': e.drift,
             animation: `emberRise ${e.dur} linear infinite`,
@@ -54,13 +60,34 @@ function Embers(): React.JSX.Element {
 }
 
 export function TitleScreen({ onNewGame, onLoadGame, onQuit }: TitleScreenProps): React.JSX.Element {
+  // Does any chronicle exist? Read once on mount — the title screen remounts
+  // whenever the player returns to it, so this stays fresh.
+  const [hasSave] = useState(() => listSlots().some((s) => !isSlotEmpty(s)))
+  // Disabled buttons swallow pointer events, so RAC's own hover detection
+  // never fires — drive the disabled-reason tooltip from the wrapper's hover.
+  const [showLoadHint, setShowLoadHint] = useState(false)
+
+  const loadButton = (
+    <Button
+      id="title-load-game"
+      variant="ghost"
+      isDisabled={!hasSave}
+      onPress={onLoadGame}
+      // Disabled native buttons swallow pointer events, which would keep the
+      // wrapping Tooltip Focusable from ever seeing hover — let them pass through.
+      className="voice-display w-full text-sm tracking-[0.18em] data-[disabled]:pointer-events-none"
+    >
+      Load Game
+    </Button>
+  )
+
   return (
     <div
       id="title-screen"
-      className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden"
+      className="relative flex h-full w-full select-none flex-col items-center justify-center overflow-hidden"
       style={{
         background:
-          'linear-gradient(to bottom, #1a1410 0%, #0d0a07 58%, #050403 100%)',
+          'linear-gradient(to bottom, var(--color-ink) 0%, color-mix(in oklab, var(--color-ink) 55%, var(--color-ash)) 58%, var(--color-ash) 100%)',
       }}
     >
       {/* hearth pool + faint grain, behind everything */}
@@ -73,38 +100,48 @@ export function TitleScreen({ onNewGame, onLoadGame, onQuit }: TitleScreenProps)
         <div className="hearth-flicker relative">
           <div
             className="surface-iron relative rounded-md px-10 py-5 sm:px-14 sm:py-6"
-            style={{ boxShadow: 'var(--bevel-iron), 0 0 60px rgba(232,169,58,0.28)' }}
+            style={{
+              boxShadow:
+                'var(--bevel-iron), 0 0 60px color-mix(in oklab, var(--color-hearth) 28%, transparent)',
+            }}
           >
             {/* emissive amber edges — firelight catching the forged metal: a
                 bright outer rim + a tighter inner bevel-catch + a top specular */}
             <div
               aria-hidden
               className="pointer-events-none absolute inset-[2px] rounded-[4px]"
-              style={{ boxShadow: 'inset 0 0 0 1px rgba(232,169,58,0.55), inset 0 0 14px rgba(232,169,58,0.18)' }}
+              style={{
+                boxShadow:
+                  'inset 0 0 0 1px color-mix(in oklab, var(--color-hearth) 55%, transparent), inset 0 0 14px color-mix(in oklab, var(--color-hearth) 18%, transparent)',
+              }}
             />
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-3 top-[3px] h-px rounded-full"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,225,170,0.6), transparent)' }}
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-parchment) 60%, transparent), transparent)',
+              }}
             />
             <h1
-              className="voice-display select-none text-6xl text-amber-100 sm:text-7xl"
+              className="voice-display text-6xl uppercase text-[color:var(--color-parchment)] sm:text-7xl"
               style={{
                 letterSpacing: '0.2em',
                 textShadow:
-                  '0 1px 0 #000, 0 0 18px rgba(232,169,58,0.45), 0 0 2px rgba(232,169,58,0.6)',
+                  '0 1px 0 var(--color-ash), 0 0 18px color-mix(in oklab, var(--color-hearth) 45%, transparent), 0 0 2px color-mix(in oklab, var(--color-hearth) 60%, transparent)',
               }}
             >
-              FE_MB
+              {GAME_TITLE}
             </h1>
           </div>
         </div>
 
-        <div className="mt-5 voice-display text-[0.78rem] uppercase tracking-[0.58em] text-parchment">
-          tactical&nbsp;roguelite
+        <div className="voice-display mt-5 text-[0.78rem] uppercase tracking-[0.58em] text-[color:var(--color-parchment-dim)]">
+          {GAME_TAGLINE}
         </div>
 
-        {/* Action hierarchy: New Game is the one lit action; the rest recede. */}
+        {/* Action hierarchy: New Game is the one lit action; the rest recede.
+            One voice for all three — display caps; light does the ranking. */}
         <nav className="mt-14 flex w-72 flex-col items-stretch gap-3">
           <Button
             id="title-new-game"
@@ -114,19 +151,31 @@ export function TitleScreen({ onNewGame, onLoadGame, onQuit }: TitleScreenProps)
           >
             New Game
           </Button>
-          <Button
-            id="title-load-game"
-            variant="ghost"
-            onPress={onLoadGame}
-            className="tracking-[0.14em] text-parchment-dim data-[hovered]:text-amber-100"
-          >
-            Load Game
-          </Button>
+          {hasSave ? (
+            loadButton
+          ) : (
+            <Tooltip
+              placement="right"
+              isOpen={showLoadHint}
+              content={<span className="font-body italic">No chronicle yet — forge a new one.</span>}
+              trigger={
+                <Focusable>
+                  <div
+                    className="flex w-full flex-col items-stretch"
+                    onPointerEnter={() => setShowLoadHint(true)}
+                    onPointerLeave={() => setShowLoadHint(false)}
+                  >
+                    {loadButton}
+                  </div>
+                </Focusable>
+              }
+            />
+          )}
           <Button
             id="title-quit"
             variant="ghost"
             onPress={onQuit}
-            className="tracking-[0.14em] text-parchment-dim data-[hovered]:text-amber-100"
+            className="voice-display text-sm tracking-[0.18em]"
           >
             Quit
           </Button>
@@ -134,7 +183,7 @@ export function TitleScreen({ onNewGame, onLoadGame, onQuit }: TitleScreenProps)
       </div>
 
       {/* maker's mark, bottom — quiet, in the body voice */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[0.65rem] italic tracking-wide text-stone-700">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[0.65rem] italic tracking-wide text-[color:var(--color-text-muted)] opacity-60">
         steel remembers
       </div>
     </div>
