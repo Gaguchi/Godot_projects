@@ -2,19 +2,36 @@
  * Character registry for dialogue UI placeholders.
  *
  * Each entry maps a speaker name (matches the `speaker` field on DialogueNode)
- * to a visual treatment: accent color (Tailwind palette), initials, and a
- * faction tag that drives portrait shape variants.
+ * to a visual treatment: an IDENTITY accent (a CSS color value from the
+ * `--id-*` ramp in index.css), initials, and a faction tag that drives
+ * portrait shape variants.
  *
- * Per-character accent is applied to:
- *   - portrait fill background
- *   - name plate underline (via `plateUnderlineClass`)
- *   - subtle border on the modal's speaker side
+ * The accent is applied to:
+ *   - portrait ring/border (and, mixed with ink via color-mix, the fill)
+ *   - name plate underline (2px edge accent)
  *
- * For unknown speakers, `defaultCharacter()` derives a deterministic styling
- * from a name hash — never breaks, always reads as intentional.
+ * Identity hues say WHO someone is — never what to do. Hearth ("act here")
+ * and ember (threat) stay reserved for actions/danger.
+ *
+ * For unknown speakers, `defaultCharacter()` hashes the name into the same
+ * 8-token ramp — never breaks, always stays on-palette.
  */
 export type Faction = 'party' | 'enemy' | 'neutral' | 'narrator' | 'noble' | 'mystic'
 export type PortraitShape = 'circle' | 'square' | 'hex' | 'diamond' | 'triangle'
+
+/** The 8-token identity ramp defined in index.css (desaturated, warm-shifted). */
+export const IDENTITY_RAMP = [
+  'var(--id-gold)',
+  'var(--id-steel)',
+  'var(--id-rose)',
+  'var(--id-moss)',
+  'var(--id-arcane)',
+  'var(--id-ember)',
+  'var(--id-slate)',
+  'var(--id-wine)',
+] as const
+
+export type IdentityAccent = (typeof IDENTITY_RAMP)[number]
 
 export interface CharacterDef {
   /** Stable id (the speaker key). Empty string is the narrator. */
@@ -25,12 +42,11 @@ export interface CharacterDef {
   initials: string
   /** Authored sprite (public path). When set, portraits render it; initials are the fallback. */
   sprite?: string
-  /** Tailwind class fragment that becomes bg-{color}. */
-  bgColor: string
-  /** Tailwind class for portrait ring + name plate underline. */
-  ringColor: string
-  /** Text color over the portrait bg. */
-  textColor: string
+  /**
+   * Identity accent — a CSS color VALUE (an `--id-*` token reference).
+   * Consumers derive fills via color-mix with ink; text stays parchment.
+   */
+  accent: IdentityAccent
   faction: Faction
   shape: PortraitShape
 }
@@ -45,9 +61,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Roy',
     initials: 'Ro',
     sprite: '/sprites/units/roy.png',
-    bgColor: 'bg-amber-700',
-    ringColor: 'ring-amber-300 border-amber-300',
-    textColor: 'text-amber-50',
+    accent: 'var(--id-gold)',
     faction: 'party',
     shape: 'circle',
   },
@@ -56,9 +70,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Marcus',
     initials: 'Ma',
     sprite: '/sprites/units/marcus.png',
-    bgColor: 'bg-sky-800',
-    ringColor: 'ring-sky-400 border-sky-400',
-    textColor: 'text-sky-50',
+    accent: 'var(--id-steel)',
     faction: 'party',
     shape: 'square',
   },
@@ -67,9 +79,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Lilina',
     initials: 'Li',
     sprite: '/sprites/units/lilina.png',
-    bgColor: 'bg-rose-700',
-    ringColor: 'ring-rose-300 border-rose-300',
-    textColor: 'text-rose-50',
+    accent: 'var(--id-rose)',
     faction: 'mystic',
     shape: 'diamond',
   },
@@ -78,9 +88,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Kael',
     initials: 'Ka',
     sprite: '/sprites/units/kael.png',
-    bgColor: 'bg-orange-800',
-    ringColor: 'ring-orange-300 border-orange-300',
-    textColor: 'text-orange-50',
+    accent: 'var(--id-ember)',
     faction: 'neutral',
     shape: 'hex',
   },
@@ -89,9 +97,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Daren',
     initials: 'Da',
     sprite: '/sprites/units/daren.png',
-    bgColor: 'bg-yellow-900',
-    ringColor: 'ring-yellow-500 border-yellow-500',
-    textColor: 'text-yellow-100',
+    accent: 'var(--id-wine)',
     faction: 'enemy',
     shape: 'hex',
   },
@@ -100,9 +106,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Garrik',
     initials: 'Ga',
     sprite: '/sprites/units/garrik.png',
-    bgColor: 'bg-stone-700',
-    ringColor: 'ring-stone-400 border-stone-400',
-    textColor: 'text-stone-100',
+    accent: 'var(--id-slate)',
     faction: 'party',
     shape: 'square',
   },
@@ -111,9 +115,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Lyra',
     initials: 'Ly',
     sprite: '/sprites/units/lyra.png',
-    bgColor: 'bg-emerald-800',
-    ringColor: 'ring-emerald-300 border-emerald-300',
-    textColor: 'text-emerald-50',
+    accent: 'var(--id-moss)',
     faction: 'party',
     shape: 'circle',
   },
@@ -122,9 +124,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Bandit',
     initials: 'Ba',
     sprite: '/sprites/units/bandit.png',
-    bgColor: 'bg-red-900',
-    ringColor: 'ring-red-400 border-red-400',
-    textColor: 'text-red-100',
+    accent: 'var(--id-ember)',
     faction: 'enemy',
     shape: 'square',
   },
@@ -133,9 +133,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Bandit Archer',
     initials: 'Ba',
     sprite: '/sprites/units/bandit_archer.png',
-    bgColor: 'bg-red-950',
-    ringColor: 'ring-red-500 border-red-500',
-    textColor: 'text-red-100',
+    accent: 'var(--id-ember)',
     faction: 'enemy',
     shape: 'square',
   },
@@ -144,9 +142,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Brigand Chief',
     initials: 'Bc',
     sprite: '/sprites/units/brigand_chief.png',
-    bgColor: 'bg-red-900',
-    ringColor: 'ring-red-400 border-red-400',
-    textColor: 'text-red-100',
+    accent: 'var(--id-wine)',
     faction: 'enemy',
     shape: 'hex',
   },
@@ -155,46 +151,44 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Wolf',
     initials: 'Wo',
     sprite: '/sprites/units/wolf.png',
-    bgColor: 'bg-stone-800',
-    ringColor: 'ring-stone-500 border-stone-500',
-    textColor: 'text-stone-100',
+    accent: 'var(--id-slate)',
     faction: 'enemy',
     shape: 'triangle',
   },
   'Shield Knight': {
     id: 'Shield Knight', displayName: 'Shield Knight', initials: 'Sk',
     sprite: '/sprites/units/shield_knight.png',
-    bgColor: 'bg-slate-800', ringColor: 'ring-slate-400 border-slate-400', textColor: 'text-slate-100',
+    accent: 'var(--id-slate)',
     faction: 'enemy', shape: 'square',
   },
   'Raider Mage': {
     id: 'Raider Mage', displayName: 'Raider Mage', initials: 'Rm',
     sprite: '/sprites/units/raider_mage.png',
-    bgColor: 'bg-violet-900', ringColor: 'ring-violet-400 border-violet-400', textColor: 'text-violet-100',
+    accent: 'var(--id-arcane)',
     faction: 'enemy', shape: 'diamond',
   },
   'Raider Cleric': {
     id: 'Raider Cleric', displayName: 'Raider Cleric', initials: 'Rc',
     sprite: '/sprites/units/raider_cleric.png',
-    bgColor: 'bg-stone-700', ringColor: 'ring-stone-400 border-stone-400', textColor: 'text-stone-100',
+    accent: 'var(--id-moss)',
     faction: 'enemy', shape: 'diamond',
   },
   'Bone Dagger Thief': {
     id: 'Bone Dagger Thief', displayName: 'Thief', initials: 'Th',
     sprite: '/sprites/units/thief.png',
-    bgColor: 'bg-emerald-950', ringColor: 'ring-emerald-500 border-emerald-500', textColor: 'text-emerald-100',
+    accent: 'var(--id-moss)',
     faction: 'enemy', shape: 'triangle',
   },
   'Ember Mage': {
     id: 'Ember Mage', displayName: 'Ember Mage', initials: 'Em',
     sprite: '/sprites/units/ember_mage.png',
-    bgColor: 'bg-red-950', ringColor: 'ring-orange-500 border-orange-500', textColor: 'text-orange-100',
+    accent: 'var(--id-ember)',
     faction: 'enemy', shape: 'diamond',
   },
   'Alpha Wolf': {
     id: 'Alpha Wolf', displayName: 'Alpha Wolf', initials: 'Aw',
     sprite: '/sprites/units/alpha_wolf.png',
-    bgColor: 'bg-stone-900', ringColor: 'ring-amber-600 border-amber-600', textColor: 'text-amber-100',
+    accent: 'var(--id-gold)',
     faction: 'enemy', shape: 'triangle',
   },
   'The Warlord': {
@@ -202,9 +196,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'The Warlord',
     initials: 'Wl',
     sprite: '/sprites/units/warlord.png',
-    bgColor: 'bg-red-950',
-    ringColor: 'ring-red-500 border-red-500',
-    textColor: 'text-red-100',
+    accent: 'var(--id-wine)',
     faction: 'enemy',
     shape: 'hex',
   },
@@ -213,9 +205,7 @@ const KNOWN: Record<string, CharacterDef> = {
     displayName: 'Bandit Leader',
     initials: 'Bl',
     sprite: '/sprites/units/brigand_chief.png',
-    bgColor: 'bg-red-900',
-    ringColor: 'ring-red-400 border-red-400',
-    textColor: 'text-red-100',
+    accent: 'var(--id-ember)',
     faction: 'enemy',
     shape: 'square',
   },
@@ -223,9 +213,7 @@ const KNOWN: Record<string, CharacterDef> = {
     id: 'Traveling Merchant',
     displayName: 'Merchant',
     initials: 'Mr',
-    bgColor: 'bg-emerald-800',
-    ringColor: 'ring-emerald-300 border-emerald-300',
-    textColor: 'text-emerald-50',
+    accent: 'var(--id-moss)',
     faction: 'neutral',
     shape: 'square',
   },
@@ -233,9 +221,7 @@ const KNOWN: Record<string, CharacterDef> = {
     id: 'Wounded Traveler',
     displayName: 'Traveler',
     initials: 'Wt',
-    bgColor: 'bg-stone-700',
-    ringColor: 'ring-stone-400 border-stone-400',
-    textColor: 'text-stone-100',
+    accent: 'var(--id-slate)',
     faction: 'neutral',
     shape: 'circle',
   },
@@ -243,21 +229,11 @@ const KNOWN: Record<string, CharacterDef> = {
     id: 'Narrator',
     displayName: 'Narrator',
     initials: '',
-    bgColor: 'bg-stone-950',
-    ringColor: 'ring-stone-600 border-stone-600',
-    textColor: 'text-stone-400',
+    accent: 'var(--id-slate)',
     faction: 'narrator',
     shape: 'circle',
   },
 }
-
-const FALLBACK_PALETTE: Pick<CharacterDef, 'bgColor' | 'ringColor' | 'textColor'>[] = [
-  { bgColor: 'bg-violet-800', ringColor: 'ring-violet-400 border-violet-400', textColor: 'text-violet-50' },
-  { bgColor: 'bg-teal-800', ringColor: 'ring-teal-400 border-teal-400', textColor: 'text-teal-50' },
-  { bgColor: 'bg-fuchsia-800', ringColor: 'ring-fuchsia-300 border-fuchsia-300', textColor: 'text-fuchsia-50' },
-  { bgColor: 'bg-cyan-800', ringColor: 'ring-cyan-400 border-cyan-400', textColor: 'text-cyan-50' },
-  { bgColor: 'bg-lime-800', ringColor: 'ring-lime-400 border-lime-400', textColor: 'text-lime-50' },
-]
 
 function hashName(name: string): number {
   let h = 0
@@ -280,36 +256,26 @@ function initialsOf(name: string): string {
 }
 
 /**
- * Character identity as an EDGE accent (materials §4.2: never a full colored
- * outline). Extracts the `border-*` classes from `ringColor` so the dialogue
- * name plate can render a 2px bottom underline in the character hue while the
- * plate itself stays on the shared iron material.
+ * Deterministic styling for an unknown speaker: hash the name into the SAME
+ * 8-token identity ramp the curated cast uses, so surprise speakers still sit
+ * inside the Forged & Lit palette.
  */
-export function plateUnderlineClass(c: CharacterDef): string {
-  return c.ringColor
-    .split(' ')
-    .filter((cl) => cl.startsWith('border-'))
-    .join(' ')
-}
-
-/**
- * Look up a speaker. Empty / null name → Narrator. Unknown speakers get a
- * deterministic fallback styling so the UI never breaks.
- */
-export function getCharacter(speaker: string | undefined): CharacterDef {
-  if (!speaker) return KNOWN['Narrator']!
-  const known = KNOWN[speaker]
-  if (known) return known
-  // Unknown speaker: pick a fallback palette deterministically by name hash.
-  const palette = FALLBACK_PALETTE[hashName(speaker) % FALLBACK_PALETTE.length]!
+export function defaultCharacter(speaker: string): CharacterDef {
   return {
     id: speaker,
     displayName: speaker,
     initials: initialsOf(speaker),
-    bgColor: palette.bgColor,
-    ringColor: palette.ringColor,
-    textColor: palette.textColor,
+    accent: IDENTITY_RAMP[hashName(speaker) % IDENTITY_RAMP.length]!,
     faction: 'neutral',
     shape: 'circle',
   }
+}
+
+/**
+ * Look up a speaker. Empty / null name → Narrator. Unknown speakers get a
+ * deterministic on-ramp fallback styling so the UI never breaks.
+ */
+export function getCharacter(speaker: string | undefined): CharacterDef {
+  if (!speaker) return KNOWN['Narrator']!
+  return KNOWN[speaker] ?? defaultCharacter(speaker)
 }

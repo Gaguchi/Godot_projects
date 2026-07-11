@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Dialog, Button, Heading, CheckButton, CheckCandidatePicker, Icon } from '../components'
 import { CharacterPortrait } from '../components/CharacterPortrait'
-import { getCharacter, plateUnderlineClass } from '../data/characters'
+import { getCharacter } from '../data/characters'
 import { useTypewriter } from '../hooks/useTypewriter'
 import { useRunStore, predicateStateFromRun } from '../../state/runStore'
 import { getDialogue } from '../../state/dialogueRegistry'
@@ -304,8 +304,8 @@ export function DialogueModal(): React.JSX.Element {
             >
               {speakerLabel.toUpperCase()}
             </div>
-            {/* character identity = 2px edge accent, never a full colored outline */}
-            <div aria-hidden className={`border-b-2 ${plateUnderlineClass(character)}`} />
+            {/* character identity = 2px edge accent (--id-* ramp), never a full colored outline */}
+            <div aria-hidden className="border-b-2" style={{ borderColor: character.accent }} />
           </div>
         )}
 

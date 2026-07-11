@@ -46,6 +46,20 @@
   --color-gem-ward: #2e8f6e;
   --color-gem-focus: #d4a72c;
 
+  /* ---- Character IDENTITY ramp --------------------------------------------
+     Who someone is: portrait rings, name-plate underlines, bust accents ONLY.
+     NEVER actions or threat — hearth ("act here") and ember (danger) stay
+     reserved. Every hue is an existing token pulled toward parchment in oklab,
+     so identities read warm + desaturated inside the candle-lit room. */
+  --id-gold: color-mix(in oklab, var(--color-hearth-soft) 62%, var(--color-parchment-dim));  /* antique gold — young lords, alpha beasts */
+  --id-steel: color-mix(in oklab, var(--color-ally) 66%, var(--color-parchment-dim));        /* oiled steel-blue — veteran knights */
+  --id-rose: color-mix(in oklab, var(--color-ember) 40%, var(--color-parchment));            /* dusty rose — court mages, gentle souls */
+  --id-moss: color-mix(in oklab, var(--color-gem-ward) 62%, var(--color-parchment-dim));     /* dry moss — scouts, clerics, merchants */
+  --id-arcane: color-mix(in oklab, var(--color-gem-arcane) 60%, var(--color-parchment-dim)); /* faded violet — occultists, raider mages */
+  --id-ember: color-mix(in oklab, var(--color-ember) 55%, var(--color-parchment-dim));       /* banked terracotta — brigands, fire mages */
+  --id-slate: color-mix(in oklab, var(--color-ally) 22%, var(--color-text-muted));           /* warm slate — commoners, beasts, drifters */
+  --id-wine: color-mix(in oklab, var(--color-ember) 55%, var(--color-gem-arcane));           /* dark wine — warlords, named villains */
+
   /* ---- Motion easing — exponential ease-out (real objects decelerate) ----- */
   --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);

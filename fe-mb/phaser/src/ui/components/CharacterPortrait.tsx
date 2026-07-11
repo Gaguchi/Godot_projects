@@ -71,8 +71,8 @@ export function CharacterPortrait({
   const showSprite = !!spriteSrc && !spriteFailed && !isNarrator
 
   // Registry miss on an enemy: force the enemy accent family so red = foe
-  // survives even for unmapped classes (hash palette must never dress a
-  // brigand in ally teal).
+  // survives even for unmapped classes (the identity hash must never dress a
+  // brigand in an ally-ish hue).
   const enemyAccent = team === 'enemy' && c.faction !== 'enemy'
 
   const shapeClass = SHAPE_CLASSES[c.shape] ?? SHAPE_CLASSES.circle
@@ -83,14 +83,14 @@ export function CharacterPortrait({
 
   const fontSize = Math.round(size * 0.34)
 
-  const accentClasses = enemyAccent ? '' : `${c.bgColor} ${c.ringColor} `
-  const enemyStyle: React.CSSProperties = enemyAccent
-    ? ({
-        background: 'color-mix(in oklab, var(--color-enemy) 26%, var(--color-ink))',
-        borderColor: 'color-mix(in oklab, var(--color-enemy) 70%, transparent)',
-        '--tw-ring-color': 'color-mix(in oklab, var(--color-enemy) 55%, transparent)',
-      } as React.CSSProperties)
-    : {}
+  // Identity (or enemy-team) accent, derived at the consumer via color-mix:
+  // fill = accent sunk into ink; ring/border = accent at edge strength.
+  const accent = enemyAccent ? 'var(--color-enemy)' : c.accent
+  const accentStyle = {
+    background: `color-mix(in oklab, ${accent} 26%, var(--color-ink))`,
+    borderColor: `color-mix(in oklab, ${accent} 70%, transparent)`,
+    '--tw-ring-color': `color-mix(in oklab, ${accent} 55%, transparent)`,
+  } as React.CSSProperties
 
   return (
     <>
@@ -101,11 +101,10 @@ export function CharacterPortrait({
           'flex items-center justify-center select-none overflow-hidden ' +
           'border-2 ring-2 ring-offset-2 ring-offset-ink shadow-lg ' +
           'transition-[transform,filter] duration-200 ' +
-          accentClasses +
           shapeClass + ' ' + animClass + ' ' +
           (className ?? '')
         }
-        style={{ width: size, height: size, ...enemyStyle }}
+        style={{ width: size, height: size, ...accentStyle }}
       >
         {showSprite ? (
           // Full-body sprite, cropped to head/torso: the frame shows the top
@@ -119,17 +118,17 @@ export function CharacterPortrait({
             onError={() => setSpriteFailed(true)}
           />
         ) : isNarrator ? (
-          <span className={`${c.textColor} flex`}>
+          <span className="flex" style={{ color: 'var(--color-text-muted)' }}>
             <Icon name="narrator" size={Math.round(size * 0.5)} />
           </span>
         ) : (
           <span
-            className={`font-bold tracking-tight ${enemyAccent ? '' : c.textColor}`}
+            className="font-bold tracking-tight"
             style={{
               fontSize,
               fontFamily: 'var(--font-display)',
               letterSpacing: '-0.02em',
-              ...(enemyAccent ? { color: 'var(--color-parchment)' } : {}),
+              color: 'var(--color-parchment)',
             }}
           >
             {c.initials || '?'}
