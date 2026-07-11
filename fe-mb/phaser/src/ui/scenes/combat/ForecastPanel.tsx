@@ -1,4 +1,5 @@
 import React from 'react'
+import { Button } from '../../components/Button'
 import { useForecastPreview } from '../../hooks/useForecastPreview'
 import { useCombatStore } from '../../../state/combatStore'
 import { createRng } from '../../../systems/rng'
@@ -57,15 +58,21 @@ export function ForecastPanel(): React.JSX.Element | null {
   return (
     <div
       id="forecast-panel"
-      className="hud-panel absolute top-4 right-4 w-80 pointer-events-auto z-[95]"
+      className="hud-panel absolute top-14 right-4 w-80 pointer-events-auto z-[95]"
       role="dialog"
       aria-label="Damage forecast"
     >
       <div className="hud-panel-header flex items-center justify-between px-3 py-2">
-        <span className="voice-display text-amber-100 text-base">{card.name ?? card.id}</span>
+        <span className="voice-display text-parchment text-base">{card.name ?? card.id}</span>
         <div className="flex items-center gap-2">
           {lethal && (
-            <span className="voice-display text-[0.6rem] tracking-[0.15em] px-1.5 py-0.5 rounded bg-red-950/70 text-red-200 border border-red-700/70">
+            <span
+              className="voice-display text-[0.6rem] tracking-[0.15em] px-1.5 py-0.5 rounded-[3px] text-[color:var(--hp-crit-text)]"
+              style={{
+                background: 'color-mix(in oklab, var(--color-ember) 22%, transparent)',
+                border: '1px solid color-mix(in oklab, var(--color-ember) 65%, transparent)',
+              }}
+            >
               LETHAL
             </span>
           )}
@@ -81,8 +88,8 @@ export function ForecastPanel(): React.JSX.Element | null {
           current={target.hp.current}
           max={target.hp.max}
           predictedAfter={forecast.predictedHp}
-          fillColor="bg-red-700"
-          lossColor="bg-red-900/50"
+          fillColor="bg-[color:var(--hp-crit)]"
+          lossColor="bg-[color:color-mix(in_oklab,var(--color-ember)_38%,transparent)]"
         />
         {target.armor > 0 && (
           <ForecastHpBar
@@ -90,8 +97,8 @@ export function ForecastPanel(): React.JSX.Element | null {
             current={target.armor}
             max={target.armor}
             predictedAfter={forecast.predictedArmor}
-            fillColor="bg-amber-600"
-            lossColor="bg-amber-900/50"
+            fillColor="bg-[color:var(--color-hearth-soft)]"
+            lossColor="bg-[color:color-mix(in_oklab,var(--color-hearth-soft)_35%,transparent)]"
           />
         )}
       </div>
@@ -99,21 +106,26 @@ export function ForecastPanel(): React.JSX.Element | null {
       <ForecastMathRow forecast={forecast} />
       <ForecastStatusRow statuses={target.statuses} />
 
-      <div className="px-3 py-2 flex gap-2 border-t border-[rgba(120,98,60,0.22)]">
-        <button
+      {/* Commit gate — while the forecast is open, Confirm is THE hearth focus
+          of the screen (the ModeLabel strip hides itself when a target pins). */}
+      <div className="relative px-3 py-2.5 flex gap-2 border-t border-[rgba(120,98,60,0.22)]">
+        <div aria-hidden className="hearth-glow pointer-events-none absolute inset-x-0 -inset-y-5" />
+        <Button
+          variant="primary"
           data-testid="forecast-confirm-btn"
-          onClick={onConfirm}
-          className="flex-1 px-3 py-1.5 rounded font-body font-medium text-sm tracking-wide text-amber-50 bg-amber-900/55 border border-amber-700/60 hover:bg-amber-900/75 hover:border-amber-500 transition-colors"
+          onPress={onConfirm}
+          className="relative flex-1 !px-3 !py-1.5 !text-[0.75rem]"
         >
           Confirm
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           data-testid="forecast-cancel-btn"
-          onClick={onCancel}
-          className="px-3 py-1.5 rounded font-body text-sm text-stone-300 bg-stone-800/60 border border-stone-600/40 hover:bg-stone-800 transition-colors"
+          onPress={onCancel}
+          className="relative !px-3 !py-1.5 !text-[0.75rem]"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   )

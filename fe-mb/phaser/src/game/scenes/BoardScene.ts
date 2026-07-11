@@ -14,6 +14,21 @@ import type { CombatEffect, CombatEvent } from '../../domain/combatState'
 import cardsJson from '../../data/content/cards.json'
 import classesJson from '../../data/content/classes.json'
 import { asTileId, asUnitId } from '../../domain/ids'
+// ALL canvas colors live in the one named-constant palette module — numeric
+// mirrors of the index.css tokens (Phaser can't read CSS vars).
+import {
+  TILE_BASE, TILE_FILL_ALPHA, TILE_STROKE, TILE_STROKE_ALPHA, TILE_SPRITE_TINT,
+  FRAME_SHADOW, FRAME_SHADOW_ALPHA, FRAME_FILL, FRAME_FILL_ALPHA, FRAME_EDGE, FRAME_EDGE_ALPHA,
+  MOVE_RANGE, MOVE_RANGE_IDLE_ALPHA, MOVE_RANGE_MODE_ALPHA, MOVE_RANGE_DRAG_ALPHA,
+  CARD_TARGET_FILL, CARD_TARGET_EDGE, CARD_TARGET_ALPHA, CARD_TARGET_HOT_ALPHA, CARD_TARGET_EDGE_ALPHA,
+  DANGER_UNION, DANGER_UNION_ALPHA,
+  HOVER_MOVE_ALLY, HOVER_MOVE_ENEMY, HOVER_ATTACK_ENEMY, HOVER_ATTACK_ALLY, HOVER_ALPHA,
+  AOE_PREVIEW, AOE_FILL_ALPHA, AOE_EDGE_ALPHA,
+  UNIT_ALLY, UNIT_ENEMY, UNIT_ALLY_RIM, UNIT_ENEMY_RIM, FLASH_WHITE, BLACK,
+  ACTIVE_RING, TARGET_RING, HP_BAR_BG,
+  hpTierFor, HP_TIER_FILL,
+  TEXT_NAME, TEXT_OUTLINE, TEXT_HEAL, TEXT_DAMAGE, TEXT_MAGIC, KO_TEXT, KO_BG,
+} from '../boardPalette'
 
 const classMovMap = new Map<string, number>(
   classesJson.map((c) => [c.id, c.startingMov]),
@@ -22,9 +37,9 @@ function movementRangeForClass(classId: string): number {
   return classMovMap.get(classId) ?? 4
 }
 
-const TILE: typeof GEO_TILE = GEO_TILE
 // Geometry lives in domain/boardGeometry (shared with the HUD's card drag).
 import { TILE as GEO_TILE, gridOriginX, gridOriginY, tileAtStagePoint } from '../../domain/boardGeometry'
+const TILE: typeof GEO_TILE = GEO_TILE
 // Current board origin — recomputed per battle in drawGrid from the actual
 // grid dimensions so every board centers on the stage (boardGeometry math).
 let GRID_OFFSET_X = gridOriginX(14)
@@ -136,6 +151,9 @@ export class BoardScene extends Phaser.Scene {
   private activeWalkSkip: (() => void) | null = null
   /** Unit being hovered (for hover-overlay rendering). Null = no hover. */
   private hoverUnitId: string | null = null
+  /** Valid target tile under the cursor during SELECTING_TARGET — brightens
+   *  toward commitment in renderTargeting. Null = none. */
+  private cardHoverTile: string | null = null
   /** Tab toggle: render union of all enemy threat zones. */
   private globalDangerZone = false
   /**
@@ -220,6 +238,7 @@ export class BoardScene extends Phaser.Scene {
         turnTeam: s.state.turn.team,
         subPhase: s.state.subPhase,
         selectedCardId: s.state.selectedCardId,
+        pinnedTargetTile: s.state.pinnedTargetTile,
         phase: s.state.phase,
         gridW: s.state.grid.width,
         gridH: s.state.grid.height,
@@ -283,9 +302,9 @@ export class BoardScene extends Phaser.Scene {
     const cx = GRID_OFFSET_X + bw / 2
     const cy = GRID_OFFSET_Y + bh / 2
     this.boardDecor.push(
-      this.add.rectangle(cx, cy + 10, bw + 36, bh + 36, 0x000000, 0.35),
-      this.add.rectangle(cx, cy, bw + 14, bh + 14, 0x15110d, 0.55)
-        .setStrokeStyle(2, 0x5a4a36, 0.85),
+      this.add.rectangle(cx, cy + 10, bw + 36, bh + 36, FRAME_SHADOW, FRAME_SHADOW_ALPHA),
+      this.add.rectangle(cx, cy, bw + 14, bh + 14, FRAME_FILL, FRAME_FILL_ALPHA)
+        .setStrokeStyle(2, FRAME_EDGE, FRAME_EDGE_ALPHA),
     )
     for (let y = 0; y < gridH; y++) {
       for (let x = 0; x < gridW; x++) {
@@ -297,7 +316,7 @@ export class BoardScene extends Phaser.Scene {
             GRID_OFFSET_X + x * TILE + TILE / 2,
             GRID_OFFSET_Y + y * TILE + TILE / 2,
             texKey,
-          ).setDisplaySize(TILE - 2, TILE - 2).setTint(0x9c8b74)
+          ).setDisplaySize(TILE - 2, TILE - 2).setTint(TILE_SPRITE_TINT)
           this.tileSprites.push(img)
         }
         const rect = this.add.rectangle(
@@ -305,8 +324,8 @@ export class BoardScene extends Phaser.Scene {
           GRID_OFFSET_Y + y * TILE + TILE / 2,
           TILE - 2, TILE - 2,
           tileTint(x, y),
-          0.30,
-        ).setStrokeStyle(1, 0x3a3226, 0.55)
+          TILE_FILL_ALPHA,
+        ).setStrokeStyle(1, TILE_STROKE, TILE_STROKE_ALPHA)
         const tileId = `${x},${y}`
         rect.setInteractive({ useHandCursor: false })
         rect.on('pointerover', () => this.onTileHover(tileId))
@@ -325,7 +344,7 @@ export class BoardScene extends Phaser.Scene {
   // countable at a glance, plus per-tile variance so the field feels worn.
   private tileBaseFill(x: number, y: number): number {
     const h = ((x * 73856093) ^ (y * 19349663)) >>> 0
-    const base = 0x1a1410 // --color-ink
+    const base = TILE_BASE // --color-ink (boardPalette)
     const checker = (x + y) % 2 === 0 ? 5 : -3
     const variance = ((h % 7) - 3) + checker
     const r = ((base >> 16) & 0xff) + variance
@@ -339,7 +358,9 @@ export class BoardScene extends Phaser.Scene {
 
     for (const [tileId, rect] of this.tileRects.entries()) {
       const [tx, ty] = tileId.split(',').map(Number)
-      rect.setFillStyle(this.tileBaseFill(tx!, ty!), 0.30)
+      rect.setFillStyle(this.tileBaseFill(tx!, ty!), TILE_FILL_ALPHA)
+      // Strokes are overlay-state too (card targeting paints red edges).
+      rect.setStrokeStyle(1, TILE_STROKE, TILE_STROKE_ALPHA)
     }
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
@@ -363,7 +384,7 @@ export class BoardScene extends Phaser.Scene {
     if (state.subPhase === 'IDLE') {
       for (const t of this.reachableForActive()) {
         const rect = this.tileRects.get(t)
-        if (rect) rect.setFillStyle(0x1f4a5a, t === this.dragHoverTile ? 0.95 : 0.4)
+        if (rect) rect.setFillStyle(MOVE_RANGE, t === this.dragHoverTile ? MOVE_RANGE_DRAG_ALPHA : MOVE_RANGE_IDLE_ALPHA)
       }
     }
 
@@ -388,7 +409,7 @@ export class BoardScene extends Phaser.Scene {
       }, blocked)
       for (const t of valid) {
         const rect = this.tileRects.get(t as unknown as string)
-        if (rect) rect.setFillStyle(0x1f4a5a, 0.7)
+        if (rect) rect.setFillStyle(MOVE_RANGE, MOVE_RANGE_MODE_ALPHA)
       }
       return
     }
@@ -408,9 +429,19 @@ export class BoardScene extends Phaser.Scene {
       card.range.max,
       { width: state.grid.width, height: state.grid.height, obstacles: state.grid.obstacles },
     )
+    // Valid card targets read attack-red (genre vocabulary: red = strike),
+    // with a brighter ember edge so the family holds even over tan ground.
+    // The hovered / pinned tile brightens toward commitment.
+    const pinnedTile = state.pinnedTargetTile === null
+      ? null
+      : (state.pinnedTargetTile as unknown as string)
     for (const t of valid) {
-      const rect = this.tileRects.get(t as unknown as string)
-      if (rect) rect.setFillStyle(0x4a3a20, 0.7)
+      const tStr = t as unknown as string
+      const rect = this.tileRects.get(tStr)
+      if (!rect) continue
+      const hot = tStr === pinnedTile || tStr === this.cardHoverTile
+      rect.setFillStyle(CARD_TARGET_FILL, hot ? CARD_TARGET_HOT_ALPHA : CARD_TARGET_ALPHA)
+      rect.setStrokeStyle(hot ? 2 : 1.25, CARD_TARGET_EDGE, CARD_TARGET_EDGE_ALPHA)
     }
   }
 
@@ -434,10 +465,10 @@ export class BoardScene extends Phaser.Scene {
       blocked,
     )
     // Move tiles
-    const moveColor = isEnemy ? 0x4a2a4a : 0x1f4a5a
+    const moveColor = isEnemy ? HOVER_MOVE_ENEMY : HOVER_MOVE_ALLY
     for (const t of reachable) {
       const rect = this.tileRects.get(t as unknown as string)
-      if (rect) rect.setFillStyle(moveColor, 0.72)
+      if (rect) rect.setFillStyle(moveColor, HOVER_ALPHA)
     }
     // Attack ring: tiles 1 step beyond reachable (basic melee threat)
     const attackTiles = new Set<string>()
@@ -453,10 +484,10 @@ export class BoardScene extends Phaser.Scene {
         attackTiles.add(k)
       }
     }
-    const attackColor = isEnemy ? 0x6a1a1a : 0x6a3a1a
+    const attackColor = isEnemy ? HOVER_ATTACK_ENEMY : HOVER_ATTACK_ALLY
     for (const t of attackTiles) {
       const rect = this.tileRects.get(t)
-      if (rect) rect.setFillStyle(attackColor, 0.72)
+      if (rect) rect.setFillStyle(attackColor, HOVER_ALPHA)
     }
   }
 
@@ -498,9 +529,9 @@ export class BoardScene extends Phaser.Scene {
     for (const t of enemyTiles) {
       const rect = this.tileRects.get(t)
       if (rect) {
-        // Soft purple — only overrides default-empty tiles, lets selection
+        // Soft red-purple — only overrides default-empty tiles, lets selection
         // overlays win when both fire.
-        rect.setFillStyle(0x3a1a3a, 0.72)
+        rect.setFillStyle(DANGER_UNION, DANGER_UNION_ALPHA)
       }
     }
   }
@@ -540,15 +571,27 @@ export class BoardScene extends Phaser.Scene {
       card.range.max,
       targetState,
     )
-    if (!new Set(valid.map((t) => t as unknown as string)).has(tileId)) return
+    if (!new Set(valid.map((t) => t as unknown as string)).has(tileId)) {
+      if (this.cardHoverTile !== null) {
+        this.cardHoverTile = null
+        this.renderTargeting()
+      }
+      return
+    }
+
+    // Brighten the hovered valid tile (renderTargeting reads cardHoverTile).
+    if (this.cardHoverTile !== tileId) {
+      this.cardHoverTile = tileId
+      this.renderTargeting()
+    }
 
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     const radius = card.aoeRadius ?? 0
     if (radius > 0) {
       const tiles = tilesInAoe(asTileId(tileId), radius, targetState)
       const g = this.add.graphics()
-      g.fillStyle(0x9966cc, 0.25)
-      g.lineStyle(1, 0x9966cc, 0.8)
+      g.fillStyle(AOE_PREVIEW, AOE_FILL_ALPHA)
+      g.lineStyle(1, AOE_PREVIEW, AOE_EDGE_ALPHA)
       for (const t of tiles) {
         const { x, y } = tileToWorld(t as unknown as string)
         g.fillRect(x - TILE / 2 + 2, y - TILE / 2 + 2, TILE - 4, TILE - 4)
@@ -567,7 +610,7 @@ export class BoardScene extends Phaser.Scene {
       if (forecast && (forecast.damageBefore > 0 || forecast.heal > 0)) {
         const { x, y } = tileToWorld(tileId)
         const label = forecast.heal > 0 ? `+${forecast.heal}` : `-${forecast.damageBefore}`
-        const color = forecast.heal > 0 ? '#88ee88' : '#ff6644'
+        const color = forecast.heal > 0 ? TEXT_HEAL : TEXT_DAMAGE
         this.damagePreview = this.add.text(x, y - 30, label, {
           fontFamily: 'monospace', fontSize: '20px', color,
         }).setOrigin(0.5)
@@ -576,7 +619,7 @@ export class BoardScene extends Phaser.Scene {
           // "KO" badge for the no-pictograph directive (story 283).
           this.koSkull = this.add.text(x, y - 6, 'KO', {
             fontFamily: 'monospace', fontSize: '18px', fontStyle: 'bold',
-            color: '#ffe9b0', backgroundColor: '#7c1d1d', padding: { left: 5, right: 5, top: 1, bottom: 1 },
+            color: KO_TEXT, backgroundColor: KO_BG, padding: { left: 5, right: 5, top: 1, bottom: 1 },
           }).setOrigin(0.5)
         }
       }
@@ -594,6 +637,10 @@ export class BoardScene extends Phaser.Scene {
     if (this.aoePreview) { this.aoePreview.destroy(); this.aoePreview = null }
     if (this.damagePreview) { this.damagePreview.destroy(); this.damagePreview = null }
     if (this.koSkull) { this.koSkull.destroy(); this.koSkull = null }
+    if (this.cardHoverTile !== null) {
+      this.cardHoverTile = null
+      this.renderTargeting()
+    }
     this.clearHoverUnit()
   }
 
@@ -834,28 +881,28 @@ export class BoardScene extends Phaser.Scene {
         const isEnemy = ['bandit', 'brigand', 'wolf'].some((k) => cls.includes(k))
         // Team is a SHAPE (disc = ally / spiked star = enemy) AND a colour, so
         // the read survives colour-blindness — never colour alone.
-        const fill = isEnemy ? 0xd0685c : 0x7ba6dd
-        const rim = isEnemy ? 0x3a1410 : 0x14283c
+        const fill = isEnemy ? UNIT_ENEMY : UNIT_ALLY
+        const rim = isEnemy ? UNIT_ENEMY_RIM : UNIT_ALLY_RIM
         const container = this.add.container(0, 0)
         const body: Phaser.GameObjects.Shape = isEnemy
           ? this.add.star(0, 0, 4, 9, 17, fill).setStrokeStyle(2.5, rim)
           : this.add.circle(0, 0, 16, fill).setStrokeStyle(2.5, rim)
         // a soft top highlight so the token reads as a lit forged piece
-        const sheen = this.add.circle(-5, -5, isEnemy ? 4 : 5, 0xffffff, 0.18)
+        const sheen = this.add.circle(-5, -5, isEnemy ? 4 : 5, FLASH_WHITE, 0.18)
         const nameText = this.add.text(0, -24, unit.name, {
           fontFamily: 'Cinzel, Georgia, serif',
           fontSize: '11px',
-          color: '#e8d8c0',
-          stroke: '#000000',
+          color: TEXT_NAME,
+          stroke: TEXT_OUTLINE,
           strokeThickness: 3,
         }).setOrigin(0.5)
         // name (~-24) + HP bar (~+20) kept inside one tile pitch so a lower
         // unit's name no longer collides with the HP bar of the unit above.
-        const hpBarBg = this.add.rectangle(0, 20, 36, 6, 0x0a0806).setStrokeStyle(1, 0x000000, 0.6)
-        const hpBar = this.add.rectangle(-16, 20, 32, 4, 0x6ea96a).setOrigin(0, 0.5)
+        const hpBarBg = this.add.rectangle(0, 20, 36, 6, HP_BAR_BG).setStrokeStyle(1, BLACK, 0.6)
+        const hpBar = this.add.rectangle(-16, 20, 32, 4, HP_TIER_FILL.ok).setOrigin(0, 0.5)
         // Transparent >=44px hit target — the visible token (~32px) is below the
         // accessible minimum, so interactivity lives on a roomier invisible circle.
-        const hit = this.add.circle(0, 0, 22, 0x000000, 0.001)
+        const hit = this.add.circle(0, 0, 22, BLACK, 0.001)
         container.add([body, sheen, nameText, hpBarBg, hpBar, hit])
         // Character sprite replaces the shape token when its texture is loaded;
         // a team-coloured base ellipse keeps the ally/enemy read colour-blind-safe.
@@ -892,18 +939,32 @@ export class BoardScene extends Phaser.Scene {
 
       const hpFraction = unit.hp.current / Math.max(1, unit.hp.max)
       view.hpBar.width = Math.max(0, 32 * hpFraction)
-      // token-driven HP tiers: ok / warn / crit (matches --hp-* CSS tokens)
-      view.hpBar.fillColor = hpFraction > 0.5 ? 0x6ea96a : hpFraction > 0.25 ? 0xd4a72c : 0xc0392b
+      // Shared HP tiers (boardPalette = single source; hpTier.ts mirrors it
+      // for the DOM readouts, so bar and text can never disagree).
+      view.hpBar.fillColor = HP_TIER_FILL[hpTierFor(unit.hp.current, unit.hp.max)]
 
       view.container.setVisible(unit.hp.current > 0)
 
       if (view.glow) { view.glow.destroy(); view.glow = null }
       if (activeId === idStr) {
         // hearth-amber ring marks the active unit
-        const glow = this.add.circle(0, 0, 23, 0xe8a93a, 0.22).setStrokeStyle(2.5, 0xe8a93a, 0.95)
+        const glow = this.add.circle(0, 0, 23, ACTIVE_RING, 0.22).setStrokeStyle(2.5, ACTIVE_RING, 0.95)
         view.container.add(glow)
         view.container.sendToBack(glow)
         view.glow = glow
+      } else if (
+        state.subPhase === 'SELECTING_TARGET' &&
+        state.pinnedTargetTile !== null &&
+        unit.position !== null &&
+        (unit.position as unknown as string) === (state.pinnedTargetTile as unknown as string) &&
+        unit.hp.current > 0
+      ) {
+        // ember-red ring marks the pinned card target — "who I am hitting"
+        // mirrors the active-unit ring so the commitment pair reads at a glance.
+        const ring = this.add.circle(0, 0, 23, TARGET_RING, 0.18).setStrokeStyle(2.5, TARGET_RING, 0.95)
+        view.container.add(ring)
+        view.container.sendToBack(ring)
+        view.glow = ring
       }
     }
 
@@ -985,19 +1046,19 @@ export class BoardScene extends Phaser.Scene {
         this.time.delayedCall(e.durationMs, () => { s.setAlpha(1); restore() })
       } else {
         const origColor = view.body.fillColor
-        view.body.setFillStyle(0xffffff)
+        view.body.setFillStyle(FLASH_WHITE)
         this.time.delayedCall(e.durationMs, () => { view.body.setFillStyle(origColor); restore() })
       }
     } else if (e.kind === 'FloatDamage') {
       const tileStr = e.tile as unknown as string
       const { x, y } = tileToWorld(tileStr)
       sfx(e.damageKind === 'heal' ? 'heal' : e.damageKind === 'magic' ? 'hitMagic' : 'hitPhysical')
-      const color = e.damageKind === 'heal' ? '#44dd66'
-        : e.damageKind === 'magic' ? '#88aaff'
-          : '#ff6644'
+      const color = e.damageKind === 'heal' ? TEXT_HEAL
+        : e.damageKind === 'magic' ? TEXT_MAGIC
+          : TEXT_DAMAGE
       const sign = e.damageKind === 'heal' ? '+' : '-'
       const txt = this.add.text(x, y - 10, `${sign}${e.amount}`, {
-        fontFamily: 'monospace', fontSize: '20px', color, stroke: '#000', strokeThickness: 3,
+        fontFamily: 'monospace', fontSize: '20px', color, stroke: TEXT_OUTLINE, strokeThickness: 3,
       }).setOrigin(0.5)
       this.pendingAnimations++
       this.tweens.add({

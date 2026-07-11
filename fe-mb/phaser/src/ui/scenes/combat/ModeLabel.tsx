@@ -1,8 +1,15 @@
 import React from 'react'
 import { useCombatStore } from '../../../state/combatStore'
+import { Keycap } from './hudBits'
 
 /**
- * Mid-screen banner that appears during SELECTING_MOVE / SELECTING_TARGET.
+ * Slim instruction strip shown during SELECTING_MOVE / SELECTING_TARGET.
+ * Docked by CombatHud's top-center column (TopBar > InitiativeStrip > this),
+ * so it needs no absolute offset of its own.
+ *
+ * Hidden while a forecast target is pinned — the ForecastPanel with its
+ * Confirm/Cancel gate IS the instruction for that moment; two surfaces must
+ * never instruct the same state.
  *
  * Uses pure CSS transitions (opacity + translate) instead of Framer Motion
  * so we don't pay for AnimatePresence in the bundle. Render is always
@@ -10,28 +17,39 @@ import { useCombatStore } from '../../../state/combatStore'
  */
 export function ModeLabel(): React.JSX.Element {
   const subPhase = useCombatStore((s) => s.state.subPhase)
+  const pinnedTile = useCombatStore((s) => s.state.pinnedTargetTile)
   const text = subPhase === 'SELECTING_MOVE'
-    ? 'Click a highlighted tile to move (ESC to cancel)'
+    ? 'Choose a highlighted tile'
     : subPhase === 'SELECTING_TARGET'
-      ? 'Click a target (ESC or right-click to cancel)'
+      ? 'Choose a target'
       : ''
 
-  const active = text.length > 0
+  const active = text.length > 0 && pinnedTile === null
 
   return (
     <div
       data-active={active || undefined}
       aria-hidden={!active}
       className={
-        // below the (lowered) initiative strip.
-        'absolute top-[13rem] left-1/2 -translate-x-1/2 px-4 py-2 ' +
-        'bg-amber-900/85 border border-amber-500/70 text-amber-50 ' +
-        'font-body font-medium text-sm tracking-wide rounded shadow-lg z-[80] ' +
+        'hud-panel pointer-events-none flex items-center gap-3 px-3 py-1.5 ' +
         'motion-safe:transition-[opacity,transform] motion-safe:duration-150 ' +
-        (active ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none')
+        (active ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2')
       }
+      style={{ borderLeft: '2px solid var(--color-hearth)' }}
     >
-      {text || ' '}
+      <span
+        className="voice-display text-[0.8rem] leading-none text-parchment"
+        style={{ fontVariantCaps: 'small-caps' }}
+      >
+        {text || ' '}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <Keycap label="Esc" />
+        <Keycap label="RMB" />
+        <span className="text-[0.6rem] uppercase leading-none tracking-[0.1em] text-[color:var(--color-text-muted)]">
+          cancel
+        </span>
+      </span>
     </div>
   )
 }

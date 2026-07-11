@@ -5,8 +5,11 @@ import { InitiativeEntry } from './InitiativeEntry'
 const MAX_VISIBLE = 8
 
 /**
- * Banner-Saga-style horizontal portrait queue. Pinned top-center. Renders the
- * current actor and up to 7 upcoming. +N badge if queue exceeds 8.
+ * Banner-Saga-style horizontal portrait queue. Renders the current actor and
+ * up to 7 upcoming. +N badge if queue exceeds 8.
+ *
+ * Positioned by CombatHud's top-center flex column (TopBar > strip >
+ * ModeLabel) — no absolute offset of its own.
  *
  * Independent of player selection — only depends on combatStore.state.units
  * and state.turn.unitId. Always present, always reflecting the same data.
@@ -21,7 +24,7 @@ export function InitiativeStrip(): React.JSX.Element | null {
   return (
     <div
       id="initiative-strip"
-      className="hud-panel absolute top-[6.25rem] left-1/2 -translate-x-1/2 flex items-end gap-2 px-3 py-2 pointer-events-auto z-[90]"
+      className="hud-panel flex items-end gap-2 px-3 py-2 pointer-events-auto"
       aria-label="Turn order"
     >
       {visible.map((entry) => (
@@ -30,7 +33,7 @@ export function InitiativeStrip(): React.JSX.Element | null {
       {overflow > 0 && (
         <div
           data-testid="initiative-overflow"
-          className="numeral flex items-center justify-center w-10 h-10 rounded-full border border-stone-700 text-stone-400 text-xs"
+          className="numeral flex items-center justify-center w-10 h-10 rounded-full border border-[color:var(--iron-edge)] text-[color:var(--color-text-muted)] text-xs"
         >
           +{overflow}
         </div>

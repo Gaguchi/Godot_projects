@@ -9,14 +9,46 @@ export interface CharacterPortraitProps {
   active?: boolean
   /** Pixel size (default 96). */
   size?: number
+  /** Combat team, when known. Enemy units whose speaker isn't in the
+   *  character registry get the enemy accent family (never the hash palette,
+   *  which can hand an ally-ish teal to a brigand). */
+  team?: 'party' | 'enemy'
   className?: string
+}
+
+const spritePath = (id: string): string => `/sprites/units/${id}.png`
+
+/**
+ * Mirror of BoardScene's `unitSpriteKey()` name→sprite mapping (the layer
+ * fence forbids importing BoardScene from React). Lets combat units whose
+ * name has no registry entry (e.g. "Brigand") still render their board
+ * sprite as a head-crop instead of an initials placeholder.
+ * KEEP IN SYNC with BoardScene.ts `unitSpriteKey`.
+ */
+function unitSpritePathForName(name: string): string | null {
+  const n = name.toLowerCase()
+  if (n.includes('alpha wolf')) return spritePath('alpha_wolf')
+  if (n.includes('shield knight')) return spritePath('shield_knight')
+  if (n.includes('raider mage')) return spritePath('raider_mage')
+  if (n.includes('raider cleric')) return spritePath('raider_cleric')
+  if (n.includes('ember mage')) return spritePath('ember_mage')
+  if (n.includes('thief')) return spritePath('thief')
+  for (const e of ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'daren', 'wolf'] as const) {
+    if (n.includes(e)) return spritePath(e)
+  }
+  if (n.includes('archer')) return spritePath('bandit_archer')
+  if (n.includes('warlord')) return spritePath('warlord')
+  if (n.includes('brigand') || n.includes('chief')) return spritePath('brigand_chief')
+  if (n.includes('bandit')) return spritePath('bandit')
+  return null
 }
 
 /**
  * Character portrait. Renders the authored sprite (head/torso crop of the
- * full-body ComfyUI unit sprite) when the registry has one; otherwise falls
- * back to a colored shape with the speaker's initials. Subtle breath/idle
- * animation when active.
+ * full-body ComfyUI unit sprite) when the registry has one — falling back to
+ * the board-sprite name mapping for combat units the registry doesn't know —
+ * and only then to a colored shape with the speaker's initials. Subtle
+ * breath/idle animation when active.
  *
  * Shape varies by character archetype (square = warrior, diamond = mystic,
  * hex = leader/named NPC, circle = generic, triangle = mystic alt). Color is
@@ -29,12 +61,19 @@ export function CharacterPortrait({
   speaker,
   active,
   size = 96,
+  team,
   className,
 }: CharacterPortraitProps): React.JSX.Element {
   const c = getCharacter(speaker)
   const isNarrator = c.faction === 'narrator'
   const [spriteFailed, setSpriteFailed] = React.useState(false)
-  const showSprite = !!c.sprite && !spriteFailed && !isNarrator
+  const spriteSrc = c.sprite ?? (speaker ? unitSpritePathForName(speaker) : null)
+  const showSprite = !!spriteSrc && !spriteFailed && !isNarrator
+
+  // Registry miss on an enemy: force the enemy accent family so red = foe
+  // survives even for unmapped classes (hash palette must never dress a
+  // brigand in ally teal).
+  const enemyAccent = team === 'enemy' && c.faction !== 'enemy'
 
   const shapeClass = SHAPE_CLASSES[c.shape] ?? SHAPE_CLASSES.circle
 
@@ -44,6 +83,15 @@ export function CharacterPortrait({
 
   const fontSize = Math.round(size * 0.34)
 
+  const accentClasses = enemyAccent ? '' : `${c.bgColor} ${c.ringColor} `
+  const enemyStyle: React.CSSProperties = enemyAccent
+    ? ({
+        background: 'color-mix(in oklab, var(--color-enemy) 26%, var(--color-ink))',
+        borderColor: 'color-mix(in oklab, var(--color-enemy) 70%, transparent)',
+        '--tw-ring-color': 'color-mix(in oklab, var(--color-enemy) 55%, transparent)',
+      } as React.CSSProperties)
+    : {}
+
   return (
     <>
       <div
@@ -51,19 +99,19 @@ export function CharacterPortrait({
         aria-label={isNarrator ? 'Narrator' : c.displayName}
         className={
           'flex items-center justify-center select-none overflow-hidden ' +
-          'border-2 ring-2 ring-offset-2 ring-offset-stone-950 shadow-lg ' +
+          'border-2 ring-2 ring-offset-2 ring-offset-ink shadow-lg ' +
           'transition-[transform,filter] duration-200 ' +
-          c.bgColor + ' ' + c.ringColor + ' ' +
+          accentClasses +
           shapeClass + ' ' + animClass + ' ' +
           (className ?? '')
         }
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, ...enemyStyle }}
       >
         {showSprite ? (
           // Full-body sprite, cropped to head/torso: the frame shows the top
           // ~45% of the image, anchored center-top.
           <img
-            src={c.sprite}
+            src={spriteSrc as string}
             alt=""
             draggable={false}
             className="w-full h-full object-cover"
@@ -76,8 +124,13 @@ export function CharacterPortrait({
           </span>
         ) : (
           <span
-            className={`font-bold tracking-tight ${c.textColor}`}
-            style={{ fontSize, fontFamily: 'serif', letterSpacing: '-0.05em' }}
+            className={`font-bold tracking-tight ${enemyAccent ? '' : c.textColor}`}
+            style={{
+              fontSize,
+              fontFamily: 'var(--font-display)',
+              letterSpacing: '-0.02em',
+              ...(enemyAccent ? { color: 'var(--color-parchment)' } : {}),
+            }}
           >
             {c.initials || '?'}
           </span>

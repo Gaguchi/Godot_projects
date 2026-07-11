@@ -9,7 +9,78 @@ import { InitiativeStrip } from './InitiativeStrip'
 import { ForecastPanel } from './ForecastPanel'
 import { UnitDetailPanel } from './UnitDetailPanel'
 import { PhaseBanner } from './PhaseBanner'
+import { Keycap } from './hudBits'
+import { Button } from '../../components/Button'
 import { useCombatUiStore } from '../../../state/combatUiStore'
+
+/**
+ * Clickable danger-zone toggle (bottom-left chip): a Tab keycap + label +
+ * state pip. BoardScene owns the actual overlay state (`globalDangerZone`),
+ * flipped by its Phaser `keydown-TAB` handler on `window` — so the chip
+ * REUSES that exact channel by synthesizing a Tab keydown instead of holding
+ * a second copy of the state. The chip's own lit/unlit read mirrors the
+ * toggle by listening for the same window-level Tab keydowns (covers both
+ * the physical key and the chip).
+ */
+function DangerZoneToggle(): React.JSX.Element {
+  const [on, setOn] = React.useState(false)
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Tab') setOn((v) => !v)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const toggle = (): void => {
+    // Phaser's KeyboardManager listens for keydown on window and routes by
+    // event.keyCode — synthesize the same event the physical key produces.
+    const ev = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      code: 'Tab',
+      keyCode: 9,
+      bubbles: true,
+      cancelable: true,
+    })
+    if (ev.keyCode !== 9) {
+      Object.defineProperty(ev, 'keyCode', { get: () => 9 })
+    }
+    window.dispatchEvent(ev)
+  }
+
+  return (
+    <Button
+      id="danger-zone-toggle"
+      variant="secondary"
+      onPress={toggle}
+      aria-pressed={on}
+      aria-label="Toggle danger zones"
+      className="gap-2 !px-2.5 !py-1.5 !text-[0.62rem]"
+      style={on ? { borderColor: 'color-mix(in oklab, var(--color-ember) 70%, transparent)' } : {}}
+    >
+      <Keycap label="Tab" />
+      <span
+        className="leading-none"
+        style={{ color: on ? 'var(--color-parchment)' : 'var(--color-text-muted)' }}
+      >
+        Danger zone
+      </span>
+      {/* state pip — second (non-colour-position) channel for the toggle read */}
+      <span
+        aria-hidden
+        className="inline-block h-[7px] w-[7px] rounded-full"
+        style={{
+          background: on ? 'var(--color-ember)' : 'color-mix(in oklab, var(--color-ash) 70%, transparent)',
+          border: on
+            ? '1px solid var(--color-ember)'
+            : '1px solid color-mix(in oklab, var(--iron-edge) 80%, transparent)',
+          boxShadow: on ? '0 0 6px color-mix(in oklab, var(--color-ember) 70%, transparent)' : 'none',
+        }}
+      />
+    </Button>
+  )
+}
 
 /**
  * Top-level combat HUD overlay rendered over the Phaser canvas.
@@ -26,11 +97,16 @@ export function CombatHud(): React.JSX.Element {
       id="combat-hud"
       className="pointer-events-none absolute inset-0 z-[100]"
     >
-      <div className="pointer-events-auto"><TopBar /></div>
+      {/* ONE composed top-center column: herald plaque > turn queue > mode
+          strip. Children flow in the column — the old top-[6.25rem] /
+          top-[13rem] magic-offset chain is gone. */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[90] flex flex-col items-center gap-2">
+        <div className="pointer-events-auto"><TopBar /></div>
+        <InitiativeStrip />
+        <ModeLabel />
+      </div>
       <PhaseBanner />
-      <InitiativeStrip />
       <ForecastPanel />
-      <ModeLabel />
       <CardHand />
       <CaptureBtn />
       <UnitDetailPanel pinnedUnitId={pinnedDetailUnitId} onClose={() => setPinned(null)} />
@@ -38,8 +114,8 @@ export function CombatHud(): React.JSX.Element {
         <MoveBtn />
         <EndTurnBtn />
       </div>
-      <div className="absolute bottom-2 left-2 text-[11px] italic tracking-wide text-[color:var(--color-text-muted)] pointer-events-none">
-        [Tab] danger zone · click a unit for detail
+      <div className="absolute bottom-3 left-3 pointer-events-auto">
+        <DangerZoneToggle />
       </div>
     </div>
   )

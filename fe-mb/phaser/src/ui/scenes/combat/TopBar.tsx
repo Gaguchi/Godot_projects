@@ -23,12 +23,12 @@ export function TopBar(): React.JSX.Element {
   return (
     <div
       id="combat-topbar"
-      className="hud-panel absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-4 px-4 py-2 z-10"
+      className="hud-panel relative flex items-center gap-4 px-4 py-2"
     >
       {/* Turn — demoted label chip */}
       <div className="flex flex-col items-center leading-none">
         <span className="text-[0.55rem] uppercase tracking-[0.22em] text-parchment-dim">Turn</span>
-        <span className="numeral text-lg text-amber-100">{turnNumber}</span>
+        <span className="numeral text-lg text-parchment">{turnNumber}</span>
       </div>
 
       <div className="hud-divider" />
@@ -37,7 +37,7 @@ export function TopBar(): React.JSX.Element {
       <div className="flex items-center gap-2.5">
         <TeamSigil enemy={isEnemy} size={20} />
         <div className="flex flex-col leading-tight">
-          <span className={`voice-display text-lg ${isEnemy ? 'text-enemy' : 'text-amber-100'}`}>
+          <span className={`voice-display text-lg ${isEnemy ? 'text-enemy' : 'text-parchment'}`}>
             {unit ? unit.name : '—'}
           </span>
           <span

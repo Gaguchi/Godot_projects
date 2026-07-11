@@ -39,6 +39,24 @@ export function HpMeter({
   )
 }
 
+/** Forged keycap chip — physical key labels (Tab/Esc/RMB) rendered as small
+ *  iron keys, never bracketed dev-notation like "[Tab]". */
+export function Keycap({ label }: { label: string }): React.JSX.Element {
+  return (
+    <kbd
+      className="numeral inline-flex h-[18px] items-center justify-center rounded-[3px] px-1.5 text-[0.6rem] uppercase leading-none tracking-[0.06em] text-parchment-dim"
+      style={{
+        background: 'linear-gradient(180deg, var(--iron-700), var(--iron-900))',
+        border: '1px solid color-mix(in oklab, var(--iron-edge) 80%, transparent)',
+        boxShadow:
+          'inset 0 1px 0 color-mix(in oklab, var(--color-parchment) 14%, transparent), inset 0 -2px 0 color-mix(in oklab, var(--color-ash) 85%, transparent)',
+      }}
+    >
+      {label}
+    </kbd>
+  )
+}
+
 /** Team sigil — shield (ally) vs fangs (enemy): a non-colour team signal. */
 export function TeamSigil({ enemy, size = 16 }: { enemy: boolean; size?: number }): React.JSX.Element {
   return enemy ? (

@@ -24,10 +24,10 @@ export function PauseButton({ onPress }: PauseButtonProps): React.JSX.Element {
       aria-label="Pause"
       className="!grid !h-8 !w-8 !place-items-center !rounded-full !p-0"
       style={{
-        background: 'rgba(16,10,5,0.72)',
-        border: '1px solid rgba(201,152,92,0.4)',
-        color: '#c9985c',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.5)',
+        background: 'color-mix(in oklab, var(--color-ash) 78%, transparent)',
+        border: '1px solid color-mix(in oklab, var(--color-hearth-soft) 42%, transparent)',
+        color: 'var(--color-hearth-soft)',
+        boxShadow: 'var(--elevation-flat)',
       }}
     >
       <Icon name="pause" size={16} />

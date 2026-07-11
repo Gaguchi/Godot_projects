@@ -22,7 +22,7 @@ describe('<ModeLabel>', () => {
       state: { ...prev.state, subPhase: 'SELECTING_MOVE' },
     }))
     render(<ModeLabel />)
-    expect(screen.getByText(/Click a highlighted tile/)).toBeInTheDocument()
+    expect(screen.getByText(/Choose a highlighted tile/)).toBeInTheDocument()
   })
 
   it('shows target-mode banner when subPhase = SELECTING_TARGET', () => {
@@ -31,6 +31,21 @@ describe('<ModeLabel>', () => {
       state: { ...prev.state, subPhase: 'SELECTING_TARGET' },
     }))
     render(<ModeLabel />)
-    expect(screen.getByText(/Click a target/)).toBeInTheDocument()
+    expect(screen.getByText(/Choose a target/)).toBeInTheDocument()
+  })
+
+  it('hides while a forecast target is pinned (ForecastPanel owns that moment)', () => {
+    useCombatStore.setState((prev) => ({
+      ...prev,
+      state: {
+        ...prev.state,
+        subPhase: 'SELECTING_TARGET',
+        pinnedTargetTile: '1,0' as never,
+      },
+    }))
+    render(<ModeLabel />)
+    const banner = document.querySelector('[aria-hidden="true"]')
+    expect(banner).not.toBeNull()
+    expect(banner?.className).toMatch(/opacity-0/)
   })
 })

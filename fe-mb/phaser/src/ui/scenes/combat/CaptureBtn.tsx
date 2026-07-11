@@ -52,7 +52,9 @@ export function CaptureBtn(): React.JSX.Element | null {
   if (candidates.length === 0) return null
 
   return (
-    <div className="absolute bottom-4 left-4 flex flex-col gap-2 pointer-events-auto">
+    // bottom-12 stacks the capture actions ABOVE the danger-zone chip row
+    // (bottom-3, ~34px tall) so the two bottom-left controls never collide.
+    <div className="absolute bottom-12 left-3 flex flex-col gap-2 pointer-events-auto">
       {candidates.map((c) => {
         const btn = (
           <Button
