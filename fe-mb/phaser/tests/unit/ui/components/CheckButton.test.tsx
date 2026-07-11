@@ -19,7 +19,7 @@ describe('<CheckButton>', () => {
     expect(screen.queryByTestId('check-prefix')).toBeNull()
   })
 
-  it('renders green prefix when stat check is passable', () => {
+  it('renders hearth-tinted chip when stat check is passable (no brackets, no best-value)', () => {
     render(<CheckButton
       text="Force door"
       requirement={{ kind: 'stat', stat: 'str', threshold: 7 }}
@@ -29,10 +29,12 @@ describe('<CheckButton>', () => {
     />)
     const prefix = screen.getByTestId('check-prefix')
     expect(prefix.textContent).toContain('STR 7')
-    expect(prefix.className).toContain('text-emerald')
+    expect(prefix.textContent).not.toContain('[')      // dev-notation brackets removed
+    expect(prefix.textContent).not.toContain('(')      // best-in-party math lives in the picker
+    expect(prefix.className).toContain('--color-hearth')
   })
 
-  it('renders red prefix when nobody meets threshold', () => {
+  it('renders "needs" chip in crit tint when nobody meets threshold', () => {
     render(<CheckButton
       text="Force door"
       requirement={{ kind: 'stat', stat: 'str', threshold: 10 }}
@@ -41,7 +43,8 @@ describe('<CheckButton>', () => {
       onPress={() => {}}
     />)
     const prefix = screen.getByTestId('check-prefix')
-    expect(prefix.className).toContain('text-red')
+    expect(prefix.textContent).toContain('needs STR 10')
+    expect(prefix.className).toContain('--hp-crit-text')
   })
 
   it('disables button when canPass is false', () => {

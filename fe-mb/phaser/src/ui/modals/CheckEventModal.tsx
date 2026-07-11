@@ -105,10 +105,12 @@ export function CheckEventModal({
         aria-label={event.title}
       >
         <div className="max-w-lg flex flex-col gap-4">
-          <h2 className="text-lg tracking-widest text-amber-200 m-0">{event.title}</h2>
+          {/* Display voice at its native tracking — never letter-space a
+              sentence-case line (memo-header tell). */}
+          <h2 className="voice-display m-0 text-lg text-[color:var(--color-hearth)]">{event.title}</h2>
           {!resolved ? (
             <>
-              <p className="italic text-stone-300">{event.description}</p>
+              <p className="italic text-[color:var(--color-parchment)]">{event.description}</p>
               <div className="flex flex-col gap-2">
                 {event.choices.map((c) => {
                   const candidates = c.check ? getCheckCandidates(c.check, party) : []
@@ -127,7 +129,7 @@ export function CheckEventModal({
             </>
           ) : (
             <>
-              <p className="text-amber-200">{resolved.outcome.narration}</p>
+              <p className="text-[color:var(--color-parchment)]">{resolved.outcome.narration}</p>
               <Button variant="primary" onPress={() => onResolve(resolved)}>Continue</Button>
             </>
           )}

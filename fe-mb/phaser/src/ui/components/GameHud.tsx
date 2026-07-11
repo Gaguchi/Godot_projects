@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { CharacterPortrait } from './CharacterPortrait'
 import { Icon } from './Icon'
@@ -61,6 +61,18 @@ function titleCase(s: string): string {
 /** Band-safe resource-bar shadow: keep the inset bevel, kill the heavy drop. */
 const BAND_SAFE_SHADOW = 'inset 0 1px 0 rgba(122,99,60,0.45), 0 1px 3px rgba(0,0,0,0.35)'
 
+/**
+ * FOOD is the run-killer stat — tint it in three tiers so it pulls the eye
+ * BEFORE starvation lands, not only at zero: calm parchment while stocked,
+ * the HP warn amber when the larder runs low (1–4), crit red + a slow pulse
+ * when empty (every further hop now costs HP).
+ */
+function foodTint(food: number): string {
+  if (food === 0) return 'food-crit text-[color:var(--hp-crit-text)]'
+  if (food <= 4) return 'text-[color:var(--hp-warn)]'
+  return 'text-[color:var(--color-parchment)]'
+}
+
 /** Parchment ledger tones — cartographer's chrome, not a combat slab. */
 const LEDGER_BG = '#e6d6ac'
 const LEDGER_BORDER = 'rgba(91,65,38,0.5)'
@@ -83,6 +95,15 @@ export function GameHud({
   const items = useRunStore((s) => s.inventory.items)
   const questStates = useRunStore((s) => s.questStates)
   const food = items.filter((i) => (i.itemId as unknown as string) === 'food_rations').length
+
+  // Scale-pop the FOOD numeral when a hop consumes a ration, so the travel
+  // cost registers as an event (second feedback channel next to the tint).
+  const prevFoodRef = useRef(food)
+  const [foodPopKey, setFoodPopKey] = useState(0)
+  useEffect(() => {
+    if (food < prevFoodRef.current) setFoodPopKey((k) => k + 1)
+    prevFoodRef.current = food
+  }, [food])
 
   const activeQuest = Object.entries(questStates).find(([, q]) => q.currentStage !== '__complete__')
   const objective = activeQuest
@@ -148,7 +169,7 @@ export function GameHud({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span
-                        className={`voice-display truncate text-[0.82rem] ${parchment ? '' : 'text-amber-100'}`}
+                        className={`voice-display truncate text-[0.82rem] ${parchment ? '' : 'text-[color:var(--color-parchment)]'}`}
                         style={parchment ? { color: LEDGER_INK } : undefined}
                       >
                         {u.name}
@@ -216,19 +237,19 @@ export function GameHud({
               {regionName && (
                 <span className="text-[0.55rem] uppercase tracking-[0.24em] text-[color:var(--color-text-muted)]">{regionName}</span>
               )}
-              {location && <span className="voice-display text-sm text-amber-100">{location}</span>}
+              {location && <span className="voice-display text-sm text-[color:var(--color-parchment)]">{location}</span>}
             </span>
             <div className="hud-divider" />
           </>
         )}
         <span className="flex flex-col items-center leading-none">
           <span className="text-[0.55rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">Day</span>
-          <span className="numeral text-sm text-amber-100">{days}</span>
+          <span className="numeral text-sm text-[color:var(--color-parchment)]">{days}</span>
         </span>
         <div className="hud-divider" />
         <span className="flex flex-col items-center leading-none">
           <span className="text-[0.55rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">Food</span>
-          <span className={`numeral text-sm ${food === 0 ? 'text-[color:var(--color-damage-text)]' : 'text-amber-100'}`}>{food}</span>
+          <span key={foodPopKey} className={`numeral text-sm ${foodTint(food)} ${foodPopKey > 0 ? 'food-pop' : ''}`}>{food}</span>
         </span>
         <div className="hud-divider" />
         <span className="flex flex-col items-center leading-none">
@@ -236,6 +257,29 @@ export function GameHud({
           <span className="numeral text-sm text-hearth">{gold}</span>
         </span>
       </div>
+
+      {/* Local feedback motion — durations collapse under reduced-motion via
+          the token override, and the loops are additionally gated motion-safe. */}
+      <style>{`
+        @keyframes hudFoodPulse {
+          0%, 100% { opacity: 1; }
+          50%      { opacity: 0.45; }
+        }
+        @keyframes hudFoodPop {
+          0%   { transform: scale(1); }
+          40%  { transform: scale(1.18); }
+          100% { transform: scale(1); }
+        }
+        @media (prefers-reduced-motion: no-preference) {
+          .food-crit { animation: hudFoodPulse 800ms ease-in-out infinite; }
+          .food-pop  { animation: hudFoodPop var(--dur-quick) var(--ease-out-quart); }
+          .food-crit.food-pop {
+            animation:
+              hudFoodPop var(--dur-quick) var(--ease-out-quart),
+              hudFoodPulse 800ms ease-in-out infinite;
+          }
+        }
+      `}</style>
     </>
   )
 }

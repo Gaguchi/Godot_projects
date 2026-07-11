@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Dialog, Button, Heading, CheckButton, CheckCandidatePicker, Icon } from '../components'
 import { CharacterPortrait } from '../components/CharacterPortrait'
-import { getCharacter } from '../data/characters'
+import { getCharacter, plateUnderlineClass } from '../data/characters'
 import { useTypewriter } from '../hooks/useTypewriter'
 import { useRunStore, predicateStateFromRun } from '../../state/runStore'
 import { getDialogue } from '../../state/dialogueRegistry'
@@ -11,6 +11,22 @@ import { evaluateCheck, getCheckCandidates } from '../../systems/checkResolver'
 import type { DialogueNodeId, DialogueId, UnitId } from '../../domain/ids'
 import type { QuestEffect } from '../../domain/quest'
 import type { DialogueChoice } from '../../domain/dialogue'
+
+/**
+ * Local motion vocabulary for the dialogue band (kept out of index.css on
+ * purpose — these are dialogue-only affordances). Both loops collapse under
+ * prefers-reduced-motion via the media guard.
+ *   - dlg-advance-caret: genre-standard pulsing "more text" chevron.
+ *   - dlg-type-caret: hard steps(2) terminal-style blink on the typewriter bar.
+ */
+const DIALOGUE_MOTION_CSS = `
+@keyframes dlgAdvanceNudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+@keyframes dlgCaretBlink { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .dlg-advance-caret { animation: dlgAdvanceNudge 1.1s var(--ease-out-quart) infinite; }
+  .dlg-type-caret { animation: dlgCaretBlink 1s steps(2, jump-none) infinite; }
+}
+`
 
 /**
  * Dialogue UX overhaul: bottom-anchored panel with floating character portrait,
@@ -106,8 +122,8 @@ export function DialogueModal(): React.JSX.Element {
       >
         <div className="flex flex-col gap-4">
           <Heading level={2} className="text-base">Dialogue Not Found</Heading>
-          <p className="text-stone-400 text-sm">
-            No dialogue tree registered for id <code className="text-amber-300">{String(pending.dialogueId)}</code>.
+          <p className="text-text-muted text-sm">
+            No dialogue tree registered for id <code className="text-hearth">{String(pending.dialogueId)}</code>.
           </p>
           <Button variant="primary" onPress={() => dispatch({ type: 'endDialogue' })}>Close</Button>
         </div>
@@ -124,7 +140,7 @@ export function DialogueModal(): React.JSX.Element {
       >
         <div className="flex flex-col gap-4">
           <Heading level={2} className="text-base">Dialogue Step Error</Heading>
-          <p className="text-stone-400 text-sm">
+          <p className="text-text-muted text-sm">
             Node <code>{pending.nodeId}</code> not in tree {String(pending.dialogueId)}.
           </p>
           <Button variant="primary" onPress={() => dispatch({ type: 'endDialogue' })}>Close</Button>
@@ -229,7 +245,7 @@ export function DialogueModal(): React.JSX.Element {
         }
         style={{
           height: 0,
-          filter: speaking ? 'none' : 'brightness(0.45) saturate(0.55)',
+          filter: speaking ? 'none' : 'brightness(0.68) saturate(0.7)',
           transform: speaking ? 'translateY(0) scale(1)' : 'translateY(6px) scale(0.95)',
           zIndex: speaking ? 2 : 1,
         }}
@@ -262,33 +278,34 @@ export function DialogueModal(): React.JSX.Element {
       onOpenChange={() => undefined}
       isDismissable={false}
       position="bottom"
-      aria-label={node.speaker ?? 'Dialogue'}
+      aria-label={node.speaker || 'Dialogue'}
     >
       <div
         id="dialogue-modal"
         className="relative mx-auto max-w-5xl px-8 pt-9 pb-6"
       >
+        <style>{DIALOGUE_MOTION_CSS}</style>
         {/* The talk stage: persistent busts standing on the band */}
         {renderBust('left')}
         {renderBust('right')}
 
-        {/* Name plate rides the band's top edge on the speaker's side */}
+        {/* Name plate rides the band's top edge, anchored INBOARD of the bust
+            column (the sprite is ~190px wide at left-6/right-6) so the plate
+            never slices across the character art. */}
         {!isNarrator && (
           <div
             className={
               'absolute -top-4 z-10 ' +
-              (slots.right === node.speaker ? 'right-10' : 'left-10')
+              (slots.right === node.speaker ? 'right-52' : 'left-52')
             }
           >
             <div
-              className={
-                `voice-display text-sm tracking-[0.18em] px-4 py-1 rounded-sm ` +
-                `bg-stone-950 border ${character.ringColor.split(' ').filter(cl => cl.startsWith('border-')).join(' ')} ` +
-                `${character.textColor} shadow-[0_2px_8px_rgba(0,0,0,0.8)]`
-              }
+              className="voice-display surface-iron text-sm tracking-[0.18em] px-4 py-1 text-parchment shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
             >
               {speakerLabel.toUpperCase()}
             </div>
+            {/* character identity = 2px edge accent, never a full colored outline */}
+            <div aria-hidden className={`border-b-2 ${plateUnderlineClass(character)}`} />
           </div>
         )}
 
@@ -311,10 +328,10 @@ export function DialogueModal(): React.JSX.Element {
               onClick={onTextAreaClick}
               disabled={!textInteractive}
               className={
-                'w-full text-left p-4 rounded transition-colors min-h-[84px] ' +
-                'bg-stone-900/60 border border-stone-800 outline-none ' +
+                'relative w-full text-left p-4 min-h-[84px] ' +
+                'bg-transparent border-0 outline-none ' +
                 (textInteractive
-                  ? 'cursor-pointer hover:bg-stone-900/80 focus-visible:[box-shadow:var(--focus-ring)]'
+                  ? 'cursor-pointer focus-visible:[box-shadow:var(--focus-ring)]'
                   : 'cursor-default')
               }
               aria-label="Dialogue text"
@@ -322,23 +339,26 @@ export function DialogueModal(): React.JSX.Element {
               <p
                 className={
                   `leading-relaxed whitespace-pre-line text-lg ` +
-                  (isNarrator ? 'text-parchment-dim italic' : 'text-stone-100')
+                  (isNarrator ? 'text-parchment-dim italic' : 'text-parchment')
                 }
               >
                 {visibleText}
                 {!isDone && (
-                  <span className="inline-block w-2 h-5 align-middle ml-1 bg-amber-300 animate-pulse" />
+                  <span
+                    aria-hidden
+                    className="dlg-type-caret inline-block align-baseline ml-1 w-[2px] h-[1em] bg-hearth"
+                  />
                 )}
               </p>
-              {!isDone && (
-                <div className="text-xs text-parchment-dim mt-3 flex items-center gap-1">
-                  <Icon name="chevron-right" size={11} /> click to skip
-                </div>
-              )}
+              {/* Genre-standard advance affordance: pulsing chevron, no copy.
+                  While the typewriter runs, clicking already skips — silent. */}
               {isDone && choices.length === 1 && (
-                <div className="text-xs text-parchment-dim mt-3 flex items-center gap-1">
-                  <Icon name="chevron-right" size={11} /> click to continue
-                </div>
+                <span
+                  aria-hidden
+                  className="dlg-advance-caret absolute bottom-2 right-3 text-hearth"
+                >
+                  <Icon name="chevron-down" size={14} />
+                </span>
               )}
             </button>
           )
@@ -373,12 +393,13 @@ export function DialogueModal(): React.JSX.Element {
                 return (
                   <Button
                     key={c.id}
-                    variant={enabled ? 'primary' : 'ghost'}
+                    variant="secondary"
+                    prose
                     isDisabled={!enabled}
                     onPress={() => onChoice(c)}
                     className="!justify-start text-left"
                   >
-                    <span className="text-amber-300 mr-3 flex items-center"><Icon name="chevron-right" size={14} /></span>
+                    <span className="text-hearth mr-3 flex items-center"><Icon name="chevron-right" size={14} /></span>
                     <span>{c.text}</span>
                   </Button>
                 )

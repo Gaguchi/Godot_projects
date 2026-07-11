@@ -1,4 +1,5 @@
 import React from 'react'
+import { Button } from './Button'
 import type { CheckRequirement, CheckCandidate } from '../../domain/check'
 
 export interface CheckButtonProps {
@@ -9,12 +10,10 @@ export interface CheckButtonProps {
   onPress: () => void
 }
 
-function formatPrefix(req: CheckRequirement, candidates: CheckCandidate[]): string {
+function requirementLabel(req: CheckRequirement): string {
   switch (req.kind) {
-    case 'stat': {
-      const best = candidates[0]?.statValue ?? 0
-      return `${req.stat.toUpperCase()} ${req.threshold} (${best})`
-    }
+    case 'stat':
+      return `${req.stat.toUpperCase()} ${req.threshold}`
     case 'class':
       return (req.classId as unknown as string).toUpperCase()
     case 'gold':
@@ -25,49 +24,52 @@ function formatPrefix(req: CheckRequirement, candidates: CheckCandidate[]): stri
 }
 
 /**
- * Fallout-NV-style choice button. A `requirement` prefixes the choice with a
- * bracketed `[STR 7 (8)]` chip (green when passable, red when blocked).
+ * FNV-style choice button for check events, forged on Button.tsx.
  *
- * Unlike a plain disabled button, a BLOCKED check stays fully legible — it
- * reads as a real, visibly-locked option (muted iron box + red requirement
- * chip) rather than fading to near-invisible prose. Enabled checks get the
- * hearth-lit primary treatment so they're obviously clickable.
+ * Requirement checks carry a small-caps stat chip (`STR 7`): hearth-bordered
+ * when someone in the party can pass, desaturated `needs STR 7` when nobody
+ * can — the chip IS the disabled-reason, so a blocked check stays a real,
+ * legible, visibly-locked option (opacity floor below keeps it readable
+ * through the forged disabled treatment). The best-candidate math lives in
+ * the CheckCandidatePicker that opens on click, not on the chip.
+ *
+ * Action rank: requirement choices that can pass are the modal's committed
+ * actions (hearth-lit primary); requirement-free prose choices ("Walk on.")
+ * read as quiet iron so a decline never shouts as loud as a commit.
  */
 export function CheckButton({
   text,
   requirement,
-  candidates,
   canPass,
   onPress,
 }: CheckButtonProps): React.JSX.Element {
   return (
-    <button
-      type="button"
-      disabled={!canPass}
-      onClick={() => { if (canPass) onPress() }}
-      className={
-        'flex w-full items-center gap-2.5 rounded border px-4 py-2.5 text-left font-body text-[0.95rem] ' +
-        'outline-none transition-colors focus-visible:[box-shadow:var(--focus-ring)] ' +
-        (canPass
-          ? 'cursor-pointer border-amber-700/60 bg-amber-900/45 text-amber-50 hover:border-amber-500 hover:bg-amber-900/70'
-          : 'cursor-not-allowed border-stone-700/60 bg-stone-900/70 text-stone-300')
-      }
-      title={canPass ? undefined : 'No one in the party meets this requirement'}
+    <Button
+      variant={requirement && canPass ? 'primary' : 'secondary'}
+      prose
+      isDisabled={!canPass}
+      onPress={onPress}
+      className="w-full"
+      // Blocked checks must stay legible (they're information, not chrome) —
+      // lift the forged disabled opacity while keeping its desaturation.
+      {...(canPass ? {} : { style: { opacity: 0.8 } })}
     >
-      {requirement && (
-        <span
-          data-testid="check-prefix"
-          className={
-            'numeral shrink-0 rounded border px-1.5 py-0.5 text-xs ' +
-            (canPass
-              ? 'border-emerald-700/50 bg-emerald-950/40 text-emerald-300'
-              : 'border-red-800/60 bg-red-950/30 text-red-300')
-          }
-        >
-          [{formatPrefix(requirement, candidates)}]
-        </span>
-      )}
-      <span className="flex-1">{text}</span>
-    </button>
+      <span className="flex w-full items-center gap-2.5 py-0.5 text-left">
+        {requirement && (
+          <span
+            data-testid="check-prefix"
+            className={
+              'numeral shrink-0 self-center rounded-[3px] border px-1.5 py-0.5 text-[0.68rem] tracking-[0.05em] [font-variant-caps:small-caps] '
+              + (canPass
+                ? 'border-[color:color-mix(in_oklab,var(--color-hearth-soft)_60%,transparent)] bg-[color-mix(in_oklab,var(--color-hearth)_10%,transparent)] text-[color:var(--color-hearth)]'
+                : 'border-[color:color-mix(in_oklab,var(--hp-crit-text)_35%,transparent)] bg-[color-mix(in_oklab,var(--color-ember)_12%,transparent)] text-[color:var(--hp-crit-text)]')
+            }
+          >
+            {canPass ? requirementLabel(requirement) : `needs ${requirementLabel(requirement)}`}
+          </span>
+        )}
+        <span className="flex-1">{text}</span>
+      </span>
+    </Button>
   )
 }

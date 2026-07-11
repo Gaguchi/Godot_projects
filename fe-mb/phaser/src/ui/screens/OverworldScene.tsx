@@ -111,6 +111,15 @@ export function OverworldScene({
   const pendingCombat = useRunStore((s) => s.pendingCombat)
   const inventoryItems = useRunStore((s) => s.inventory.items)
   const [activeCheckEvent, setActiveCheckEvent] = useState<CheckEvent | null>(null)
+
+  // Dev/e2e hook: the check-event modal is local component state (an encounter
+  // roll opens it), so expose a deterministic opener for tests + screenshots.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const w = window as unknown as { __openCheckEvent?: (e: CheckEvent) => void }
+    w.__openCheckEvent = (e) => setActiveCheckEvent(e)
+    return () => { delete w.__openCheckEvent }
+  }, [])
   // One encounter roll per hop, max. When a rolled encounter suspends the hop
   // (dialogue / check event), the RETRIED hop must not roll again — the RNG
   // derives from an unchanged rngState, so a re-roll reproduces the same
@@ -459,6 +468,9 @@ export function OverworldScene({
   const regionId = region?.id ?? 'borderlands'
   const pal = regionPalette(regionId)
   const isTraveling = !!(pendingTravelPath && pendingTravelPath.remainingNodeIds.length > 0)
+  // First completed hop writes visitedNodes (persisted in the save) — the
+  // cheapest existing signal that the player already knows how to travel.
+  const hasTraveled = Object.keys(visitedNodes).length > 0
 
   // Which way is the journey headed? Drives band scroll + caravan facing.
   const nextNodeOnPath = pendingTravelPath?.remainingNodeIds?.[0] as unknown as string | undefined
@@ -503,7 +515,7 @@ export function OverworldScene({
   return (
     <div
       id="overworld-scene"
-      className="h-full w-full text-amber-100 font-body overflow-hidden relative"
+      className="h-full w-full text-[color:var(--color-parchment)] font-body overflow-hidden relative"
       style={{ background: '#100b07' }}
     >
       {/* ── TRAVEL BAND — side-view journey window (no interaction) ───── */}
@@ -692,6 +704,11 @@ export function OverworldScene({
                         fontWeight: isCurrent ? 700 : 600,
                         color: isCurrent ? pal.accent : pal.ink,
                         opacity: 1,
+                        // Paint-order knockout: a paper-colored stroke UNDER the
+                        // ink fill reads as text printed over the route lines, so
+                        // a dashed road can never strike through a name.
+                        WebkitTextStroke: '3px rgba(240,231,206,0.95)',
+                        paintOrder: 'stroke fill',
                         textShadow: '0 1px 0 rgba(240,231,206,0.9), 0 0 2px rgba(240,231,206,0.6)',
                       }}
                     >
@@ -711,19 +728,25 @@ export function OverworldScene({
             if (!hn) return null
             const TIP_W = 184
             const left = Math.min(Math.max(8, hn.position.x + 28), map.width - TIP_W - 8)
-            const top = Math.max(8, hn.position.y - 44)
+            // Dodge the node's name: labels alternate above/below by the same
+            // id hash (see the label block) — pin the cost readout to the
+            // OPPOSITE side so it never sits on the name it belongs to.
+            let lh = 0
+            for (let ci = 0; ci < hoverNodeId.length; ci++) lh = (lh * 31 + hoverNodeId.charCodeAt(ci)) >>> 0
+            const labelBelow = lh % 2 === 0
+            const top = Math.max(8, labelBelow ? hn.position.y - 44 : hn.position.y + 26)
             return (
               <div
-                className="absolute px-3 py-1.5 bg-stone-950/95 border border-amber-900/60 rounded text-xs tracking-wider pointer-events-none z-20"
+                className="hud-panel absolute px-3 py-1.5 text-xs tracking-wider pointer-events-none z-20"
                 style={{ left, top, width: TIP_W }}
               >
                 <span className="text-[color:var(--color-text-muted)]"><span className="numeral">{hoverPath.length}</span> hop{hoverPath.length === 1 ? '' : 's'}</span>
                 {' · '}
-                <span className={foodCount >= hoverPath.length ? 'text-amber-200' : foodCount > 0 ? 'text-amber-500' : 'text-red-400'}>
+                <span className={foodCount >= hoverPath.length ? 'text-[color:var(--color-parchment)]' : foodCount > 0 ? 'text-[color:var(--hp-warn)]' : 'text-[color:var(--hp-crit-text)]'}>
                   cost <span className="numeral">{hoverPath.length}</span> food
                 </span>
                 {foodCount < hoverPath.length && (
-                  <div className="text-red-400 mt-0.5 inline-flex items-center gap-1">
+                  <div className="text-[color:var(--hp-crit-text)] mt-0.5 inline-flex items-center gap-1">
                     <Icon name="skull" size={11} /> starvation: <span className="numeral">{(hoverPath.length - foodCount) * 3}</span> HP/unit
                   </div>
                 )}
@@ -741,19 +764,21 @@ export function OverworldScene({
             // Type-specific entry options
             if (node.type === 'town') {
               actions.push(
-                { id: 'enter', label: 'Enter Town', icon: 'town', onChoose: () => onEnterTown(id) },
+                { id: 'enter', label: 'Enter Town', icon: 'town', primary: true, onChoose: () => onEnterTown(id) },
                 { id: 'inn',    label: 'Visit Inn',    icon: 'rest',  onChoose: () => onEnterTown(id, 'inn') },
                 { id: 'shop',   label: 'Visit Shop',   icon: 'shop',  onChoose: () => onEnterTown(id, 'shop') },
                 { id: 'tavern', label: 'Visit Tavern', icon: 'event', onChoose: () => onEnterTown(id, 'tavern') },
               )
             } else if (node.type === 'camp') {
-              actions.push({ id: 'enter', label: 'Make Camp', icon: 'camp', onChoose: () => onEnterCamp(id) })
+              actions.push({ id: 'enter', label: 'Make Camp', icon: 'camp', primary: true, onChoose: () => onEnterCamp(id) })
             } else if (node.type === 'dungeon') {
-              actions.push({ id: 'enter', label: 'Enter Dungeon', icon: 'dungeon', onChoose: () => onEnterDungeon(id) })
+              actions.push({ id: 'enter', label: 'Enter Dungeon', icon: 'dungeon', primary: true, onChoose: () => onEnterDungeon(id) })
             } else if (node.type === 'exit') {
-              actions.push({ id: 'exit', label: 'Challenge the Iron Throne', icon: 'combat', onChoose: () => onWin() })
+              actions.push({ id: 'exit', label: 'Challenge the Iron Throne', icon: 'combat', primary: true, onChoose: () => onWin() })
             }
-            // Travel continuation
+            // Travel continuation — only mid-journey does the menu carry travel
+            // rows. At rest, Esc / a click on the chart dismisses it (no web
+            // "Close" row).
             if (hasMoreHops) {
               actions.push({
                 id: 'continue',
@@ -761,13 +786,11 @@ export function OverworldScene({
                 icon: 'arrow-right',
                 onChoose: () => { /* menu dismisses; useEffect resumes hop */ },
               })
-            }
-            actions.push({
-              id: 'stay',
-              label: hasMoreHops ? 'Stay Here' : 'Close',
-              icon: 'cross',
-              onChoose: () => {
-                if (hasMoreHops) {
+              actions.push({
+                id: 'stay',
+                label: 'Stay Here',
+                icon: 'cross',
+                onChoose: () => {
                   // Cancel rest of journey
                   dispatchRun({
                     type: 'startTravelPath',
@@ -775,9 +798,9 @@ export function OverworldScene({
                       path: { remainingNodeIds: [], totalHopsThisLeg: 0, rngBranch: useRunStore.getState().rngState },
                     },
                   })
-                }
-              },
-            })
+                },
+              })
+            }
             // Flip the menu to the LEFT of the node when its right edge would
             // clip past the stage (far-right exit node would otherwise bury the
             // win button). 36px gap + 220px menu width = 256px reach.
@@ -818,16 +841,26 @@ export function OverworldScene({
         surface="parchment"
       />
 
-      {/* Bottom status line — ink on the chart margin. Click a node to travel
-          straight there; drag to pan. */}
-      <div
-        className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none z-10"
-        style={{ bottom: 4, color: pal.ink, fontSize: 11, letterSpacing: '0.08em' }}
-      >
-        {isTraveling
-          ? `traveling… ${pendingTravelPath.remainingNodeIds.length} hop${pendingTravelPath.remainingNodeIds.length === 1 ? '' : 's'} left`
-          : 'click a node to travel · drag to pan'}
-      </div>
+      {/* Bottom status line — ink on the chart margin. The journey readout is
+          game state and always shows while traveling; the "click a node"
+          tutorial line only exists until the player's first completed hop
+          (visitedNodes persists through save, so it never nags a loaded run). */}
+      {(isTraveling || !hasTraveled) && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none z-10"
+          style={{
+            bottom: 4,
+            color: pal.ink,
+            fontSize: 11,
+            letterSpacing: '0.08em',
+            transition: 'opacity var(--dur-settle) var(--ease-out-quart)',
+          }}
+        >
+          {isTraveling
+            ? `traveling… ${pendingTravelPath.remainingNodeIds.length} hop${pendingTravelPath.remainingNodeIds.length === 1 ? '' : 's'} left`
+            : 'click a node to travel · drag to pan'}
+        </div>
+      )}
 
       <style>{`
         @keyframes overworldPulse {

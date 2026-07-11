@@ -7,7 +7,7 @@
  *
  * Per-character accent is applied to:
  *   - portrait fill background
- *   - name plate underline
+ *   - name plate underline (via `plateUnderlineClass`)
  *   - subtle border on the modal's speaker side
  *
  * For unknown speakers, `defaultCharacter()` derives a deterministic styling
@@ -277,6 +277,19 @@ function initialsOf(name: string): string {
     return w.length >= 2 ? (w[0]! + w[1]!.toLowerCase()) : w[0]!.toUpperCase()
   }
   return (parts[0]![0]! + parts[1]![0]!).toUpperCase()
+}
+
+/**
+ * Character identity as an EDGE accent (materials §4.2: never a full colored
+ * outline). Extracts the `border-*` classes from `ringColor` so the dialogue
+ * name plate can render a 2px bottom underline in the character hue while the
+ * plate itself stays on the shared iron material.
+ */
+export function plateUnderlineClass(c: CharacterDef): string {
+  return c.ringColor
+    .split(' ')
+    .filter((cl) => cl.startsWith('border-'))
+    .join(' ')
 }
 
 /**
