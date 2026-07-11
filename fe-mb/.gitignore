@@ -2,8 +2,9 @@
 .godot/
 /android/
 
-# Session/tooling scratch (regenerable)
-/.claude/
+# Session/tooling scratch (regenerable) — but skills are versioned knowledge
+/.claude/*
+!/.claude/skills/
 .playwright-mcp/
 .crop/
 _crop/
