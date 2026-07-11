@@ -6,14 +6,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- "Forged & Lit" type voice: Cinzel = engraved heraldic display (titles,
          names, places); EB Garamond = readable old-style serif body/lore.
-         Numbers stay tabular mono (defined in index.css). Solid serif
-         fallbacks so the mono-terminal feel dies even if the CDN is offline. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+         Numbers stay tabular mono (defined in index.css). SELF-HOSTED variable
+         woff2 (public/fonts) — no CDN dependency, no flash-of-Georgia, works
+         offline in the desktop shell. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/cinzel-normal-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
+    <link
+      rel="preload"
+      href="/fonts/eb-garamond-normal-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link href="/fonts/fonts.css" rel="stylesheet" />
     <title>FE_MB — tactical roguelite</title>
   </head>
   <body>
