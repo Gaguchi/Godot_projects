@@ -75,6 +75,46 @@ describe('<PartyLoadoutModal>', () => {
     expect(useRunStore.getState().party.units['roy']?.handLeft ?? null).toBeNull()
   })
 
+  it('stacks duplicate gear into one row per definition with a count badge', () => {
+    seed(['iron_sword', 'iron_sword', 'iron_sword', 'iron_buckler', 'food_rations'])
+    render(<PartyLoadoutModal open onClose={noop} />)
+    // One row per def, not per copy.
+    expect(screen.getAllByText('Iron Sword')).toHaveLength(1)
+    expect(screen.getAllByText('Iron Buckler')).toHaveLength(1)
+    // Count badge on the stacked row only.
+    expect(screen.getByText('×3')).toBeInTheDocument()
+    expect(screen.queryByText('×1')).toBeNull()
+    // Consumables summary still counts copies, once each.
+    expect(screen.getByText(/\+1 consumable/)).toBeInTheDocument()
+  })
+
+  it('equipping from a stacked row consumes exactly one copy', () => {
+    seed(['iron_sword', 'iron_sword', 'iron_sword'])
+    render(<PartyLoadoutModal open onClose={noop} />)
+    const swordRow = screen.getByText('Iron Sword').closest('div')!.parentElement!
+    const equipL = swordRow.querySelectorAll('button')[0]!
+    fireEvent.click(equipL)
+    expect(useRunStore.getState().party.units['roy']?.handLeft).toBe('iron_sword')
+    const remaining = useRunStore
+      .getState()
+      .inventory.items.filter((i) => (i.itemId as unknown as string) === 'iron_sword')
+    expect(remaining).toHaveLength(2)
+    // Badge decrements from ×3 to ×2.
+    expect(screen.getByText('×2')).toBeInTheDocument()
+    expect(screen.queryByText('×3')).toBeNull()
+  })
+
+  it('bag rows sort stably by name', () => {
+    seed(['iron_greatsword', 'iron_sword', 'iron_buckler'])
+    render(<PartyLoadoutModal open onClose={noop} />)
+    const names = ['Iron Buckler', 'Iron Greatsword', 'Iron Sword']
+    const positions = names.map((n) => {
+      const el = screen.getByText(n)
+      return Array.prototype.indexOf.call(document.querySelectorAll('span'), el)
+    })
+    expect(positions).toEqual([...positions].sort((a, b) => a - b))
+  })
+
   it('deck preview groups cards by source', () => {
     useRunStore.getState().dispatch({
       type: 'equipItem',

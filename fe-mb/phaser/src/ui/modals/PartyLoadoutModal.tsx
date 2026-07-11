@@ -233,11 +233,27 @@ export function PartyLoadoutModal({ open, onClose }: PartyLoadoutModalProps): Re
     )
   }
 
-  const gearInBag = bag.filter((b) => {
-    const def = getItemDef(b.itemId)
-    return def && isHandSlotItem(def)
-  })
-  const consumablesCount = bag.length - gearInBag.length
+  /**
+   * Display stacking: the bag stores one entry per item COPY (def ids, no
+   * instance ids), so duplicates would render as identical rows. Group by
+   * definition id — one row per def with a ×N count. Equip dispatches carry
+   * the def id and planEquip removes the FIRST matching bag entry, so
+   * equipping from a stacked row consumes exactly one copy.
+   */
+  const gearStacks = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const b of bag) {
+      const def = getItemDef(b.itemId)
+      if (!def || !isHandSlotItem(def)) continue
+      const id = b.itemId as unknown as string
+      counts.set(id, (counts.get(id) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+      .map(([id, count]) => ({ id, def: getItemDef(id)!, count }))
+      .sort((a, b) => a.def.name.localeCompare(b.def.name))
+  }, [bag])
+  const gearCount = gearStacks.reduce((sum, s) => sum + s.count, 0)
+  const consumablesCount = bag.length - gearCount
 
   return (
     <Dialog isOpen={open} onOpenChange={(o) => { if (!o) onClose() }} aria-label="Party Loadout">
@@ -328,7 +344,7 @@ export function PartyLoadoutModal({ open, onClose }: PartyLoadoutModalProps): Re
                 Bag
               </Heading>
             </div>
-            {gearInBag.length === 0 && (
+            {gearStacks.length === 0 && (
               <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
                 <Icon name="treasure" size={40} className="opacity-25 text-[color:var(--color-parchment-dim)]" />
                 <div className="font-body text-xs text-[color:var(--color-parchment-dim)]">
@@ -339,16 +355,13 @@ export function PartyLoadoutModal({ open, onClose }: PartyLoadoutModalProps): Re
                 </div>
               </div>
             )}
-            {gearInBag.map((b, i) => {
-              const def = getItemDef(b.itemId)!
-              const reasonL = equipReason('left', b.itemId as unknown as string)
-              const reasonR = def.twoHanded
-                ? 'two-handed'
-                : equipReason('right', b.itemId as unknown as string)
+            {gearStacks.map(({ id, def, count }) => {
+              const reasonL = equipReason('left', id)
+              const reasonR = def.twoHanded ? 'two-handed' : equipReason('right', id)
               const cardCount = def.gearCardIds?.length ?? 0
               return (
                 <div
-                  key={`${b.itemId as unknown as string}-${i}`}
+                  key={id}
                   className="surface-iron rounded-[var(--radius-md)] p-2"
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -356,8 +369,18 @@ export function PartyLoadoutModal({ open, onClose }: PartyLoadoutModalProps): Re
                       <GemDot rarity={def.rarity} />
                       <span className={`font-body text-xs ${RARITY_TEXT[def.rarity]}`}>{def.name}</span>
                     </span>
-                    <span className="numeral shrink-0 text-sm text-[color:var(--color-parchment)]">
-                      {cardCount > 0 ? `+${cardCount} cards` : '—'}
+                    <span className="flex shrink-0 items-baseline gap-1.5">
+                      <span className="numeral text-sm text-[color:var(--color-parchment)]">
+                        {cardCount > 0 ? `+${cardCount} cards` : '—'}
+                      </span>
+                      {count > 1 && (
+                        <span
+                          className="numeral text-[10px] text-[color:var(--color-text-muted)]"
+                          aria-label={`${count} in bag`}
+                        >
+                          ×{count}
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div className="mb-1.5 text-[10px] uppercase tracking-[0.1em] text-[color:var(--color-text-muted)]">
@@ -368,12 +391,12 @@ export function PartyLoadoutModal({ open, onClose }: PartyLoadoutModalProps): Re
                     <EquipButton
                       label="Equip L"
                       reason={reasonL}
-                      onPress={() => equipInto('left', b.itemId as unknown as string)}
+                      onPress={() => equipInto('left', id)}
                     />
                     <EquipButton
                       label="Equip R"
                       reason={reasonR}
-                      onPress={() => equipInto('right', b.itemId as unknown as string)}
+                      onPress={() => equipInto('right', id)}
                     />
                   </div>
                 </div>
