@@ -37,6 +37,17 @@ const SaveFileSchema = z.object({
   contentAliasesApplied: z.string(),
 })
 
+const LEGACY_CAPTURED = / \(captured\)$/
+
+/** Pre-0.8 saves marked capture by appending ' (captured)' to the NAME.
+ *  Strip the suffix and set the captured flag instead. */
+function migrateCapturedSuffix(u: unknown): unknown {
+  if (!u || typeof u !== 'object' || typeof (u as { name?: unknown }).name !== 'string') return u
+  const unit = u as { name: string; captured?: boolean }
+  if (!LEGACY_CAPTURED.test(unit.name)) return u
+  return { ...unit, name: unit.name.replace(LEGACY_CAPTURED, ''), captured: true }
+}
+
 export type LoadResult =
   | { ok: true; save: SaveFile; warnings: string[] }
   | { ok: false; error: string }
@@ -56,7 +67,15 @@ export function loadFromString(raw: string): LoadResult {
     warnings.push(`Save version ${save.saveVersion} differs from current ${SAVE_VERSION} — pre-alpha policy: nuke or proceed with caution.`)
   }
 
+  // Legacy capture marker: pre-0.8 saves encoded "taken alive" by renaming
+  // the unit ("Daren (captured)"). Migrate to the captured flag.
+  if (save.combat && typeof save.combat === 'object' && 'units' in save.combat) {
+    const cu = (save.combat as { units: Record<string, unknown> }).units
+    for (const k of Object.keys(cu)) cu[k] = migrateCapturedSuffix(cu[k])
+  }
+
   if (save.run) {
+    save.run.partyUnits = save.run.partyUnits.map(u => migrateCapturedSuffix(u))
     save.run.inventoryItems = save.run.inventoryItems.map(i => {
       const resolved = resolveAlias('itemId', i.itemId)
       if (resolved !== i.itemId) warnings.push(`alias: itemId ${i.itemId} -> ${resolved}`)

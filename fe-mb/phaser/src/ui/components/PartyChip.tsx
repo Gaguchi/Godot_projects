@@ -34,7 +34,7 @@ export function PartyChip(): React.JSX.Element | null {
             title={`${u.name} — ${u.classId as unknown as string} L${u.level} — HP ${u.hp.current}/${u.hp.max}`}
           >
             <div className="rounded-full overflow-hidden ring-1 ring-amber-700/50">
-              <CharacterPortrait speaker={u.name} size={26} active={false} />
+              <CharacterPortrait speaker={u.name} unitId={u.id as unknown as string} classId={u.classId as unknown as string} size={26} active={false} />
             </div>
             <span className={`text-[9px] numeral ${hpColor}`}>
               {u.hp.current}/{u.hp.max}

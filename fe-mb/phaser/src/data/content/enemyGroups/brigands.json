@@ -2,7 +2,18 @@
   "id": "brigands",
   "name": "Brigand Raiders",
   "members": [
-    { "name": "Brigand", "classId": "bandit", "level": 2, "count": 2 },
-    { "name": "Brigand Chief", "classId": "bandit", "level": 2, "count": 1 }
+    {
+      "name": "Brigand",
+      "classId": "bandit",
+      "level": 2,
+      "count": 2
+    },
+    {
+      "id": "brigand_chief",
+      "name": "Brigand Chief",
+      "classId": "bandit",
+      "level": 2,
+      "count": 1
+    }
   ]
 }

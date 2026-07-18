@@ -1,5 +1,6 @@
 import React from 'react'
 import { getCharacter, type PortraitShape } from '../data/characters'
+import { spriteIdForUnit, spritePathFor } from '../../data/unitSprites'
 import { Icon } from './Icon'
 
 export interface CharacterPortraitProps {
@@ -13,35 +14,17 @@ export interface CharacterPortraitProps {
    *  character registry get the enemy accent family (never the hash palette,
    *  which can hand an ally-ish teal to a brigand). */
   team?: 'party' | 'enemy'
+  /** Unit id + class, when the caller has a combat Unit — resolves board art
+   *  via unitSprites (id first, class fallback) for units the dialogue
+   *  registry doesn't know. */
+  unitId?: string | null
+  classId?: string
   className?: string
 }
 
-const spritePath = (id: string): string => `/sprites/units/${id}.png`
-
-/**
- * Mirror of BoardScene's `unitSpriteKey()` name→sprite mapping (the layer
- * fence forbids importing BoardScene from React). Lets combat units whose
- * name has no registry entry (e.g. "Brigand") still render their board
- * sprite as a head-crop instead of an initials placeholder.
- * KEEP IN SYNC with BoardScene.ts `unitSpriteKey`.
- */
-function unitSpritePathForName(name: string): string | null {
-  const n = name.toLowerCase()
-  if (n.includes('alpha wolf')) return spritePath('alpha_wolf')
-  if (n.includes('shield knight')) return spritePath('shield_knight')
-  if (n.includes('raider mage')) return spritePath('raider_mage')
-  if (n.includes('raider cleric')) return spritePath('raider_cleric')
-  if (n.includes('ember mage')) return spritePath('ember_mage')
-  if (n.includes('thief')) return spritePath('thief')
-  for (const e of ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'daren', 'wolf'] as const) {
-    if (n.includes(e)) return spritePath(e)
-  }
-  if (n.includes('archer')) return spritePath('bandit_archer')
-  if (n.includes('warlord')) return spritePath('warlord')
-  if (n.includes('brigand') || n.includes('chief')) return spritePath('brigand_chief')
-  if (n.includes('bandit')) return spritePath('bandit')
-  return null
-}
+// Combat units resolve art through the same id-keyed module the board uses
+// (data/unitSprites.ts — pure data, so the React↔Phaser fence allows it).
+// Display names are never matched.
 
 /**
  * Character portrait. Renders the authored sprite (head/torso crop of the
@@ -62,12 +45,17 @@ export function CharacterPortrait({
   active,
   size = 96,
   team,
+  unitId,
+  classId,
   className,
 }: CharacterPortraitProps): React.JSX.Element {
   const c = getCharacter(speaker)
   const isNarrator = c.faction === 'narrator'
   const [spriteFailed, setSpriteFailed] = React.useState(false)
-  const spriteSrc = c.sprite ?? (speaker ? unitSpritePathForName(speaker) : null)
+  const unitSpriteId = (unitId != null || classId != null)
+    ? spriteIdForUnit(unitId, classId ?? '')
+    : null
+  const spriteSrc = c.sprite ?? (unitSpriteId ? spritePathFor(unitSpriteId) : null)
   const showSprite = !!spriteSrc && !spriteFailed && !isNarrator
 
   // Registry miss on an enemy: force the enemy accent family so red = foe

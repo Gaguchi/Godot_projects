@@ -164,7 +164,7 @@ export function GameHud({
                     className="shrink-0 overflow-hidden rounded-full ring-1 ring-amber-700/50"
                     style={{ clipPath: 'circle(50%)' }}
                   >
-                    <CharacterPortrait speaker={u.name} size={30} active={false} />
+                    <CharacterPortrait speaker={u.name} unitId={u.id as unknown as string} classId={u.classId as unknown as string} size={30} active={false} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">

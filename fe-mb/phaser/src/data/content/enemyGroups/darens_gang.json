@@ -2,8 +2,27 @@
   "id": "darens_gang",
   "name": "Daren's Gang",
   "members": [
-    { "name": "Bandit Thug", "classId": "bandit", "level": 2, "count": 2 },
-    { "name": "Bandit Archer", "classId": "bandit", "level": 2, "count": 1 },
-    { "name": "Daren", "classId": "bandit", "level": 2, "count": 1, "isCaptureTarget": true, "bountyValue": 50 }
+    {
+      "name": "Bandit Thug",
+      "classId": "bandit",
+      "level": 2,
+      "count": 2
+    },
+    {
+      "id": "bandit_archer",
+      "name": "Bandit Archer",
+      "classId": "bandit",
+      "level": 2,
+      "count": 1
+    },
+    {
+      "id": "daren",
+      "name": "Daren",
+      "classId": "bandit",
+      "level": 2,
+      "count": 1,
+      "isCaptureTarget": true,
+      "bountyValue": 50
+    }
   ]
 }

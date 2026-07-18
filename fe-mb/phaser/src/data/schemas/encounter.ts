@@ -38,6 +38,11 @@ export const EncounterTableSchema = z.object({
 })
 
 export const EnemyGroupMemberSchema = z.object({
+  /** Stable unit id for this member ('daren', 'wolf', 'brigand_chief').
+   *  Seeders use it verbatim (count 1) or suffixed `_N` (packs); it drives
+   *  sprite lookup (unitSprites.ts) and quest capturedIds matching. Omitted →
+   *  generated `<groupId>_<idx>` id with class-fallback art. */
+  id: z.string().optional(),
   name: z.string(),
   classId: z.string(),
   level: z.number().int().min(1),

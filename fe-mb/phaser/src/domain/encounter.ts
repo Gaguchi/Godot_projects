@@ -62,6 +62,10 @@ export interface EncounterTable {
  * combats. Members expand to N units of the given class at the given level.
  */
 export interface EnemyGroupMember {
+  /** Stable unit id ('daren', 'wolf'). Seeders use it verbatim (count 1) or
+   *  `_N`-suffixed (packs); drives sprite lookup + quest capturedIds.
+   *  Omitted → generated `<groupId>_<idx>` id, class-fallback art. */
+  id?: string
   name: string
   classId: string
   level: number

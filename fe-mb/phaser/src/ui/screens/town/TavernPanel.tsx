@@ -43,7 +43,9 @@ export function TavernPanel({ town }: TavernPanelProps): React.JSX.Element {
   const onRecruit = (r: TavernRecruitEntry): void => {
     const cost = costFor(r)
     if (gold < cost) return
-    const unit = buildUnit(r.classId, r.level, r.name, `recruit_${r.id}`)
+    // The town entry id IS the unit id ('garrik', 'lyra') — stable, save-safe,
+    // and the key sprite/portrait lookup uses (unitSprites.ts).
+    const unit = buildUnit(r.classId, r.level, r.name, r.id)
     if (!unit) return
     dispatchRun({ type: 'addGold', payload: { amount: -cost } })
     dispatchRun({ type: 'recruitUnit', payload: { unit } })

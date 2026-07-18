@@ -179,7 +179,8 @@ Zod schemas in `src/data/schemas/` mirror `src/domain/` types. Schemas accept pl
 - `data/schemas/quest.ts` ↔ `QuestDef` (`QuestSchema`, `QuestStageSchema`, `QuestEffectSchema`; `StatKind` for statCheck). **Active.**
 - `data/schemas/dialogue.ts` ↔ `DialogueTree` (DialogueChoice has `next` for unconditional advances OR `check`+`onPass`+`onFail` for stat/class/gold/food gates; mutual exclusion enforced via Zod refine). **Active.**
 - `data/schemas/region.ts` ↔ `Region` (`asRegionId`, tier 1-3 modulates encounter difficulty). **Active.**
-- `data/schemas/encounter.ts` ↔ `EncounterEntry` / `EncounterTable` / `EnemyGroup` / `EnemyGroupMember` / `EncounterOutcome` / `CaptureTarget` (`EncounterId` brand, `asEncounterId`). Outcome union: `dialogue | battle | checkEvent` (the last two require `enemyGroupId` / `event` payload respectively). Driven by `systems/encounterRoller.ts`. **Active.**
+- `data/schemas/encounter.ts` ↔ `EncounterEntry` / `EncounterTable` / `EnemyGroup` / `EnemyGroupMember` / `EncounterOutcome` / `CaptureTarget` (`EncounterId` brand, `asEncounterId`). `EnemyGroupMember.id` (optional) = stable unit id ('daren', 'wolf') used verbatim by seeders (packs get `_N` suffix) — drives id-keyed sprites + quest capturedIds. Outcome union: `dialogue | battle | checkEvent` (the last two require `enemyGroupId` / `event` payload respectively). Driven by `systems/encounterRoller.ts`. **Active.**
+- `data/unitSprites.ts` — THE unit-id→sprite mapping (`UNIT_ID_SPRITES`, `CLASS_FALLBACK_SPRITE`, `ALL_SPRITE_IDS`, `spriteIdForUnit(unitId, classId)`, `spritePathFor`). BoardScene (preload + board) and CharacterPortrait (via `unitId`/`classId` props) both consume it; display names are NEVER matched for art. `Unit.captured?: boolean` marks taken-alive units (reducer `capture` case) — `battleResolver` reports them as `capturedIds` (BattleVictory) + `capturedEnemies` (no kill-gold); pre-0.8 `' (captured)'` name-suffix saves are migrated in `persistence/load.ts`. **Active.**
 - `data/schemas/checkEvent.ts` ↔ `CheckEventDef` / `CheckEventChoiceDef` (title, description, choices each with optional CheckRequirement + onPass/onFail outcome). Consumed by `<CheckEventModal>` and the encounter outcome union. **Active.**
 - `data/schemas/enemyAI.ts` ↔ `EnemyClassAI` / `EnemyAction` / `EnemyRole` (rusher | archer | healer | tank). One JSON per enemy class in `data/content/enemyAI/`. Drives `systems/enemyAI.planTurn`. **Active.**
 - `state/combatUiStore.ts` ↔ lightweight UI-only Zustand store (`CombatUiState` shape, `useCombatUiStore` hook). Holds `pinnedDetailUnitId` for the click-pinned UnitDetailPanel. Phaser writes; React HUD reads. NOT routed through the combatReducer — purely chrome state. **Active.**
@@ -210,7 +211,7 @@ phaser/src/
 ├── mapRegistry/    MapRegistry: registry of world/battle/dungeon maps
 ├── state/          metaStore, runStore, combatStore, flags, eventBus, errorBus, actionLog
 ├── persistence/    saveFormat, save, load (atomic hydration), contentAliases
-├── game/           createGame.ts + scenes/ (BootScene, CombatScene) + runtime/ (CombatRuntime POJO)
+├── game/           createGame.ts + scenes/ (BoardScene + battle seeders) + runtime/ (CombatRuntime POJO)
 ├── ui/             React shell + ErrorBoundary + DevHud + modals
 └── tests/          unit (Vitest) + e2e (Playwright)
 ```

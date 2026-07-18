@@ -65,8 +65,14 @@ export function seedGroupBattle(
       const scaled = scaleEnemyForLevel(cls.baseStats, cls.startingHp, level)
       const x = 9 + (enemyIdx % 2)
       const y = 3 + Math.floor(enemyIdx / 2) * 2
+      // Authored member id wins (stable across renames; drives sprites +
+      // quest capturedIds). Packs get a copy suffix; anonymous members get
+      // the generated group id.
+      const unitId = member.id
+        ? (member.count > 1 ? `${member.id}_${i}` : member.id)
+        : `${enemyGroupId}_${enemyIdx}`
       enemies.push({
-        id: asUnitId(`${enemyGroupId}_${enemyIdx}`),
+        id: asUnitId(unitId),
         name: member.name,
         classId: asClassId(cls.id),
         team: 'enemy',

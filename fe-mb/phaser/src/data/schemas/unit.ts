@@ -22,4 +22,5 @@ export const UnitSchema = z.object({
     turnsRemaining: z.number().int().min(0),
     source: z.string().nullable(),
   })),
+  captured: z.boolean().optional(),
 })

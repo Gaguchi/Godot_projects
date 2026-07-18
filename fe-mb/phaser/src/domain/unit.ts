@@ -39,4 +39,7 @@ export interface Unit {
   // item sits in handLeft and locks handRight (must stay empty).
   handLeft?: ItemId | null
   handRight?: ItemId | null
+  /** Taken alive (capture mechanic). Replaces the legacy `' (captured)'`
+   *  name-suffix marker; load.ts migrates the suffix on old saves. */
+  captured?: boolean
 }

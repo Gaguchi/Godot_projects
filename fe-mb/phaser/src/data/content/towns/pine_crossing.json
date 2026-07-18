@@ -36,14 +36,14 @@
   ],
   "recruits": [
     {
-      "id": "pc_garrik_knight",
+      "id": "garrik",
       "name": "Garrik",
       "classId": "knight",
       "level": 1,
       "description": "A grizzled veteran looking for steady pay."
     },
     {
-      "id": "pc_lyra_mage",
+      "id": "lyra",
       "name": "Lyra",
       "classId": "mage",
       "level": 1,

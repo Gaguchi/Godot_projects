@@ -79,8 +79,14 @@ export function seedDungeonBattle(
     for (let i = 0; i < member.count; i++) {
       const x = 12 + (enemyIdx % 2)
       const y = 4 + Math.floor(enemyIdx / 2)
+      // Raw JSON imports: `id` is optional and absent from most groups'
+      // inferred types — read it through a widened view.
+      const memberId = (member as { id?: string }).id
+      const unitId = memberId
+        ? (member.count > 1 ? `${memberId}_${i}` : memberId)
+        : `${groupId}_${enemyIdx}`
       enemies.push({
-        id: asUnitId(`${groupId}_${enemyIdx}`),
+        id: asUnitId(unitId),
         name: member.name,
         classId: asClassId(cls.id),
         team: 'enemy',

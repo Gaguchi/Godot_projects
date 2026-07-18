@@ -292,7 +292,7 @@ export function PartyLoadoutModal({ open, onClose }: PartyLoadoutModalProps): Re
                       : {})}
                   >
                     <span className={active ? '' : 'opacity-60'}>
-                      <CharacterPortrait speaker={u.name} size={22} active={active} />
+                      <CharacterPortrait speaker={u.name} unitId={u.id as unknown as string} classId={u.classId as unknown as string} size={22} active={active} />
                     </span>
                     <span className="text-xs">{u.name}</span>
                   </Button>

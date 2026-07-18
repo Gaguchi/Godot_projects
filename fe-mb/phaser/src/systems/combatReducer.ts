@@ -701,11 +701,13 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
 
       const newUnits: Record<string, Unit> = { ...state.units }
       if (success) {
-        // Mark unit as captured: HP=1, set status flag (we use a custom marker via name suffix)
+        // Taken alive: off the grid like death, but flagged. battleResolver
+        // reports flagged units as capturedIds (BattleVictory) — never mark
+        // state through the display name.
         newUnits[targetId as unknown as string] = {
           ...target,
-          hp: { ...target.hp, current: 0 }, // remove from grid like death
-          name: target.name + ' (captured)',
+          hp: { ...target.hp, current: 0 },
+          captured: true,
         }
       }
 

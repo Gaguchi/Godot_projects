@@ -38,7 +38,7 @@ export function UnitDetailPanel({ pinnedUnitId, onClose }: UnitDetailPanelProps)
     >
       <div className="hud-panel-header flex items-center justify-between px-3 py-2">
         <span className="flex items-center gap-2">
-          <CharacterPortrait speaker={unit.name} size={28} active />
+          <CharacterPortrait speaker={unit.name} unitId={unit.id as unknown as string} classId={unit.classId as unknown as string} size={28} active />
           <TeamSigil enemy={isEnemy} size={16} />
           <span className={`voice-display text-base ${isEnemy ? 'text-enemy' : 'text-parchment'}`}>
             {unit.name}

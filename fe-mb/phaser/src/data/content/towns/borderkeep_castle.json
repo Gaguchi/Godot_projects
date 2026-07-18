@@ -17,14 +17,14 @@
   "tavernQuests": [],
   "recruits": [
     {
-      "id": "bc_tane_knight",
+      "id": "tane_elder",
       "name": "Tane the Elder",
       "classId": "knight",
       "level": 3,
       "description": "A castle veteran whose tour is up. Asks a king's ransom."
     },
     {
-      "id": "bc_seraphine_mage",
+      "id": "seraphine",
       "name": "Seraphine",
       "classId": "mage",
       "level": 2,

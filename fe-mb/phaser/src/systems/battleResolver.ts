@@ -40,15 +40,25 @@ export function resolveBattle(input: ResolveBattleInput): BattleResult {
   const outcome: BattleResult['outcome'] = !partyAlive ? 'defeat'
     : enemiesAlive.length === 0 ? 'victory' : 'fled'
 
+  // Captured enemies (reducer sets unit.captured) are taken alive — they are
+  // not "defeated" and pay no kill-gold; they report through capturedIds so
+  // quests (e.g. blood_ties `capturedIds contains 'daren'`) can react.
+  const capturedIds: UnitId[] = []
+  const capturedEnemies: BattleResult['capturedEnemies'] = []
+
   // Foundation: simple gold reward formula 10 + level*5 per defeated enemy.
   let goldEarned = 0
   let enemiesDefeated = 0
   for (const id of enemyIds) {
     const u = allUnits[id as unknown as string]
-    if (u && !isAlive(u)) {
-      goldEarned += 10 + u.level * 5
-      enemiesDefeated++
+    if (!u || isAlive(u)) continue
+    if (u.captured) {
+      capturedIds.push(id)
+      capturedEnemies.push({ id, classId: u.classId, level: u.level })
+      continue
     }
+    goldEarned += 10 + u.level * 5
+    enemiesDefeated++
   }
 
   // Foundation: no XP awards yet — leveling lands in next milestone.
@@ -68,7 +78,7 @@ export function resolveBattle(input: ResolveBattleInput): BattleResult {
 
   const battleOutcomeEvent: DomainEvent = outcome === 'defeat'
     ? { type: 'BattleDefeat', payload: { battleId } }
-    : { type: 'BattleVictory', payload: { battleId, survivors, capturedIds: [] } }
+    : { type: 'BattleVictory', payload: { battleId, survivors, capturedIds } }
 
   const emittedEvents: DomainEvent[] = [
     battleOutcomeEvent,
@@ -81,7 +91,7 @@ export function resolveBattle(input: ResolveBattleInput): BattleResult {
     survivors,
     fallen,
     xpAwards,
-    capturedEnemies: [],   // populated when capture event fires (next milestone)
+    capturedEnemies,
     goldEarned,
     enemiesDefeated,
     loot,

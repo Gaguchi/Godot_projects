@@ -58,30 +58,9 @@ interface UnitView {
   nameText: Phaser.GameObjects.Text
 }
 
-/** Character sprite ids loaded in preload(); keys are `unit_<id>`. */
-const UNIT_SPRITES = ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'bandit', 'bandit_archer', 'brigand_chief', 'wolf', 'daren', 'warlord', 'shield_knight', 'raider_mage', 'raider_cleric', 'thief', 'ember_mage', 'alpha_wolf'] as const
-
-/** Map a combat unit to its character sprite texture key (or null -> shape token). */
-function unitSpriteKey(name: string, cls: string): string | null {
-  const n = name.toLowerCase()
-  // Class-specific plates FIRST — the generic name loop below would eat
-  // 'Alpha Wolf' (includes 'wolf') and similar.
-  if (cls === 'alpha_wolf' || n.includes('alpha wolf')) return 'unit_alpha_wolf'
-  if (cls === 'shield_knight') return 'unit_shield_knight'
-  if (cls === 'raider_mage') return 'unit_raider_mage'
-  if (cls === 'raider_cleric') return 'unit_raider_cleric'
-  if (cls === 'ember_mage') return 'unit_ember_mage'
-  if (cls === 'thief' || n.includes('thief')) return 'unit_thief'
-  for (const e of ['roy', 'marcus', 'lilina', 'garrik', 'lyra', 'kael', 'daren', 'wolf']) if (n.includes(e)) return `unit_${e}`
-  if (n.includes('archer')) return 'unit_bandit_archer'
-  if (n.includes('warlord') || cls.includes('warlord')) return 'unit_warlord'
-  if (n.includes('brigand') || n.includes('chief')) return 'unit_brigand_chief'
-  if (n.includes('bandit') || cls.includes('bandit')) return 'unit_bandit'
-  if (cls.includes('lord')) return 'unit_roy'
-  if (cls.includes('knight')) return 'unit_marcus'
-  if (cls.includes('mage')) return 'unit_lilina'
-  return null
-}
+// Sprite selection is id-keyed via the shared unitSprites module — display
+// names are presentation-only and never matched. See data/unitSprites.ts.
+import { spriteIdForUnit, spritePathFor, ALL_SPRITE_IDS } from '../../data/unitSprites'
 
 type CardData = typeof cardsJson[number]
 const cardsMap = new Map<string, CardData>(cardsJson.map((c) => [c.id, c]))
@@ -168,7 +147,7 @@ export class BoardScene extends Phaser.Scene {
   preload(): void {
     // Character sprites for the cast. BootScene was removed (it was a stub),
     // so 'combat' is the first scene to run — texture loading lives here.
-    for (const u of UNIT_SPRITES) this.load.image(`unit_${u}`, `/sprites/units/${u}.png`)
+    for (const u of ALL_SPRITE_IDS) this.load.image(`unit_${u}`, spritePathFor(u))
     // Board floor: baked painted terrain variants (story 282 — tiles read as
     // ground, not flat rects). Darkened via tint to keep the moody board.
     for (let i = 1; i <= 8; i++) this.load.image(`board_grass_${i}`, `/art/terrain/grass_${i}.png`)
@@ -906,7 +885,8 @@ export class BoardScene extends Phaser.Scene {
         container.add([body, sheen, nameText, hpBarBg, hpBar, hit])
         // Character sprite replaces the shape token when its texture is loaded;
         // a team-coloured base ellipse keeps the ally/enemy read colour-blind-safe.
-        const spriteKey = unitSpriteKey(unit.name, cls)
+        const spriteId = spriteIdForUnit(unit.id as unknown as string, cls)
+        const spriteKey = spriteId ? `unit_${spriteId}` : null
         let sprite: Phaser.GameObjects.Sprite | undefined
         if (spriteKey && this.textures.exists(spriteKey)) {
           body.setVisible(false); sheen.setVisible(false); nameText.setY(-40)

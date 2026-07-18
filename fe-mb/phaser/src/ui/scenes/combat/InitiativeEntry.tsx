@@ -44,6 +44,8 @@ export function InitiativeEntry({ entry }: InitiativeEntryProps): React.JSX.Elem
         <div className={`rounded-full overflow-hidden ${ringClass}`}>
           <CharacterPortrait
             speaker={unit.name}
+            unitId={unit.id as unknown as string}
+            classId={unit.classId as unknown as string}
             size={portraitSize}
             active={isActive}
             team={isEnemy ? 'enemy' : 'party'}
