@@ -1,6 +1,6 @@
 # Character Identity Layer Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **SUPERSEDED (2026-07-18, before execution):** implemented directly in commit e157814 using EXISTING unit ids per user direction — no `characterId` field, no registry re-key, no save-version bump. The captureTargets→flags threading (Task 7's remainder) is still open; everything else landed or was made unnecessary. Kept for reference only.
 
 **Goal:** Replace name-substring identity plumbing with stable `characterId` keys so the Long Carry cast swap (spec `2026-07-18-cast-the-long-carry-design.md`, Appendix A) becomes data-only.
 

@@ -1,5 +1,5 @@
 # Embermarch — "The Long Carry": Cast & Premise Design
-**Date:** 2026-07-18 · **Status:** APPROVED (user, 2026-07-18) · **Supersedes:** the placeholder FE6 cast (Roy/Marcus/Lilina), MVP_CONTENT_PLAN recruit roster, unnamed Warlord boss
+**Date:** 2026-07-18 · **Status:** PARKED — NOT approved. The user reviewed this concept and wants the story, world, and characters worked out through discussion instead; treat this document as one input, not direction. The Appendix A identity-layer prerequisite was implemented independently using existing unit ids — no `characterId` field (commit e157814).
 
 **Decisions this design implements** (user-selected 2026-07-17):
 1. **Signature cards** — every named character carries 1-2 personal cards; personality is played, not read.
