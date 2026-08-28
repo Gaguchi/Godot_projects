@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Dialog, Button, Heading, Icon } from '../components'
+import { Dialog } from '../components'
 import { listSlots, isSlotEmpty, type SaveSlotMeta } from '../../persistence/saveSlots'
-import { SlotCard, ModalRule } from './SaveGameModal'
+import { SlotCard, PageSheet, PageHead } from './SaveGameModal'
 
 /** Open book, blank pages — Icon.tsx has no chronicle glyph, so a local
  *  inline SVG in the set's stroke family carries the empty-state silhouette. */
@@ -46,60 +46,54 @@ export function LoadGameModal({ open, onClose, onSelect }: LoadGameModalProps): 
       onOpenChange={(o) => { if (!o) onClose() }}
       aria-label="Load Game"
       backdrop="veil"
+      unpadded
+      className="w-[476px]"
     >
-      <div id="load-game-modal" className="flex max-h-[70vh] min-w-[440px] cursor-default select-none flex-col gap-4">
-        <div>
-          <div className="flex items-center justify-between pb-2">
-            <Heading
-              level={2}
-              className="voice-display m-0 text-lg uppercase tracking-[0.24em] text-[color:var(--color-parchment)]"
-            >
-              Load Game
-            </Heading>
-            <Button
-              id="load-game-close"
-              variant="ghost"
-              onPress={onClose}
-              className="px-2 py-1"
-              aria-label="Close"
-            >
-              <Icon name="cross" size={16} />
-            </Button>
-          </div>
-          <ModalRule />
-        </div>
+      <div
+        id="load-game-modal"
+        className="page-canvas relative max-h-[70vh] cursor-default select-none overflow-hidden rounded-[var(--radius-md)]"
+        style={{ background: 'var(--canvas-base)' }}
+      >
+        <PageSheet />
+        <div className="relative flex flex-col pb-5 pl-[42px] pr-6 pt-5">
+          <PageHead title="Load Game" closeId="load-game-close" onClose={onClose}>
+            <p className="mb-0 mt-1 font-body text-xs italic text-[color:var(--color-parchment-dim)]">
+              {allEmpty ? 'nothing written here yet' : 'pick up a march already begun'}
+            </p>
+          </PageHead>
 
-        {allEmpty ? (
-          // Designed empty state: dimmed silhouette + in-voice copy + a
-          // pointer to the action that fills it. (Copy keeps the
-          // "No saved games" phrase — e2e boot contract.)
-          <div id="load-game-empty" className="flex flex-col items-center gap-2 px-6 py-8 text-center">
-            <span className="opacity-30 text-[color:var(--color-parchment-dim)]">
-              <UnwrittenChronicleGlyph />
-            </span>
-            <p className="m-0 font-body text-sm text-[color:var(--color-text-muted)]">
-              No saved games yet — the chronicle is unwritten.
-            </p>
-            <p className="m-0 font-body text-xs text-[color:var(--color-text-muted)] opacity-75">
-              Save from the pause menu, out on the road.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {slots.map((slot) => {
-              const empty = isSlotEmpty(slot)
-              return (
-                <SlotCard
-                  key={slot.slotId}
-                  slot={slot}
-                  testId={`load-slot-${slot.slotId}`}
-                  isDisabled={empty}
-                  onPress={() => onSelect(slot.slotId)}
-                />
-              )
-            })}
-          </div>
-        )}
+          {allEmpty ? (
+            // Designed empty state: dimmed silhouette pressed into the page +
+            // in-voice copy + a pointer to the action that fills it. (Copy keeps
+            // the "No saved games" phrase — e2e boot contract.)
+            <div id="load-game-empty" className="flex flex-col items-center gap-2 px-6 py-9 text-center">
+              <span className="text-[color:var(--color-parchment-dim)] opacity-30">
+                <UnwrittenChronicleGlyph />
+              </span>
+              <p className="voice-display m-0 text-sm tracking-[0.08em] text-[color:var(--color-parchment)]">
+                No saved games yet — the chronicle is unwritten.
+              </p>
+              <p className="m-0 font-body text-xs text-[color:var(--color-text-muted)]">
+                Save from the pause menu, out on the road.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-3 flex flex-col overflow-y-auto">
+              {slots.map((slot) => {
+                const empty = isSlotEmpty(slot)
+                return (
+                  <SlotCard
+                    key={slot.slotId}
+                    slot={slot}
+                    testId={`load-slot-${slot.slotId}`}
+                    isDisabled={empty}
+                    onPress={() => onSelect(slot.slotId)}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </Dialog>
   )

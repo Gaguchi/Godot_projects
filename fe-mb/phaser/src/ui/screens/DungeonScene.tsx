@@ -33,14 +33,26 @@ const ROOM_TYPE_ICON: Record<DungeonRoom['type'], IconName> = {
   boss: 'boss',
 }
 
-const ROOM_TYPE_COLOR_CLASS: Record<DungeonRoom['type'], string> = {
-  combat: 'text-red-500 border-red-700/80',
-  elite: 'text-red-600 border-red-800',
-  rest: 'text-emerald-400 border-emerald-700/80',
-  shop: 'text-amber-300 border-amber-700/80',
-  event: 'text-purple-400 border-purple-700/80',
-  treasure: 'text-amber-300 border-amber-700/80',
-  boss: 'text-red-400 border-red-700',
+/**
+ * Room-type ink, straight off the token ramp — no stock Tailwind palette.
+ * The gem hues are the tokens picked to stay legible as small marks on
+ * leather; the deep fill tokens (--color-ember, --color-enemy) are NOT used
+ * here because they drop under 3:1 against the cave ground.
+ *
+ * Hue is the SECONDARY channel: every room carries its own silhouette icon,
+ * the boss is the only square node on the map, and the legend spells each
+ * type out in words — so the read survives without colour entirely. Struck
+ * brass is deliberately absent: it belongs to the party's CURRENT position
+ * and to primary actions, nowhere else.
+ */
+const ROOM_TYPE_INK: Record<DungeonRoom['type'], string> = {
+  combat: 'var(--color-gem-attack)',
+  elite: 'var(--color-damage-text)',
+  rest: 'var(--color-gem-ward)',
+  shop: 'var(--color-gem-focus)',
+  event: 'var(--color-gem-arcane)',
+  treasure: 'var(--color-gem-focus)',
+  boss: 'var(--color-damage-text)',
 }
 
 const ROOM_TYPE_LABEL: Record<DungeonRoom['type'], string> = {
@@ -59,8 +71,29 @@ export interface DungeonSceneProps {
   onLeave: () => void
 }
 
-const ROW_HEIGHT = 96
+/* Row pitch was 96, which pushed a 7-row graph to 848px of content inside the
+   720px stage — the entry row sat off-stage and had to be scrolled to. 78 +
+   a tighter map gutter fits the whole descent on one screen. */
+const ROW_HEIGHT = 78
 const COL_WIDTH = 140
+const MAP_GUTTER = 36
+
+/**
+ * Underground FIELD ground: cut earth and spoil, darkening steeply with
+ * depth so the map's own nodes are the lit objects. The blood-red cave
+ * gradient, the eerie central pool and the black vignette are gone — Field
+ * Ledger has no glows and no vignettes; depth does the focusing instead.
+ */
+const DUNGEON_GROUND =
+  'linear-gradient(180deg, '
+  + 'color-mix(in oklab, var(--iron-700) 30%, var(--iron-900)) 0%, '
+  + 'var(--iron-900) 34%, '
+  + 'color-mix(in oklab, var(--color-ash) 70%, var(--iron-900)) 72%, '
+  + 'var(--color-ash) 100%)'
+
+/** Node body per state — one recipe, four states, no stock palette. */
+const NODE_BODY_CURRENT = 'linear-gradient(160deg, #e6c887 0%, var(--iron-edge) 58%, #7a5a1e 100%)'
+const NODE_BODY_LIVE = 'linear-gradient(160deg, var(--iron-800) 0%, var(--iron-900) 100%)'
 
 export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonSceneProps): React.JSX.Element {
   const dispatchRun = useRunStore((s) => s.dispatch)
@@ -156,41 +189,23 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
   return (
     <div
       id="dungeon-scene"
-      className="h-full w-full text-amber-100 font-body overflow-auto relative flex flex-col items-center p-8"
-      style={{
-        background: [
-          // Eerie central glow
-          'radial-gradient(ellipse 60% 50% at 50% 45%, #6b1a1f33 0%, transparent 60%)',
-          // Deep cave: red/charcoal sky-to-ground
-          'linear-gradient(to bottom, #2a0d10 0%, #170609 55%, #080304 100%)',
-        ].join(', '),
-      }}
+      className="relative flex h-full w-full flex-col items-center overflow-auto p-8 font-body text-[color:var(--color-parchment)]"
+      style={{ background: DUNGEON_GROUND }}
     >
-      {/* Cave-grain noise overlay */}
+      {/* Cut-stone and spoil-earth grain */}
       <div
         aria-hidden
-        className="absolute inset-0 pointer-events-none opacity-[0.22] mix-blend-overlay"
-        style={{
-          backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.0 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")`,
-          backgroundSize: '240px 240px',
-        }}
+        className="iron-grain pointer-events-none absolute inset-0"
+        style={{ opacity: 0.14 }}
       />
 
-      {/* Cave-mist drift — slower than overworld fog, redder palette */}
+      {/* Rock dust hanging in the passage — dust, not smoke, and not red. */}
       <div
         aria-hidden
-        className="absolute inset-0 pointer-events-none atmosphere-fog-fast opacity-25 mix-blend-screen"
+        className="atmosphere-fog-fast pointer-events-none absolute inset-0 opacity-20 mix-blend-screen"
         style={{
-          backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.01 0.022' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.18 0 0 0 0 0.15 0 0 0 0.4 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>")`,
+          backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.01 0.022' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.50 0 0 0 0 0.43 0 0 0 0 0.32 0 0 0 0.4 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>")`,
           backgroundSize: '800px 500px',
-        }}
-      />
-      {/* Vignette — squeezes attention to the dungeon graph */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse 80% 65% at 50% 50%, transparent 50%, rgba(0,0,0,0.7) 100%)',
         }}
       />
       <GameHud regionName="Dungeon" location="Smuggler's Cave" />
@@ -203,16 +218,16 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
         Retreat
       </Button>
 
-      <div className="mt-8 text-stone-500 text-xs tracking-wider">
+      <div className="mt-8 text-xs tracking-wider text-[color:var(--color-text-muted)]">
         {currentNodeId
           ? 'click a connected room to advance'
           : 'enter the dungeon by clicking a room on the lowest row'}
       </div>
 
-      <div className="relative mt-8" style={{ width: mapWidth, height: mapHeight + 64 }}>
+      <div className="relative mt-8" style={{ width: mapWidth, height: mapHeight + MAP_GUTTER }}>
         <svg
           width={mapWidth}
-          height={mapHeight + 64}
+          height={mapHeight + MAP_GUTTER}
           className="absolute inset-0 pointer-events-none"
         >
           {dungeon.edges.map(([from, to], i) => {
@@ -242,7 +257,7 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
                 key={i}
                 d={`M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`}
                 fill="none"
-                stroke={isAdjacent ? '#a07a40' : '#3a2a18'}
+                stroke={isAdjacent ? 'var(--iron-edge)' : 'rgba(176,138,62,0.32)'}
                 strokeWidth={isAdjacent ? 2 : 1}
                 strokeLinecap="round"
                 {...(isAdjacent ? {} : { strokeDasharray: '4 4' })}
@@ -262,19 +277,41 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
             const isClearedRoom = activeDungeon?.clearedRooms.has(asNodeId(roomIdStr)) ?? false
             const isBoss = room.type === 'boss'
 
+            const ink = ROOM_TYPE_INK[room.type]
             const baseClass =
-              'absolute flex items-center justify-center text-2xl select-none ' +
-              'border-2 motion-safe:transition-[transform,box-shadow] motion-safe:duration-100 outline-none ' +
-              'data-[focus-visible]:ring-2 data-[focus-visible]:ring-amber-400'
-            const shapeClass = isBoss ? 'rounded-lg' : 'rounded-full'
+              'absolute flex select-none items-center justify-center text-2xl ' +
+              'border-2 outline-none motion-safe:transition-[transform,box-shadow] motion-safe:duration-100 ' +
+              'data-[focus-visible]:[box-shadow:var(--focus-ring)]'
+            const shapeClass = isBoss ? 'rounded-[4px]' : 'rounded-full'
+            // Hover is a HARD brass edge + a lift, never a bloom.
             const stateClass = isCurrent
-              ? 'bg-amber-400 border-amber-400 text-stone-950 cursor-default'
+              ? 'cursor-default'
               : isReachable
-                ? `bg-stone-950 ${ROOM_TYPE_COLOR_CLASS[room.type]} cursor-pointer ` +
-                  'data-[hovered]:scale-110 data-[hovered]:shadow-[0_0_12px_currentColor]'
+                ? 'cursor-pointer data-[hovered]:scale-110 data-[hovered]:shadow-[0_0_0_2px_var(--iron-edge)]'
+                : 'cursor-default'
+            const stateStyle: React.CSSProperties = isCurrent
+              ? {
+                  background: NODE_BODY_CURRENT,
+                  borderColor: '#e6c887',
+                  color: 'var(--color-ash)',
+                  boxShadow: '0 3px 8px rgba(0,0,0,0.5)',
+                }
+              : isReachable
+                ? {
+                    background: NODE_BODY_LIVE,
+                    borderColor: ink,
+                    color: ink,
+                    boxShadow: 'inset 0 1px 0 rgba(214,178,108,0.18), 0 2px 6px rgba(0,0,0,0.45)',
+                  }
                 : isClearedRoom
-                  ? `bg-stone-900 ${ROOM_TYPE_COLOR_CLASS[room.type]} opacity-90 cursor-default`
-                  : `bg-stone-950 border-stone-800 ${ROOM_TYPE_COLOR_CLASS[room.type].split(' ')[0]} opacity-60 cursor-default`
+                  ? { background: NODE_BODY_LIVE, borderColor: ink, color: ink, opacity: 0.8 }
+                  : {
+                      // unreached rooms are still MAP — readable, just quiet
+                      background: 'var(--iron-900)',
+                      borderColor: 'rgba(176,138,62,0.3)',
+                      color: ink,
+                      opacity: 0.72,
+                    }
 
             return (
               <Pressable
@@ -284,7 +321,7 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
                 isDisabled={!isReachable && !isCurrent}
                 aria-label={ROOM_TYPE_LABEL[room.type]}
                 className={`${baseClass} ${shapeClass} ${stateClass}`}
-                style={{ left: x - 28, top: y - 28, width: 56, height: 56 }}
+                style={{ left: x - 28, top: y - 28, width: 56, height: 56, ...stateStyle }}
               >
                 <Icon name={ROOM_TYPE_ICON[room.type]} size={28} />
               </Pressable>
@@ -293,12 +330,17 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
         )}
       </div>
 
-      <div className="fixed bottom-3 right-4 z-[70] text-[11px] text-stone-500 flex gap-4 px-3 py-1.5 rounded bg-stone-950/80 border border-stone-800">
-        <span className="text-red-500 flex items-center gap-1"><Icon name="combat" size={14} /> Combat</span>
-        <span className="text-purple-400 flex items-center gap-1"><Icon name="event" size={14} /> Event</span>
-        <span className="text-emerald-400 flex items-center gap-1"><Icon name="rest" size={14} /> Rest</span>
-        <span className="text-red-600 flex items-center gap-1"><Icon name="elite" size={14} /> Elite</span>
-        <span className="text-red-400 flex items-center gap-1"><Icon name="boss" size={14} /> Boss</span>
+      {/* Legend — the ICON carries the hue, the WORD carries the meaning, so
+          the labels stay on the bone ramp and keep their AA headroom. */}
+      <div className="hud-panel fixed bottom-3 right-4 z-[70] flex gap-4 px-3 py-1.5 text-[11px] text-[color:var(--color-parchment-dim)]">
+        {(['combat', 'event', 'rest', 'elite', 'boss'] as const).map((t) => (
+          <span key={t} className="flex items-center gap-1.5">
+            <span className="flex" style={{ color: ROOM_TYPE_INK[t] }}>
+              <Icon name={ROOM_TYPE_ICON[t]} size={14} />
+            </span>
+            {ROOM_TYPE_LABEL[t]}
+          </span>
+        ))}
       </div>
 
       {isCleared && (
@@ -315,14 +357,17 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
         <div
           role="dialog"
           aria-label="Dungeon Shop"
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-950/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-sm"
+          style={{ background: 'color-mix(in oklab, var(--color-ash) 74%, transparent)' }}
         >
-          <div className="w-96 bg-stone-950 border border-amber-700 rounded p-5 font-body">
-            <div className="flex items-baseline justify-between mb-4">
-              <Heading level={2} className="text-lg text-amber-200 voice-display">Black-Market Stall</Heading>
-              <span className="text-xs text-stone-400">Gold: <span className="numeral">{gold}</span>g</span>
+          <div className="hud-panel w-96 p-5 font-body">
+            <div className="hud-panel-header mb-4 flex items-baseline justify-between pb-2">
+              <Heading level={2} className="voice-display text-lg text-[color:var(--color-parchment)]">Black-Market Stall</Heading>
+              <span className="text-xs text-[color:var(--color-text-muted)]">
+                Gold: <span className="numeral text-[color:var(--color-hearth)]">{gold}</span>g
+              </span>
             </div>
-            <p className="text-stone-500 text-xs mb-4">
+            <p className="mb-4 text-xs italic text-[color:var(--color-parchment-dim)]">
               A hooded smuggler nudges a few items toward you.
             </p>
             <div className="space-y-2">
@@ -331,13 +376,13 @@ export function DungeonScene({ onClearAndExit, onCombatRoom, onLeave }: DungeonS
                 return (
                   <div
                     key={o.itemId}
-                    className="p-2 border border-stone-800 flex justify-between items-center"
+                    className="flex items-center justify-between border-b border-[rgba(176,138,62,0.22)] p-2"
                   >
                     <div>
-                      <div className={`voice-display ${o.rarity === 'uncommon' ? 'text-emerald-400' : 'text-amber-100'}`}>
+                      <div className="voice-display text-[color:var(--color-parchment)]">
                         {o.name}
                       </div>
-                      <div className="text-[10px] text-stone-500">{o.rarity}</div>
+                      <div className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-text-muted)]">{o.rarity}</div>
                     </div>
                     <Button
                       variant="primary"

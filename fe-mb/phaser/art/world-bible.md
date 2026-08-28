@@ -5,21 +5,53 @@ All character / creature / building art is produced locally through **ComfyUI** 
 §3). Per-asset specs live beside this file (`art/characters/*.json`, later
 `art/buildings/*.json`); `npm run comfy -- --batch art/characters` generates them.
 
+> **Tone updated 2026-08-28; art NOT re-baked.** §1 below has been rewritten to
+> match `docs/worldbuilding/story-bible.md` (the live creative truth) and the
+> "Field Ledger" UI direction
+> (`docs/superpowers/specs/2026-08-28-ui-retheme-field-ledger-design.md`).
+> **§2 (regions), §3's prompt/trigger strings and §4 (cast) still describe the
+> earlier premise and have NOT been regenerated** — changing prompt text
+> unverified would silently break a cast that is already consistent. What a
+> full re-bake would require is listed at the end of §3.
+
 ---
 
 ## 1. Premise & Tone
 
-A tactical **roguelite of permadeath and scarcity**. A small company — *"three souls
-bound by duty"* — is charged with crossing a collapsing frontier before winter seals
-the mountain passes. Bandits prey on the roads; older, darker things stir deeper in.
+A tactical **roguelite of permadeath and scarcity**, played as a **free mercenary
+company** — a travelling outfit that exists while it moves. Towns hire it; battles
+are jobs and ambushes; misfits join the roster. The player character is a foundling
+raised in the company's wagons, who inherits the banner when the Captain is murdered
+by his own sworn brother, and hunts him across an open map while the company keeps
+taking work to eat.
 
-**Tone:** grounded medieval **dark fantasy** with an arcane edge. Weathered, lived-in,
-a little grim — not bright/cute, not grimdark-gore. A Fire Emblem homage (the cast
-nods to FE6) but its own world. Stakes are real: the fallen stay fallen.
+**Tone:** **grounded medieval — Mount & Blade energy.** No cataclysm, no cosmic
+stakes; a handful of petty realms at low-grade border war, endless merc work, no side
+purely right. Earthy and working: mud, wool, oiled leather, road dust, daylight.
+**Gallows humour over a warm found-family core** — a hard world full of people who
+like each other. Stakes are real (the fallen stay fallen), but the register is *not*
+despair.
+
+Dragons are the **one** fantastical element and they are **extinct legend** — bones
+over castle gates, names on old banners, histories most people treat as myth. Magic
+is thin and unglamorous where it appears at all.
+
+**Explicitly NOT:** not bright/cute; not grimdark-gore; and — corrected 2026-08-28 —
+**not candle-lit "dark fantasy" grimdark** either. The earlier framing of this
+section ("darker things stir deeper in", torch-and-shadow mood) is retired along with
+the candle-lit UI skin. Light is **daylight**: it falls, it does not emit.
 
 ---
 
 ## 2. The World — three regions → the throne
+
+> **PRE-STORY-BIBLE (flagged 2026-08-28, not rewritten).** The three-region tier
+> ladder ending at the Iron Throne predates the story bible's **omnidirectional
+> open sandbox of petty realms** and its Mercer Kaine final boss. It also predates
+> the "Field Ledger" UI, whose page/field grounds are deliberately region-neutral.
+> Treat the table below as the CURRENT SHIPPED content (the code and region palettes
+> still use it), not as agreed world canon. Reconciling the two is a design task, not
+> a docs edit — see §3's re-bake list, item 3.
 
 Each region has a **hard material identity** that drives palettes for its enemies,
 gear, and architecture. The run climbs the tiers, then ends at the Iron Throne.
@@ -71,9 +103,43 @@ signature, chibi, multiple characters, complex background, blurry, realistic,
 **Output → board:** sprites generate large (832×1216). A later pipeline step will
 trim + downscale each to a consistent on-tile size; for now we lock the *look*.
 
+**Tone steer (2026-08-28, note only — no prompt text changed).** The strings above
+are the ones the existing cast was generated from; they are deliberately untouched.
+When the next bake happens, steer the *subject* line (not the preamble, not the
+trigger, not the negative) toward §1's register: working clothes over heroic armour,
+earth/wool/leather over black-and-ember, daylight key over torchlight, weathered but
+not ghoulish. `DarkFantasy-PixelSprite` / `DFSV1` is the LoRA's technical name — it
+is not a licence to render grimdark mood.
+
+**What a full art re-bake would require** (deliberately NOT done here — untestable
+from a docs pass):
+1. A tone-steer A/B on 2–3 existing characters (same seed, subject line edited) rated
+   in `npm run sprite-lab`, to prove the steer moves the look without breaking the
+   house style — the LoRA may simply pull back to its trained mood.
+2. A decision on whether the preamble/negative need a daylight or palette term at all,
+   or whether the subject line carries it. Only change the fixed preamble if (1) shows
+   the subject line can't.
+3. Re-deriving §2's region material identities against the story bible's petty-realms
+   map (the three-region tier ladder + Iron Throne predates it) — see §2's note.
+4. Re-deriving §4's cast against the story bible's roster (foundling MC, Corwin Vale,
+   Mercer Kaine, Bagrat "Oak", Cassius Merrow) — see §4's note.
+5. Re-approving every `status: "approved"` character afterwards, since the whole point
+   of one recipe is that the roster stays coherent — a half-rebaked cast is worse than
+   either end state.
+
 ---
 
 ## 4. The Cast (roster → `art/characters/<id>.json`)
+
+> **PRE-STORY-BIBLE (flagged 2026-08-28, not rewritten).** This roster is the FE6
+> homage cast (Roy / Marcus / Lilina). The story bible locks a different one — an
+> authored, player-named **foundling** MC, Captain **Corwin Vale**, traitor
+> **Mercer Kaine**, **Bagrat "Oak"** as first companion, **Cassius Merrow** as a
+> turnable sub-boss — with companions recruited BG3-style through main and faction
+> quests rather than as shop-row hires. The names below are what the game files and
+> generated sprites currently contain (name hardcoding was removed in e157814; unit
+> **ids** are the identity key), so they stay until a deliberate content pass swaps
+> them. Do not half-migrate.
 
 Appearances below are **drafts** — the open part we're deciding now. Edit the files
 (or tell me) and regenerate.
@@ -140,5 +206,10 @@ from the character pipeline. Flagged, not solved.
 
 ## 6. Status
 
-Art direction (this bible) = **drafting**. Characters = drafted, awaiting appearance
-sign-off + generation. Update `status` per character as we approve them.
+- **Tone (§1)** = updated 2026-08-28 to the story bible + Field Ledger direction.
+- **Art direction (§3 recipe)** = unchanged and still **drafting**; no prompt text
+  was touched by the tone update. Re-bake prerequisites are listed at the end of §3.
+- **World (§2) and cast (§4)** = pre-story-bible, flagged in place, awaiting a
+  deliberate content pass.
+- **Characters** = drafted, awaiting appearance sign-off + generation. Update
+  `status` per character as we approve them.

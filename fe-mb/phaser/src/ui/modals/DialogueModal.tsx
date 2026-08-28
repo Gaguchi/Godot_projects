@@ -13,24 +13,83 @@ import type { QuestEffect } from '../../domain/quest'
 import type { DialogueChoice } from '../../domain/dialogue'
 
 /**
- * Local motion vocabulary for the dialogue band (kept out of index.css on
- * purpose — these are dialogue-only affordances). Both loops collapse under
- * prefers-reduced-motion via the media guard.
+ * Local vocabulary for the dialogue band (kept out of index.css on purpose —
+ * these are dialogue-only affordances). Declared in a <style> tag inside the
+ * band, so it lands after index.css in document order and wins ties against
+ * the `.btn-forged*` recipes without needing !important.
+ *
+ * Motion (both loops collapse under prefers-reduced-motion via the guard):
  *   - dlg-advance-caret: genre-standard pulsing "more text" chevron.
  *   - dlg-type-caret: hard steps(2) terminal-style blink on the typewriter bar.
+ *
+ * Material — "Field Ledger": the band is a strip of the quartermaster's PAGE
+ * (linen, walnut ink), so a choice is a RULED ENTRY on that page, not a slab.
+ * Hover/focus slides a saddle-leather strap under the entry: canvas = read,
+ * leather = act, and the entry the player is about to commit is the one piece
+ * of leather on the strip.
  */
-const DIALOGUE_MOTION_CSS = `
+const DIALOGUE_CSS = `
 @keyframes dlgAdvanceNudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
 @keyframes dlgCaretBlink { from { opacity: 1; } to { opacity: 0; } }
 @media (prefers-reduced-motion: no-preference) {
   .dlg-advance-caret { animation: dlgAdvanceNudge 1.1s var(--ease-out-quart) infinite; }
   .dlg-type-caret { animation: dlgCaretBlink 1s steps(2, jump-none) infinite; }
 }
+.dlg-choice {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--canvas-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.45rem 0.7rem;
+  color: var(--color-parchment);
+}
+.dlg-choice[data-hovered] {
+  background: linear-gradient(168deg, #7c5936 0%, var(--iron-700) 62%, #543a22 100%);
+  border-bottom-color: var(--iron-900);
+  color: #f8f1e1;
+  box-shadow:
+    inset 0 1px 0 rgba(230, 200, 135, 0.3),
+    0 1px 3px rgba(30, 20, 10, 0.34);
+}
+.dlg-choice[data-focus-visible] {
+  background: linear-gradient(168deg, #7c5936 0%, var(--iron-700) 62%, #543a22 100%);
+  border-bottom-color: var(--iron-900);
+  color: #f8f1e1;
+  box-shadow: var(--focus-ring);
+}
+.dlg-choice[data-pressed] { transform: translateY(1px) scale(0.995); }
+/* A choice you cannot take is still INFORMATION — the forged 0.52 ghost put
+   it at 2.3:1 on linen, and dimming further only made it worse. Three
+   channels carry "not available" at FULL opacity instead: muted ink (a rank
+   below the live entries), italic, and a dead chevron. Measured 5.8:1 base /
+   5.2:1 mid — it clears AA like every other pair on the page. */
+.dlg-choice[data-disabled] {
+  opacity: 1;
+  filter: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.dlg-choice[data-disabled] .dlg-choice-mark { color: var(--canvas-rule); }
+.dlg-choice-mark { color: var(--color-hearth); }
+.dlg-choice[data-hovered] .dlg-choice-mark,
+.dlg-choice[data-focus-visible] .dlg-choice-mark { color: #e6c887; }
 `
 
 /**
- * Dialogue UX overhaul: bottom-anchored panel with floating character portrait,
+ * Dialogue UX: bottom-anchored band with persistent full-body busts,
  * typewriter text reveal, and stacked choices.
+ *
+ * "Field Ledger" grounding: the JRPG composition is unchanged, but the TEXT
+ * BAND is now a strip of the quartermaster's page — linen canvas, walnut ink
+ * prose, faint ruling — pulled up over the world. The name plate is a pinned
+ * paper tag with the speaker's identity accent under it, not hammered iron,
+ * and choices are ruled ink entries that take a leather strap on hover.
+ * Nothing on the band glows.
  *
  * Layout (research-backed; see brief in design notes):
  *   - Panel pinned to bottom edge, full width, world dimmed 55% black + slight blur
@@ -260,7 +319,9 @@ export function DialogueModal(): React.JSX.Element {
               height: 300,
               marginBottom: -8,
               transform: flip ? 'scaleX(-1)' : undefined,
-              filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.7))',
+              // daylight contact shadow on the canonical key-light vector —
+              // a seated figure, not a rim-lit cutout floating on a black halo
+              filter: 'drop-shadow(var(--key-light-dx) var(--key-light-dy) 7px rgba(30, 20, 10, 0.55))',
             }}
           />
         ) : (
@@ -280,18 +341,48 @@ export function DialogueModal(): React.JSX.Element {
       position="bottom"
       aria-label={node.speaker || 'Dialogue'}
     >
-      <div
-        id="dialogue-modal"
-        className="relative mx-auto max-w-5xl px-8 pt-9 pb-6"
-      >
-        <style>{DIALOGUE_MOTION_CSS}</style>
+      <div id="dialogue-modal" className="page-canvas relative w-full">
+        <style>{DIALOGUE_CSS}</style>
+
+        {/* --- the page strip itself ------------------------------------- */}
+        {/* linen ground; the gradient never reaches --canvas-deep so muted
+            prose keeps its AA headroom anywhere on the band */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: 'linear-gradient(180deg, var(--canvas-base) 0%, var(--canvas-mid) 100%)',
+            boxShadow: 'inset 0 2px 0 rgba(42,33,25,0.5), inset 0 3px 0 rgba(255,252,244,0.55)',
+          }}
+        />
+        {/* the ledger's ruling — widely spaced, barely inked */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(0deg, transparent 0 34px, rgba(42,33,25,0.075) 34px 35px)',
+            maskImage: 'linear-gradient(to bottom, transparent 0%, #000 22%, #000 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, #000 22%, #000 100%)',
+          }}
+        />
+        {/* linen weave — multiply, so texture bites on a light ground */}
+        <div
+          aria-hidden
+          className="iron-grain pointer-events-none absolute inset-0"
+          style={{ mixBlendMode: 'multiply', opacity: 0.4 }}
+        />
+
+        <div className="relative mx-auto max-w-5xl px-8 pt-9 pb-6">
         {/* The talk stage: persistent busts standing on the band */}
         {renderBust('left')}
         {renderBust('right')}
 
         {/* Name plate rides the band's top edge, anchored INBOARD of the bust
             column (the sprite is ~190px wide at left-6/right-6) so the plate
-            never slices across the character art. */}
+            never slices across the character art. It is a paper tag pinned to
+            the page — the same linen as the strip, with the speaker's identity
+            accent inked under it. */}
         {!isNarrator && (
           <div
             className={
@@ -300,7 +391,7 @@ export function DialogueModal(): React.JSX.Element {
             }
           >
             <div
-              className="voice-display surface-iron text-sm tracking-[0.18em] px-4 py-1 text-parchment shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+              className="surface-parchment voice-display px-4 py-1 text-sm tracking-[0.18em] text-[color:var(--color-parchment)]"
             >
               {speakerLabel.toUpperCase()}
             </div>
@@ -310,7 +401,7 @@ export function DialogueModal(): React.JSX.Element {
         )}
 
         {isNarrator && (
-          <div className="flex items-center justify-center gap-2 text-xs tracking-widest text-parchment-dim mb-2">
+          <div className="mb-2 flex items-center justify-center gap-2 text-xs tracking-widest text-[color:var(--color-parchment-dim)]">
             <Icon name="narrator" size={14} />
             <span>NARRATOR</span>
             <Icon name="narrator" size={14} />
@@ -339,14 +430,17 @@ export function DialogueModal(): React.JSX.Element {
               <p
                 className={
                   `leading-relaxed whitespace-pre-line text-lg ` +
-                  (isNarrator ? 'text-parchment-dim italic' : 'text-parchment')
+                  (isNarrator
+                    ? 'italic text-[color:var(--color-parchment-dim)]'
+                    : 'text-[color:var(--color-parchment)]')
                 }
               >
                 {visibleText}
                 {!isDone && (
                   <span
                     aria-hidden
-                    className="dlg-type-caret inline-block align-baseline ml-1 w-[2px] h-[1em] bg-hearth"
+                    className="dlg-type-caret ml-1 inline-block h-[1em] w-[2px] align-baseline"
+                    style={{ background: 'var(--color-hearth)' }}
                   />
                 )}
               </p>
@@ -355,7 +449,8 @@ export function DialogueModal(): React.JSX.Element {
               {isDone && choices.length === 1 && (
                 <span
                   aria-hidden
-                  className="dlg-advance-caret absolute bottom-2 right-3 text-hearth"
+                  className="dlg-advance-caret absolute bottom-2 right-3"
+                  style={{ color: 'var(--color-hearth)' }}
                 >
                   <Icon name="chevron-down" size={14} />
                 </span>
@@ -367,11 +462,11 @@ export function DialogueModal(): React.JSX.Element {
         {/* Choices — render after reveal, clearly separated from the read-area
             so they never blend with the text or catch a stray skip-click. */}
         {isDone && choices.length > 1 && (
-          <div className="mt-5 border-t border-[rgba(120,98,60,0.3)] pt-4">
-            <div className="mb-2 text-[0.6rem] uppercase tracking-[0.22em] text-parchment-dim">
+          <div className="mt-5 border-t border-[color:var(--canvas-rule)] pt-3">
+            <div className="mb-1.5 text-[0.6rem] uppercase tracking-[0.22em] text-[color:var(--color-parchment-dim)]">
               Choose a response
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col">
               {choices.map((c) => {
                 const enabled = isChoiceEnabled(c, predicateState)
                 if (c.check) {
@@ -380,26 +475,30 @@ export function DialogueModal(): React.JSX.Element {
                     ? getCheckCandidates(c.check, partyArr)
                     : []
                   return (
-                    <CheckButton
-                      key={c.id}
-                      text={c.text}
-                      requirement={c.check}
-                      candidates={candidates}
-                      canPass={canPass}
-                      onPress={() => onChoice(c)}
-                    />
+                    // Requirement choices keep the CheckButton's committed
+                    // leather slab (the stat chip is its disabled-reason);
+                    // the margin keeps it from fusing with the ruled entries.
+                    <div key={c.id} className="my-1.5">
+                      <CheckButton
+                        text={c.text}
+                        requirement={c.check}
+                        candidates={candidates}
+                        canPass={canPass}
+                        onPress={() => onChoice(c)}
+                      />
+                    </div>
                   )
                 }
                 return (
                   <Button
                     key={c.id}
-                    variant="secondary"
+                    variant="ghost"
                     prose
                     isDisabled={!enabled}
                     onPress={() => onChoice(c)}
-                    className="!justify-start text-left"
+                    className="dlg-choice"
                   >
-                    <span className="text-hearth mr-3 flex items-center"><Icon name="chevron-right" size={14} /></span>
+                    <span className="dlg-choice-mark mr-3 flex items-center"><Icon name="chevron-right" size={14} /></span>
                     <span>{c.text}</span>
                   </Button>
                 )
@@ -407,6 +506,7 @@ export function DialogueModal(): React.JSX.Element {
               </div>
             </div>
           )}
+        </div>
         </div>
 
       <CheckCandidatePicker

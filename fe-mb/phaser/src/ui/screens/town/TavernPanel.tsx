@@ -4,14 +4,25 @@ import { evaluatePredicate } from '../../../systems/predicates'
 import { predicateStateFromRun } from '../../../state/runStore'
 import { asDialogueId } from '../../../domain/ids'
 import type { TownDef, TavernRecruitEntry } from '../../../domain/town'
-import { Button, Heading } from '../../components'
+import { Button } from '../../components'
 import { recruitmentCost } from '../../../systems/recruitmentCost'
 import { buildUnit } from '../../../systems/buildUnit'
-import { BoardGlyph, EmptyState, SectionLabel, TankardGlyph } from './townUi'
+import {
+  BoardGlyph, ColumnHeader, EmptyState, EntryHeading, INK_RULE, QuillGlyph, SectionLabel, TankardGlyph,
+  type ColumnSpec,
+} from './townUi'
 
 export interface TavernPanelProps {
   town: TownDef
 }
+
+/** The hire column: who, what they are, what they cost. */
+const COLS: React.CSSProperties = { gridTemplateColumns: 'minmax(0,1fr) 5rem 5.75rem' }
+const HIRE_COLS: readonly ColumnSpec[] = [
+  { label: 'Sellsword' },
+  { label: 'Fee', align: 'right' },
+  { label: '' },
+]
 
 /** Display layer over class ids — the player never reads snake_case. */
 function classDisplayName(classId: unknown): string {
@@ -53,39 +64,53 @@ export function TavernPanel({ town }: TavernPanelProps): React.JSX.Element {
   }
 
   return (
-    <div id="tavern-panel">
-      <Heading level={1} className="text-2xl tracking-widest m-0">The Drunken Boar</Heading>
-      <p className="mt-2 text-[color:var(--color-text-muted)]">Rumors, quests, and bounties.</p>
+    <div id="tavern-panel" className="max-w-[44rem]">
+      <EntryHeading title="The Drunken Boar" blurb="What the room is saying, what needs doing, and who will do it for coin." />
 
-      <SectionLabel className="mt-6">Rumors</SectionLabel>
-      <div className="mt-3 max-w-xl space-y-2.5">
+      {/* Rumors are quoted testimony, so they hang off a marginal rule the way
+          a clerk's side-note does — prose, not a data list. */}
+      <SectionLabel className="mt-5">Rumors</SectionLabel>
+      <div className="mt-2 max-w-[38rem] space-y-1 pl-4" style={{ borderLeft: `1px solid ${INK_RULE}` }}>
         {town.rumors.map((r, i) => (
-          <p key={i} className="m-0 font-body leading-relaxed text-[color:var(--color-parchment-dim)]">
-            <span className="opacity-60">&ldquo;</span>
+          <p key={i} data-probe={i === 0 ? 'rumor' : undefined} className="m-0 font-body leading-snug text-[color:var(--color-parchment-dim)]">
+            <span aria-hidden className="text-[color:var(--color-text-muted)]">&ldquo;</span>
             {r}
-            <span className="opacity-60">&rdquo;</span>
+            <span aria-hidden className="text-[color:var(--color-text-muted)]">&rdquo;</span>
           </p>
         ))}
       </div>
 
-      <SectionLabel>Quest Board</SectionLabel>
+      <SectionLabel className="mt-5">Quest Board</SectionLabel>
       {visibleQuests.length === 0 ? (
-        <div className="mt-3 text-[color:var(--color-text-muted)]">No one is asking for help today.</div>
+        <EmptyState
+          glyph={<QuillGlyph />}
+          line="No one is asking for help today."
+          hint="Work gets written up as trouble finds the town."
+        />
       ) : (
-        visibleQuests.map((q) => (
-          <div key={q.questId} className="surface-iron mt-3 max-w-xl rounded-[var(--radius-md)] p-4">
-            <div className="font-body text-[1.05rem] text-parchment">{q.npcName}</div>
-            <p className="mt-1 text-sm leading-snug text-[color:var(--color-text-muted)]">{q.npcDescription}</p>
+        visibleQuests.map((q, i) => (
+          <div
+            key={q.questId}
+            className="mt-2.5 pb-3"
+            style={{ borderBottom: `1px solid ${INK_RULE}` }}
+          >
+            <div data-probe="quest-npc" className="voice-display text-[1.05rem] text-[color:var(--color-ink)]">
+              {q.npcName}
+            </div>
+            <p data-probe="quest-desc" className="mt-1 max-w-[34rem] font-body text-[0.92rem] leading-snug text-[color:var(--color-parchment-dim)]">
+              {q.npcDescription}
+            </p>
+            {/* One leather tab per entry; only the first is the page primary. */}
             <Button
               id={`tavern-talk-${q.questId}`}
-              variant="primary"
+              variant={i === 0 ? 'primary' : 'secondary'}
               onPress={() => {
                 dispatchRun({
                   type: 'startDialogue',
                   payload: { dialogueId: asDialogueId(q.dialogueId), nodeId: 'start' },
                 })
               }}
-              className="mt-3 !text-xs"
+              className="mt-2.5 !px-4 !py-1.5 !text-[0.66rem]"
             >
               Talk to {q.npcName}
             </Button>
@@ -93,19 +118,19 @@ export function TavernPanel({ town }: TavernPanelProps): React.JSX.Element {
         ))
       )}
       {Object.keys(questStates).length > 0 && (
-        <div className="mt-3 text-sm text-[color:var(--color-text-muted)]">
+        <div className="mt-2.5 text-[0.8rem] text-[color:var(--color-text-muted)]">
           Active quest: Blood Ties (in progress)
         </div>
       )}
 
-      <SectionLabel>Bounty Board</SectionLabel>
+      <SectionLabel className="mt-5">Bounty Board</SectionLabel>
       <EmptyState
         glyph={<BoardGlyph />}
         line="Nothing nailed up today — the roads must be quiet."
         hint="Bounties post as word of trouble reaches town."
       />
 
-      <SectionLabel>Recruitment</SectionLabel>
+      <SectionLabel className="mt-5">Recruitment</SectionLabel>
       {visibleRecruits.length === 0 ? (
         <EmptyState
           glyph={<TankardGlyph />}
@@ -113,7 +138,8 @@ export function TavernPanel({ town }: TavernPanelProps): React.JSX.Element {
           hint="Sellswords drift in as your company's name travels."
         />
       ) : (
-        <div className="mt-3 grid max-w-xl grid-cols-1 gap-3">
+        <div className="max-w-[36rem]">
+          <ColumnHeader cols={HIRE_COLS} style={COLS} />
           {visibleRecruits.map((r) => {
             const cost = costFor(r)
             const canAfford = gold >= cost
@@ -121,38 +147,56 @@ export function TavernPanel({ town }: TavernPanelProps): React.JSX.Element {
               <div
                 key={r.id}
                 id={`tavern-recruit-${r.id}`}
-                className="surface-iron flex items-center justify-between gap-3 rounded-[var(--radius-md)] p-3"
+                className="grid items-center gap-3 py-2.5"
+                style={{ ...COLS, borderBottom: `1px solid ${INK_RULE}` }}
               >
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">
-                    <span className="font-body text-[0.95rem] text-parchment">{r.name}</span>
-                    <span className="text-[0.62rem] uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                    <span data-probe="recruit-name" className="voice-display text-[1rem] text-[color:var(--color-ink)]">
+                      {r.name}
+                    </span>
+                    <span
+                      data-probe="recruit-class"
+                      className="text-[0.58rem] uppercase tracking-[0.16em] text-[color:var(--color-text-muted)]"
+                    >
                       {classDisplayName(r.classId)} · Lv <span className="numeral">{r.level}</span>
                     </span>
                   </div>
                   {r.description && (
-                    <p className="mt-1 text-xs leading-snug text-[color:var(--color-text-muted)]">{r.description}</p>
+                    <p data-probe="recruit-desc" className="mt-1 font-body text-[0.85rem] leading-snug text-[color:var(--color-parchment-dim)]">
+                      {r.description}
+                    </p>
                   )}
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <span
-                    className={`numeral text-lg leading-none ${
-                      canAfford ? 'text-[color:var(--color-hearth-soft)]' : 'text-[color:var(--color-damage-text)]'
-                    }`}
-                  >
-                    {cost}
-                    <span className="text-[0.7rem] opacity-80">g</span>
-                  </span>
-                  <Button
-                    id={`tavern-recruit-btn-${r.id}`}
-                    variant="primary"
-                    isDisabled={!canAfford}
-                    onPress={() => onRecruit(r)}
-                    className="!px-3 !py-1 !text-[0.65rem]"
-                  >
-                    {canAfford ? 'Hire' : `Need ${cost}g`}
-                  </Button>
-                </div>
+                <span
+                  data-probe="recruit-cost"
+                  className={`numeral text-right text-[1.05rem] leading-none ${
+                    canAfford ? 'text-[color:var(--color-hearth-soft)]' : 'text-[color:var(--color-damage-text)]'
+                  }`}
+                >
+                  {cost}
+                  <span className="text-[0.68rem]">g</span>
+                </span>
+                {/* Leather only where the hire can actually be made; an
+                    unaffordable row keeps the control and the reason but
+                    drops the material. */}
+                <Button
+                  id={`tavern-recruit-btn-${r.id}`}
+                  variant={canAfford ? 'secondary' : 'ghost'}
+                  isDisabled={!canAfford}
+                  onPress={() => onRecruit(r)}
+                  aria-label={
+                    canAfford
+                      ? `Hire ${r.name} for ${cost} gold`
+                      : `Cannot hire ${r.name} — ${cost - gold} gold short of ${cost}`
+                  }
+                  className={
+                    '!w-full !px-2 !py-1 !text-[0.6rem] !tracking-[0.12em] '
+                    + (canAfford ? '' : '!justify-end !opacity-100 !text-[color:var(--color-text-muted)]')
+                  }
+                >
+                  {canAfford ? 'Hire' : `Short ${cost - gold}g`}
+                </Button>
               </div>
             )
           })}

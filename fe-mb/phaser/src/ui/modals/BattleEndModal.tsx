@@ -12,6 +12,14 @@ const CHECK_EVENTS: Record<string, CheckEvent> = {
 }
 
 /**
+ * "Field Ledger" grounding: the battle-end ceremony is the quartermaster
+ * WRITING THE ENGAGEMENT UP — a linen report page inside the leather folder,
+ * walnut ink, the tally set as a ruled ledger column with dotted leaders and
+ * tabular numerals. Victory and defeat differ by copy first, then by ink
+ * (walnut vs oxblood) and by the colour of the rules; defeat's page is the
+ * greyer, weathered sheet. Nothing glows: the hearth pool, the ember motes
+ * and the ash vignette are gone.
+ *
  * Ceremony motion (scoped to this modal): the heading lands with a back-out
  * settle, then children rise in staggered. Pure CSS entrance — skippable by
  * nature, and fully collapsed under prefers-reduced-motion.
@@ -41,34 +49,25 @@ function riseDelay(step: number): string {
 const LABEL_CLASS = 'text-[0.65rem] uppercase tracking-[0.18em]'
 const LABEL_STYLE: React.CSSProperties = { color: 'var(--color-text-muted)' }
 
-/** 2–3 ember motes drifting up from the hearth pool (victory mood only). */
-function VictoryEmbers(): React.JSX.Element {
-  const embers = [
-    { left: '38%', delay: '0.4s', drift: '12px', size: 3, dur: '6.5s' },
-    { left: '52%', delay: '2.2s', drift: '-10px', size: 2, dur: '7.5s' },
-    { left: '64%', delay: '1.1s', drift: '8px', size: 2, dur: '6s' },
-  ]
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 motion-reduce:hidden">
-      {embers.map((e, i) => (
-        <span
-          key={i}
-          className="absolute bottom-8 rounded-full"
-          style={{
-            left: e.left,
-            width: e.size,
-            height: e.size,
-            background: 'radial-gradient(circle, var(--color-hearth) 0%, transparent 70%)',
-            boxShadow: '0 0 6px color-mix(in oklab, var(--color-hearth) 80%, transparent)',
-            // @ts-expect-error custom property consumed by the emberRise keyframe
-            '--ember-drift': e.drift,
-            animation: `emberRise ${e.dur} linear infinite`,
-            animationDelay: e.delay,
-          }}
-        />
-      ))}
-    </div>
-  )
+/** The report sheet. Victory is fresh linen; defeat is the same page gone
+ *  grey and weathered — a colder sheet, not a darker room. Both gradients run
+ *  base → mid and never reach --canvas-deep, and the defeat mix is capped at
+ *  14% neutral so every muted pair on it still clears AA (measured: the
+ *  weakest, --color-text-muted on the bottom band, is 4.8:1). */
+const WEATHER_GREY = '#a8a49a'
+function sheetBackground(isVictory: boolean): string {
+  return isVictory
+    ? 'linear-gradient(180deg, var(--canvas-base) 0%, var(--canvas-mid) 100%)'
+    : `linear-gradient(180deg, color-mix(in oklab, var(--canvas-base) 86%, ${WEATHER_GREY}) 0%, `
+      + `color-mix(in oklab, var(--canvas-mid) 86%, ${WEATHER_GREY}) 100%)`
+}
+
+/** The one rule colour on the page: struck brass for a win, oxblood for a
+ *  loss. Rules and edges only — brass never carries small text on canvas. */
+function ruleColor(isVictory: boolean): string {
+  return isVictory
+    ? 'color-mix(in oklab, var(--color-hearth-soft) 62%, transparent)'
+    : 'color-mix(in oklab, var(--color-ember) 46%, transparent)'
 }
 
 /**
@@ -214,53 +213,83 @@ export function BattleEndModal({
     >
       <div
         id={isRunComplete ? 'run-complete-modal' : isVictory ? 'victory-modal' : 'defeat-modal'}
-        className="relative min-w-[460px] max-w-[560px] overflow-hidden px-10 pb-8 pt-9 text-center"
+        className="page-canvas relative min-w-[460px] max-w-[560px] overflow-hidden px-10 pb-8 pt-8 text-center"
       >
         <style>{CEREMONY_CSS}</style>
 
-        {/* Outcome mood layer: victory = hearth pool + ember motes rising;
-            defeat = cold rust bleed from above + ash vignette. Tinted inner
-            seam replaces the old stock-color border. */}
-        {isVictory ? (
-          <>
-            <div
-              aria-hidden
-              className="hearth-glow-strong pointer-events-none absolute inset-0"
-              style={{
-                boxShadow: 'inset 0 0 0 1px color-mix(in oklab, var(--color-hearth) 32%, transparent)',
-              }}
-            />
-            <VictoryEmbers />
-          </>
-        ) : (
-          <div
+        {/* The report sheet: linen ground, faint ruling, linen weave. Flat —
+            no pool, no motes, no vignette. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ background: sheetBackground(isVictory) }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(0deg, transparent 0 34px, rgba(42,33,25,0.07) 34px 35px)',
+          }}
+        />
+        <div
+          aria-hidden
+          className="iron-grain pointer-events-none absolute inset-0"
+          style={{ mixBlendMode: 'multiply', opacity: 0.4 }}
+        />
+        {/* brass (or oxblood) corner brackets pinning the sheet in the folder */}
+        {[
+          'left-2 top-2 border-l-2 border-t-2',
+          'right-2 top-2 border-r-2 border-t-2',
+          'left-2 bottom-2 border-b-2 border-l-2',
+          'right-2 bottom-2 border-b-2 border-r-2',
+        ].map((pos) => (
+          <span
+            key={pos}
             aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                'radial-gradient(ellipse 100% 65% at 50% -8%, color-mix(in oklab, var(--color-enemy) 13%, transparent) 0%, transparent 62%), ' +
-                'radial-gradient(ellipse 130% 100% at 50% 45%, transparent 52%, color-mix(in oklab, var(--color-ash) 78%, transparent) 100%)',
-              boxShadow: 'inset 0 0 0 1px color-mix(in oklab, var(--color-enemy) 26%, transparent)',
-            }}
+            className={`pointer-events-none absolute ${pos} h-3.5 w-3.5`}
+            style={{ borderColor: ruleColor(isVictory) }}
           />
-        )}
+        ))}
 
         <div className="relative flex flex-col gap-5">
-          <Heading
-            level={1}
-            className={
-              'battle-end-heading m-0 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] ' +
-              (isRunComplete ? 'text-3xl tracking-[0.3em] pl-[0.3em]' : 'text-4xl tracking-[0.4em] pl-[0.4em]')
-            }
-          >
-            <span style={{ color: isVictory ? 'var(--color-hearth)' : 'var(--hp-crit-text)' }}>
-              {isRunComplete ? 'THE THRONE IS YOURS' : isGameOver ? 'GAME OVER' : 'VICTORY'}
+          {/* The ledger entry's header: what this page IS, then the verdict
+              stamped between two flat ink rules. */}
+          <div className="flex flex-col items-center gap-2">
+            <span className={LABEL_CLASS} style={LABEL_STYLE}>
+              {runEnded ? 'Final Entry' : 'Field Report'}
             </span>
-          </Heading>
+            <div
+              aria-hidden
+              className="h-px w-full"
+              style={{ background: 'rgba(42,33,25,0.42)' }}
+            />
+            <Heading
+              level={1}
+              className={
+                'battle-end-heading m-0 ' +
+                (isRunComplete ? 'text-3xl tracking-[0.3em] pl-[0.3em]' : 'text-4xl tracking-[0.4em] pl-[0.4em]')
+              }
+            >
+              <span
+                style={{
+                  color: isVictory ? 'var(--color-ink)' : 'var(--color-damage-text)',
+                  textShadow: '0 1px 0 rgba(255,252,244,0.6)',
+                }}
+              >
+                {isRunComplete ? 'THE THRONE IS YOURS' : isGameOver ? 'GAME OVER' : 'VICTORY'}
+              </span>
+            </Heading>
+            <div
+              aria-hidden
+              className="h-px w-full"
+              style={{ background: 'rgba(42,33,25,0.42)' }}
+            />
+          </div>
 
           <div
             className="battle-end-rise font-body text-sm italic"
-            style={{ animationDelay: riseDelay(0), color: 'var(--color-text-muted)' }}
+            style={{ animationDelay: riseDelay(0), color: 'var(--color-parchment-dim)' }}
           >
             {isRunComplete
               ? 'The Warlord is defeated. The frontier is crossed.'
@@ -283,25 +312,30 @@ export function BattleEndModal({
                 className="battle-end-rise h-px"
                 style={{
                   animationDelay: `${rowBaseDelay - 20}ms`,
-                  background: isVictory
-                    ? 'linear-gradient(to right, transparent, color-mix(in oklab, var(--color-hearth-soft) 40%, transparent), transparent)'
-                    : 'linear-gradient(to right, transparent, color-mix(in oklab, var(--color-text-muted) 35%, transparent), transparent)',
+                  background: ruleColor(isVictory),
                 }}
               />
-              {/* Ledger rows — zero rows dim to a dash so the real story carries the eye. */}
+              {/* Ledger rows — dotted leaders carry the eye from the entry to
+                  its figure, the way a written tally does. Zero rows fade to a
+                  dash so the real story keeps the weight. */}
               <div className="flex flex-col gap-1.5 text-sm">
                 {stats.map(([label, value], i) => {
                   const zero = value === 0
                   return (
                     <div
                       key={label}
-                      className="battle-end-rise flex items-baseline justify-between gap-8"
-                      style={{ animationDelay: `${rowBaseDelay + i * 40}ms`, opacity: zero ? 0.45 : undefined }}
+                      className="battle-end-rise flex items-baseline gap-2"
+                      style={{ animationDelay: `${rowBaseDelay + i * 40}ms`, opacity: zero ? 0.55 : undefined }}
                     >
-                      <span style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+                      <span style={{ color: 'var(--color-parchment-dim)' }}>{label}</span>
+                      <span
+                        aria-hidden
+                        className="min-w-4 flex-1 self-end border-b border-dotted"
+                        style={{ borderColor: 'var(--canvas-rule)', marginBottom: '0.28em' }}
+                      />
                       <span
                         className="numeral text-base"
-                        style={{ color: zero ? 'var(--color-text-muted)' : 'var(--color-parchment)' }}
+                        style={{ color: zero ? 'var(--color-parchment-dim)' : 'var(--color-parchment)' }}
                       >
                         {zero ? '—' : value}
                       </span>
@@ -329,10 +363,10 @@ export function BattleEndModal({
                     partyAlive.map((u) => (
                       <span
                         key={u.id as unknown as string}
-                        className="voice-display inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 text-sm"
+                        className="voice-display inline-flex items-center gap-1.5 rounded-[2px] px-2.5 py-1 text-sm"
                         style={{
-                          background: 'rgba(0, 0, 0, 0.3)',
-                          border: '1px solid color-mix(in oklab, var(--color-hearth-soft) 28%, transparent)',
+                          background: 'rgba(255, 252, 244, 0.5)',
+                          border: '1px solid var(--canvas-rule)',
                           color: 'var(--color-parchment)',
                         }}
                       >
@@ -345,7 +379,7 @@ export function BattleEndModal({
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm" style={{ color: 'var(--color-text-muted)', opacity: 0.6 }}>—</span>
+                    <span className="text-sm" style={{ color: 'var(--color-parchment-dim)' }}>—</span>
                   )}
                 </div>
               </div>
@@ -354,28 +388,32 @@ export function BattleEndModal({
                   vanished from the board and the survivors list. */}
               {partyFallen.length > 0 && (
                 <div className="battle-end-rise flex flex-col items-center gap-2" style={{ animationDelay: riseDelay(3) }}>
-                  <span className={LABEL_CLASS} style={{ ...LABEL_STYLE, color: 'var(--color-enemy)' }}>Fallen</span>
+                  <span className={LABEL_CLASS} style={{ ...LABEL_STYLE, color: 'var(--color-damage-text)' }}>Fallen</span>
                   <div className="flex flex-wrap justify-center gap-2">
                     {partyFallen.map((u) => (
                       <span
                         key={u.id as unknown as string}
-                        className="voice-display inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 text-sm line-through"
+                        className="voice-display inline-flex items-center gap-1.5 rounded-[2px] px-2.5 py-1 text-sm line-through"
                         style={{
-                          background: 'rgba(0, 0, 0, 0.3)',
-                          border: '1px solid color-mix(in oklab, var(--color-enemy) 30%, transparent)',
-                          color: 'var(--color-text-muted)',
+                          // Same linen wash as the survivors: an oxblood TINT
+                          // under oxblood text dropped the name to 4.45:1 on
+                          // the mid band. The rule, the strike and the diamond
+                          // carry the distinction instead — measured 6.5:1.
+                          background: 'rgba(255, 252, 244, 0.5)',
+                          border: '1px solid color-mix(in oklab, var(--color-ember) 55%, transparent)',
+                          color: 'var(--color-damage-text)',
                         }}
                       >
                         <span
                           aria-hidden
                           className="inline-block h-1.5 w-1.5 rotate-45"
-                          style={{ background: 'var(--color-enemy)' }}
+                          style={{ background: 'var(--color-damage-text)' }}
                         />
                         {u.name}
                       </span>
                     ))}
                   </div>
-                  <span className="font-body text-xs italic" style={{ color: 'var(--color-text-muted)', opacity: 0.8 }}>
+                  <span className="font-body text-xs italic" style={{ color: 'var(--color-parchment-dim)' }}>
                     Lost for good. The company marches lighter.
                   </span>
                 </div>

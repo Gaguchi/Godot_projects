@@ -3,8 +3,17 @@
 Why game panels don't look like web cards: a web card is a flat rectangle
 (solid fill, uniform 1px border, uniform radius, one drop shadow). A game
 panel is a **physical object**: it has a material, a light source, wear, and
-craftsmanship. Reference points: Darkest Dungeon, Diablo IV, Slay the Spire,
-Baldur's Gate 3, Octopath Traveler.
+craftsmanship. Reference points for *construction*: Darkest Dungeon, Diablo IV,
+Slay the Spire, Baldur's Gate 3, Octopath Traveler.
+
+> **HOUSE RULE (FE_MB, 2026-08-28) — construction yes, lighting no.**
+> The recipes below are generic craft. This project's light model is
+> **"Field Ledger"** (`docs/superpowers/specs/2026-08-28-ui-retheme-field-ledger-design.md`):
+> a quartermaster's ledger and camp table **in daylight**, two grounds —
+> **canvas = read, leather = act**. **Nothing glows.** Wherever a recipe here
+> reaches for a torch, an ember, a halo or a vignette, take the *construction*
+> (bevel pair, seam, texture, socket, silhouette) and drop the *emission*.
+> Rows tagged **⚠ house rule** below are the ones that conflict.
 
 ## 1. Panel construction
 
@@ -48,14 +57,56 @@ Low-contrast (±3–5% luminance) — felt, not seen. SVG turbulence data-URI:
 `baseFrequency`: `0.9` paper · `0.04 0.09` (anisotropic) brushed metal/wood ·
 two layers (fine + coarse at .03) = stone.
 
-### 1.4 Inner light — panels are lit from the scene
+### 1.4 Inner light — panels are lit BY the scene, and they never emit
+The principle is one light source and a material that responds to it. What
+changes between games is *which* light. Pick one and derive every panel from
+it — mixing torch-glow panels with daylight panels is the tell.
+
 ```css
-/* recessed well (inventory slot, portrait frame) */
+/* recessed well (inventory slot, portrait frame) — universal */
 box-shadow: inset 0 2px 8px rgba(0,0,0,.8), inset 0 -1px 0 rgba(255,255,255,.05);
-/* torchlit interior */
-background: radial-gradient(120% 90% at 50% 0%, rgba(255,170,60,.10), transparent 60%), #17120c;
-/* "playable now" pulse */
-.playable { box-shadow: 0 0 12px 2px rgba(120,220,120,.55); animation: pulse 1.6s ease-in-out infinite; }
+```
+
+**The FE_MB pair — two grounds, one daylight key (high, from the left).**
+
+```css
+/* PAGE — a linen ledger sheet on the camp table. What you READ.
+   Flat ink rules, a dashed tooled edge, a hairline paper-white inner lip,
+   and a short contact shadow that seats it on the table. No inner glow. */
+.page {
+  background: linear-gradient(180deg, #e7dec9 0%, #ddd2b8 72%, #cbbc9c 100%);
+  border: 1px dashed rgba(42,33,25,.28);
+  box-shadow: 0 1px 2px rgba(30,20,10,.28),        /* contact, not float */
+              inset 0 0 0 1px rgba(255,252,244,.5); /* paper lip */
+  color: #2a2119;                                   /* walnut ink */
+}
+/* FIELD — a saddle-leather strap. What you ACT ON. Leather sits flat and
+   takes a HARD edge: a top catchlight, an under-seam, a short shadow. */
+.strap {
+  background: linear-gradient(158deg, #4a3421 0%, #1c140d 100%);
+  border: 1px solid rgba(28,18,9,.9);
+  box-shadow:
+    inset 0 1px 0 rgba(214,178,108,.26),   /* catchlight — 1px, not a bloom */
+    inset 0 -2px 5px rgba(0,0,0,.5),       /* under-seam */
+    inset 0 0 0 5px rgba(176,138,62,.30),  /* tooled brass line inside the edge */
+    0 3px 8px rgba(0,0,0,.42);             /* contact shadow */
+  color: #f1e9d8;                          /* bone */
+}
+```
+
+The two grounds are a seam on purpose: **the page describes the field.** The
+one primary action on a page is the one piece of *leather* on it — that is how
+you direct the eye without light.
+
+**⚠ house rule — the "playable now" pulse.** A `0 0 12px` emissive halo is the
+retired candle-lit idiom. Signal availability with **material and edge**
+instead: a brass edge the disabled state doesn't get, plus a second
+non-colour channel (a filled pip, a rivet, a label). Reserve motion for the
+moment something *changes*, not for an idle state.
+
+```css
+.playable   { border-color: #b08a3e; box-shadow: inset 0 1px 0 rgba(230,200,135,.34); }
+.playable[data-disabled] { opacity:.52; filter:saturate(.35); box-shadow:none; }
 ```
 
 ### 1.5 Bevel pair — one global light source (top/top-left)
@@ -110,7 +161,15 @@ Free faces that read "game" (dark fantasy):
 .label { font-variant-caps: small-caps; letter-spacing: .08em; }
 h1 { text-transform: uppercase; letter-spacing: .12em; }
 ```
-Parchment text = warm near-black `#2a2118` on `#e4d5b0` — never #000 on #fff.
+**⚠ house rule** — keep the gold-gradient *fill* and the 1px dark drop for
+bite; drop the second `drop-shadow(0 0 6px …)` (that is the bloom). On a page,
+skip the gradient entirely: a title is stamped walnut ink between two flat ink
+rules, and it carries by size, tracking and the display face alone.
+Page text = warm near-black on warm off-white — never #000 on #fff. FE_MB's
+live pair is walnut ink `#2a2119` on linen `#e7dec9` (11.8:1), with
+`#57493a` for secondary and `#5e5040` for muted. Check small text against
+BOTH the top and mid stops of a page gradient, and keep muted text out of the
+bottom deep band (it measured 4.16:1 there — below AA).
 
 ### 2.3 HUD hierarchy — role-coded treatments, not a type scale
 1. **Numbers biggest and instant** — damage/HP/cost are the largest text on
@@ -130,9 +189,11 @@ Parchment text = warm near-black `#2a2118` on `#e4d5b0` — never #000 on #fff.
 - One shape language, one stroke weight. Mixing outline + filled = amateur tell.
 - Icons sit in **shaped sockets** (circle = status, diamond = slot, shield =
   defense) with the recessed-well inset shadow; the container is semantic.
-- **Tint by state, not per-icon**: base = bone/parchment ink; buff = gold glow,
-  debuff = sickly green/purple, disabled = 40% + desaturate. Use
-  `filter: drop-shadow(0 0 4px var(--glow))` (follows silhouette; box-shadow doesn't).
+- **Tint by state, not per-icon**: base = the ground's own ink (bone on
+  leather, walnut on canvas); buff = gold, debuff = sickly green/purple,
+  disabled = 40% + desaturate. **⚠ house rule:** tint with flat colour, not
+  emission — `filter: drop-shadow(0 0 4px …)` is a glow and is out. If a state
+  needs to shout, give it a shape or a socket change as well as a hue.
 - Stat rows: `icon + bold tabular value`, value right of icon — `⚔ 12` reads
   faster than "Attack: 12".
 
@@ -151,6 +212,13 @@ accents spent ONLY on decisions/importance. **Saturation = interactivity.**
 }
 ```
 
+**⚠ house rule — "saturation = interactivity" holds, but FE_MB spends it as
+MATERIAL, not light.** The live values are in `phaser/src/index.css`; do not
+copy the block above into the project. The rationed accent is struck brass
+(`#d9a93f` / edge `#b08a3e`), and it appears as fills, edges, rivets and rules
+— one per screen, never bloomed, and never as small text on a light page (raw
+brass is ~3.2:1 on linen; the page scope swaps in a dark, AA-safe brass).
+
 ### 4.2 Semantic color is a contract players already know
 - **Rarity:** grey/white → green → blue → purple → orange/gold. Keep rarity
   hues OFF the damage-type palette. Rarity = name color + edge accent, never
@@ -164,18 +232,36 @@ accents spent ONLY on decisions/importance. **Saturation = interactivity.**
 
 ## 5. Atmosphere layers (fixed, pointer-events:none overlays)
 
+Atmosphere is a *ground*, not a spotlight. Two of the four classic layers below
+are direction-dependent — pick them to match your light model, not by habit.
+
 ```css
-/* 1. Vignette — cheapest atmosphere win */
-.vignette { position:fixed; inset:0; pointer-events:none;
-  background: radial-gradient(ellipse 120% 100% at 50% 45%,
-    transparent 55%, rgba(0,0,0,.35) 78%, rgba(0,0,0,.72) 100%); }
-/* 2. Color-grade wash — unifies disparate art */
+/* 1a. ⚠ house rule — VIGNETTE IS OUT for FE_MB. A radial darkening is the
+       torch-in-a-crypt idiom; under an open sky it just reads as a dirty lens.
+       Frame with material instead: the page is an OBJECT on a table, narrower
+       than the stage, with the table visible either side of it. */
+/* 1b. Daylight wash — the FE_MB replacement. Light FALLS from the top; it
+       never pools at a point and never emits from a panel. */
+.daylight { background: linear-gradient(180deg,
+  rgba(255,248,228,.16) 0%, rgba(255,248,228,.05) 40%, transparent 70%); }
+/* 2. Color-grade wash — unifies disparate art (keep; warm and very low) */
 .grade { background: rgba(180,120,40,.05); mix-blend-mode: overlay; }
-/* 3. Film grain — §1.3 turbulence at opacity .04–.06 */
-/* 4. Ember motes — 2-3px radial dots, translateY(-100vh) + flicker, 12-20s staggered */
-/* 5. Hover = light response, never web-blue: */
-.btn:hover { box-shadow: inset 0 0 12px rgba(255,180,80,.18),
-  0 0 10px rgba(255,170,60,.30); border-color: var(--frame-hi); }
+/* 3. Film grain — §1.3 turbulence at opacity .04–.09, over CHROME and PAGE
+      grounds only. Never over numeric data. */
+/* 4. Motes. The generic recipe is 2–3px radial dots on translateY(-100vh),
+      12–20s staggered — that part is sound. What they ARE is the decision:
+      ⚠ house rule — NOT embers (embers imply fire, and there is no fire in
+      Field Ledger). They are DAYLIGHT DUST lifting off a camp track: pale
+      warm-white, no flicker, opacity peaking ~.34 then fading, transform +
+      opacity only, gated by prefers-reduced-motion. Same motion contract,
+      different fiction — keep the keyframe, change the colour and drop the
+      flicker. */
+/* 5. ⚠ house rule — hover is a light response in torch games; here it is an
+      EDGE response. Never web-blue, and never a halo: brighten the catchlight
+      and bring the brass edge up. */
+.btn:hover { border-color: rgba(176,138,62,.85);
+  box-shadow: inset 0 1px 0 rgba(230,200,135,.30),
+              inset 0 -2px 4px rgba(0,0,0,.40), 0 2px 5px rgba(20,13,6,.45); }
 ```
 
 ## 6. Web habit → game replacement cheat sheet
@@ -187,9 +273,10 @@ accents spent ONLY on decisions/importance. **Saturation = interactivity.**
 | flat hex background | material gradient + turbulence grain |
 | outward drop shadow only | + inner recess or inner glow |
 | Inter/Roboto | Alegreya/EB Garamond body + Cinzel/Grenze display |
-| #fff text | warm bone #e8ddc4; gold-gradient headers |
-| blue focus ring | torchlight glow |
-| hairline divider | fading gradient rule + center fleuron |
+| #fff text | warm bone #e8ddc4 on dark; warm near-black on a light page |
+| blue focus ring | a ring in the game's own metal (FE_MB: dark halo + brass, `--focus-ring`) — ⚠ house rule: a ring, not a torch glow |
+| hairline divider | fading gradient rule + center fleuron (FE_MB: a flat ink rule on canvas, a dashed stitch line on leather) |
 | Heroicons | silhouette icons in shaped sockets |
 | full brand palette | desaturated base + 2–3 rationed accents + rarity/element contracts |
-| no atmosphere | vignette + grade + grain overlays |
+| no atmosphere | grade + grain overlays, and ONE light model applied everywhere — ⚠ house rule: for FE_MB that's a top-down daylight wash, **not** a vignette |
+| directing the eye with a glow | ⚠ house rule: direct it with MATERIAL — one leather primary on a canvas page, everything else recedes to ghost |

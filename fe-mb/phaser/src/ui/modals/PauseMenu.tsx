@@ -15,30 +15,59 @@ export interface PauseMenuProps {
 }
 
 /* ------------------------------------------------------------------------- */
-/* Local material bits (tokens only — no new hex literals)                    */
+/* Local material bits (tokens only — no invented palette)                    */
 /* ------------------------------------------------------------------------- */
 
-/** Fading horizontal hairline — the ornamental rule from materials §2.3. */
-function Rule({ className }: { className?: string }): React.JSX.Element {
+/**
+ * The ledger page under the modal: linen ground, feint ruling, the double
+ * margin rule every ledger carries, brass pins at the corners. Decorative
+ * only — it never eats pointer events.
+ *
+ * The gradient deliberately stops at `--canvas-mid` instead of running down to
+ * `--canvas-deep`: the bake-off audit measured muted text at only 4.16:1 over
+ * the deep band, and a modal is short enough that its whole body would sit in
+ * it. Capping at mid keeps every small-text pair on this page above AA.
+ */
+function Sheet({ ruleGap = 30, gutter = 26 }: { ruleGap?: number; gutter?: number }): React.JSX.Element {
   return (
-    <div
-      aria-hidden
-      className={`h-px ${className ?? ''}`}
-      style={{
-        background:
-          'linear-gradient(90deg, transparent, color-mix(in oklab, var(--iron-edge) 85%, transparent), transparent)',
-      }}
-    />
+    <>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{ background: 'linear-gradient(168deg, #f3ecda 0%, var(--canvas-base) 42%, var(--canvas-mid) 100%)' }}
+      />
+      {/* linen weave — multiply so the texture actually bites on a light ground */}
+      <div
+        aria-hidden
+        className="iron-grain pointer-events-none absolute inset-0"
+        style={{ mixBlendMode: 'multiply', opacity: 0.4 }}
+      />
+      {/* the ruling: widely spaced, barely inked */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage: `repeating-linear-gradient(0deg, transparent 0 ${ruleGap - 1}px, rgba(42,33,25,0.09) ${ruleGap - 1}px ${ruleGap}px)`,
+        }}
+      />
+      {/* double margin rule */}
+      {[0, 4].map((dx) => (
+        <div
+          key={dx}
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 w-px"
+          style={{ left: gutter + dx, background: dx === 0 ? 'rgba(42,33,25,0.34)' : 'rgba(42,33,25,0.16)' }}
+        />
+      ))}
+      <Pins />
+    </>
   )
 }
 
-/** Corner rivets — the silhouette irregularity that kills the web-card read. */
-function Rivets(): React.JSX.Element {
+/** Brass pins holding the page to the table — daylight contact shadow, no bloom. */
+function Pins(): React.JSX.Element {
   const spots: React.CSSProperties[] = [
-    { top: 7, left: 7 },
-    { top: 7, right: 7 },
-    { bottom: 7, left: 7 },
-    { bottom: 7, right: 7 },
+    { top: 8, left: 8 }, { top: 8, right: 8 }, { bottom: 8, left: 8 }, { bottom: 8, right: 8 },
   ]
   return (
     <>
@@ -46,16 +75,22 @@ function Rivets(): React.JSX.Element {
         <span
           key={i}
           aria-hidden
-          className="pointer-events-none absolute h-1.5 w-1.5 rounded-full"
+          className="pointer-events-none absolute h-2 w-2 rounded-full"
           style={{
             ...pos,
-            background:
-              'radial-gradient(circle at 35% 35%, color-mix(in oklab, var(--color-parchment) 35%, var(--iron-edge)), var(--iron-edge) 72%)',
-            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.6)',
+            background: 'radial-gradient(circle at 36% 32%, #f0d79a 0%, var(--iron-edge) 52%, #6d5218 100%)',
+            boxShadow: '0 1px 2px rgba(46,32,16,0.5)',
           }}
         />
       ))}
     </>
+  )
+}
+
+/** Flat ink rule — a page is ruled with ink, never with a glowing seam. */
+function Rule({ className, weight = 0.28 }: { className?: string; weight?: number }): React.JSX.Element {
+  return (
+    <div aria-hidden className={`h-px ${className ?? ''}`} style={{ background: `rgba(42,33,25,${weight})` }} />
   )
 }
 
@@ -85,6 +120,25 @@ function Rise({
       }}
     >
       {children}
+    </div>
+  )
+}
+
+/**
+ * One written line of the menu. The label sits on the ruled line; a brass tick
+ * appears in the margin when the line is under the pointer or the keyboard,
+ * so the "current line" read never depends on colour alone.
+ */
+function LedgerLine({ children, last }: { children: React.ReactNode; last?: boolean }): React.JSX.Element {
+  return (
+    <div className="group relative">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-[-14px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rotate-45 opacity-0 transition-opacity duration-[var(--dur-quick)] group-hover:opacity-100 group-focus-within:opacity-100"
+        style={{ background: 'var(--iron-edge)' }}
+      />
+      {children}
+      {!last && <Rule weight={0.18} />}
     </div>
   )
 }
@@ -122,15 +176,19 @@ function SpeakerGlyph({ muted }: { muted: boolean }): React.JSX.Element {
 
 /* ------------------------------------------------------------------------- */
 
+/** Shared geometry: text starts just right of the margin rule. */
+const COL = 'pl-[42px] pr-6'
+
 /**
  * Top-level pause menu. Triggered by Esc anywhere except title (combat,
  * overworld, town, camp, dungeon). The menu items map to existing modals
  * — pause is just the dispatch hub.
  *
- * Fiction: the campfire idiom — the world holds its breath (veil backdrop,
- * the map stays readable) while a forged-iron plaque offers the way back in.
- * Exactly one lit action (Resume); leaving actions sit below a rule and stay
- * quiet until the confirm step, where Cancel is the focused safe default.
+ * Field Ledger fiction: the quartermaster lays a slip of the ledger on the
+ * table while the column halts. Linen ground, walnut ink, the menu written
+ * out as ruled lines. Resume is the ONE piece of leather on the page — the
+ * material contract is "canvas = read, leather = act" — so the eye lands on
+ * it without any light trickery; everything else is ink on a ruled line.
  */
 export function PauseMenu({
   open, canSave, onClose, onResume, onSaveGame, onLoadGame, onReturnToTitle, onQuit,
@@ -143,6 +201,16 @@ export function PauseMenu({
     if (!open) setConfirmTitle(false)
   }, [open])
 
+  /** Ledger lines share one voice: display small-caps, walnut ink, left-hung.
+   *  `!` overrides are required, not decoration: the `.btn-forged` recipe is
+   *  unlayered CSS and would otherwise beat every Tailwind utility here. On
+   *  hover the ghost's default brass RECTANGLE is swapped for a brass edge at
+   *  the margin — a strap sliding under the line, not a web outline. */
+  const lineClass =
+    'voice-display w-full !justify-start !px-0 !py-2.5 !text-[0.78rem] !tracking-[0.16em] ' +
+    '!text-[color:var(--color-parchment)] ' +
+    'data-[hovered]:!border-transparent data-[hovered]:![box-shadow:inset_4px_0_0_var(--iron-edge)]'
+
   return (
     <Dialog
       isOpen={open}
@@ -150,118 +218,133 @@ export function PauseMenu({
       aria-label="Pause Menu"
       backdrop="veil"
       unpadded
-      className="w-[380px]"
+      className="w-[392px]"
     >
-      <div id="pause-menu" className="relative cursor-default select-none overflow-hidden rounded-md">
-        {/* material: grain + one hearth pool behind the header/Resume zone */}
-        <div aria-hidden className="iron-grain pointer-events-none absolute inset-0" />
-        <div
-          aria-hidden
-          className="hearth-glow pointer-events-none absolute inset-x-0 top-0 h-56"
-        />
-        <Rivets />
+      <div
+        id="pause-menu"
+        className="page-canvas relative cursor-default select-none overflow-hidden rounded-[var(--radius-md)]"
+        style={{ background: 'var(--canvas-base)' }}
+      >
+        <Sheet />
 
         <div className="relative flex flex-col">
-          {/* header — engraved plate line with flanking rules */}
-          <div className="px-8 pb-2 pt-6">
-            <div className="flex items-center gap-3">
-              <Rule className="flex-1" />
-              <Heading
-                level={2}
-                className="voice-display m-0 text-lg uppercase tracking-[0.3em] text-[color:var(--color-parchment)]"
-              >
-                Paused
-              </Heading>
-              <Rule className="flex-1" />
-            </div>
-            <p className="mb-0 mt-1.5 text-center font-body text-xs italic text-[color:var(--color-text-muted)]">
+          {/* header — stamped between the ledger's double head-rule */}
+          <div className={`${COL} pb-3 pt-6`}>
+            <Heading
+              level={2}
+              /* `!` beats Heading.tsx's baked-in `text-amber-100`, which is a
+                 same-rank utility and would otherwise keep the title bone-white
+                 on a linen page. */
+              className="voice-display m-0 text-lg uppercase !tracking-[0.3em] !text-[color:var(--color-parchment)]"
+            >
+              Paused
+            </Heading>
+            <p className="mb-0 mt-1 font-body text-xs italic text-[color:var(--color-parchment-dim)]">
               the world holds its breath
             </p>
+          </div>
+          <div className={COL}>
+            <Rule weight={0.46} />
+            <div className="h-[3px]" />
+            <Rule weight={0.22} />
           </div>
 
           {/* body — menu or confirm, crossfading via keyed mount */}
           {confirmTitle ? (
-            <Rise key="confirm" className="px-6 pb-5 pt-3">
+            <Rise key="confirm" className={`${COL} pb-5 pt-4`}>
               <p
-                className="voice-display m-0 text-center text-base tracking-[0.06em]"
-                style={{ color: 'color-mix(in oklab, var(--color-damage-text) 70%, var(--color-parchment))' }}
+                className="voice-display m-0 text-base tracking-[0.06em] text-[color:var(--color-damage-text)]"
               >
                 Return to Title?
               </p>
-              <p className="mb-0 mt-2 text-center font-body text-sm text-[color:var(--color-parchment-dim)]">
+              <p className="mb-0 mt-1.5 font-body text-sm text-[color:var(--color-parchment-dim)]">
                 Unsaved progress will be lost — the march ends here.
               </p>
-              <div className="mt-4 flex justify-center gap-2">
-                <Button variant="ghost" autoFocus onPress={() => setConfirmTitle(false)}>
-                  Cancel
-                </Button>
+              <div className="mt-4 flex gap-2">
                 <Button variant="danger" onPress={onReturnToTitle}>
                   Return to Title
+                </Button>
+                <Button variant="ghost" autoFocus onPress={() => setConfirmTitle(false)}>
+                  Cancel
                 </Button>
               </div>
             </Rise>
           ) : (
-            <div key="menu" className="flex flex-col px-6 pb-4 pt-3">
+            <div key="menu" className={`${COL} flex flex-col pb-3 pt-4`}>
+              {/* the one piece of leather on the page */}
               <Rise delayMs={0}>
                 <Button
                   id="pause-resume"
                   variant="primary"
                   autoFocus
                   onPress={onResume}
-                  className="voice-display w-full py-3 tracking-[0.14em]"
+                  className="voice-display w-full py-3 tracking-[0.16em]"
                 >
                   Resume
                 </Button>
               </Rise>
-              <Rise delayMs={30} className="mt-2">
-                <Button
-                  id="pause-save"
-                  variant="secondary"
-                  isDisabled={!canSave}
-                  onPress={onSaveGame}
-                  className="w-full"
-                >
-                  Save Game
-                </Button>
-                {!canSave && (
-                  <p className="mb-0 mt-1 text-center font-body text-[0.7rem] italic text-[color:var(--color-text-muted)]">
-                    nothing to save outside a campaign
-                  </p>
-                )}
+
+              <Rise delayMs={30} className="mt-4">
+                <LedgerLine>
+                  <Button
+                    id="pause-save"
+                    variant="ghost"
+                    isDisabled={!canSave}
+                    onPress={onSaveGame}
+                    className={lineClass}
+                    {...(canSave
+                      ? {}
+                      : { style: { opacity: 1, filter: 'none', color: 'var(--color-text-muted)' } })}
+                  >
+                    Save Game
+                  </Button>
+                  {!canSave && (
+                    <p className="mb-1.5 -mt-1 font-body text-[0.72rem] italic text-[color:var(--color-text-muted)]">
+                      nothing to save outside a campaign
+                    </p>
+                  )}
+                </LedgerLine>
               </Rise>
-              <Rise delayMs={60} className="mt-2">
-                <Button id="pause-load" variant="secondary" onPress={onLoadGame} className="w-full">
-                  Load Game
-                </Button>
+              <Rise delayMs={60}>
+                <LedgerLine>
+                  <Button id="pause-load" variant="ghost" onPress={onLoadGame} className={lineClass}>
+                    Load Game
+                  </Button>
+                </LedgerLine>
               </Rise>
 
-              {/* staying above, leaving below */}
-              <Rise delayMs={90}>
-                <Rule className="mx-4 my-3" />
+              {/* staying above, leaving below — a heavier rule divides them */}
+              <Rise delayMs={90} className="py-2">
+                <Rule weight={0.42} />
               </Rise>
 
               <Rise delayMs={120}>
-                <Button
-                  id="pause-title"
-                  variant="ghost"
-                  onPress={() => setConfirmTitle(true)}
-                  className="w-full"
-                >
-                  Return to Title
-                </Button>
+                <LedgerLine>
+                  <Button
+                    id="pause-title"
+                    variant="ghost"
+                    onPress={() => setConfirmTitle(true)}
+                    className={lineClass}
+                  >
+                    Return to Title
+                  </Button>
+                </LedgerLine>
               </Rise>
-              <Rise delayMs={150} className="mt-1">
-                <Button id="pause-quit" variant="ghost" onPress={onQuit} className="w-full">
-                  Quit
-                </Button>
+              <Rise delayMs={150}>
+                <LedgerLine last>
+                  <Button id="pause-quit" variant="ghost" onPress={onQuit} className={lineClass}>
+                    Quit
+                  </Button>
+                </LedgerLine>
               </Rise>
             </div>
           )}
 
-          {/* footer — sound toggle out of the action stack, two visual channels */}
+          {/* footer — sound toggle out of the action stack, two visual channels
+              (pip fill + written state), on the page's foot band */}
           <div
-            className="flex items-center justify-between px-6 py-2.5"
-            style={{ borderTop: '1px solid color-mix(in oklab, var(--iron-edge) 45%, transparent)' }}
+            className={`${COL} flex items-center justify-between py-2.5`}
+            style={{ borderTop: '1px solid rgba(42,33,25,0.3)', background: 'rgba(42,33,25,0.05)' }}
           >
             <span className="font-body text-[0.7rem] uppercase tracking-[0.18em] text-[color:var(--color-text-muted)]">
               Sound
@@ -271,7 +354,7 @@ export function PauseMenu({
               variant="ghost"
               aria-label={audioMuted ? 'Sound: Off' : 'Sound: On'}
               onPress={() => dispatchMeta({ type: 'setAudioMuted', payload: { muted: !audioMuted } })}
-              className="gap-2 px-3 py-1"
+              className="gap-2 px-2 py-1 text-[color:var(--color-parchment-dim)]"
             >
               <SpeakerGlyph muted={audioMuted} />
               <span className={`ap-pip ${audioMuted ? 'ap-pip--empty' : 'ap-pip--full'}`} />
