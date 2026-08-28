@@ -3,7 +3,7 @@ import { PredicateSchema } from './predicate'
 import { CheckEventSchema } from './checkEvent'
 
 const CaptureTargetSchema = z.object({
-  unitName: z.string(),
+  unitId: z.string(),
   capturedDialogueId: z.string(),
   killedDialogueId: z.string(),
   capturedFlag: z.string(),

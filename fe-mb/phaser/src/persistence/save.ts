@@ -38,6 +38,7 @@ export function serializeRun(run: RunState | null): SerializedRunState | null {
     runStats: { ...run.runStats },
     daysElapsed: run.daysElapsed,
     oneShotsFired: Array.from(run.oneShotsFired),
+    edgeTraversals: { ...run.edgeTraversals },
   }
 }
 

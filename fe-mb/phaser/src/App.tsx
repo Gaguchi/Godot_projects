@@ -18,6 +18,7 @@ import { DialogueModal } from './ui/modals/DialogueModal'
 import { QuestLog } from './ui/overlays/QuestLog'
 import { CombatHud } from './ui/scenes/combat/CombatHud'
 import { bootstrapDialogues } from './state/dialogueBootstrap'
+import { bootstrapQuests, attachQuestEngine } from './state/questEngine'
 import { buildSaveFile } from './persistence/save'
 import { writeSlot, readSlot } from './persistence/saveSlots'
 import { diagLog, diag } from './state/diagLog'
@@ -26,6 +27,7 @@ import { useRunStore } from './state/runStore'
 import { buildStarterParty } from './systems/starterParty'
 import { PartyLoadoutModal } from './ui/modals/PartyLoadoutModal'
 import { resolveBattle } from './systems/battleResolver'
+import { resolveCaptureTargets } from './systems/captureTargets'
 import { isEnemyUnit } from './systems/team'
 import { createRng, deriveRng } from './systems/rng'
 import { allItemDefs } from './data/itemRegistry'
@@ -38,19 +40,16 @@ import { enemyLevelFor } from './systems/difficulty'
 import { setMusicContext, sfx, unlockAudio, setMuted } from './audio/engine'
 import { asNodeId } from './domain/ids'
 import type { Unit } from './domain/unit'
-import { createErrorBus } from './state/errorBus'
-import { createEventBus } from './state/eventBus'
-import { createActionLog } from './state/actionLog'
+import { errorBus, eventBus, actionLog, busRefs } from './state/appBus'
 import { useMetaStore } from './state/metaStore'
-
-const errorBus = createErrorBus()
-const eventBus = createEventBus()
-const actionLog = createActionLog()
-
-export const __busRefs = { errorBus, eventBus, actionLog }
 
 // One-shot dialogue registry bootstrap so DialogueModal can find trees by id.
 bootstrapDialogues()
+// Quest registry + engine. Until this existed, every `listeners` and
+// `transitions` block in the quest JSON was dead data and quests advanced only
+// when a dialogue node dispatched advanceQuestStage by hand.
+bootstrapQuests()
+attachQuestEngine(eventBus)
 diag('lifecycle', 'app boot')
 
 // Dev-only debug surface. Claude diagnostic API entry point:
@@ -60,7 +59,7 @@ if (import.meta.env.DEV) {
     combatStore: useCombatStore,
     runStore: useRunStore,
     metaStore: useMetaStore,
-    busRefs: { errorBus, eventBus, actionLog },
+    busRefs,
     diag: diagLog,
   }
 }
@@ -143,6 +142,9 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return
+      // BoardScene marks the event consumed when this Esc cancelled a combat
+      // selection — one keystroke must not also open the pause menu.
+      if (e.defaultPrevented) return
       if (view === 'title') return
       // If a modal is already open, close it instead of toggling pause.
       if (saveModalOpen) { setSaveModalOpen(false); return }
@@ -205,6 +207,28 @@ export function App(): React.JSX.Element {
           lootPool: allItemDefs(),
         })
         run.dispatch({ type: 'applyBattleResult', payload: { result } })
+        // resolveBattle has always BUILT these (BattleVictory, UnitDied,
+        // EnemyCaptured...) and nothing ever published them, so quest stages
+        // listening for a battle outcome could never fire. Replay them now
+        // that the store has settled, so listeners read post-battle state.
+        eventBus.replayAll(result.emittedEvents)
+        // Named-enemy outcomes from the encounter that started this fight.
+        // captureTargets was declared in the schema and read by nothing, so
+        // the Blood Ties capture chain could never fire.
+        const targets = run.pendingCaptureTargets
+        if (targets.length > 0) {
+          const survivingEnemyIds = Object.values(s.state.units)
+            .filter(u => isEnemyUnit(u) && u.hp.current > 0 && !u.captured)
+            .map(u => u.id as unknown as string)
+          const effects = resolveCaptureTargets(targets, {
+            capturedIds: result.capturedEnemies.map(c => c.id as unknown as string),
+            survivingEnemyIds,
+          })
+          if (effects.length > 0) {
+            run.dispatch({ type: 'applyQuestEffects', payload: { effects } })
+          }
+          run.dispatch({ type: 'setPendingCaptureTargets', payload: { targets: [] } })
+        }
         // Final boss down → the run is complete (win screen renders off
         // battleTag; meta records the completion once).
         if (s.state.battleTag === 'finalBoss') {

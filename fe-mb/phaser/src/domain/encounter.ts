@@ -35,7 +35,10 @@ export interface CheckEventChoiceDef {
 }
 
 export interface CaptureTarget {
-  unitName: string
+  /** The enemy's stable UNIT ID (e.g. 'daren'), matching the id on the
+   *  EnemyGroupMember. Display names are never used for identity — see the
+   *  identity refactor in data/unitSprites.ts. */
+  unitId: string
   capturedDialogueId: string
   killedDialogueId: string
   capturedFlag: string

@@ -10,6 +10,7 @@ import type { PredicateState } from '../systems/predicates'
 import { planEquip, planUnequip, placeInBag } from '../systems/equipment'
 import { getItemDef } from '../data/itemRegistry'
 import { diag } from './diagLog'
+import { actionLog } from './appBus'
 
 export interface RunState {
   runId: string
@@ -30,10 +31,25 @@ export interface RunState {
   pendingDialogue: { dialogueId: DialogueId; nodeId: string } | null
   /** GP-C5: ids of one-shot encounter entries already fired (excluded from future rolls). */
   oneShotsFired: Set<string>
+  /** How many times each overworld edge has been walked, keyed by
+   *  `edgeTraversalKey(mapId, a, b)` (node ids sorted, so a road is one road in both
+   *  directions), plus the `daysElapsed` of the most recent crossing.
+   *
+   *  This exists because the hop encounter RNG derives from `rngState`, which
+   *  never advances during play — without a per-edge counter in the label, a
+   *  given road re-rolls the SAME encounter for the entire run. That was
+   *  tolerable on a one-way march; on an open map you walk the same roads
+   *  repeatedly and it becomes the dominant bug. The last-crossed day also
+   *  gives the cooldown something to measure. */
+  edgeTraversals: Record<string, { count: number; lastDay: number }>
   /** GP-C6: HP damage applied to whole party when food = 0 on a hop. */
   starvationDamagePerHop: number
   /** Combat requested from a dialogue or quest effect — OverworldScene routes the next tick. */
   pendingCombat: { enemyGroupId: string } | null
+  /** Capture targets declared by the encounter that started the CURRENT
+   *  battle. Set when the battle boots, consumed and cleared at battle end so
+   *  a named enemy taken alive (or killed) can set flags and open a dialogue. */
+  pendingCaptureTargets: import('../domain/encounter').CaptureTarget[]
   /** Days on the road — starts at 1, +1 per overworld hop. Shown in the HUD. */
   daysElapsed: number
   /** Run summary counters (win / game-over screens). Updated by
@@ -74,7 +90,9 @@ export type RunAction =
   | { type: 'endDialogue' }
   | { type: 'resetRun' }
   | { type: 'clearPendingCombat' }
+  | { type: 'setPendingCaptureTargets'; payload: { targets: import('../domain/encounter').CaptureTarget[] } }
   | { type: 'markEncounterFired'; payload: { encounterId: string } }
+  | { type: 'recordEdgeTraversal'; payload: { mapId: string; from: string; to: string } }
   | { type: 'consumeFoodPerHop' }
   | { type: 'enterMap'; payload: { mapId: MapId; nodeId: NodeId } }
   | { type: 'restParty'; payload: { percent: number } }
@@ -92,6 +110,7 @@ export type RunAction =
       daysElapsed?: number | undefined
       runStats?: RunState['runStats'] | undefined
       oneShotsFired?: string[] | undefined
+      edgeTraversals?: Record<string, { count: number; lastDay: number }> | undefined
       visitedNodes?: Record<string, boolean> | undefined
       clearedEncounters?: Record<string, boolean> | undefined
       deathLog?: { unitId: string; cause: string; turn: number }[] | undefined
@@ -239,7 +258,9 @@ function freshState(): RunState {
     deathLog: [],
     pendingDialogue: null,
     pendingCombat: null,
+    pendingCaptureTargets: [],
     oneShotsFired: new Set<string>(),
+    edgeTraversals: {},
     starvationDamagePerHop: 3,
     daysElapsed: 1,
     runStats: {
@@ -269,12 +290,29 @@ function visitedKey(mapId: MapId, nodeId: NodeId): string {
   return `overworld:${mapId as unknown as string}:${nodeId as unknown as string}`
 }
 
+/** Canonical key for an overworld edge. Node ids are SORTED so a road is the
+ *  same road walked either way — an ambush should not reset just because you
+ *  turned around. */
+export function edgeTraversalKey(mapId: string, a: string, b: string): string {
+  return a < b ? `${mapId}:${a}|${b}` : `${mapId}:${b}|${a}`
+}
+
 export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
   ...freshState(),
   dispatch(action) {
     // Diagnostic log: every action recorded so I can replay sequences via
     // window.__debug.diag.recent() / .byCategory('store.run').
     diag('store.run', action.type, 'payload' in action ? action.payload : undefined)
+    // Replay log. `actionLog.append` had no callers at all, so the log inside
+    // every save file was an empty array and the dev HUD's action panel was
+    // permanently blank. Captured BEFORE the switch so rngStateBeforeAction
+    // means what its name says.
+    actionLog.append({
+      store: 'run',
+      action: { type: action.type, ...('payload' in action ? { payload: action.payload } : {}) },
+      timestamp: Date.now(),
+      rngStateBeforeAction: { ...get().rngState },
+    })
     switch (action.type) {
       case 'recruitUnit': {
         const u = action.payload.unit
@@ -526,10 +564,30 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
       case 'clearPendingCombat':
         set({ pendingCombat: null })
         return
+      case 'setPendingCaptureTargets':
+        set({ pendingCaptureTargets: [...action.payload.targets] })
+        return
       case 'markEncounterFired':
         set(s => {
           const next = new Set(s.oneShotsFired); next.add(action.payload.encounterId)
           return { oneShotsFired: next }
+        })
+        return
+      case 'recordEdgeTraversal':
+        // Dispatched when a hop LANDS, never when one is rolled — a hop
+        // suspended by a dialogue or check event is retried, and bumping the
+        // count mid-hop would change the RNG label under the retry and re-roll
+        // a different encounter every attempt.
+        set(s => {
+          const { mapId, from, to } = action.payload
+          const k = edgeTraversalKey(mapId, from, to)
+          const prev = s.edgeTraversals[k]
+          return {
+            edgeTraversals: {
+              ...s.edgeTraversals,
+              [k]: { count: (prev?.count ?? 0) + 1, lastDay: s.daysElapsed },
+            },
+          }
         })
         return
       case 'enterMap':
@@ -613,6 +671,7 @@ export const useRunStore = create<RunStateWithDispatch>((set, get) => ({
           ...(p.daysElapsed !== undefined ? { daysElapsed: p.daysElapsed } : {}),
           ...(p.runStats ? { runStats: { ...p.runStats } } : {}),
           ...(p.oneShotsFired ? { oneShotsFired: new Set(p.oneShotsFired) } : {}),
+          ...(p.edgeTraversals ? { edgeTraversals: { ...p.edgeTraversals } } : {}),
           ...(p.visitedNodes ? { visitedNodes: { ...p.visitedNodes } } : {}),
           ...(p.clearedEncounters ? { clearedEncounters: { ...p.clearedEncounters } } : {}),
           ...(p.deathLog ? { deathLog: p.deathLog.map(d => ({ unitId: d.unitId as unknown as UnitId, cause: d.cause, turn: d.turn })) } : {}),

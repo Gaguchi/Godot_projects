@@ -390,7 +390,7 @@
         "enemyGroupId": "darens_gang",
         "captureTargets": [
           {
-            "unitName": "Daren",
+            "unitId": "daren",
             "capturedDialogueId": "sq_blood_ties_daren_captured",
             "killedDialogueId": "sq_blood_ties_daren_killed",
             "capturedFlag": "daren_captured",

@@ -23,6 +23,10 @@ export interface SerializedRunState {
   deathLog: { unitId: string; cause: string; turn: number }[]
   daysElapsed?: number
   oneShotsFired?: string[]
+  /** Per-edge walk counts + last-crossed day. Feeds the hop encounter RNG
+   *  label so a road does not re-roll the same encounter forever, and gives
+   *  the re-traversal cooldown something to measure. */
+  edgeTraversals?: Record<string, { count: number; lastDay: number }>
   /** Run summary counters (win / game-over screens). Optional: absent in
    *  pre-0.7 saves; hydration defaults to zeros. */
   runStats?: {

@@ -6,7 +6,7 @@ import borderlandsRoad from '../../data/content/encounters/borderlands_road.json
 import thornwoodPath from '../../data/content/encounters/thornwood_path.json'
 import ashfallTrack from '../../data/content/encounters/ashfall_track.json'
 import regionsJson from '../../data/content/regions.json'
-import { useRunStore, predicateStateFromRun } from '../../state/runStore'
+import { useRunStore, predicateStateFromRun, edgeTraversalKey } from '../../state/runStore'
 import { asNodeId, asMapId, asDialogueId } from '../../domain/ids'
 import type { NodeId } from '../../domain/ids'
 import { createRng, deriveRng } from '../../systems/rng'
@@ -14,6 +14,7 @@ import { rollEncounter } from '../../systems/encounterRoller'
 import { buildGraph, findPath } from '../../systems/overworldPath'
 import type { EncounterTable } from '../../domain/encounter'
 import { diag } from '../../state/diagLog'
+import { emitDomainEvent } from '../../state/appBus'
 import { GameHud, Icon, NodeQuickActionMenu, type NodeQuickAction } from '../components'
 import { STAGE_W, STAGE_H } from '../stage'
 import { NodeBeacon, type NodeVisualState, type NodeProgress } from './overworld/NodeBeacon'
@@ -281,7 +282,14 @@ export function OverworldScene({
 
     const rngState = useRunStore.getState().rngState
     const parent = createRng(rngState)
-    const hopRng = deriveRng(parent, `hop:${mapId}:${currentNodeId}->${nextNodeId}`)
+    // The run RNG state never advances during play, so the ONLY thing that
+    // makes a second crossing of a road differ from the first is this pass
+    // number in the label. Without it every hop over a given edge reproduces
+    // the same encounter for the whole run — invisible on a one-way march,
+    // glaring on a map you can roam.
+    const edge0 = useRunStore.getState().edgeTraversals[edgeTraversalKey(mapId, currentNodeId, nextNodeId)]
+    const pass = edge0?.count ?? 0
+    const hopRng = deriveRng(parent, `hop:${mapId}:${currentNodeId}->${nextNodeId}#${pass}`)
 
     // GP-C6: every hop costs food (or HP if starving).
     dispatchRun({ type: 'consumeFoodPerHop' })
@@ -309,7 +317,16 @@ export function OverworldScene({
       (e) => (e.from === currentNodeId && e.to === nextNodeId)
         || (e.to === currentNodeId && e.from === nextNodeId),
     )
-    const rollChance = edge?.rollChance ?? 0.3
+    // Re-traversal cooldown: a road you just walked is quieter the second
+    // time. Without this, free roaming turns every return trip into the same
+    // gauntlet and the encounter budget stops meaning anything. Decays back to
+    // full over COOLDOWN_DAYS.
+    const COOLDOWN_DAYS = 3
+    const daysSince = edge0 ? useRunStore.getState().daysElapsed - edge0.lastDay : Infinity
+    const cooldown = pass === 0 || daysSince >= COOLDOWN_DAYS
+      ? 1
+      : Math.max(0.25, daysSince / COOLDOWN_DAYS)
+    const rollChance = (edge?.rollChance ?? 0.3) * cooldown
 
     // Towns / dungeons / exits never roll travel encounters. A hop that
     // already rolled (and was suspended by its encounter) never rolls twice.
@@ -348,6 +365,14 @@ export function OverworldScene({
           return
         }
         if (result.outcome.kind === 'battle') {
+          // Stash the encounter's named-enemy targets so battle end can tell
+          // "taken alive" from "killed". Always dispatched (empty when the
+          // encounter declares none) so a previous battle's targets cannot
+          // leak into this one.
+          dispatchRun({
+            type: 'setPendingCaptureTargets',
+            payload: { targets: result.outcome.captureTargets ?? [] },
+          })
           // Combat suspends; player resumes from overworld after victory.
           _onTravelToCombat(asNodeId(nextNodeId), result.outcome.enemyGroupId)
           return
@@ -363,6 +388,20 @@ export function OverworldScene({
     // No encounter (or roll missed) → arrive normally
     rolledHopsRef.current.delete(hopKey)
     dispatchRun({ type: 'arriveAtNode', payload: { nodeId: asNodeId(nextNodeId) } })
+    // Count the crossing only now that the hop has actually LANDED. Bumping it
+    // earlier would move the RNG label out from under a suspended-and-retried
+    // hop. See the recordEdgeTraversal handler in runStore.
+    dispatchRun({
+      type: 'recordEdgeTraversal',
+      payload: { mapId, from: currentNodeId, to: nextNodeId },
+    })
+    // Declared in the quest listener vocabulary since the foundation and never
+    // once emitted, so no quest could react to reaching a place. Emitted after
+    // arriveAtNode so listeners see the party already standing there.
+    emitDomainEvent({
+      type: 'LocationArrived',
+      payload: { nodeRef: { mapKind: 'overworld', mapId: asMapId(mapId), nodeId: asNodeId(nextNodeId) } },
+    })
     consumeHopHead()
 
     // Routing on arrival: only OPEN the quick-action menu when this is the

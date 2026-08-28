@@ -4,7 +4,9 @@
 
 > **Working spec:** `../docs/superpowers/specs/2026-05-08-phaser-foundations-v2-design.md`. All design rationale lives there; this file holds CURRENT-truth pointers only.
 
-> **Status:** Skeleton — populated as foundation milestone progresses (Week 1 → Week 6). Sections marked `[STUB]` are scheduled but not yet authoritative.
+> **Status:** Populated and authoritative. The foundation milestone closed 2026-05-09 and the game reached the `beta-0.1` tag on 2026-07-06; every section below reflects shipped code. Historical `[STUB]` markers have been cleared.
+>
+> **Narrative direction:** `../docs/worldbuilding/story-bible.md` is the live creative truth (free mercenary company, dragon-egg spine, the Ashford cast). It is developed in conversation with the project owner, and it currently DISAGREES with shipped content on four points — the directed three-region map, the candle-lit UI palette, the FE6 placeholder names, and tavern recruitment. Do not "fix" those by guessing; they are tracked decisions.
 
 ---
 
@@ -19,7 +21,7 @@
 6. **`Math.random()` is forbidden.** All randomness flows through `RNG` parameters. Hierarchical: `deriveRng(parent, label)` per subsystem.
 7. **Cross-system writes go through `src/contracts/` types.** `BattleResult`, `RecruitmentResult`, `PendingTravelPath`, `CombatBootRequest`, `DomainEvent`. Compiler enforces integration boundaries.
 8. **Predicates are declarative AST**, not function references. Round-trips through save. One evaluator (`systems/predicates.ts`) used by quest transitions, map gates, dialogue gates, shop gates.
-9. **Domain events** (`BattleVictory`, `LocationArrived`, etc.) flow through `eventBus`. Quest listeners subscribe; subscribers dispatch back to stores. Bus is NOT a mutation channel.
+9. **Domain events** (`BattleVictory`, `LocationArrived`, etc.) flow through `eventBus`; quest listeners subscribe, subscribers dispatch back to stores, and the bus is NEVER a mutation channel. The singletons live in `state/appBus.ts` (`eventBus`, `errorBus`, `actionLog`, `emitDomainEvent`) — NOT in `App.tsx`, so non-React modules can publish without importing the React root. `state/appBus.ts` also exports `busRefs` (the dev-HUD/debug handle). `state/questEngine.ts` owns the quest registry (`bootstrapQuests()`, `getQuestEngine()`) and the pumps: `settleQuests()` (stage transitions to a fixed point, bounded at 8 passes), `handleDomainEvent(event)` (one event through stage listeners, then settle — call it directly in tests/replay), and `attachQuestEngine(bus)` (subscribes both the bus AND the run store, because most quest progress is a dialogue setting a flag, which emits no domain event). Emit sites today: `LocationArrived` on overworld arrival, and `BattleResult.emittedEvents` replayed after `applyBattleResult`. `actionLog.append` now fires from the `runStore` dispatch chokepoint (capturing `rngStateBeforeAction` before the switch), so save files carry a real replay log instead of `[]`.
 10. **Specs in `docs/superpowers/specs/` are append-only and immutable post-merge.** New decisions = new spec + supersedes-link.
 
 ## 2. Three-Store Ownership Map (≤30 lines)
@@ -35,6 +37,8 @@
 | `questStates` (per-quest current stage) | `runStore` | one run | run end |
 | `activeDungeon` (graph, position, cleared rooms) | `runStore` | one dungeon visit | dungeon exit |
 | `rngState` (root for run-derived RNGs) | `runStore` | one run | run end |
+| `edgeTraversals` (per-road walk count + last-crossed day) | `runStore` | one run | run end |
+| `pendingCaptureTargets` (named enemies the current encounter cares about) | `runStore` | one battle | battle end |
 | `phase`, `subPhase`, `units`, `decks`, `grid`, `effects[]` | `combatStore` | one battle | battle end |
 | `combatStore.rng` (derived from run-RNG per battle) | `combatStore` | one battle | battle end |
 
@@ -42,13 +46,11 @@
 - `runStore.dispatch({ type: 'applyBattleResult', payload })` — handles XP, fallen, loot, gold, captures, flag updates, hop consumption, in one update.
 - `runStore.dispatch({ type: 'recruitUnit', payload })` — adds to party + deducts gold + emits event.
 
-## 3. Action Catalog (≤40 lines) `[STUB — fills in Week 2]`
+## 3. Action Catalog (≤40 lines)
 
 Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, each with a single `dispatch(action)` chokepoint. Action unions: `MetaAction`, `RunAction`, `CombatEvent`. `combatStore` state shape: `CombatStoreState` wrapping `CombatState`.
 
-**`metaStore` actions** (`MetaAction` union):
-- `startNewRun`
-- `recordRunCompleted { won }`
+**`metaStore` actions** (`MetaAction` union): `startNewRun`, `recordRunCompleted { won }`, `markTutorialSeen`, `setAudioMuted { muted }`. State also carries `runsWon`, `runsLost`, `tutorialSeen`, `audioMuted` beyond the `gameStarted`/`totalRuns` in §2. None of it is persisted — the save file writes `gameStarted`/`totalRuns` and never reads them back.
 
 **`runStore` actions** (`RunAction` union in `state/runStore.ts`):
 - `recruitUnit { unit }`
@@ -60,7 +62,7 @@ Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, 
 - `buyItem { itemId, price }` — atomic gold-deduction + add-to-first-empty-slot; no-op if gold insufficient or bag full
 - `sellItem { itemId, sellPrice }` — atomic remove-first-match + gold credit; no-op if item not in bag
 - `addGold { amount }`
-- `hydrateFromSave { gold, worldPosition, partyUnits, partyOrder, inventoryItems }` — minimal save-load restore. Atomic. Full hydration (flags, quests, dungeon, RNG, actionLog) lands when persistence-load is wired through the reducer.
+- `hydrateFromSave { gold, worldPosition, partyUnits, partyOrder, inventoryItems, flags?, questStates?, rngState?, daysElapsed?, runStats?, oneShotsFired?, visitedNodes?, clearedEncounters?, deathLog? }` — atomic save-load restore. **Any new optional field must ALSO be added to `SerializedRunSchema` in `persistence/load.ts`** — Zod strips undeclared keys, so an omitted field is silently dropped on the real load path even though `serializeRun` writes it. Still NOT restored: `metaStore`, the combat snapshot (explicitly reset on load), `runId`/`runSeed`, `activeDungeon`, `pendingTravelPath`, `pendingDialogue`, `pendingCombat`.
 - `arriveAtNode { nodeId }`
 - `startTravelPath { path }`
 - `consumeTravelHop { hopIndex }`
@@ -75,12 +77,16 @@ Stores expose a `useMetaStore` / `useRunStore` / `useCombatStore` Zustand hook, 
 - `startDialogue { dialogueId, nodeId }` — sets `pendingDialogue`; consumed by `<DialogueModal>`
 - `endDialogue` — clears `pendingDialogue`
 - `resetRun` — atomic full-run wipe (New Run from win/game-over screens)
+- `clearPendingCombat`, `markEncounterFired { encounterId }`, `consumeFoodPerHop` (also +1 `daysElapsed`; starvation is 3 HP/unit when food is out), `enterMap { mapId, nodeId }`, `restParty`
+- `setPendingCaptureTargets { targets }` — stashes the encounter's `captureTargets` when a battle boots; battle end feeds them to `systems/captureTargets.resolveCaptureTargets` (pure: captured ⇒ capturedFlag + capturedDialogue, dead ⇒ killedFlag + killedDialogue, still standing ⇒ nothing) and clears them. Targets key on **unit id**, never display name. Only the first dialogue survives, since `pendingDialogue` is a single slot.
+- `recordEdgeTraversal { mapId, from, to }` — bumps `edgeTraversals[edgeTraversalKey(mapId, from, to)]` (node ids sorted, so a road is one road both ways) and stamps `lastDay`. Dispatch it only when a hop LANDS: the hop encounter RNG label embeds the pass number, and `rngState` never advances during play, so bumping mid-hop would move the label out from under a suspended-and-retried hop. This counter is the only reason a second crossing of a road rolls a different encounter than the first.
+- Stubs, NOT implemented: the `recruitUnit` / `spawnNode` / `unlockNode` **QuestEffect** cases in `applyQuestEffect` are no-ops (distinct from the `recruitUnit` ACTION above, which works)
 
 `RunState.runStats` (battlesWon, enemiesDefeated, unitsLost, goldEarned, gearFound, enemiesCaptured, hops) feeds the win/game-over screens; updated by `applyBattleResult` + `consumeTravelHop`; `BattleResult.enemiesDefeated` counts dead foes. Boss: `seedBossBattle` (Iron Throne — authored Warlord stats, `warlord` class + AI with `aoeRadius` sweep) fires from the overworld exit node; victory records `recordRunCompleted` and shows the run-complete screen.
 
 Helper: `predicateStateFromRun(s)` reifies a `RunState` into the `PredicateState` shape questRunner / dialogueRunner expect.
 
-Dialogue registry (`state/dialogueRegistry.ts`): in-memory `DialogueTree` registry — `registerDialogue`, `getDialogue`, `clearDialogues`, `listDialogueIds`. `state/dialogueBootstrap.ts` exports `bootstrapDialogues()` which loads the 8 ported trees on App boot.
+Dialogue registry (`state/dialogueRegistry.ts`): in-memory `DialogueTree` registry — `registerDialogue`, `getDialogue`, `clearDialogues`, `listDialogueIds`. `state/dialogueBootstrap.ts` exports `bootstrapDialogues()` which registers the 14 shipped trees on App boot (the original 8 Godot ports plus the Missing Caravan / Deserter chains).
 
 **Diagnostic log** (`state/diagLog.ts`): bounded ring buffer (last 500 `DiagEntry` records, typed by `DiagLevel` and `DiagCategory`). Callers use `diag(category, msg, data?, level?)`. Wired into `runStore.dispatch`, `DialogueModal` lifecycle, `OverworldScene` encounter rolls and BFS path commits. Auto-mirrors to devtools console. Queryable via `window.__debug.diag`: `recent(n)`, `byCategory(cat,n)`, `byLevel(lvl,n)`, `since(ts)`, `search(re,n)`, `dump(n)` (formatted text), `categories()`, `clear()`. Exported as `diagLog` and `diag`.
 
@@ -201,7 +207,10 @@ phaser/src/
 ├── data/
 │   ├── schemas/    Zod schemas
 │   ├── content/    JSON content (classes, cards, items, quests, dialogue, maps)
-│   └── load.ts     parse + validate + alias-resolve at boot
+│   └── load.ts     validateContent (Zod). NOTE: called from tests only —
+│                   the app imports content JSON directly, so there is no
+│                   boot-time content validation despite invariant §1.
+│                   Save-file loading is persistence/load.ts, not this.
 ├── systems/        pure functions: deckBuilder, combatReducer, effectPipeline,
 │                   statusEffects, targeting, turnOrder, capture, enemyAI,
 │                   predicates, questRunner, dialogueRunner, battleResolver,
@@ -209,7 +218,10 @@ phaser/src/
 ├── procgen/        pure deterministic generators: dungeonGenerator (stub),
 │                   overworldGenerator (stub)
 ├── mapRegistry/    MapRegistry: registry of world/battle/dungeon maps
-├── state/          metaStore, runStore, combatStore, flags, eventBus, errorBus, actionLog
+├── state/          metaStore, runStore, combatStore, flags, appBus (the bus
+│                   singletons + emitDomainEvent), questEngine (registry +
+│                   settleQuests + attachQuestEngine), eventBus, errorBus,
+│                   actionLog, diagLog, dialogueRegistry
 ├── persistence/    saveFormat, save, load (atomic hydration), contentAliases
 ├── game/           createGame.ts + scenes/ (BoardScene + battle seeders) + runtime/ (CombatRuntime POJO)
 ├── ui/             React shell + ErrorBoundary + DevHud + modals
@@ -241,7 +253,7 @@ phaser/src/
 - **`CombatEvent` ≠ `DomainEvent` ≠ `QuestListener.on`.** Three different "event-shaped" patterns. Don't confuse.
 - **`QuestEffect` ≠ `CardEffect`** — separate domains; never confuse.
 - **Effect pipeline middleware ordering:** stages 1=source-mod, 2=target-mod, 3=terrain, 4=card-specific, 5=armor, 6=clamp. Lower stages run first; each can spawn/absorb effects.
-- **`combatReducer` team detection** uses `classId.includes('bandit')` as a foundation heuristic (covers `mage_bandit` etc.) — replace with explicit `team` field on Unit (or spawn payload) when richer content lands. Pure `mage` is a player class.
+- **Team detection** is the explicit `Unit.team` field via `systems/team.ts` `isEnemyUnit`; the `classId` fragment list is only a fallback for legacy fixtures. Beware the DUPLICATE in `scripts/cli/render.ts`, which keeps its own stale fragment list (no 'warlord', ignores `unit.team`) and therefore mis-colours the boss in `--scenario boss`.
 
 ## 12. Open Questions (≤30 lines) `[STUB — populated as decisions arise]`
 
@@ -260,6 +272,6 @@ phaser/src/
 
 ---
 
-**Update protocol:** any PR touching `phaser/src/domain/`, `phaser/src/state/*Store.ts`, `phaser/src/systems/`, `phaser/src/contracts/`, or `phaser/src/persistence/saveFormat.ts` MUST update this file in the same commit. CI check: `phaser/scripts/check-context-doc.ts` greps current type names from those source files and asserts they appear here. Drift fails the build.
+**Update protocol:** any PR touching `phaser/src/domain/`, `phaser/src/state/*Store.ts`, `phaser/src/systems/`, `phaser/src/contracts/`, or `phaser/src/persistence/saveFormat.ts` MUST update this file in the same commit. CI check: `phaser/scripts/check-context-doc.ts` greps current type names from those source files and asserts they appear here. Drift fails the build. Two caveats: there is NO CI pipeline (no .github/workflows) — this only runs when someone runs `npm run verify` locally; and `check-context-doc.ts` scans domain/contracts/state/persistence only, NOT `src/systems/`, despite this protocol naming it.
 
 **When this file overflows 300 lines:** prune the least-current entry per section, do NOT extend. Stale entries get `[STALE-YYYY-MM-DD]` markers; removed monthly.
