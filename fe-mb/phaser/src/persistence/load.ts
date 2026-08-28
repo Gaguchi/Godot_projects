@@ -25,6 +25,25 @@ const SerializedRunSchema = z.object({
   activeDungeon: z.unknown(),
   rngState: z.object({ seed: z.number(), counter: z.number() }),
   deathLog: z.array(z.object({ unitId: z.string(), cause: z.string(), turn: z.number() })),
+  // Optional since 0.7: absent in older saves. These MUST be declared here —
+  // Zod strips unknown keys, so an omitted field is silently dropped on load
+  // even though serializeRun writes it (day counter reset to 1, run stats
+  // wiped, consumed one-shot encounters able to fire again).
+  daysElapsed: z.number().optional(),
+  oneShotsFired: z.array(z.string()).optional(),
+  edgeTraversals: z.record(
+    z.string(),
+    z.object({ count: z.number(), lastDay: z.number() }),
+  ).optional(),
+  runStats: z.object({
+    battlesWon: z.number(),
+    enemiesDefeated: z.number(),
+    unitsLost: z.number(),
+    goldEarned: z.number(),
+    gearFound: z.number(),
+    enemiesCaptured: z.number(),
+    hops: z.number(),
+  }).optional(),
 })
 
 const SaveFileSchema = z.object({

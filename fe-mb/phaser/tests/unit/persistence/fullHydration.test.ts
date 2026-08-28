@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { useRunStore } from '../../../src/state/runStore'
-import { serializeRun } from '../../../src/persistence/save'
+import { serializeRun, buildSaveFile, saveToString } from '../../../src/persistence/save'
+import { loadFromString } from '../../../src/persistence/load'
 import { asUnitId, asItemId, asQuestId, asStageId } from '../../../src/domain/ids'
 import type { Unit } from '../../../src/domain/unit'
 
@@ -67,5 +68,42 @@ describe('full save hydration round-trip (story 477)', () => {
     expect(s.daysElapsed).toBe(2)
     expect(s.runStats.battlesWon).toBe(1)
     expect(s.runStats.hops).toBe(1)
+  })
+
+  // The test above calls serializeRun → hydrateFromSave directly, which is NOT
+  // the path the game takes. The real path is
+  //   serializeRun → buildSaveFile → saveToString → loadFromString → hydrateFromSave
+  // and loadFromString validates with Zod, which STRIPS any key the schema
+  // does not declare. daysElapsed / runStats / oneShotsFired were missing from
+  // SerializedRunSchema, so a real load silently reset the day counter, wiped
+  // run stats and let consumed one-shot encounters fire again.
+  it('optional 0.7 fields survive the REAL load path (through loadFromString)', () => {
+    const store = useRunStore.getState()
+    store.__resetForTest()
+    store.dispatch({ type: 'recruitUnit', payload: { unit: roy() } })
+    store.dispatch({ type: 'markEncounterFired', payload: { encounterId: 'injured_knight' } })
+    store.dispatch({ type: 'consumeFoodPerHop' })
+    store.dispatch({ type: 'consumeFoodPerHop' })
+
+    const before = serializeRun(useRunStore.getState())!
+    expect(before.daysElapsed).toBe(3)
+    expect(before.runStats?.hops).toBe(2)
+    expect(before.oneShotsFired).toContain('injured_knight')
+
+    const json = saveToString(buildSaveFile({
+      meta: { gameStarted: true, totalRuns: 0 },
+      run: useRunStore.getState(),
+      combat: null,
+      actionLog: [],
+    }))
+
+    const loaded = loadFromString(json)
+    expect(loaded.ok).toBe(true)
+    if (!loaded.ok) return
+
+    const run = loaded.save.run!
+    expect(run.daysElapsed).toBe(3)
+    expect(run.runStats?.hops).toBe(2)
+    expect(run.oneShotsFired).toContain('injured_knight')
   })
 })
