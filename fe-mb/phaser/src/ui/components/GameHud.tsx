@@ -73,12 +73,9 @@ function foodTint(food: number): string {
   return 'text-[color:var(--color-parchment)]'
 }
 
-/** Parchment ledger tones — cartographer's chrome, not a combat slab. */
-const LEDGER_BG = '#e6d6ac'
-const LEDGER_BORDER = 'rgba(91,65,38,0.5)'
-const LEDGER_INK = '#5b4126'
-const LEDGER_INK_SOFT = 'rgba(91,65,38,0.3)'
-const LEDGER_HP_FILL = '#7a8a4f'
+/* The parchment roster is a `.surface-parchment` page scope: the scope
+   re-declares the text/HP ramp tokens, so the SAME token classNames used by
+   the dark slab resolve to the walnut-ink page values — no raw hexes here. */
 
 export function GameHud({
   location,
@@ -115,37 +112,25 @@ export function GameHud({
   const parchment = surface === 'parchment'
 
   /**
-   * Parchment roster restyles the slab as a pinned ledger card; the dark slab
-   * keeps the `hud-panel` iron recipe. We drop the `hud-panel` class under
-   * parchment so its iron gradient/bevel doesn't bleed through the overrides.
+   * Parchment roster is a pinned ledger card — the `.surface-parchment` page
+   * recipe (linen gradient, dashed tooled edge) plus its token scope, which
+   * re-resolves every colour class below to the walnut-ink page ramp. The
+   * dark slab keeps the `hud-panel` leather recipe.
    */
   const rosterClass = parchment
-    ? `pointer-events-none fixed ${partyPos} z-[60] w-60 rounded-md p-2.5`
+    ? `surface-parchment pointer-events-none fixed ${partyPos} z-[60] w-60 rounded-md p-2.5`
     : `hud-panel pointer-events-none fixed ${partyPos} z-[60] w-60 p-2.5`
-  const rosterStyle: React.CSSProperties | undefined = parchment
-    ? {
-        background: LEDGER_BG,
-        border: `1px solid ${LEDGER_BORDER}`,
-        boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-      }
-    : undefined
 
   return (
     <>
       {/* Party roster */}
       {showParty && order.length > 0 && (
-        <div className={rosterClass} style={rosterStyle}>
+        <div className={rosterClass}>
           <div className="mb-2 flex items-center justify-between px-0.5">
-            <span
-              className={`text-[0.6rem] uppercase tracking-[0.22em] ${parchment ? '' : 'text-[color:var(--color-text-muted)]'}`}
-              style={parchment ? { color: LEDGER_INK } : undefined}
-            >
+            <span className="text-[0.6rem] uppercase tracking-[0.22em] text-[color:var(--color-text-muted)]">
               Party
             </span>
-            <span
-              className={`numeral text-[0.6rem] ${parchment ? '' : 'text-[color:var(--color-text-muted)]'}`}
-              style={parchment ? { color: LEDGER_INK } : undefined}
-            >
+            <span className="numeral text-[0.6rem] text-[color:var(--color-text-muted)]">
               {order.length}
             </span>
           </div>
@@ -168,37 +153,19 @@ export function GameHud({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span
-                        className={`voice-display truncate text-[0.82rem] ${parchment ? '' : 'text-[color:var(--color-parchment)]'}`}
-                        style={parchment ? { color: LEDGER_INK } : undefined}
-                      >
+                      <span className="voice-display truncate text-[0.82rem] text-[color:var(--color-parchment)]">
                         {u.name}
                       </span>
-                      <span
-                        className={`numeral text-[0.65rem] ${parchment ? '' : hpText(u.hp.current, u.hp.max)}`}
-                        style={parchment ? { color: LEDGER_INK } : undefined}
-                      >
+                      <span className={`numeral text-[0.65rem] ${hpText(u.hp.current, u.hp.max)}`}>
                         {u.hp.current}
-                        <span
-                          style={parchment ? { color: LEDGER_INK_SOFT } : undefined}
-                          className={parchment ? '' : 'text-[color:var(--color-text-muted)]'}
-                        >
+                        <span className="text-[color:var(--color-text-muted)]">
                           /{u.hp.max}
                         </span>
                       </span>
                     </div>
-                    {parchment ? (
-                      <div
-                        className="mt-1 overflow-hidden rounded-full"
-                        style={{ height: 3, background: LEDGER_INK_SOFT }}
-                      >
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: LEDGER_HP_FILL }} />
-                      </div>
-                    ) : (
-                      <div className="hp-bar mt-1">
-                        <div className="hp-bar__fill" style={{ width: `${pct}%`, background: hpFill(u.hp.current, u.hp.max) }} />
-                      </div>
-                    )}
+                    <div className="hp-bar mt-1">
+                      <div className="hp-bar__fill" style={{ width: `${pct}%`, background: hpFill(u.hp.current, u.hp.max) }} />
+                    </div>
                   </div>
                 </div>
               )
@@ -206,19 +173,14 @@ export function GameHud({
           </div>
           {objective && (
             <div
-              className={`mt-2.5 flex items-start gap-1.5 pt-2 ${parchment ? '' : 'border-t border-[rgba(120,98,60,0.22)]'}`}
-              style={parchment ? { borderTop: `1px solid ${LEDGER_INK_SOFT}` } : undefined}
+              className={`mt-2.5 flex items-start gap-1.5 border-t pt-2 ${parchment ? 'border-[color:var(--canvas-rule)]' : 'border-[rgba(120,98,60,0.22)]'}`}
             >
-              <span
-                className={`mt-0.5 flex ${parchment ? '' : 'text-hearth'}`}
-                style={parchment ? { color: LEDGER_INK } : undefined}
-              >
+              {/* --color-hearth is scope-aware: struck brass on leather, the
+                  AA-safe dark brass inside the parchment scope. */}
+              <span className="text-hearth mt-0.5 flex">
                 <Icon name="quest" size={12} />
               </span>
-              <span
-                className={`text-[0.7rem] leading-tight ${parchment ? '' : 'text-parchment'}`}
-                style={parchment ? { color: LEDGER_INK } : undefined}
-              >
+              <span className="text-parchment text-[0.7rem] leading-tight">
                 {objective}
               </span>
             </div>

@@ -469,17 +469,14 @@ export function App(): React.JSX.Element {
           )}
           {view === 'combat' && (
             <>
-              {/* Combat backdrop — same atmospheric pattern as overworld/dungeon
-                  sits BEHIND the Phaser canvas so the gridless area no longer
-                  reads as a black void. */}
+              {/* Combat backdrop — trodden field around the board. Flat earth
+                  lit from above (Field Ledger has no candle pool), so the
+                  gridless area reads as ground, not a void. */}
               <div
                 aria-hidden
                 className="fixed inset-0 -z-10"
                 style={{
-                  background: [
-                    'radial-gradient(ellipse 70% 50% at 50% 45%, #382818 0%, transparent 60%)',
-                    'linear-gradient(to bottom, #1a1612 0%, #0b0907 55%, #050403 100%)',
-                  ].join(', '),
+                  background: 'linear-gradient(to bottom, #33261a 0%, #241a11 52%, #191209 100%)',
                 }}
               />
               <div
@@ -490,14 +487,16 @@ export function App(): React.JSX.Element {
                   backgroundSize: '220px 220px',
                 }}
               />
-              {/* Vignette OVER the (transparent) canvas, under the HUD —
-                  focuses the eye on the board without touching input. */}
+              {/* Daylight grade OVER the (transparent) canvas, under the HUD.
+                  The old radial vignette is gone — this is a directional wash
+                  (sky above, shaded soil below) so the field reads as outdoors
+                  without pulling a spotlight onto the board. */}
               <div
                 aria-hidden
                 className="fixed inset-0 pointer-events-none"
                 style={{
                   background:
-                    'radial-gradient(ellipse 120% 100% at 50% 45%, transparent 55%, rgba(0,0,0,0.30) 80%, rgba(0,0,0,0.60) 100%)',
+                    'linear-gradient(to bottom, rgba(255,248,228,0.05) 0%, transparent 26%, rgba(24,17,10,0.32) 100%)',
                 }}
               />
               <div id="react-shell" />

@@ -137,10 +137,13 @@ export function Card({
           />
         ))}
 
-        {/* candle-lit inner well */}
+        {/* tooled-leather inner well (daylight from the top edge, no candle) */}
         <div
           className="relative flex h-full flex-col overflow-hidden rounded-[4px]"
-          style={{ background: 'radial-gradient(120% 82% at 50% 0%, #36291c 0%, #120d09 78%)' }}
+          style={{
+            background:
+              'linear-gradient(178deg, color-mix(in oklab, var(--iron-700) 30%, var(--iron-900)) 0%, var(--iron-900) 78%)',
+          }}
         >
           {/* header banner: gem + name. A floated spacer reserves the AP
               coin's overhang, so text lines WRAP around the coin instead of

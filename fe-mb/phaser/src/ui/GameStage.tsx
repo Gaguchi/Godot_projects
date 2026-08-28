@@ -45,7 +45,7 @@ export function GameStage({ children }: { children: React.ReactNode }): React.JS
         position: 'fixed',
         inset: 0,
         overflow: 'hidden',
-        background: '#050403',
+        background: '#17110c',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

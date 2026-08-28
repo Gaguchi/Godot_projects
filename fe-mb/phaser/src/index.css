@@ -1,64 +1,92 @@
 @import "tailwindcss";
 
 /* =============================================================================
-   FE_MB — "Forged & Lit" design tokens  (UI overhaul Phase 1: the foundation)
+   FE_MB — "Field Ledger" design tokens
 
-   The Stone & Steel theme, finally finished. A warm near-black void treated as
-   a candle-lit room — not flat emptiness — with surfaces of aged PARCHMENT for
-   information screens and hammered IRON for combat chrome. One scarce amber
-   "hearth" glow per screen means "this is what you act on."
+   Daylight camp, not a candle-lit crypt. The fiction is the company
+   quartermaster's ledger and the camp table under open sky: linen canvas,
+   walnut ink, oak, saddle leather, struck brass. Mount & Blade energy —
+   earthy, working, unglamorous.
 
-   Every later UI change consumes these tokens, so the whole interface stays
-   cohesive and themeable from one place. RULE: material/texture lives on CHROME
-   (frames, headers, plates) — NEVER on numeric data, which stays clean + legible.
+   TWO GROUNDS, ONE SYSTEM
+   -----------------------
+   * PAGE (light): information you READ — title, town, shop, loadout, quest
+     log, save/load, dialogue. Linen canvas #e7dec9, walnut ink #2a2119.
+     Opt in with `.page-canvas` (a whole screen) or `.surface-parchment`
+     (a card on a screen). Both re-declare the text ramp, so any component
+     inside them inverts automatically.
+   * CHROME (dark): things you ACT ON — combat HUD, buttons, cards, straps.
+     Saddle leather over walnut, brass edges and rivets. Stays dark because
+     the board needs light-on-dark to stay readable at a glance.
+
+   Token names are FIXED (a numeric mirror lives in game/boardPalette.ts and
+   every component consumes them), so several names now read oddly against
+   their values. Read them by ROLE, not by noun:
+     --color-parchment      = "primary text on THIS ground" (bone on leather,
+                              walnut ink inside a page scope)
+     --color-parchment-dim  = secondary text on this ground
+     --color-hearth         = the one struck-brass accent
+     --color-ink            = walnut — page text AND the darkest chrome seam
+     --iron-*               = the leather ramp
+
+   RULES THAT DO NOT BEND: texture on chrome only, never on numeric data.
+   Numbers are the largest text on any combat element. Every small-text pair
+   clears AA 4.5:1 against its OWN ground. Colour is never the only channel.
    ========================================================================== */
 
 @theme {
   /* ---- Type voice ---------------------------------------------------------
-     display = engraved heraldic serif: titles, unit/card names, place names.
+     display = inscriptional serif for names/titles/places (Cinzel renders its
+               lowercase as small capitals, so it already reads as the
+               soldier's-journal small-caps voice this direction wants).
      body    = readable old-style serif: prose, dialogue, lore, control labels.
-     numeric = tabular mono, used ONLY for raw numbers (HP/AP/damage/gold) where
-               it reads as carved inscription / a tally — never console output. */
+     numeric = tabular mono, used ONLY for raw numbers (HP/AP/damage/gold). */
   --font-display: "Cinzel", "Trajan Pro", "Georgia", serif;
   --font-body: "EB Garamond", "Georgia", "Times New Roman", serif;
   --font-numeric: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Consolas", monospace;
 
-  /* ---- Candlelight + material accents (semantic; also generate utilities) -- */
-  --color-hearth: #e8a93a;        /* candlelight amber — the scarce "act here" glow */
-  --color-hearth-soft: #c98f2c;   /* dimmer firelight */
-  --color-ember: #c0392b;         /* blood / danger / enemy accent */
-  --color-ink: #1a1410;           /* warm near-black base (never pure #000) */
-  --color-ash: #0b0907;           /* deepest shadow */
-  --color-parchment: #e8d8c0;     /* aged-paper light / primary text */
-  --color-parchment-dim: #b9a079; /* aged-paper muted text (on DARK; ~7.3:1) */
-  --color-text-muted: #a89a86;    /* muted label/help text on dark — clears AA 4.5:1 (warm, not cool stone) */
-  /* lighter reds reserved for small TEXT (deep --color-ember is for fills only) */
-  --color-damage-text: #e0705f;   /* damage/crit numerals — clears AA on dark */
+  /* ---- Brass + earth accents (semantic; also generate utilities) ----------
+     Brass is a METAL here, not a glow: it lives in fills, edges, rivets and
+     rules. It is never bloomed and never used for small text on a light page
+     (raw brass is only ~3.2:1 on canvas — the page scope swaps in a dark
+     brass that clears AA). */
+  --color-hearth: #d9a93f;        /* struck brass — the one "act here" accent, on LEATHER */
+  --color-hearth-soft: #b8862b;   /* raw brass — fills + edges */
+  --color-ember: #9a2c22;         /* oxblood — danger fills, enemy accent */
+  --color-ink: #2a2119;           /* walnut ink — page text AND the darkest chrome seam */
+  --color-ash: #17110c;           /* deepest shadow / letterbox ground */
+  --color-parchment: #f1e9d8;     /* bone — primary text on leather (6.5:1 on saddle) */
+  --color-parchment-dim: #d5c8ad; /* bone, dimmed — secondary text on leather */
+  --color-text-muted: #b3a68e;    /* muted label text on dark leather (7.6:1 on the panel body) */
+  /* lighter reds for small TEXT (deep --color-ember is a FILL colour only) */
+  --color-damage-text: #e8806c;   /* damage/crit numerals on leather — 5.3:1 */
 
   /* team accents — colour is the REDUNDANT channel; shape + icon carry meaning
-     (so the read survives colour-blindness and the dark board). */
-  --color-ally: #7ba6dd;          /* steel-blue */
-  --color-enemy: #d0685c;         /* rust-red */
+     (ally disc / enemy star / sigil), so the read survives colour-blindness. */
+  --color-ally: #3f628a;          /* deepened field blue — 4.7:1 on canvas */
+  --color-enemy: #a6432f;         /* brick rust — 4.5:1 on canvas */
 
-  /* card-type gem hues (gem SHAPE is the primary signal, hue is secondary) */
-  --color-gem-attack: #c0392b;
-  --color-gem-arcane: #8a63d6;
-  --color-gem-ward: #2e8f6e;
-  --color-gem-focus: #d4a72c;
+  /* card-type gem hues (gem SHAPE is the primary signal, hue is secondary);
+     lifted off the base tokens so a 10px gem still clears 3:1 on leather */
+  --color-gem-attack: #b8402c;
+  --color-gem-arcane: #7d63c4;
+  --color-gem-ward: #4a8f6a;
+  --color-gem-focus: #c9932f;
 
   /* ---- Character IDENTITY ramp --------------------------------------------
      Who someone is: portrait rings, name-plate underlines, bust accents ONLY.
-     NEVER actions or threat — hearth ("act here") and ember (danger) stay
-     reserved. Every hue is an existing token pulled toward parchment in oklab,
-     so identities read warm + desaturated inside the candle-lit room. */
-  --id-gold: color-mix(in oklab, var(--color-hearth-soft) 62%, var(--color-parchment-dim));  /* antique gold — young lords, alpha beasts */
-  --id-steel: color-mix(in oklab, var(--color-ally) 66%, var(--color-parchment-dim));        /* oiled steel-blue — veteran knights */
-  --id-rose: color-mix(in oklab, var(--color-ember) 40%, var(--color-parchment));            /* dusty rose — court mages, gentle souls */
-  --id-moss: color-mix(in oklab, var(--color-gem-ward) 62%, var(--color-parchment-dim));     /* dry moss — scouts, clerics, merchants */
-  --id-arcane: color-mix(in oklab, var(--color-gem-arcane) 60%, var(--color-parchment-dim)); /* faded violet — occultists, raider mages */
-  --id-ember: color-mix(in oklab, var(--color-ember) 55%, var(--color-parchment-dim));       /* banked terracotta — brigands, fire mages */
-  --id-slate: color-mix(in oklab, var(--color-ally) 22%, var(--color-text-muted));           /* warm slate — commoners, beasts, drifters */
-  --id-wine: color-mix(in oklab, var(--color-ember) 55%, var(--color-gem-arcane));           /* dark wine — warlords, named villains */
+     NEVER actions or threat — brass ("act here") and oxblood (danger) stay
+     reserved. Each hue is an existing token pulled toward the ground's own
+     text colour, so identities re-resolve automatically inside a page scope
+     (light rings on leather, ink-weight rings on canvas). */
+  --id-gold: color-mix(in oklab, var(--color-hearth-soft) 62%, var(--color-parchment-dim));
+  --id-steel: color-mix(in oklab, var(--color-ally) 66%, var(--color-parchment-dim));
+  --id-rose: color-mix(in oklab, var(--color-ember) 40%, var(--color-parchment));
+  --id-moss: color-mix(in oklab, var(--color-gem-ward) 62%, var(--color-parchment-dim));
+  --id-arcane: color-mix(in oklab, var(--color-gem-arcane) 60%, var(--color-parchment-dim));
+  --id-ember: color-mix(in oklab, var(--color-ember) 55%, var(--color-parchment-dim));
+  --id-slate: color-mix(in oklab, var(--color-ally) 22%, var(--color-text-muted));
+  --id-wine: color-mix(in oklab, var(--color-ember) 55%, var(--color-gem-arcane));
 
   /* ---- Motion easing — exponential ease-out (real objects decelerate) ----- */
   --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -75,45 +103,109 @@
 
   /* ---- Tactical washes — same hue + meaning on board, cards, forecast ----- */
   --threat: color-mix(in oklab, var(--color-ember) 26%, transparent);
-  --threat-edge: color-mix(in oklab, var(--color-ember) 60%, transparent);
-  --reach: color-mix(in oklab, var(--color-ally) 22%, transparent);
-  --reach-edge: color-mix(in oklab, var(--color-ally) 55%, transparent);
+  --threat-edge: color-mix(in oklab, var(--color-ember) 62%, transparent);
+  --reach: color-mix(in oklab, var(--color-ally) 24%, transparent);
+  --reach-edge: color-mix(in oklab, var(--color-ally) 60%, transparent);
 
-  /* ---- HP tiers (paired with a cap-icon change so hue is never the sole cue) */
-  --hp-ok: #6ea96a;
-  --hp-warn: #d4a72c;
-  --hp-crit: #c0392b;          /* fill (>=3:1 ok) */
-  --hp-crit-text: #e0705f;     /* small crit TEXT — clears AA 4.5:1 on dark */
+  /* ---- HP tiers (paired with a cap-icon/label change so hue is never the
+     sole cue). Fills are picked to clear 3:1 on BOTH grounds; the small crit
+     TEXT colour is ground-specific and re-declared per scope. */
+  --hp-ok: #5d7a33;            /* field olive — 3.7:1 leather, 3.6:1 canvas */
+  --hp-warn: #bd7d20;          /* ochre */
+  --hp-crit: #9a2c22;          /* oxblood fill */
+  --hp-crit-text: #e8806c;     /* small crit TEXT on leather — 5.3:1 */
 
-  /* ---- Forged-iron material recipe ---------------------------------------- */
-  --iron-900: #15110d;
-  --iron-800: #221c15;
-  --iron-700: #322a20;
-  --iron-edge: #5a4a36;
-  /* a 2-layer bevel max: inset top highlight + inset bottom shadow + drop */
+  /* ---- Saddle-leather material recipe -------------------------------------
+     900 = the shadowed underside, 800 = the panel body, 700 = the lit saddle
+     strap, edge = struck brass. */
+  --iron-900: #1c140d;
+  --iron-800: #2b1e14;
+  --iron-700: #6a4b2f;
+  --iron-edge: #b08a3e;
+  /* leather sits flat and takes a hard edge — a top catchlight, an under-seam
+     and a short contact shadow. No bloom, no 16px halo. */
   --bevel-iron:
-    inset 0 1px 0 rgba(122, 99, 60, 0.45),
-    inset 0 -3px 7px rgba(0, 0, 0, 0.55),
-    0 6px 16px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(214, 178, 108, 0.26),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.5),
+    0 3px 8px rgba(0, 0, 0, 0.42);
 
-  /* ---- Elevation (dark mode: depth via lighter surface + soft shadow) ----- */
-  --elevation-flat: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --elevation-raised: 0 5px 14px rgba(0, 0, 0, 0.45);
-  --elevation-float: 0 20px 48px rgba(0, 0, 0, 0.62);
+  /* one brass rivet, painted as a full-size background layer (safe on any box
+     size — no background-position/size juggling) */
+  --rivet-tl: radial-gradient(circle 2.6px at 8px 8px, #e6c887 0%, var(--iron-edge) 52%, rgba(0, 0, 0, 0.55) 76%, transparent 79%);
+  --rivet-tr: radial-gradient(circle 2.6px at calc(100% - 8px) 8px, #e6c887 0%, var(--iron-edge) 52%, rgba(0, 0, 0, 0.55) 76%, transparent 79%);
+  --rivet-bl: radial-gradient(circle 2.6px at 8px calc(100% - 8px), #e6c887 0%, var(--iron-edge) 52%, rgba(0, 0, 0, 0.55) 76%, transparent 79%);
+  --rivet-br: radial-gradient(circle 2.6px at calc(100% - 8px) calc(100% - 8px), #e6c887 0%, var(--iron-edge) 52%, rgba(0, 0, 0, 0.55) 76%, transparent 79%);
 
-  /* ---- Focus ring — visible on every interactive surface ------------------ */
-  --focus-ring: 0 0 0 2px var(--color-ink), 0 0 0 4px var(--color-hearth);
+  /* ---- Elevation — daylight: short, hard-edged contact shadows ------------ */
+  --elevation-flat: 0 1px 2px rgba(30, 20, 10, 0.28);
+  --elevation-raised: 0 3px 10px rgba(30, 20, 10, 0.3);
+  --elevation-float: 0 14px 34px rgba(20, 13, 6, 0.5);
 
-  /* ---- Radii -------------------------------------------------------------- */
-  --radius-sm: 3px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  /* ---- Focus ring — visible on leather AND on canvas ---------------------- */
+  --focus-ring: 0 0 0 2px var(--color-ash), 0 0 0 4px var(--color-hearth);
+
+  /* ---- Radii — a ledger is cut square; keep them tight -------------------- */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
 
   /* ---- Overworld key light ------------------------------------------------ */
-  /* Canonical overworld key-light vector: warm, low, from the LEFT. ALL
+  /* Canonical overworld key-light vector: high daylight, from the LEFT. ALL
      overworld grounding shadows derive from this so art + UI never diverge. */
   --key-light-dx: 3px;
   --key-light-dy: 4px;
+
+  /* ---- Page (canvas) ground ----------------------------------------------- */
+  --canvas-base: #e7dec9;
+  --canvas-mid: #ddd2b8;
+  --canvas-deep: #cbbc9c;
+  --canvas-rule: rgba(42, 33, 25, 0.28);
+}
+
+/* =========================================================================
+   GROUND SCOPES — the two text ramps.
+
+   A scope re-declares the ramp tokens on itself, so every descendant that
+   reads `--color-parchment` / `--color-text-muted` / `--color-damage-text`
+   gets the value that clears AA against the ground it is actually sitting on.
+   Because a leather recipe re-declares the ramp ON ITSELF, a leather button
+   inside a canvas page still gets bone text — specificity, not source order.
+   ========================================================================= */
+
+/* PAGE: linen canvas, walnut ink. */
+/* Ramp values are AA-checked against BOTH --canvas-base and --canvas-mid
+   (the parchment gradient's working range); only the last ~15% of a page
+   gradient reaches --canvas-deep, and small text must not sit there. */
+.page-canvas,
+.surface-parchment {
+  --color-parchment: #2a2119;        /* walnut ink — 11.8:1 base / 10.5:1 mid */
+  --color-parchment-dim: #57493a;    /* 6.5:1 base / 5.8:1 mid / 4.6:1 deep */
+  --color-text-muted: #5e5040;       /* 5.8:1 base / 5.2:1 mid */
+  --color-hearth: #6e4705;           /* dark brass, text-safe — 6.1:1 / 5.5:1 */
+  --color-hearth-soft: #6e4705;
+  --color-damage-text: #9a2c22;      /* oxblood — 5.7:1 base / 5.1:1 mid */
+  --hp-crit-text: #9a2c22;
+  --hp-warn: #6e4705;                /* ochre is only 2.6:1 on canvas — go dark */
+  --hp-ok: #445b24;                  /* 5.7:1 base / 5.1:1 mid */
+  color: var(--color-ink);
+}
+
+/* CHROME: leather re-asserts the bone ramp wherever it lands.
+   Ghost buttons are deliberately excluded — they have no material of their
+   own, so they must take the ramp of the ground they are drawn on. */
+.surface-iron,
+.hud-panel,
+.btn-forged:not(.btn-forged--ghost),
+.forged-card {
+  --color-parchment: #f1e9d8;
+  --color-parchment-dim: #d5c8ad;
+  --color-text-muted: #b3a68e;
+  --color-hearth: #d9a93f;
+  --color-hearth-soft: #c99a33;
+  --color-damage-text: #e8806c;
+  --hp-crit-text: #e8806c;
+  --hp-warn: #d9a93f;
+  --hp-ok: #7ba33f;
 }
 
 /* ---- Overworld grounding animations + utilities -------------------------- */
@@ -129,7 +221,7 @@
 .road-comet { animation: roadComet 1.1s linear infinite; }
 /* Offset contact shadow that seats a marker on the ground (not a halo). */
 .ground-contact {
-  filter: drop-shadow(var(--key-light-dx) var(--key-light-dy) 2px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(var(--key-light-dx) var(--key-light-dy) 1.5px rgba(46, 32, 16, 0.45));
 }
 
 html,
@@ -137,11 +229,10 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  background: var(--color-ink);
+  background: var(--color-ash);
   color: var(--color-parchment);
   font-family: var(--font-body);
   overflow: hidden;
-  /* slightly crisper serif rendering on the dark ground */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -168,21 +259,21 @@ canvas,
 svg {
   -webkit-user-drag: none;
 }
-/* Native OS scrollbars → thin iron rails, everywhere a panel scrolls. */
+/* Native OS scrollbars → thin leather rails, everywhere a panel scrolls. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(120, 98, 60, 0.45) transparent;
+  scrollbar-color: rgba(106, 75, 47, 0.55) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(120, 98, 60, 0.45);
+  background: rgba(106, 75, 47, 0.55);
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(120, 98, 60, 0.7);
+  background: rgba(176, 138, 62, 0.7);
 }
 *::-webkit-scrollbar-track,
 *::-webkit-scrollbar-corner {
@@ -194,59 +285,69 @@ svg {
    spraying 6 box-shadow layers across className strings).
    ========================================================================= */
 
-/* Numbers as carved tally: tabular mono, never console output. */
+/* Numbers as a quartermaster's tally: tabular, never console output. */
 .numeral {
   font-family: var(--font-numeric);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
 }
 
-/* Engraved heraldic display voice (titles, names, places). */
+/* Inscribed display voice (titles, names, places). Cinzel's lowercase are
+   small capitals, so this reads as a journal hand without a second face. */
 .voice-display {
   font-family: var(--font-display);
   letter-spacing: 0.04em;
 }
 
-/* Hammered-iron chrome surface (combat HUD plates, card frames, banners). */
+/* Saddle-leather chrome (combat HUD plates, card frames, banners, straps). */
 .surface-iron {
-  background: linear-gradient(158deg, var(--iron-700) 0%, var(--iron-900) 100%);
+  background:
+    linear-gradient(
+      158deg,
+      color-mix(in oklab, var(--iron-700) 42%, var(--iron-900)) 0%,
+      var(--iron-900) 100%
+    );
   box-shadow: var(--bevel-iron);
-  border: 1px solid rgba(90, 74, 54, 0.35);
+  border: 1px solid color-mix(in oklab, var(--iron-edge) 40%, transparent);
+  color: var(--color-parchment);
 }
 
-/* Aged-parchment surface (information screens: overworld/town/dungeon/dialogue). */
+/* Linen ledger page (information surfaces: title, town, loadout, dialogue).
+   Flat ink rules, a dashed tooled edge, no bloom. */
 .surface-parchment {
   background:
-    radial-gradient(140% 120% at 50% -10%, #efe3c9 0%, #ddc9a4 60%, #c9b288 100%);
-  color: var(--color-ink);
-  box-shadow: var(--elevation-raised), inset 0 0 40px rgba(120, 92, 50, 0.25);
+    linear-gradient(180deg, var(--canvas-base) 0%, var(--canvas-mid) 72%, var(--canvas-deep) 100%);
+  border: 1px dashed var(--canvas-rule);
+  box-shadow: var(--elevation-flat), inset 0 0 0 1px rgba(255, 252, 244, 0.5);
 }
 
-/* A single warm hearth pool behind a screen's focal content — the dark reads
-   as a lit room, not a void. Apply to an absolutely-positioned -z layer. */
+/* Open-sky light pooled over a screen's focal content. This used to be the
+   candle; it is now the daylight falling on the table — barely there, and it
+   never reads as a glow. Apply to an absolutely-positioned -z layer. */
 .hearth-glow {
-  background: radial-gradient(
-    ellipse 58% 48% at 50% 42%,
-    rgba(232, 169, 58, 0.16) 0%,
-    rgba(232, 169, 58, 0.05) 38%,
-    transparent 66%
+  background: linear-gradient(
+    180deg,
+    rgba(255, 248, 228, 0.09) 0%,
+    rgba(255, 248, 228, 0.03) 34%,
+    transparent 62%
   );
 }
 .hearth-glow-strong {
-  background: radial-gradient(
-    ellipse 50% 42% at 50% 44%,
-    rgba(232, 169, 58, 0.28) 0%,
-    rgba(201, 143, 44, 0.08) 40%,
-    transparent 68%
+  background: linear-gradient(
+    180deg,
+    rgba(255, 248, 228, 0.16) 0%,
+    rgba(255, 248, 228, 0.05) 40%,
+    transparent 70%
   );
 }
 
-/* Faint forged-metal grain — a tiling SVG noise, mixed low over iron chrome. */
+/* Canvas/leather grain — a tiling SVG noise, mixed low over CHROME and PAGE
+   grounds. Never over numeric data. */
 .iron-grain {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  background-size: 160px 160px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
   mix-blend-mode: overlay;
-  opacity: 0.12;
+  opacity: 0.09;
 }
 
 /* Visible focus ring helper (RAC focus-visible already wires data attrs). */
@@ -254,57 +355,68 @@ svg {
   box-shadow: var(--focus-ring);
 }
 
-/* The ONE floating combat-HUD chrome recipe — iron-tinted, lightly translucent
-   so the board reads through, blurred, beveled. Every HUD panel uses this so
-   panels stop being visually interchangeable through ad-hoc one-off classes. */
+/* The ONE combat-HUD chrome recipe — a saddle-leather strap with brass rivets
+   at the corners and a tooled brass line inside the edge. Every HUD panel uses
+   this so panels stop being visually interchangeable through one-off classes. */
 .hud-panel {
-  background: linear-gradient(158deg, rgba(40, 33, 25, 0.92), rgba(18, 14, 10, 0.94));
-  border: 1px solid rgba(120, 98, 60, 0.35);
+  background:
+    var(--rivet-tl),
+    var(--rivet-tr),
+    var(--rivet-bl),
+    var(--rivet-br),
+    linear-gradient(158deg, rgba(74, 52, 33, 0.96) 0%, rgba(28, 20, 13, 0.97) 100%);
+  border: 1px solid rgba(28, 18, 9, 0.9);
   border-radius: var(--radius-md);
-  box-shadow: var(--bevel-iron);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  box-shadow:
+    var(--bevel-iron),
+    inset 0 0 0 4px rgba(0, 0, 0, 0.001),
+    inset 0 0 0 5px rgba(176, 138, 62, 0.3);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
 }
+/* the one dashed treatment: a stitch line under a panel header */
 .hud-panel-header {
-  border-bottom: 1px solid rgba(120, 98, 60, 0.22);
+  border-bottom: 1px dashed rgba(176, 138, 62, 0.38);
 }
 .hud-divider {
   width: 1px;
   align-self: stretch;
-  background: linear-gradient(to bottom, transparent, rgba(120, 98, 60, 0.35), transparent);
+  background: rgba(176, 138, 62, 0.3);
 }
 
-/* AP pips — the single glowing readout. Filled pip = available AP. */
+/* AP pips — struck brass discs, not lamps. Filled pip = available AP. */
 .ap-pip {
   width: 9px;
   height: 9px;
   border-radius: 9999px;
-  border: 1px solid rgba(120, 98, 60, 0.6);
+  border: 1px solid rgba(176, 138, 62, 0.55);
 }
 .ap-pip--full {
-  background: radial-gradient(circle at 35% 30%, #f3c46a, var(--color-hearth) 70%);
-  border-color: var(--color-hearth);
-  box-shadow: 0 0 6px rgba(232, 169, 58, 0.7);
+  background: linear-gradient(160deg, #e6c887 0%, var(--iron-edge) 58%, #7a5a1e 100%);
+  border-color: #e6c887;
 }
 .ap-pip--empty {
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.4);
 }
 
-/* Forged buttons — chrome you ACT on. Button.tsx consumes these recipes;
-   never hand-roll a <button> style. The variants share one physical body
-   (iron slab, top catchlight, dark under-seam) and differ only in accent:
-   primary = hearth-lit, secondary = plain iron, ghost = etched on hover,
-   danger = ember-forged. RAC sets the data-* state attributes. */
+/* Buttons — chrome you ACT on, so they stay leather on BOTH grounds (that is
+   the material contract: leather = act, canvas = read). Button.tsx consumes
+   these recipes; never hand-roll a <button> style. The variants share one
+   physical body (leather slab, top catchlight, dark under-seam) and differ
+   only in edge: primary = brass-edged, secondary = plain, ghost = etched on
+   hover, danger = oxblood-edged. RAC sets the data-* state attributes. */
 .btn-forged {
   border-radius: var(--radius-sm);
-  background: linear-gradient(168deg, var(--iron-700) 0%, var(--iron-900) 100%);
-  border: 1px solid rgba(120, 98, 60, 0.45);
-  border-top-color: rgba(170, 140, 92, 0.5);
-  border-bottom-color: rgba(0, 0, 0, 0.6);
+  background: linear-gradient(
+    168deg,
+    color-mix(in oklab, var(--iron-700) 46%, var(--iron-900)) 0%,
+    var(--iron-900) 100%
+  );
+  border: 1px solid rgba(28, 18, 9, 0.9);
   box-shadow:
-    inset 0 1px 0 rgba(232, 200, 140, 0.1),
-    inset 0 -2px 6px rgba(0, 0, 0, 0.35),
-    0 2px 6px rgba(0, 0, 0, 0.4);
+    inset 0 1px 0 rgba(214, 178, 108, 0.22),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(20, 13, 6, 0.4);
   color: var(--color-parchment);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -319,55 +431,58 @@ svg {
     filter var(--dur-quick) ease;
 }
 .btn-forged[data-hovered] {
-  border-color: rgba(201, 152, 92, 0.75);
+  border-color: rgba(176, 138, 62, 0.85);
   box-shadow:
-    inset 0 1px 0 rgba(232, 200, 140, 0.16),
-    inset 0 0 10px rgba(232, 169, 58, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.45);
+    inset 0 1px 0 rgba(230, 200, 135, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    0 2px 5px rgba(20, 13, 6, 0.45);
 }
 .btn-forged[data-pressed] {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+  transform: translateY(1px) scale(0.985);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.55);
 }
 .btn-forged[data-focus-visible] {
   box-shadow: var(--focus-ring);
 }
 .btn-forged[data-disabled] {
-  opacity: 0.45;
-  filter: saturate(0.4);
+  opacity: 0.52;
+  filter: saturate(0.35);
   cursor: not-allowed;
   box-shadow: none;
 }
+/* primary = the brass-faced strap: a real edge, never a halo */
 .btn-forged--primary {
   background: linear-gradient(
     168deg,
-    color-mix(in oklab, var(--color-hearth) 22%, var(--iron-700)),
-    color-mix(in oklab, var(--color-hearth) 7%, var(--iron-900))
+    color-mix(in oklab, var(--iron-700) 72%, var(--iron-900)) 0%,
+    color-mix(in oklab, var(--iron-700) 24%, var(--iron-900)) 100%
   );
-  border-color: color-mix(in oklab, var(--color-hearth) 55%, transparent);
-  color: color-mix(in oklab, var(--color-parchment) 82%, var(--color-hearth));
+  border-color: var(--iron-edge);
+  box-shadow:
+    inset 0 1px 0 rgba(230, 200, 135, 0.34),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    0 2px 5px rgba(20, 13, 6, 0.45);
+  color: #fbf3e2;
 }
 .btn-forged--primary[data-hovered] {
-  border-color: var(--color-hearth);
-  box-shadow:
-    inset 0 1px 0 rgba(232, 200, 140, 0.18),
-    0 0 12px rgba(232, 169, 58, 0.32),
-    0 2px 8px rgba(0, 0, 0, 0.45);
+  border-color: #e6c887;
+  background: linear-gradient(
+    168deg,
+    color-mix(in oklab, var(--iron-700) 84%, var(--iron-900)) 0%,
+    color-mix(in oklab, var(--iron-700) 34%, var(--iron-900)) 100%
+  );
 }
 .btn-forged--danger {
   background: linear-gradient(
     168deg,
-    color-mix(in oklab, var(--color-ember) 18%, var(--iron-700)),
-    color-mix(in oklab, var(--color-ember) 6%, var(--iron-900))
+    color-mix(in oklab, var(--color-ember) 42%, var(--iron-900)) 0%,
+    color-mix(in oklab, var(--color-ember) 12%, var(--iron-900)) 100%
   );
-  border-color: color-mix(in oklab, var(--color-ember) 50%, transparent);
-  color: color-mix(in oklab, var(--color-parchment) 80%, var(--color-ember));
+  border-color: color-mix(in oklab, var(--color-ember) 78%, var(--iron-edge));
+  color: #f7e3da;
 }
 .btn-forged--danger[data-hovered] {
-  border-color: var(--color-ember);
-  box-shadow:
-    0 0 12px rgba(192, 57, 43, 0.3),
-    0 2px 8px rgba(0, 0, 0, 0.45);
+  border-color: #c4462f;
 }
 .btn-forged--ghost {
   background: transparent;
@@ -376,8 +491,8 @@ svg {
   color: var(--color-parchment-dim);
 }
 .btn-forged--ghost[data-hovered] {
-  background: color-mix(in oklab, var(--color-hearth) 8%, transparent);
-  border-color: rgba(120, 98, 60, 0.4);
+  background: color-mix(in oklab, var(--iron-700) 26%, transparent);
+  border-color: rgba(176, 138, 62, 0.5);
   color: var(--color-parchment);
   box-shadow: none;
 }
@@ -390,25 +505,29 @@ svg {
   font-size: 0.95rem;
 }
 
-/* Forged combat card — iron frame, bevel, hearth-lit states. Transforms stay
-   in Tailwind (motion-safe); only background + shadow live here so the two
-   never fight. RAC sets data-hovered / data-disabled / data-selected. */
+/* Combat card — a tooled leather tab. Transforms stay in Tailwind
+   (motion-safe); only background + shadow live here so the two never fight.
+   Selection is a hard brass edge, not a bloom. RAC sets the data attrs. */
 .forged-card {
-  background: linear-gradient(158deg, var(--iron-700) 0%, var(--iron-900) 100%);
+  background: linear-gradient(
+    158deg,
+    color-mix(in oklab, var(--iron-700) 34%, var(--iron-900)) 0%,
+    var(--iron-900) 100%
+  );
   box-shadow: var(--bevel-iron);
   transition: transform var(--dur-quick) var(--ease-out-quart),
     box-shadow var(--dur-quick) ease, filter var(--dur-quick) ease;
 }
 .forged-card[data-hovered]:not([data-disabled]):not([data-selected]) {
-  box-shadow: var(--bevel-iron), 0 12px 24px rgba(0, 0, 0, 0.55),
-    0 0 16px rgba(232, 169, 58, 0.26);
+  box-shadow: var(--bevel-iron), 0 8px 16px rgba(20, 13, 6, 0.5),
+    inset 0 0 0 1px rgba(176, 138, 62, 0.55);
 }
 .forged-card[data-selected] {
-  box-shadow: var(--bevel-iron), 0 0 0 1.5px var(--color-hearth),
-    0 0 22px rgba(232, 169, 58, 0.5);
+  box-shadow: var(--bevel-iron), inset 0 0 0 2px var(--iron-edge),
+    0 8px 16px rgba(20, 13, 6, 0.5);
 }
 .forged-card[data-disabled] {
-  filter: saturate(0.45) brightness(0.78);
+  filter: saturate(0.4) brightness(0.72);
 }
 
 /* Segmented HP bar — token-driven tier colour (paired with a tier label/icon
@@ -416,9 +535,14 @@ svg {
 .hp-bar {
   height: 6px;
   border-radius: 9999px;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.4);
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+.page-canvas .hp-bar,
+.surface-parchment .hp-bar {
+  background: rgba(42, 33, 25, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(42, 33, 25, 0.3);
 }
 .hp-bar__fill {
   height: 100%;
@@ -427,7 +551,7 @@ svg {
 }
 
 /* =========================================================================
-   Atmosphere — slow-drifting fog for overworld + dungeon (story 280).
+   Atmosphere — slow-drifting haze for overworld + dungeon (story 280).
    Pure background-position animation on tiling SVG noise; no JS/layout thrash.
    ========================================================================= */
 @keyframes fogDriftSlow {
@@ -441,13 +565,12 @@ svg {
 .atmosphere-fog-slow { animation: fogDriftSlow 90s linear infinite; }
 .atmosphere-fog-fast { animation: fogDriftFast 60s linear infinite; }
 
-/* Slow ember/candle flicker for hearth-lit focal elements (title plate etc.). */
+/* Candle flicker is GONE — daylight does not gutter. The class is retained as
+   an inert hook so the components that reference it keep working. */
 @keyframes hearthFlicker {
-  0%, 100% { opacity: 1; filter: brightness(1); }
-  45%      { opacity: 0.94; filter: brightness(1.06); }
-  70%      { opacity: 0.97; filter: brightness(0.97); }
+  0%, 100% { opacity: 1; filter: none; }
 }
-.hearth-flicker { animation: hearthFlicker 5.5s ease-in-out infinite; }
+.hearth-flicker { animation: none; }
 
 /* Turn-phase banner — a full-width band wipes across on team handoff so turn
    ownership is never missed. transform/opacity only. */
@@ -466,12 +589,14 @@ svg {
 @keyframes roadDash { to { stroke-dashoffset: -24; } }
 .road-dash { animation: roadDash 0.85s linear infinite; }
 
-/* Drifting embers rising from the hearth (title screen / camp). */
+/* Was "embers rising from the hearth"; now DUST lifting off a camp track in
+   daylight. Same motion contract (transform + opacity only, one named
+   keyframe the reduced-motion block gates), no fire. */
 @keyframes emberRise {
   from { transform: translateY(0) translateX(0); opacity: 0; }
-  10%  { opacity: 0.7; }
-  90%  { opacity: 0.5; }
-  to   { transform: translateY(-120px) translateX(var(--ember-drift, 10px)); opacity: 0; }
+  14%  { opacity: 0.34; }
+  86%  { opacity: 0.2; }
+  to   { transform: translateY(-96px) translateX(var(--ember-drift, 10px)); opacity: 0; }
 }
 
 /* =========================================================================
@@ -488,13 +613,15 @@ svg {
   .atmosphere-fog-fast,
   .hearth-flicker,
   .phase-banner,
-  .road-dash {
+  .road-dash,
+  .road-comet {
     animation: none;
   }
   /* inline-styled looping focal motion (overworld marker/quest pulse, title
-     embers) — gate by matching the inline animation name so nothing loops. */
+     dust) — gate by matching the inline animation name so nothing loops. */
   [style*="overworldPulse"],
-  [style*="emberRise"] {
+  [style*="emberRise"],
+  [style*="nodePing"] {
     animation: none !important;
   }
 }
