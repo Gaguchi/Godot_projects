@@ -192,6 +192,12 @@ export function OverworldScene({
   }, [mapId, currentNodeId, map])
 
   const onPanStart = (e: React.MouseEvent): void => {
+    // Clear the drag flag on EVERY press, including presses that land on a
+    // node. `moved` gates the node-click handler, and it used to be reset only
+    // on the pan path — so one pan latched it true, the early return below
+    // skipped the reset forever after, and every subsequent node click was
+    // silently swallowed. Travel became impossible after you moved the map.
+    dragState.current.moved = false
     if ((e.target as HTMLElement).closest('[id^="node-"]')) return
     dragState.current = {
       active: true,
@@ -210,6 +216,15 @@ export function OverworldScene({
   }
   const onPanEnd = (): void => {
     dragState.current.active = false
+    // Clear the drag flag AFTER this gesture's own click has been dispatched.
+    // `moved` exists to swallow the click that ends a drag, but it used to
+    // latch forever: node beacons press through react-aria, which stops the
+    // mousedown before it reaches onPanStart, so nothing ever reset it and
+    // every node click after your first pan was silently ignored — travel
+    // became impossible once you moved the map. A macrotask is late enough
+    // that the drag-release click still sees `true`, and early enough that
+    // the player's next press sees `false`.
+    setTimeout(() => { dragState.current.moved = false }, 0)
   }
 
   // ── Pending combat from a dialogue's `startCombat` effect ───────
@@ -622,16 +637,36 @@ export function OverworldScene({
           {/* Party token — walks the actual road spline between nodes. */}
           <Caravan nodes={map.nodes} currentNodeId={currentNodeId} walkMs={MARKER_WALK_MS} palette={pal} />
 
-          {/* Region-edge stubs — ink notes pointing to off-map destinations */}
+          {/* Region gateways — the ONLY way out of a region, so they must be
+              pressable. These were plain divs: the crossing logic in
+              handleNodeClick has always worked, but it keys on a node id, and
+              the destination lives in the OTHER map's node list so it never
+              rendered as a clickable beacon. The result was a run with no
+              ending — no reachable Thornwood, therefore no Iron Throne. */}
           {regionEdgesFromHere.map((re, i) => {
             const cur = map.nodes.find((n) => n.id === currentNodeId)
             if (!cur) return null
-            const otherMapId = re.fromMapId === mapId ? re.toMapId : re.fromMapId
-            const dir = otherMapId === 'thornwood' ? 1 : otherMapId === 'borderlands' ? -1 : 1
+            const goingOnward = re.fromMapId === mapId
+            const otherMapId = goingOnward ? re.toMapId : re.fromMapId
+            const otherNodeId = goingOnward ? re.toNodeId : re.fromNodeId
+            // Direction from the DATA, not from hardcoded region names (the old
+            // ternary pointed the wrong way whenever you stood in Ashfall).
+            const dir = goingOnward ? 1 : -1
+            const label = REGIONS[otherMapId]?.name ?? otherMapId
             return (
-              <div
+              <button
                 key={`re-${i}`}
-                className="absolute flex items-center gap-1 voice-display text-xs italic tracking-[0.06em]"
+                type="button"
+                id={`region-gateway-${otherMapId}`}
+                onClick={() => commitTravel([otherNodeId])}
+                onPointerEnter={() => setHoverNodeId(otherNodeId)}
+                onPointerLeave={() => setHoverNodeId((id) => (id === otherNodeId ? null : id))}
+                aria-label={`Travel onward to ${label}`}
+                className="absolute flex items-center gap-1 voice-display text-xs italic tracking-[0.06em]
+                           cursor-pointer rounded-[2px] px-1.5 py-1
+                           transition-[background-color,transform] duration-[var(--dur-quick)]
+                           hover:bg-[color-mix(in_oklab,var(--canvas-deep)_70%,transparent)]
+                           focus-visible:outline-none focus-visible:[box-shadow:var(--focus-ring)]"
                 style={{
                   left: cur.position.x + dir * 80 - 30,
                   top: cur.position.y - 44,
@@ -640,8 +675,8 @@ export function OverworldScene({
                 }}
               >
                 <Icon name="arrow-right" size={12} />
-                {REGIONS[otherMapId]?.name ?? otherMapId}
-              </div>
+                {label}
+              </button>
             )
           })}
 

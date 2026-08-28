@@ -1,3 +1,4 @@
+import { getQuestEngine } from '../../state/questEngine'
 import React from 'react'
 import { useRunStore } from '../../state/runStore'
 import { Dialog, Button, Heading, Icon } from '../components'
@@ -7,8 +8,13 @@ export interface QuestLogProps {
   onClose: () => void
 }
 
+/** Stage prose per quest, keyed by the REAL quest id (the `sq_` prefix is
+ *  part of it — this table used to key Blood Ties as 'blood_ties' and so never
+ *  matched, printing "Unmarked entry" for an accepted quest). Display NAMES now
+ *  come from the quest registry so a missing entry here can only ever cost the
+ *  stage line, never the quest's identity. */
 const QUEST_DESCRIPTIONS: Record<string, { name: string; stages: Record<string, string> }> = {
-  blood_ties: {
+  sq_blood_ties: {
     name: 'Blood Ties',
     stages: {
       find_daren: 'Find Daren and resolve the matter — capture or kill.',
@@ -183,6 +189,7 @@ export function QuestLog({ open, onClose }: QuestLogProps): React.JSX.Element {
             <div className="mt-1 flex min-h-0 flex-1 flex-col overflow-y-auto">
               {activeQuests.map(([questId, state]) => {
                 const descr = QUEST_DESCRIPTIONS[questId]
+                const registryName = getQuestEngine().quests[questId]?.name
                 if (import.meta.env.DEV && !descr) {
                   console.warn(`[QuestLog] no display entry for quest id "${questId}"`)
                 }
@@ -202,7 +209,7 @@ export function QuestLog({ open, onClose }: QuestLogProps): React.JSX.Element {
                                 : 'text-[color:var(--color-parchment)]')
                             }
                           >
-                            {descr?.name ?? 'Unmarked entry'}
+                            {descr?.name ?? registryName ?? 'Unmarked entry'}
                           </span>
                           {complete && (
                             <span

@@ -190,7 +190,17 @@ export function GameHud({
 
       {/* Context + resources */}
       <div
-        className="hud-panel pointer-events-none fixed left-1/2 top-4 z-[60] flex -translate-x-1/2 items-center gap-3 px-4 py-2"
+        className={
+          // The resource bar used to be leather on EVERY screen, so a dark
+          // riveted plate floated over each linen page and became the loudest
+          // object on it — out-shouting the page's actual primary action. On a
+          // page ground it becomes a pinned ledger tag; the scope re-declares
+          // the text ramp, so the numerals invert to walnut ink on their own.
+          (parchment
+            ? 'surface-parchment rounded-md'
+            : 'hud-panel')
+          + ' pointer-events-none fixed left-1/2 top-4 z-[60] flex -translate-x-1/2 items-center gap-3 px-4 py-2'
+        }
         style={parchment ? { boxShadow: BAND_SAFE_SHADOW } : undefined}
       >
         {(regionName || location) && (
@@ -216,7 +226,9 @@ export function GameHud({
         <div className="hud-divider" />
         <span className="flex flex-col items-center leading-none">
           <span className="text-[0.55rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">Gold</span>
-          <span className="numeral text-sm text-hearth">{gold}</span>
+          {/* var(), not the text-hearth utility: Tailwind's @theme utility bakes
+              the ROOT brass and would ignore the page scope's text-safe value. */}
+          <span className="numeral text-sm" style={{ color: 'var(--color-hearth)' }}>{gold}</span>
         </span>
       </div>
 

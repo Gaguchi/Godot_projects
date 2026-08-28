@@ -423,9 +423,16 @@ export function App(): React.JSX.Element {
       run.dispatch({ type: 'arriveAtNode', payload: { nodeId: asNodeId(nextNode as unknown as string) } })
       run.dispatch({ type: 'startTravelPath', payload: { path: { ...pending, remainingNodeIds: [] } } })
     }
-    const wasTutorial = useCombatStore.getState().state.battleTag === 'tutorial'
+    const combat = useCombatStore.getState().state
+    const wasTutorial = combat.battleTag === 'tutorial'
+    // A fight INSIDE a dungeon returns you to the dungeon, not to the world
+    // map. Every combat room used to eject the player to the overworld and
+    // force them to walk back in, which made a multi-room crawl impossible.
+    // The dungeon's own boss room clears activeDungeon before this runs, so
+    // finishing a dungeon still lands on the map.
+    const inDungeon = run.activeDungeon !== null && combat.battleTag !== 'finalBoss'
     useCombatStore.getState().reset()
-    setView('overworld')
+    setView(inDungeon ? 'dungeon' : 'overworld')
     // Tutorial → overworld handoff fires the prologue (deferred from New Game).
     if (wasTutorial && !run.flags.has('prologue_seen' as never)) {
       run.dispatch({
@@ -574,10 +581,13 @@ export function App(): React.JSX.Element {
                 padding: '2px 8px',
                 fontSize: 11,
                 letterSpacing: '0.04em',
-                color: '#c9985c',
-                background: 'rgba(16,10,5,0.66)',
-                border: '1px solid rgba(201,152,92,0.3)',
-                borderRadius: 4,
+                // Tokens, not the old dark web-chip literals: this bar sits on
+                // the linen page in town/overworld, where a near-black pill
+                // with amber text read as a debug overlay stuck to the sheet.
+                color: 'var(--color-text-muted)',
+                background: 'color-mix(in oklab, var(--canvas-deep) 62%, transparent)',
+                border: '1px solid var(--canvas-rule)',
+                borderRadius: 3,
               }}
             >
               <span
@@ -586,8 +596,8 @@ export function App(): React.JSX.Element {
                   fontWeight: 600,
                   padding: '0 4px',
                   borderRadius: 2,
-                  border: '1px solid rgba(201,152,92,0.45)',
-                  color: '#e8c98a',
+                  border: '1px solid var(--canvas-rule)',
+                  color: 'var(--color-parchment)',
                 }}
               >
                 Q
@@ -599,8 +609,8 @@ export function App(): React.JSX.Element {
                   fontWeight: 600,
                   padding: '0 4px',
                   borderRadius: 2,
-                  border: '1px solid rgba(201,152,92,0.45)',
-                  color: '#e8c98a',
+                  border: '1px solid var(--canvas-rule)',
+                  color: 'var(--color-parchment)',
                   marginLeft: 8,
                 }}
               >

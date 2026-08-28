@@ -384,6 +384,13 @@ svg {
   background: rgba(176, 138, 62, 0.3);
 }
 
+/* On a page ground the brass hairline all but vanishes; use the page's own
+   ink rule so the divider reads as ruling, not as a scratch. */
+.page-canvas .hud-divider,
+.surface-parchment .hud-divider {
+  background: var(--canvas-rule);
+}
+
 /* AP pips — struck brass discs, not lamps. Filled pip = available AP. */
 .ap-pip {
   width: 9px;

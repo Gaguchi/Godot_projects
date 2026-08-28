@@ -132,14 +132,19 @@ export function generateDungeon(rng: RNG, params: DungeonGenerateParams): Dungeo
   // Build rows[][]
   const rows: DungeonRoom[][] = []
   for (let r = 0; r <= bossRow; r++) {
+    // The boss row holds exactly one room. Its id is `r{bossRow}c0`, which the
+    // column scan below ALSO finds in nodeMap — so the old code pushed the
+    // boss twice, putting a duplicate node in the graph and tripping React's
+    // duplicate-key warning on every dungeon render.
+    if (r === bossRow) {
+      rows.push([bossRoom])
+      continue
+    }
     const row: DungeonRoom[] = []
     for (let c = 0; c < COLS_PER_ROW; c++) {
       const id = nodeIdAt(r, c)
       const room = nodeMap.get(id)
       if (room) row.push(room)
-    }
-    if (r === bossRow) {
-      row.push(bossRoom)
     }
     rows.push(row)
   }
