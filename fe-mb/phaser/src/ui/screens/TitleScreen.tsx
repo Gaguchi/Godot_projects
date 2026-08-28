@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { Focusable } from 'react-aria-components'
-import { Button, Tooltip } from '../components'
+import { Button, Tooltip, Focusable } from '../components'
 import { GAME_TITLE, GAME_TAGLINE } from '../strings'
 import { listSlots, isSlotEmpty } from '../../persistence/saveSlots'
 
@@ -160,10 +159,22 @@ export function TitleScreen({ onNewGame, onLoadGame, onQuit }: TitleScreenProps)
               content={<span className="font-body italic">No chronicle yet — forge a new one.</span>}
               trigger={
                 <Focusable>
+                  {/* Wraps the DISABLED Load button so it can still explain
+                      itself: a disabled <button> emits no pointer events, so
+                      the hover target has to live outside it. role/tabIndex
+                      make the wrapper a real focus stop — without them RAC
+                      warns "Focusable child must have an interactive ARIA
+                      role" on every boot, and keyboard users never reach the
+                      disabled-reason tooltip at all. */}
                   <div
+                    role="button"
+                    aria-disabled="true"
+                    tabIndex={0}
                     className="flex w-full flex-col items-stretch"
                     onPointerEnter={() => setShowLoadHint(true)}
                     onPointerLeave={() => setShowLoadHint(false)}
+                    onFocus={() => setShowLoadHint(true)}
+                    onBlur={() => setShowLoadHint(false)}
                   >
                     {loadButton}
                   </div>

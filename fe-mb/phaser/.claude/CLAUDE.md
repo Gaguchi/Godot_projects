@@ -22,7 +22,7 @@ For research-bearing tasks (procgen rules, RNG strategies, growth math, scaling 
 
 ## Run
 
-- `npm run dev` — Vite at :5173
+- `npm run dev` — Vite at :5183 (pinned via `strictPort`; **:5173 belongs to a different app on this machine**)
 - `npm test` — Vitest unit tests
 - `npm run test:e2e` — Playwright E2E
 - `npm run typecheck` — tsc --noEmit
@@ -30,7 +30,7 @@ For research-bearing tasks (procgen rules, RNG strategies, growth math, scaling 
 - `npm run lint:content` — static content checks (broken card/dialogue refs; offense-less classes)
 - `npm run check-context-doc` — CONTEXT.md drift check (CI)
 - `npm run verify` — composite green gate: typecheck + typecheck:cli + lint:content + check-context-doc + unit tests
-- `npm run test:e2e` — Playwright incl. `tests/e2e/visual.spec.ts` (boot/console-error, no-overflow, dialogue-clipping, masked snapshots). If :5173 is taken, `PW_BASE_URL=http://localhost:5174 npx playwright test`; regenerate baselines with `--update-snapshots`.
+- `npm run test:e2e` — Playwright incl. `tests/e2e/visual.spec.ts` (boot/console-error, no-overflow, dialogue-clipping, full-frame snapshots). The config starts its own dev server on :5183 and reuses one if already running — so if something ELSE is on :5183 you will silently test the wrong app. Override with `PW_BASE_URL`; regenerate baselines with `--update-snapshots`. Snapshots are unmasked and tolerance is tight (0.0005) on purpose: they were previously masked into solid-magenta blanks that could never fail.
 
 ## Headless CLI (dev tool — `scripts/cli/`, see its README)
 

@@ -4,11 +4,12 @@
 // (Rust + MSVC build tools, ~6 GB) does not fit on this machine's nearly-full
 // C: drive, whereas Electron installs entirely via npm onto E:.
 //
-// Loads the dev server by default; set FEMB_URL to point elsewhere (e.g. a
-// built+previewed dist for a production-feel launch).
+// Loads the dev server by default (vite is pinned to 5183 via strictPort in
+// vite.config.ts — 5173 belongs to another app on this machine); set FEMB_URL
+// to point elsewhere (e.g. a built+previewed dist for a production-feel run).
 const { app, BrowserWindow, Menu } = require('electron')
 
-const URL = process.env.FEMB_URL || 'http://localhost:5174/'
+const URL = process.env.FEMB_URL || 'http://localhost:5183/'
 
 function createWindow() {
   const win = new BrowserWindow({

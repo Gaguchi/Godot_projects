@@ -6,6 +6,12 @@ import {
 } from 'react-aria-components'
 import { stagePortalContainer } from '../stage'
 
+/** Re-exported through the components boundary so screens can wrap a
+ *  non-interactive trigger (e.g. a disabled button) without importing
+ *  react-aria-components directly — src/ui/** outside components/ is barred
+ *  from that import by an ESLint layer rule. */
+export { Focusable } from 'react-aria-components'
+
 export interface TooltipProps {
   trigger: React.ReactElement
   content: React.ReactNode

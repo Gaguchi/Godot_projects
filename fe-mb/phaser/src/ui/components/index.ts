@@ -13,7 +13,7 @@ export type { MenuProps } from './Menu'
 export { ListBox, ListBoxItem } from './ListBox'
 export type { ListBoxProps } from './ListBox'
 
-export { Tooltip } from './Tooltip'
+export { Tooltip, Focusable } from './Tooltip'
 export type { TooltipProps } from './Tooltip'
 
 export { Heading } from './Heading'
