@@ -11,11 +11,12 @@ import cardsJson from '../../src/data/content/cards.json'
 
 const cardsById = new Map(cardsJson.map((c) => [c.id, c]))
 
-const ENEMY_KEYS = ['bandit', 'brigand', 'wolf']
-export function isEnemyUnit(u: Unit): boolean {
-  const cls = u.classId as unknown as string
-  return ENEMY_KEYS.some((k) => cls.includes(k))
-}
+// Re-exported from the single source of truth rather than reimplemented. The
+// local copy that used to live here predated `Unit.team` and listed only
+// bandit/brigand/wolf, so the Warlord in `--scenario boss` rendered as an ALLY
+// in the ASCII board and in --json output.
+export { isEnemyUnit } from '../../src/systems/team'
+import { isEnemyUnit } from '../../src/systems/team'
 
 export function tileXY(tileId: string): [number, number] {
   const [x, y] = tileId.split(',')

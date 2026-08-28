@@ -184,22 +184,55 @@ function pickRoleTargets(state: CombatState, ai: EnemyClassAI, self: Unit): Role
   }
 }
 
+const orthNeighbours = (tile: string): string[] => {
+  const [x, y] = tileXY(tile)
+  return [`${x - 1},${y}`, `${x + 1},${y}`, `${x},${y - 1}`, `${x},${y + 1}`]
+}
+
 /**
- * Step `self.position` one tile toward `dest` (Manhattan, prefers x then y).
- * Returns the candidate tile, or `null` if the move is blocked.
+ * Step `self.position` one tile toward `dest`, routing AROUND blockers.
+ *
+ * Distance is a BFS field flooded from `dest` over unoccupied tiles (living
+ * units are walls; corpses are not; `dest` itself is allowed occupied — it is
+ * usually the target's own tile). The step taken is the free neighbour with
+ * the strictly smallest field value, so movement always makes real progress
+ * and terminates.
+ *
+ * Why not Manhattan: the old axis-only version froze the moment one party
+ * unit stood on the single approach tile (the "melee AI permanently stalls"
+ * playtest P1 — enemies passed every turn for 12+ rounds), and even a
+ * Manhattan-based sidestep cannot escape geometries where every legal detour
+ * momentarily INCREASES straight-line distance. Board is 14×10; the flood is
+ * ~140 cells, dispatched a handful of times per enemy turn — cheap.
  */
-function stepToward(state: CombatState, fromTile: string, dest: string): string | null {
-  const [fx, fy] = tileXY(fromTile)
-  const [dx, dy] = tileXY(dest)
-  const candidates: string[] = []
-  if (dx < fx) candidates.push(`${fx - 1},${fy}`)
-  if (dx > fx) candidates.push(`${fx + 1},${fy}`)
-  if (dy < fy) candidates.push(`${fx},${fy - 1}`)
-  if (dy > fy) candidates.push(`${fx},${fy + 1}`)
-  for (const c of candidates) {
-    if (inBounds(state, c) && !tileOccupied(state, c)) return c
+function stepToward(
+  state: CombatState,
+  fromTile: string,
+  dest: string,
+  banned?: ReadonlySet<string>,
+): string | null {
+  const dist = new Map<string, number>()
+  dist.set(dest, 0)
+  const queue = [dest]
+  while (queue.length > 0) {
+    const t = queue.shift()!
+    const d = dist.get(t)!
+    for (const n of orthNeighbours(t)) {
+      if (dist.has(n) || !inBounds(state, n)) continue
+      // fromTile is the mover itself — it must receive a field value even
+      // though it is "occupied", or the mover could never read its own cell.
+      if (n !== fromTile && tileOccupied(state, n)) continue
+      dist.set(n, d + 1)
+      queue.push(n)
+    }
   }
-  return null
+  const here = dist.get(fromTile)
+  if (here === undefined) return null // fully walled off — genuinely stuck
+  const best = orthNeighbours(fromTile)
+    .filter(c => inBounds(state, c) && !tileOccupied(state, c) && !banned?.has(c) && dist.has(c))
+    .map(c => ({ tile: c, d: dist.get(c)! }))
+    .sort((a, b) => a.d - b.d)[0]
+  return best && best.d < here ? best.tile : null
 }
 
 interface ActionContext {
@@ -270,11 +303,13 @@ export function planTurn(state: CombatState, rng: RNG, enemyId: UnitId): CombatE
   // visually). The reducer just teleports — the animation is cosmetic.
   let pos = self.position as unknown as string
   const dest = targets.desiredPosition ?? (targets.primary.position as unknown as string)
+  const walked = new Set<string>([pos])
   for (let step = 0; step < ai.movement; step++) {
     if (pos === dest) break
-    const next = stepToward(state, pos, dest)
+    const next = stepToward(state, pos, dest, walked)
     if (!next) break
     pos = next
+    walked.add(next)
   }
   if (pos !== (self.position as unknown as string)) {
     events.push({

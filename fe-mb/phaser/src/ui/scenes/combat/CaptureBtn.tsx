@@ -1,5 +1,6 @@
 import React from 'react'
 import { Button, Tooltip } from '../../components'
+import { isEnemyUnit } from '../../../systems/team'
 import { useCombatStore } from '../../../state/combatStore'
 import { createRng } from '../../../systems/rng'
 
@@ -33,8 +34,10 @@ export function CaptureBtn(): React.JSX.Element | null {
   for (const u of Object.values(units)) {
     if (u.hp.current <= 0) continue
     if (!u.position) continue
-    const isEnemy = (u.classId as unknown as string).includes('bandit')
-    if (!isEnemy) continue
+    // Any enemy is capturable — the reducer and battleResolver always handled
+    // every class; only this UI gate was bandit-only, silently hiding capture
+    // for wolves, thieves, clerics, and the rest of the roster.
+    if (!isEnemyUnit(u)) continue
     const enemyPos = u.position as unknown as string
     if (manhattanDistance(activePos, enemyPos) !== 1) continue
     const hpFraction = u.hp.current / Math.max(1, u.hp.max)

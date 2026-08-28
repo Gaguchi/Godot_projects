@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useCombatStore } from '../../state/combatStore'
 import { buildInitiativeQueue } from '../../systems/turnOrder'
+import { isEnemyUnit } from '../../systems/team'
 import type { UnitId } from '../../domain/ids'
 import type { Unit } from '../../domain/unit'
 
@@ -11,10 +12,11 @@ export interface InitiativeEntry {
   team: 'party' | 'enemy'
 }
 
-const ENEMY_CLASS_FRAGMENTS = ['bandit', 'brigand', 'wolf']
+// systems/team.ts is the single team authority; a stale local fragment list
+// here put shield knights / thieves / raider mages on the party side of the
+// initiative strip.
 function teamOf(u: Unit): 'party' | 'enemy' {
-  const id = u.classId as unknown as string
-  return ENEMY_CLASS_FRAGMENTS.some((s) => id.includes(s)) ? 'enemy' : 'party'
+  return isEnemyUnit(u) ? 'enemy' : 'party'
 }
 
 /**

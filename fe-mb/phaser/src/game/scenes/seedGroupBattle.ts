@@ -34,7 +34,7 @@ const DAMAGE_CARD_IDS = new Set(
   cardsJson.filter(c => c.effects.some(e => e.kind === 'Damage')).map(c => c.id),
 )
 
-const PARTY_SLOTS: Array<[number, number]> = [
+export const PARTY_SLOTS: Array<[number, number]> = [
   [2, 4], [2, 5], [1, 4], [1, 5], [0, 4], [0, 5],
 ]
 

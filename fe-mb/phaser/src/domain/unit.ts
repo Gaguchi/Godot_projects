@@ -13,6 +13,13 @@ export interface ActiveStatus {
   stacks: number
   turnsRemaining: number
   source: UnitId | null
+  /** Set when the status was applied to the ACTIVE unit during its own turn
+   *  (a self-buff like taunt/riposte/cover). The end-of-turn tick skips a
+   *  fresh status once — clearing the flag instead of decrementing — so a
+   *  "1 turn" defensive buff survives the enemy phase it was bought to cover.
+   *  Without this, every 1-turn buff expired at the end of the turn it was
+   *  played and never did anything. */
+  fresh?: boolean
 }
 
 export interface Unit {

@@ -49,10 +49,13 @@ export function ForecastPanel(): React.JSX.Element | null {
         targets: [target.position],
         card: cardPayload,
       },
-    }, createRng({ seed: 0, counter: 0 }))
+      // The combat RNG, not a fresh seed-0 stream: this panel was the one
+      // dispatch site off the deterministic chain, so any panel-confirmed
+      // card broke replay reproducibility.
+    }, createRng(useCombatStore.getState().state.rng))
   }
   const onCancel = (): void => {
-    dispatch({ type: 'unpinTarget' }, createRng({ seed: 0, counter: 0 }))
+    dispatch({ type: 'unpinTarget' }, createRng(useCombatStore.getState().state.rng))
   }
 
   return (

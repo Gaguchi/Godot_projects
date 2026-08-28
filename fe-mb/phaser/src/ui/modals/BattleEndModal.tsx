@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useCombatStore } from '../../state/combatStore'
+import { isEnemyUnit } from '../../systems/team'
 import { useRunStore } from '../../state/runStore'
 import { Dialog, Button, Heading } from '../components'
 import { CheckEventModal, type CheckEvent } from './CheckEventModal'
@@ -137,11 +138,18 @@ export function BattleEndModal({
     }
   }, [phase])
 
+  // systems/team.ts, not a bandit substring: against any non-bandit group the
+  // old checks printed "0 enemies defeated" and listed surviving ENEMIES as
+  // your party. (The victory-event check above stays bandit-specific — the
+  // interrogate_survivor event is authored for the bandits group only.)
   const partyAlive = Object.values(units).filter(
-    (u) => u.hp.current > 0 && !(u.classId as unknown as string).includes('bandit'),
+    (u) => u.hp.current > 0 && !isEnemyUnit(u),
+  )
+  const partyFallen = Object.values(units).filter(
+    (u) => u.hp.current <= 0 && !isEnemyUnit(u) && !u.captured,
   )
   const enemiesDefeated = Object.values(units).filter(
-    (u) => u.hp.current <= 0 && (u.classId as unknown as string).includes('bandit'),
+    (u) => u.hp.current <= 0 && isEnemyUnit(u) && !u.captured,
   ).length
 
   // While a victory event is active and unresolved, render only the
@@ -341,6 +349,37 @@ export function BattleEndModal({
                   )}
                 </div>
               </div>
+              {/* The fallen, named. Permadeath is the game's hardest rule and
+                  used to happen with NO acknowledgement anywhere — a unit just
+                  vanished from the board and the survivors list. */}
+              {partyFallen.length > 0 && (
+                <div className="battle-end-rise flex flex-col items-center gap-2" style={{ animationDelay: riseDelay(3) }}>
+                  <span className={LABEL_CLASS} style={{ ...LABEL_STYLE, color: 'var(--color-enemy)' }}>Fallen</span>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {partyFallen.map((u) => (
+                      <span
+                        key={u.id as unknown as string}
+                        className="voice-display inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 text-sm line-through"
+                        style={{
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          border: '1px solid color-mix(in oklab, var(--color-enemy) 30%, transparent)',
+                          color: 'var(--color-text-muted)',
+                        }}
+                      >
+                        <span
+                          aria-hidden
+                          className="inline-block h-1.5 w-1.5 rotate-45"
+                          style={{ background: 'var(--color-enemy)' }}
+                        />
+                        {u.name}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="font-body text-xs italic" style={{ color: 'var(--color-text-muted)', opacity: 0.8 }}>
+                    Lost for good. The company marches lighter.
+                  </span>
+                </div>
+              )}
             </>
           )}
 

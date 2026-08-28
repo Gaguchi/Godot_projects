@@ -1,4 +1,5 @@
 import React from 'react'
+import { isEnemyUnit } from '../../../systems/team'
 import { useCombatStore } from '../../../state/combatStore'
 import { Button, Icon } from '../../components'
 import { CharacterPortrait } from '../../components/CharacterPortrait'
@@ -29,7 +30,7 @@ export function UnitDetailPanel({ pinnedUnitId, onClose }: UnitDetailPanelProps)
   if (!pinnedUnitId || !unit) return null
 
   const classId = unit.classId as unknown as string
-  const isEnemy = ['bandit', 'brigand', 'wolf'].some((k) => classId.includes(k))
+  const isEnemy = isEnemyUnit(unit)
 
   return (
     <div

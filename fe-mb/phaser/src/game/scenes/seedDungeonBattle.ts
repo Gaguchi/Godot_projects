@@ -20,6 +20,7 @@ import type { CombatEvent, CombatGrid, DeckState } from '../../domain/combatStat
 import type { RngState } from '../../domain/rng'
 import type { DungeonDef } from '../../domain/dungeon'
 import type { EnemyGroup } from '../../domain/encounter'
+import { PARTY_SLOTS } from './seedGroupBattle'
 import { buildDeckForUnit } from '../../systems/deckBuilder'
 import { getItemDef } from '../../data/itemRegistry'
 
@@ -51,7 +52,7 @@ const GROUPS: Record<string, EnemyGroup> = {
  * GP-F4: Seed a dungeon battle. Looks up the DungeonDef by id, picks the
  * appropriate enemy group based on room type (combat / elite / boss), and
  * expands the EnemyGroup members into Unit instances on the right side of
- * the grid. Party units are seeded by the caller (overworld / boot).
+ * the grid, and places the party on the left-column slots.
  */
 export function seedDungeonBattle(
   dungeonId: string,
@@ -102,10 +103,20 @@ export function seedDungeonBattle(
     }
   }
 
+  // Position the party. The caller hands over RUN-store units, whose
+  // `position` is null outside combat — this seeder shipped without placing
+  // them, so every dungeon battle spawned the party off-board and soft-locked
+  // (the "100% stalemate at exactly 51 turns" the sim reported for all three
+  // dungeon room types). Same left-column slots as seedGroupBattle.
+  const partyUnits = party.slice(0, PARTY_SLOTS.length).map((u, i) => {
+    const [x, y] = PARTY_SLOTS[i]!
+    return { ...u, team: 'party' as const, position: asTileId(`${x},${y}`), ap: 3, armor: 0, statuses: [] }
+  })
+
   // Gear-as-deck: party decks include hand-slot gear cards; enemies are
   // innate-only until enemy gear content lands (Phase 45).
   const decks: Record<string, DeckState> = {}
-  for (const u of [...party, ...enemies]) {
+  for (const u of [...partyUnits, ...enemies]) {
     const cls = classMap.get(u.classId as unknown as string)
     if (!cls) continue
     decks[u.id as unknown as string] = buildDeckForUnit(u, {
@@ -123,6 +134,6 @@ export function seedDungeonBattle(
 
   return {
     type: 'startBattle',
-    payload: { units: [...party, ...enemies], grid, rngSeed, decks },
+    payload: { units: [...partyUnits, ...enemies], grid, rngSeed, decks },
   }
 }

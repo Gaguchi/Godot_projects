@@ -9,6 +9,7 @@ import { seedStubBattle } from './seedStubBattle'
 import { sfx } from '../../audio/engine'
 import { tilesInRange, tilesInAoe, tilesReachable, findMovePath } from '../../systems/targeting'
 import { planTurn } from '../../systems/enemyAI'
+import { isEnemyUnit } from '../../systems/team'
 import { computeForecast, type ForecastCard } from '../../systems/damage'
 import type { CombatEffect, CombatEvent } from '../../domain/combatState'
 import cardsJson from '../../data/content/cards.json'
@@ -174,10 +175,15 @@ export class BoardScene extends Phaser.Scene {
 
     // ESC cancels active selection (still wired here so canvas-only focus
     // also dismisses; HUD ESC is handled by RAC Dialog wrappers separately).
-    this.input.keyboard?.on('keydown-ESC', () => {
+    this.input.keyboard?.on('keydown-ESC', (event: KeyboardEvent) => {
       const cs2 = useCombatStore.getState()
       if (cs2.state.subPhase !== 'IDLE') {
         cs2.dispatch({ type: 'cancelSelection' }, createRng(cs2.state.rng))
+        // Consume the keystroke: App's window listener opens the pause menu
+        // on Esc and reads subPhase to defer — but by the time it runs we've
+        // already flipped subPhase to IDLE, so one press both cancelled AND
+        // paused. defaultPrevented is the cross-listener signal.
+        event?.preventDefault?.()
       }
     })
 
@@ -427,9 +433,7 @@ export class BoardScene extends Phaser.Scene {
   private renderHoverOverlay(unitId: string, state: ReturnType<typeof useCombatStore.getState>['state']): void {
     const u = state.units[unitId]
     if (!u || !u.position || u.hp.current <= 0) return
-    const isEnemy = (u.classId as unknown as string).includes('bandit')
-      || (u.classId as unknown as string).includes('brigand')
-      || (u.classId as unknown as string).includes('wolf')
+    const isEnemy = isEnemyUnit(u)
     const range = movementRangeForClass(u.classId as unknown as string)
     const blocked = new Set<string>()
     for (const other of Object.values(state.units)) {
@@ -474,10 +478,7 @@ export class BoardScene extends Phaser.Scene {
     const enemyTiles = new Set<string>()
     for (const u of Object.values(state.units)) {
       if (u.hp.current <= 0 || !u.position) continue
-      const isEnemy = (u.classId as unknown as string).includes('bandit')
-        || (u.classId as unknown as string).includes('brigand')
-        || (u.classId as unknown as string).includes('wolf')
-      if (!isEnemy) continue
+      if (!isEnemyUnit(u)) continue
       const range = movementRangeForClass(u.classId as unknown as string)
       const blocked = new Set<string>()
       for (const other of Object.values(state.units)) {
@@ -584,7 +585,7 @@ export class BoardScene extends Phaser.Scene {
     const targetUnit = Object.values(state.units).find(
       (u) => u.position && (u.position as unknown as string) === tileId,
     )
-    if (targetUnit && (targetUnit.classId as unknown as string).includes('bandit')) {
+    if (targetUnit && isEnemyUnit(targetUnit)) {
       const forecast = computeForecast(card as ForecastCard, activeUnit, targetUnit, 0)
       if (forecast && (forecast.damageBefore > 0 || forecast.heal > 0)) {
         const { x, y } = tileToWorld(tileId)
@@ -856,8 +857,11 @@ export class BoardScene extends Phaser.Scene {
 
       let view = this.unitViews.get(idStr)
       if (!view) {
-        const cls = unit.classId as unknown as string
-        const isEnemy = ['bandit', 'brigand', 'wolf'].some((k) => cls.includes(k))
+        // systems/team.ts is the ONLY team authority — this token chooser had
+        // its own stale fragment list, so 5 of 9 enemy groups (thieves, shield
+        // knights, raider mages/clerics, ember mages) rendered on the ALLY
+        // disc and friend/foe was unreadable.
+        const isEnemy = isEnemyUnit(unit)
         // Team is a SHAPE (disc = ally / spiked star = enemy) AND a colour, so
         // the read survives colour-blindness — never colour alone.
         const fill = isEnemy ? UNIT_ENEMY : UNIT_ALLY
@@ -885,7 +889,7 @@ export class BoardScene extends Phaser.Scene {
         container.add([body, sheen, nameText, hpBarBg, hpBar, hit])
         // Character sprite replaces the shape token when its texture is loaded;
         // a team-coloured base ellipse keeps the ally/enemy read colour-blind-safe.
-        const spriteId = spriteIdForUnit(unit.id as unknown as string, cls)
+        const spriteId = spriteIdForUnit(unit.id as unknown as string, unit.classId as unknown as string)
         const spriteKey = spriteId ? `unit_${spriteId}` : null
         let sprite: Phaser.GameObjects.Sprite | undefined
         if (spriteKey && this.textures.exists(spriteKey)) {

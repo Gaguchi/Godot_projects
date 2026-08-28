@@ -154,6 +154,11 @@ export function runEnemyTurns(): string[] {
 function autoPartyTurn(): string[] {
   const log: string[] = []
   let guard = 0
+  // Draw/cycle cards per turn, capped. Focus is AP-NEUTRAL now that the
+  // reducer honours its gainAp (cost 1, refund 1), so an uncapped greedy AI
+  // plays it forever — the hand refills from the reshuffled discard and the
+  // turn literally never ends (150-round "stalemate" at full HP).
+  let drawPlays = 0
   while (guard++ < 14) {
     const s = cstate()
     if (s.phase !== 'COMBAT' || s.turn.team !== 'party') break
@@ -229,7 +234,7 @@ function autoPartyTurn(): string[] {
         plays.push({ idx: i, tile: unit.position as unknown as string, score: 45 })
         continue
       }
-      if (isDraw && unit.ap >= card.apCost) {
+      if (isDraw && unit.ap >= card.apCost && drawPlays < 2) {
         plays.push({ idx: i, tile: unit.position as unknown as string, score: 15 })
         continue
       }
@@ -237,6 +242,8 @@ function autoPartyTurn(): string[] {
 
     if (plays.length > 0) {
       const best = plays.sort((a, b) => b.score - a.score)[0]!
+      const bestCard = hand[best.idx]
+      if (bestCard?.effects.some((e) => e.kind === 'DrawCards')) drawPlays++
       log.push(...applyCommand(`play ${best.idx} ${best.tile}`))
       continue
     }

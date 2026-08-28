@@ -115,6 +115,7 @@ function tickUnitStatuses(unit: Unit): { unit: Unit; effects: CombatEffect[] } {
   let hp = unit.hp.current
   let armor = unit.armor
   for (const s of unit.statuses) {
+    if (s.fresh) continue // bought this turn — exempt from this tick entirely
     const def = getStatusEffect(s.effectId)
     if (!def?.onTurnEnd) continue
     for (const e of def.onTurnEnd({ selfUnitId: unit.id, selfStacks: s.stacks, selfTurnsRemaining: s.turnsRemaining })) {
@@ -131,8 +132,16 @@ function tickUnitStatuses(unit: Unit): { unit: Unit; effects: CombatEffect[] } {
       }
     }
   }
+  // A fresh status (self-buff applied during this very turn) spends its
+  // exemption instead of a duration point: the flag clears, the counter
+  // holds, and normal decrement starts at the NEXT end of turn — after the
+  // enemy phase it was meant to cover.
   const remaining = unit.statuses
-    .map(s => ({ ...s, turnsRemaining: s.turnsRemaining - 1 }))
+    .map(s => {
+      if (!s.fresh) return { ...s, turnsRemaining: s.turnsRemaining - 1 }
+      const { fresh: _spent, ...rest } = s
+      return rest
+    })
     .filter(s => s.turnsRemaining > 0)
   return {
     unit: { ...unit, hp: { ...unit.hp, current: hp }, armor, statuses: remaining },
@@ -367,12 +376,16 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
         }
       }
 
-      // Find a target unit at each target tile (if any)
+      // Find a LIVING target unit at each target tile (if any). Corpses keep
+      // their position, so without the alive filter the first dead unit found
+      // at a tile shadowed the living one standing on it — the living enemy
+      // became immune to every single-target card (Jab "expected 11, dealt 0"
+      // in the playtest; the majority of late-fight whiffs in the sim).
       const targetUnits: Unit[] = []
       for (const tile of targets) {
         const tileStr = tile as unknown as string
         const u = Object.values(newUnits).find(
-          (cand) => cand.position && (cand.position as unknown as string) === tileStr,
+          (cand) => isAlive(cand) && cand.position && (cand.position as unknown as string) === tileStr,
         )
         if (u) targetUnits.push(u)
       }
@@ -404,10 +417,18 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       const applyStatusTo = (target: Unit, effectId: string, stacks: number, turns: number): void => {
         const tStr = target.id as unknown as string
         const cur = newUnits[tStr] ?? target
-        newUnits[tStr] = {
-          ...cur,
-          statuses: mergeStatus(cur.statuses, asStatusEffectId(effectId), stacks, turns, srcId),
+        let statuses = mergeStatus(cur.statuses, asStatusEffectId(effectId), stacks, turns, srcId)
+        // Landing on the unit whose turn it IS (taunt, riposte, covers played
+        // on yourself) ⇒ fresh: the end-of-turn tick will spend the flag, not
+        // a duration point, so the buff survives the coming enemy phase.
+        // Statuses inflicted outside the victim's own turn (enemy poison on
+        // you, your slow on them) tick normally.
+        if (tStr === (state.turn.unitId as unknown as string)) {
+          statuses = statuses.map(s =>
+            (s.effectId as unknown as string) === effectId ? { ...s, fresh: true } : s,
+          )
         }
+        newUnits[tStr] = { ...cur, statuses }
       }
 
       // Resolve each effect against each target
@@ -551,6 +572,14 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
           }
         } else if (eff.kind === 'DrawCards') {
           const count = (params.count as number | undefined) ?? 1
+          // Some draw cards (mage Focus) also grant AP; the HUD prints
+          // "Draw 1 · +1 AP" from this same param, and until now the reducer
+          // never read it — the card charged 1 AP and refunded nothing.
+          const gainAp = (params.gainAp as number | undefined) ?? 0
+          if (gainAp > 0) {
+            const cur = newUnits[srcStr0] ?? src
+            newUnits[srcStr0] = { ...cur, ap: cur.ap + gainAp }
+          }
           const deck = newDecks[srcStr0]
           if (deck && count > 0) {
             let draw = deck.draw.slice()
@@ -668,6 +697,22 @@ export function reduce(state: CombatState, event: CombatEvent, _rng: RNG): Reduc
       if (u.hasMovedThisTurn) return { state, effects: [] }
       // Immobilize (ship plan §9): MOV = 0 while the status is active.
       if (isImmobilized(u)) return { state, effects: [] }
+      // Board legality lives HERE, not only in the view (pure systems are the
+      // authority — a scripted/AI/replayed moveUnit must obey the same board
+      // a click does). Range stays with the caller: MOV isn't a unit stat yet.
+      const destStr = tileId as unknown as string
+      const parts = destStr.split(',').map(Number)
+      const mx = parts[0] ?? NaN
+      const my = parts[1] ?? NaN
+      if (!Number.isInteger(mx) || !Number.isInteger(my)
+        || mx < 0 || my < 0 || mx >= state.grid.width || my >= state.grid.height) {
+        return { state, effects: [] }
+      }
+      if (state.grid.obstacles.has(tileId)) return { state, effects: [] }
+      const occupied = Object.values(state.units).some(
+        o => o.id !== u.id && isAlive(o) && (o.position as unknown as string) === destStr,
+      )
+      if (occupied) return { state, effects: [] }
       const newUnits: Record<string, Unit> = {
         ...state.units,
         [unitId as unknown as string]: { ...u, position: tileId, hasMovedThisTurn: true },
