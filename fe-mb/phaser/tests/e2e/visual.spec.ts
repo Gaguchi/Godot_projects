@@ -44,9 +44,21 @@ for (const view of SCENES) {
 
   test(`${view}: matches snapshot`, async ({ page }) => {
     await bootScene(page, view)
+    // No mask. #game-canvas-container is `absolute inset-0` and permanently
+    // mounted (App.tsx — unmounting it detaches the canvas and every battle
+    // after the first is invisible), and in combat the canvas itself fills the
+    // stage under the HUD overlay. Masking either one painted solid magenta
+    // over the whole 1280x720 frame, which is how all three baselines became
+    // byte-identical blank squares that could never fail. The board renders
+    // deterministically (fixed seed + reducedMotion), so compare it directly
+    // and let maxDiffPixelRatio absorb GPU antialiasing jitter.
+    // Tolerance is deliberately tight. At the old 0.02 the suite could not
+    // even see the accent colour change from amber to cyan — the "act here"
+    // hearth is scarce by design, so it moves well under 2% of 921600 pixels.
+    // Two consecutive runs of this suite produce a byte-identical frame, so
+    // this only has to absorb occasional antialiasing jitter.
     await expect(page).toHaveScreenshot(`${view}.png`, {
-      mask: [page.locator('#game-canvas-container')],
-      maxDiffPixelRatio: 0.02,
+      maxDiffPixelRatio: 0.0005,
     })
   })
 }
