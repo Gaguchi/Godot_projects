@@ -1,0 +1,76 @@
+{
+  "id": "interrogate_survivor",
+  "title": "A bandit survivor begs for mercy",
+  "description": "Bloodied, kneeling. He'll talk if pressed — or die in silence if you let him.",
+  "choices": [
+    {
+      "id": "intimidate",
+      "text": "Threaten him.",
+      "check": {
+        "kind": "stat",
+        "stat": "str",
+        "threshold": 7
+      },
+      "onPass": {
+        "narration": "He spills everything. Their camp lies east of the road. You note it for later.",
+        "effects": [
+          {
+            "kind": "setFlag",
+            "key": "bandit_camp_known",
+            "value": true,
+            "scope": "permanent"
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "He spits at your boots and dies refusing.",
+        "effects": []
+      }
+    },
+    {
+      "id": "persuade",
+      "text": "Convince him.",
+      "check": {
+        "kind": "stat",
+        "stat": "skl",
+        "threshold": 5
+      },
+      "onPass": {
+        "narration": "He talks freely, almost grateful. Their camp lies east of the road.",
+        "effects": [
+          {
+            "kind": "setFlag",
+            "key": "bandit_camp_known",
+            "value": true,
+            "scope": "permanent"
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "He distrusts you and stays silent.",
+        "effects": []
+      }
+    },
+    {
+      "id": "spare",
+      "text": "Let him live.",
+      "onPass": {
+        "narration": "You let him go. He scrambles away, swearing he'll never raid the road again.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "kill",
+      "text": "End it.",
+      "onPass": {
+        "narration": "Quick and quiet.",
+        "effects": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "id": "ashfall_road",
+  "regionId": "ashfall",
+  "entries": [
+    {
+      "id": "ashfall_brigands",
+      "weight": 10,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "brigands"
+      }
+    },
+    {
+      "id": "ashfall_bandits",
+      "weight": 6,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "bandit_lookouts"
+      }
+    },
+    {
+      "id": "ashfall_raiders_battle",
+      "weight": 8,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "ashfall_raiders"
+      }
+    },
+    {
+      "id": "ancient_shrine",
+      "weight": 3,
+      "oneShot": true,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "checkEventId": "ancient_shrine"
+      }
+    }
+  ]
+}

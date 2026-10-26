@@ -1,0 +1,20 @@
+{
+  "id": "thornwood_depths",
+  "name": "Thornwood Depths",
+  "regionId": "thornwood",
+  "combatEnemyGroupId": "wolves",
+  "eliteEnemyGroupId": "wolf_alpha_pack",
+  "bossEnemyGroupId": "thornwood_ambush",
+  "roomEvents": [
+    "blocked_passage",
+    "ancient_inscription",
+    "pale_growth",
+    "black_water",
+    "earlier_company",
+    "dripping_font"
+  ],
+  "battlefieldIds": [
+    "collapsed_gallery",
+    "cave_pillars"
+  ]
+}

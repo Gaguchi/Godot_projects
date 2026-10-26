@@ -1,0 +1,97 @@
+{
+  "id": "darens_camp",
+  "title": "Smoke over the gully — Daren's camp",
+  "description": "Three fires, a picket line of stolen horses, and men who have stopped bothering to post a proper watch. Daren's gang, fat on the caravan they took. From the ridge you can count them; they cannot count you.",
+  "choices": [
+    {
+      "id": "storm",
+      "text": "Go in hard while they're drunk.",
+      "onPass": {
+        "narration": "You come down the gully at a run. The first man to stand up is the first man to fall.",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "darens_gang",
+            "captureTargets": [
+              {
+                "unitId": "daren",
+                "capturedDialogueId": "sq_blood_ties_daren_captured",
+                "killedDialogueId": "sq_blood_ties_daren_killed",
+                "capturedFlag": "daren_captured",
+                "killedFlag": "daren_killed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "creep",
+      "text": "Creep in and cut the horses loose first.",
+      "check": {
+        "kind": "stat",
+        "stat": "skl",
+        "threshold": 5
+      },
+      "onPass": {
+        "narration": "The horses go quietly. When the shouting starts, half the gang is chasing hooves into the dark — the half that stays has no cover and no plan.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 20
+          },
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "darens_gang",
+            "captureTargets": [
+              {
+                "unitId": "daren",
+                "capturedDialogueId": "sq_blood_ties_daren_captured",
+                "killedDialogueId": "sq_blood_ties_daren_killed",
+                "capturedFlag": "daren_captured",
+                "killedFlag": "daren_killed"
+              }
+            ]
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "A horse screams. Every head in the camp turns toward you.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 3
+          },
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "darens_gang",
+            "captureTargets": [
+              {
+                "unitId": "daren",
+                "capturedDialogueId": "sq_blood_ties_daren_captured",
+                "killedDialogueId": "sq_blood_ties_daren_killed",
+                "capturedFlag": "daren_captured",
+                "killedFlag": "daren_killed"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "withdraw",
+      "text": "Mark the place and withdraw. Another night.",
+      "onPass": {
+        "narration": "You leave them to their fires and mark the gully on Kael's map. A camp that big does not stay put — sooner or later it walks onto the road, and you will be on it.",
+        "effects": [
+          {
+            "kind": "setFlag",
+            "key": "darens_camp_marked",
+            "value": true,
+            "scope": "permanent"
+          }
+        ]
+      }
+    }
+  ]
+}

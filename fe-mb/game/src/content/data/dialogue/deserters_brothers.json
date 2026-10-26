@@ -1,0 +1,32 @@
+{
+  "id": "deserters_brothers",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "speaker": "legion_brother",
+      "text": "Armed men block the road, legion tattoos under bandit leathers. \"You sold our brother to the rope for sixty silver,\" their leader says, drawing steel. \"Let's see what your lives fetch.\"",
+      "onEnter": [
+        {
+          "kind": "setFlag",
+          "key": "deserter_brothers_met",
+          "value": true,
+          "scope": "permanent"
+        }
+      ],
+      "choices": [
+        {
+          "id": "c0",
+          "text": "Draw steel.",
+          "effects": [
+            {
+              "kind": "startCombat",
+              "enemyGroupId": "brigands"
+            }
+          ],
+          "next": "end"
+        }
+      ]
+    }
+  }
+}

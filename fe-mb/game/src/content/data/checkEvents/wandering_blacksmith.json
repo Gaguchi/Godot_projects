@@ -1,0 +1,68 @@
+{
+  "id": "wandering_blacksmith",
+  "title": "A wandering blacksmith hails you from his cart",
+  "description": "His portable forge still glows in its iron cradle. \"Road's been cruel to your kit, by the look of it. Sixty gold and I'll set it all right — dents hammered, edges honed, straps mended.\"",
+  "choices": [
+    {
+      "id": "pay_for_work",
+      "text": "Pay 60 gold for his best work.",
+      "check": {
+        "kind": "gold",
+        "amount": 60
+      },
+      "onPass": {
+        "narration": "He works through the afternoon, humming over the anvil. Your gear sits better than it has in weeks, and the party's aches fade with the load off their shoulders.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": -60
+          },
+          {
+            "kind": "healParty",
+            "percent": 0.3
+          },
+          {
+            "kind": "setFlag",
+            "key": "blacksmith_patronized",
+            "value": true,
+            "scope": "run"
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Your purse comes up short. He shrugs, not unkindly, and stokes his forge for the next traveler.",
+        "effects": []
+      }
+    },
+    {
+      "id": "trade_stories",
+      "text": "Trade stories of the road instead.",
+      "check": {
+        "kind": "stat",
+        "stat": "lck",
+        "threshold": 4
+      },
+      "onPass": {
+        "narration": "He laughs at your best tale and shares his supper — good bread, better sausage. \"For the company,\" he says.",
+        "effects": [
+          {
+            "kind": "addFood",
+            "amount": 1
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "He listens politely, then returns to his bellows. The road calls you both onward.",
+        "effects": []
+      }
+    },
+    {
+      "id": "walk_on",
+      "text": "Walk on.",
+      "onPass": {
+        "narration": "You nod to him and keep moving. The ring of his hammer follows you down the road.",
+        "effects": []
+      }
+    }
+  ]
+}

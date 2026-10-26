@@ -1,0 +1,69 @@
+{
+  "id": "pale_growth",
+  "title": "Something pale is growing on the wall",
+  "description": "It carries its own faint light, and it has grown across the passage in the shape of a hand.",
+  "choices": [
+    {
+      "id": "read",
+      "text": "Read what it is before anyone touches it.",
+      "check": {
+        "kind": "stat",
+        "stat": "mag",
+        "threshold": 7
+      },
+      "onPass": {
+        "narration": "Cavelight, and the good kind. It packs into the satchel and keeps.",
+        "effects": [
+          {
+            "kind": "addFood",
+            "amount": 2
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "It bursts at a touch and the spores go everywhere. The coughing lasts an hour.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "push",
+      "text": "Put a shield to it and press through.",
+      "check": {
+        "kind": "stat",
+        "stat": "def",
+        "threshold": 8
+      },
+      "onPass": {
+        "narration": "It comes away in sheets. Behind it is a niche somebody sealed and never came back for.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 30
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "It comes away in sheets, and so does the wall behind it.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "leave",
+      "text": "Go round it.",
+      "onPass": {
+        "narration": "The long way is a long way. It is also a way.",
+        "effects": []
+      }
+    }
+  ]
+}

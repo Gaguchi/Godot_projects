@@ -1,0 +1,66 @@
+{
+  "id": "borderland_shrine",
+  "title": "A roadside shrine, offerings uncounted",
+  "description": "A weathered saint with the face worn off, a bowl of coppers at her feet, and dried flowers older than the war. Travellers still leave things here. Nobody is watching.",
+  "choices": [
+    {
+      "id": "rest",
+      "text": "Kneel a while. Let the wounded rest in the shade.",
+      "onPass": {
+        "narration": "Nothing answers, but the shade is cool and the water in the basin is clean. The company leaves lighter than it came.",
+        "effects": [
+          {
+            "kind": "healParty",
+            "percent": 0.25
+          }
+        ]
+      }
+    },
+    {
+      "id": "offer",
+      "text": "Leave a coin of your own.",
+      "check": {
+        "kind": "gold",
+        "amount": 5
+      },
+      "onPass": {
+        "narration": "A copper joins the coppers. On the road out, a hare freezes in the grass and lets you pass. You decide that counts.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": -5
+          },
+          {
+            "kind": "setFlag",
+            "key": "shrine_offering",
+            "value": true,
+            "scope": "run"
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "You have nothing to leave. The saint does not seem to mind.",
+        "effects": []
+      }
+    },
+    {
+      "id": "take",
+      "text": "Take the bowl. Coppers spend.",
+      "onPass": {
+        "narration": "Thirty-odd coppers, and every one of them feels heavier than it should. The company does not talk for a mile.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 15
+          },
+          {
+            "kind": "setFlag",
+            "key": "robbed_the_shrine",
+            "value": true,
+            "scope": "run"
+          }
+        ]
+      }
+    }
+  ]
+}

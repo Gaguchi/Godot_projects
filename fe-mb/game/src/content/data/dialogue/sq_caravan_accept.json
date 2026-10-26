@@ -1,0 +1,75 @@
+{
+  "id": "sq_caravan_accept",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "speaker": "guildmistress_anya",
+      "text": "You've the look of road-hardened folk. My caravan left for the Thornwood eleven days ago — silks, salt, and my sister's dowry chest. It never arrived.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "offer"
+        }
+      ]
+    },
+    "offer": {
+      "id": "offer",
+      "speaker": "guildmistress_anya",
+      "text": "Find what became of it. Whatever bandits left behind, the guild will trade you steel worth keeping for its return. A serpent-forged blade, Thornwood work.",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "We'll find your caravan.",
+          "effects": [],
+          "next": "accept"
+        },
+        {
+          "id": "c1",
+          "text": "Not our trouble.",
+          "effects": [],
+          "next": "decline"
+        }
+      ]
+    },
+    "accept": {
+      "id": "accept",
+      "speaker": "guildmistress_anya",
+      "text": "The drivers favoured the south road toward the Thornwood eaves. Search the waysides — and if my people still breathe, tell them the guild hasn't forgotten them. Now: the register. I put no one on the guild's books unnamed.",
+      "onEnter": [
+        {
+          "kind": "startQuest",
+          "questId": "sq_missing_caravan"
+        }
+      ],
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Give her a name for the register.",
+          "effects": [
+            {
+              "kind": "promptName",
+              "target": "mc"
+            }
+          ],
+          "next": "end"
+        }
+      ]
+    },
+    "decline": {
+      "id": "decline",
+      "speaker": "guildmistress_anya",
+      "text": "Then drink your drink and mind the roads. They've grown hungry of late.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    }
+  }
+}

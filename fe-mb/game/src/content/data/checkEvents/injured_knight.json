@@ -1,0 +1,65 @@
+{
+  "id": "injured_knight",
+  "title": "An injured knight slumps against a milestone",
+  "description": "His shield arm is bound in bloody rags and his horse is nowhere in sight. \"Bandits,\" he rasps. \"A meal and I might live to repay you.\"",
+  "choices": [
+    {
+      "id": "help_him",
+      "text": "Spend a ration to feed him and bind his wounds.",
+      "check": {
+        "kind": "food",
+        "amount": 1
+      },
+      "onPass": {
+        "narration": "He eats like a man back from the dead. When he can stand, he presses his purse into your hands and swears his sword to your cause, once his arm mends. \"Look for me on the road ahead.\"",
+        "effects": [
+          {
+            "kind": "addFood",
+            "amount": -1
+          },
+          {
+            "kind": "addGold",
+            "amount": 40
+          },
+          {
+            "kind": "setFlag",
+            "key": "injured_knight_helped",
+            "value": true,
+            "scope": "permanent"
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "You have nothing to spare. He nods, understanding, and waves you on before his eyes close.",
+        "effects": []
+      }
+    },
+    {
+      "id": "loot_him",
+      "text": "Strip his gear and leave him.",
+      "onPass": {
+        "narration": "His sword and pauldrons fetch a fair price in your pack. He watches you take them, too weak to curse.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 25
+          },
+          {
+            "kind": "setFlag",
+            "key": "injured_knight_looted",
+            "value": true,
+            "scope": "permanent"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ride_past",
+      "text": "Ride past.",
+      "onPass": {
+        "narration": "The road is full of dying men. You do not look back.",
+        "effects": []
+      }
+    }
+  ]
+}

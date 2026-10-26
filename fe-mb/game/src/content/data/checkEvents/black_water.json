@@ -1,0 +1,73 @@
+{
+  "id": "black_water",
+  "title": "The gallery is flooded to the knee",
+  "description": "Cold, black and still. Whatever went in here went in a long while ago.",
+  "choices": [
+    {
+      "id": "wade",
+      "text": "Wade it and feel for the bottom.",
+      "check": {
+        "kind": "stat",
+        "stat": "res",
+        "threshold": 7
+      },
+      "onPass": {
+        "narration": "The cold bites and lets go. A drowned pack comes up with the coin still in it.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 45
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The cold gets into the bones and stays there long after the water is behind you.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "ledge",
+      "text": "Edge along the dry ledge.",
+      "check": {
+        "kind": "stat",
+        "stat": "spd",
+        "threshold": 5
+      },
+      "onPass": {
+        "narration": "Boots dry, tempers dry. Somebody's stores sit above the waterline, untouched.",
+        "effects": [
+          {
+            "kind": "addFood",
+            "amount": 1
+          },
+          {
+            "kind": "addGold",
+            "amount": 15
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The ledge is wetter than it looks. The company goes in to the waist.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "turn_back",
+      "text": "Leave the water alone.",
+      "onPass": {
+        "narration": "Whatever is under it can keep it.",
+        "effects": []
+      }
+    }
+  ]
+}

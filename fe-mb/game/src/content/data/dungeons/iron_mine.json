@@ -1,0 +1,20 @@
+{
+  "id": "iron_mine",
+  "name": "Iron Mine",
+  "regionId": "ashfall",
+  "combatEnemyGroupId": "bandit_lookouts",
+  "eliteEnemyGroupId": "brigands",
+  "bossEnemyGroupId": "ashfall_raiders",
+  "roomEvents": [
+    "blocked_passage",
+    "disarm_trap",
+    "collapsed_shaft",
+    "bad_air",
+    "black_water",
+    "earlier_company"
+  ],
+  "battlefieldIds": [
+    "cave_pillars",
+    "collapsed_gallery"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "classId": "alpha_wolf",
+  "role": "tank",
+  "movement": 5,
+  "actions": [
+    {
+      "id": "savage_bite",
+      "kind": "attack",
+      "range": {
+        "min": 1,
+        "max": 1
+      },
+      "amount": 7,
+      "damageStat": "str",
+      "weight": 60,
+      "situation": "always"
+    },
+    {
+      "id": "howl_swipe",
+      "kind": "attack",
+      "range": {
+        "min": 1,
+        "max": 1
+      },
+      "amount": 5,
+      "damageStat": "str",
+      "weight": 35,
+      "situation": "always",
+      "aoeRadius": 1
+    },
+    {
+      "id": "throat_rip",
+      "kind": "attack",
+      "range": {
+        "min": 1,
+        "max": 1
+      },
+      "amount": 11,
+      "damageStat": "str",
+      "weight": 80,
+      "situation": "target_low_hp"
+    },
+    {
+      "id": "alpha_howl",
+      "kind": "buff",
+      "range": {
+        "min": 0,
+        "max": 0
+      },
+      "amount": 0,
+      "damageStat": null,
+      "weight": 30,
+      "situation": "always",
+      "aoeRadius": 2,
+      "applyStatus": {
+        "effectId": "empower",
+        "value": 2,
+        "turns": 1
+      }
+    }
+  ]
+}

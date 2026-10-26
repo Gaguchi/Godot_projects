@@ -1,0 +1,68 @@
+{
+  "id": "warlords_camp",
+  "title": "Banners in the ash — a warlord's camp",
+  "description": "Ashford colours on a palisade of charred stakes. Raiders drill in the yard; a sergeant bellows counts. This is not a gang. This is an army's forward camp, and the road runs past its gate.",
+  "choices": [
+    {
+      "id": "sneak",
+      "text": "Slip past under cover of the drill.",
+      "check": {
+        "kind": "stat",
+        "stat": "spd",
+        "threshold": 8
+      },
+      "onPass": {
+        "narration": "Between one count and the next you are past the gate and into the ash-fog. Nobody so much as turns.",
+        "effects": []
+      },
+      "onFail": {
+        "narration": "A sentry on the palisade sees something move where nothing should. The drill stops. The gate opens.",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "ashfall_raiders"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bribe",
+      "text": "Pay the sergeant to look elsewhere.",
+      "check": {
+        "kind": "gold",
+        "amount": 60
+      },
+      "onPass": {
+        "narration": "Sixty in Ashford silver and the sergeant discovers a sudden interest in the far side of the yard.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": -60
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "You count it out and come up short. The sergeant counts it too.",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "ashfall_raiders"
+          }
+        ]
+      }
+    },
+    {
+      "id": "attack",
+      "text": "Hit the camp before it hits you.",
+      "onPass": {
+        "narration": "You take the gate at a run. The drill becomes a battle line faster than you would like.",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "ashfall_raiders"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+[
+  {
+    "id": "open_ground",
+    "name": "Open Ground",
+    "obstacles": [[6, 2], [10, 6]]
+  },
+  {
+    "id": "broken_fence",
+    "name": "The Broken Fence",
+    "obstacles": [[7, 0], [7, 1], [7, 2], [7, 3], [7, 6], [7, 7], [7, 8], [7, 9]]
+  },
+  {
+    "id": "wagon_road",
+    "name": "The Wagon Road",
+    "obstacles": [[5, 1], [5, 2], [9, 7], [9, 8], [11, 4]]
+  },
+  {
+    "id": "thornwood_thicket",
+    "name": "Thornwood Thicket",
+    "obstacles": [[4, 1], [6, 7], [8, 2], [9, 5], [11, 8], [12, 3]]
+  },
+  {
+    "id": "chapel_yard",
+    "name": "The Chapel Yard",
+    "obstacles": [[4, 1], [5, 1], [6, 1], [8, 8], [9, 8], [11, 4]]
+  },
+  {
+    "id": "ashfall_slabs",
+    "name": "The Ashfall Slabs",
+    "obstacles": [[5, 2], [5, 3], [9, 6], [9, 7], [11, 1], [3, 8]]
+  },
+  {
+    "id": "cinder_gully",
+    "name": "The Cinder Gully",
+    "obstacles": [[6, 0], [6, 1], [6, 2], [6, 7], [6, 8], [6, 9], [10, 4], [10, 5]]
+  },
+  {
+    "id": "cave_pillars",
+    "name": "The Pillared Dark",
+    "obstacles": [[4, 2], [4, 7], [7, 4], [7, 5], [10, 2], [10, 7]]
+  },
+  {
+    "id": "collapsed_gallery",
+    "name": "The Collapsed Gallery",
+    "obstacles": [[5, 5], [5, 6], [5, 7], [8, 1], [8, 2], [8, 3], [11, 5], [11, 6]]
+  },
+  {
+    "id": "throne_hall",
+    "name": "The Iron Hall",
+    "obstacles": [[4, 1], [4, 8], [8, 1], [8, 8], [11, 4], [11, 5]]
+  }
+]

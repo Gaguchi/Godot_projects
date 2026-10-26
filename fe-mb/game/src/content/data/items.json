@@ -1,0 +1,976 @@
+[
+  {
+    "id": "food_rations",
+    "name": "Food Rations",
+    "kind": "food",
+    "rarity": "common",
+    "region": "none",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "buyPrice": 40,
+    "sellPrice": 20,
+    "charges": 4
+  },
+  {
+    "id": "healing_potion",
+    "name": "Healing Potion",
+    "kind": "potion",
+    "rarity": "common",
+    "region": "none",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "buyPrice": 30,
+    "sellPrice": 15,
+    "effect": {
+      "kind": "Heal",
+      "amount": 10
+    }
+  },
+  {
+    "id": "power_elixir",
+    "name": "Power Elixir",
+    "kind": "potion",
+    "rarity": "uncommon",
+    "region": "none",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "buyPrice": 80,
+    "sellPrice": 40,
+    "effect": {
+      "kind": "GainAp",
+      "amount": 3
+    }
+  },
+  {
+    "id": "iron_sword",
+    "name": "Iron Sword",
+    "kind": "weapon",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "sword",
+    "buyPrice": 80,
+    "sellPrice": 40,
+    "gearCardIds": [
+      "iron_sword_slash",
+      "iron_sword_thrust",
+      "iron_sword_guard_break",
+      "iron_sword_riposte"
+    ]
+  },
+  {
+    "id": "iron_buckler",
+    "name": "Iron Buckler",
+    "kind": "shield",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "shield",
+    "buyPrice": 60,
+    "sellPrice": 30,
+    "gearCardIds": [
+      "iron_buckler_block",
+      "iron_buckler_parry",
+      "iron_buckler_deflect"
+    ]
+  },
+  {
+    "id": "iron_greatsword",
+    "name": "Iron Greatsword",
+    "kind": "weapon",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 2,
+      "height": 3
+    },
+    "weaponClass": "greatsword",
+    "twoHanded": true,
+    "buyPrice": 150,
+    "sellPrice": 75,
+    "gearCardIds": [
+      "iron_greatsword_heavy_slash",
+      "iron_greatsword_cleave",
+      "iron_greatsword_overhead_blow",
+      "iron_greatsword_whirlwind",
+      "iron_greatsword_power_stance",
+      "iron_greatsword_guard"
+    ]
+  },
+  {
+    "id": "steel_sword",
+    "name": "Steel Sword",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "sword",
+    "buyPrice": 160,
+    "sellPrice": 80,
+    "gearCardIds": [
+      "steel_sword_slash",
+      "steel_sword_thrust",
+      "steel_sword_guard_break"
+    ]
+  },
+  {
+    "id": "iron_lance",
+    "name": "Iron Lance",
+    "kind": "weapon",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "lance",
+    "buyPrice": 80,
+    "sellPrice": 40,
+    "gearCardIds": [
+      "iron_lance_jab",
+      "iron_lance_impale",
+      "iron_lance_brace"
+    ]
+  },
+  {
+    "id": "steel_lance",
+    "name": "Steel Lance",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "lance",
+    "buyPrice": 180,
+    "sellPrice": 90,
+    "gearCardIds": [
+      "steel_lance_jab",
+      "steel_lance_impale",
+      "steel_lance_brace"
+    ]
+  },
+  {
+    "id": "iron_axe",
+    "name": "Iron Axe",
+    "kind": "weapon",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "axe",
+    "buyPrice": 70,
+    "sellPrice": 35,
+    "gearCardIds": [
+      "iron_axe_chop",
+      "iron_axe_wild_swing",
+      "iron_axe_rend"
+    ]
+  },
+  {
+    "id": "steel_axe",
+    "name": "Steel Axe",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "axe",
+    "buyPrice": 170,
+    "sellPrice": 85,
+    "gearCardIds": [
+      "steel_axe_chop",
+      "steel_axe_wild_swing",
+      "steel_axe_rend"
+    ]
+  },
+  {
+    "id": "iron_bow",
+    "name": "Iron Bow",
+    "kind": "weapon",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 3
+    },
+    "weaponClass": "bow",
+    "buyPrice": 90,
+    "sellPrice": 45,
+    "gearCardIds": [
+      "iron_bow_quick_shot",
+      "iron_bow_aimed_shot",
+      "iron_bow_volley"
+    ]
+  },
+  {
+    "id": "steel_bow",
+    "name": "Steel Bow",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 3
+    },
+    "weaponClass": "bow",
+    "buyPrice": 200,
+    "sellPrice": 100,
+    "gearCardIds": [
+      "steel_bow_quick_shot",
+      "steel_bow_aimed_shot",
+      "steel_bow_volley"
+    ]
+  },
+  {
+    "id": "iron_crossbow",
+    "name": "Iron Crossbow",
+    "kind": "weapon",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "crossbow",
+    "buyPrice": 100,
+    "sellPrice": 50,
+    "gearCardIds": [
+      "iron_crossbow_bolt",
+      "iron_crossbow_heavy_bolt",
+      "iron_crossbow_pinning_shot"
+    ]
+  },
+  {
+    "id": "steel_crossbow",
+    "name": "Steel Crossbow",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "crossbow",
+    "buyPrice": 210,
+    "sellPrice": 105,
+    "gearCardIds": [
+      "steel_crossbow_bolt",
+      "steel_crossbow_heavy_bolt",
+      "steel_crossbow_pinning_shot"
+    ]
+  },
+  {
+    "id": "fire_tome",
+    "name": "Fire Tome",
+    "kind": "tome",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "tome",
+    "buyPrice": 100,
+    "sellPrice": 50,
+    "gearCardIds": [
+      "fire_tome_fire",
+      "fire_tome_blaze",
+      "fire_tome_flame_burst",
+      "fire_tome_ember"
+    ]
+  },
+  {
+    "id": "thunder_tome",
+    "name": "Thunder Tome",
+    "kind": "tome",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "tome",
+    "buyPrice": 220,
+    "sellPrice": 110,
+    "gearCardIds": [
+      "thunder_tome_thunder",
+      "thunder_tome_thoron",
+      "thunder_tome_lightning"
+    ]
+  },
+  {
+    "id": "heal_staff",
+    "name": "Heal Staff",
+    "kind": "staff",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "staff",
+    "buyPrice": 110,
+    "sellPrice": 55,
+    "gearCardIds": [
+      "heal_staff_heal",
+      "heal_staff_restore",
+      "heal_staff_purify"
+    ]
+  },
+  {
+    "id": "mend_staff",
+    "name": "Mend Staff",
+    "kind": "staff",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "staff",
+    "buyPrice": 230,
+    "sellPrice": 115,
+    "gearCardIds": [
+      "mend_staff_heal",
+      "mend_staff_restore",
+      "mend_staff_purify"
+    ]
+  },
+  {
+    "id": "bone_dagger",
+    "name": "Bone Dagger",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "dagger",
+    "buyPrice": 140,
+    "sellPrice": 70,
+    "gearCardIds": [
+      "bone_dagger_stab",
+      "bone_dagger_lacerate",
+      "bone_dagger_twist_blade"
+    ]
+  },
+  {
+    "id": "venom_lance",
+    "name": "Venom Lance",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "lance",
+    "buyPrice": 190,
+    "sellPrice": 95,
+    "gearCardIds": [
+      "venom_lance_toxic_jab",
+      "venom_lance_venom_impale",
+      "venom_lance_poison_brace"
+    ]
+  },
+  {
+    "id": "darkwood_bow",
+    "name": "Darkwood Bow",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 3
+    },
+    "weaponClass": "bow",
+    "buyPrice": 210,
+    "sellPrice": 105,
+    "gearCardIds": [
+      "darkwood_thorn_arrow",
+      "darkwood_natures_aim",
+      "darkwood_briar_volley"
+    ]
+  },
+  {
+    "id": "thorn_staff",
+    "name": "Thorn Staff",
+    "kind": "staff",
+    "rarity": "uncommon",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "staff",
+    "buyPrice": 220,
+    "sellPrice": 110,
+    "gearCardIds": [
+      "thorn_staff_natures_touch",
+      "thorn_staff_regrowth",
+      "thorn_staff_entangle"
+    ]
+  },
+  {
+    "id": "serpent_blade",
+    "name": "Serpent Blade",
+    "kind": "weapon",
+    "rarity": "rare",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "sword",
+    "buyPrice": 380,
+    "sellPrice": 190,
+    "gearCardIds": [
+      "serpent_blade_fang_strike",
+      "serpent_blade_cobra_lunge",
+      "serpent_blade_shed_skin"
+    ]
+  },
+  {
+    "id": "obsidian_axe",
+    "name": "Obsidian Axe",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "ashfall",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "axe",
+    "buyPrice": 200,
+    "sellPrice": 100,
+    "gearCardIds": [
+      "obsidian_chop",
+      "obsidian_magma_swing",
+      "obsidian_shatter"
+    ]
+  },
+  {
+    "id": "magma_blade",
+    "name": "Magma Blade",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "ashfall",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "sword",
+    "buyPrice": 210,
+    "sellPrice": 105,
+    "gearCardIds": [
+      "magma_blade_flame_slash",
+      "magma_blade_eruption_strike",
+      "magma_blade_molten_edge"
+    ]
+  },
+  {
+    "id": "ember_tome",
+    "name": "Ember Tome",
+    "kind": "tome",
+    "rarity": "uncommon",
+    "region": "ashfall",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "tome",
+    "buyPrice": 230,
+    "sellPrice": 115,
+    "gearCardIds": [
+      "ember_tome_ember",
+      "ember_tome_conflagrate",
+      "ember_tome_volcanic_surge"
+    ]
+  },
+  {
+    "id": "molten_crossbow",
+    "name": "Molten Crossbow",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "ashfall",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "crossbow",
+    "buyPrice": 240,
+    "sellPrice": 120,
+    "gearCardIds": [
+      "molten_crossbow_fire_bolt",
+      "molten_crossbow_magma_bolt",
+      "molten_crossbow_explosive_bolt"
+    ]
+  },
+  {
+    "id": "hellfire_tome",
+    "name": "Hellfire Tome",
+    "kind": "tome",
+    "rarity": "rare",
+    "region": "ashfall",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "tome",
+    "buyPrice": 450,
+    "sellPrice": 225,
+    "gearCardIds": [
+      "hellfire_tome_hellfire",
+      "hellfire_tome_inferno",
+      "hellfire_tome_pyroclasm"
+    ]
+  },
+  {
+    "id": "steel_buckler",
+    "name": "Steel Buckler",
+    "kind": "shield",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "shield",
+    "buyPrice": 130,
+    "sellPrice": 65,
+    "gearCardIds": [
+      "steel_buckler_block",
+      "steel_buckler_parry",
+      "steel_buckler_deflect"
+    ]
+  },
+  {
+    "id": "iron_tower_shield",
+    "name": "Iron Tower Shield",
+    "kind": "shield",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "shield",
+    "buyPrice": 110,
+    "sellPrice": 55,
+    "gearCardIds": [
+      "iron_tower_shield_fortress",
+      "iron_tower_shield_shield_wall",
+      "iron_tower_shield_cover"
+    ]
+  },
+  {
+    "id": "steel_tower_shield",
+    "name": "Steel Tower Shield",
+    "kind": "shield",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "shield",
+    "buyPrice": 200,
+    "sellPrice": 100,
+    "gearCardIds": [
+      "steel_tower_shield_fortress",
+      "steel_tower_shield_shield_wall",
+      "steel_tower_shield_cover"
+    ]
+  },
+  {
+    "id": "bark_shield",
+    "name": "Bark Shield",
+    "kind": "shield",
+    "rarity": "uncommon",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "shield",
+    "buyPrice": 160,
+    "sellPrice": 80,
+    "gearCardIds": [
+      "bark_shield_thorn_block",
+      "bark_shield_root_guard",
+      "bark_shield_natures_shell"
+    ]
+  },
+  {
+    "id": "volcanic_tower_shield",
+    "name": "Volcanic Tower Shield",
+    "kind": "shield",
+    "rarity": "uncommon",
+    "region": "ashfall",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "shield",
+    "buyPrice": 240,
+    "sellPrice": 120,
+    "gearCardIds": [
+      "volcanic_tower_shield_magma_fortress",
+      "volcanic_tower_shield_lava_wall",
+      "volcanic_tower_shield_heat_shield"
+    ]
+  },
+  {
+    "id": "steel_greatsword",
+    "name": "Steel Greatsword",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 2,
+      "height": 3
+    },
+    "weaponClass": "greatsword",
+    "twoHanded": true,
+    "buyPrice": 250,
+    "sellPrice": 125,
+    "gearCardIds": [
+      "steel_greatsword_heavy_slash",
+      "steel_greatsword_cleave",
+      "steel_greatsword_overhead_blow",
+      "steel_greatsword_whirlwind",
+      "steel_greatsword_power_stance",
+      "steel_greatsword_guard"
+    ]
+  },
+  {
+    "id": "longbow",
+    "name": "Longbow",
+    "kind": "weapon",
+    "rarity": "common",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 2,
+      "height": 3
+    },
+    "weaponClass": "bow",
+    "twoHanded": true,
+    "buyPrice": 120,
+    "sellPrice": 60,
+    "gearCardIds": [
+      "longbow_long_shot",
+      "longbow_snipe",
+      "longbow_rain_of_arrows",
+      "longbow_steady_aim",
+      "longbow_quick_nock",
+      "longbow_covering_fire"
+    ]
+  },
+  {
+    "id": "composite_bow",
+    "name": "Composite Bow",
+    "kind": "weapon",
+    "rarity": "uncommon",
+    "region": "borderlands",
+    "gridSize": {
+      "width": 2,
+      "height": 3
+    },
+    "weaponClass": "bow",
+    "twoHanded": true,
+    "buyPrice": 250,
+    "sellPrice": 125,
+    "gearCardIds": [
+      "composite_bow_long_shot",
+      "composite_bow_snipe",
+      "composite_bow_rain_of_arrows",
+      "composite_bow_steady_aim",
+      "composite_bow_quick_nock",
+      "composite_bow_covering_fire"
+    ]
+  },
+  {
+    "id": "standard_quiver",
+    "name": "Standard Quiver",
+    "kind": "quiver",
+    "rarity": "common",
+    "region": "none",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "buyPrice": 50,
+    "sellPrice": 25,
+    "quiverModifier": {
+      "kind": "thunder",
+      "value": 1,
+      "turns": 0
+    }
+  },
+  {
+    "id": "poison_quiver",
+    "name": "Poison Quiver",
+    "kind": "quiver",
+    "rarity": "uncommon",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "buyPrice": 150,
+    "sellPrice": 75,
+    "quiverModifier": {
+      "kind": "poison",
+      "value": 2,
+      "turns": 2
+    }
+  },
+  {
+    "id": "ice_quiver",
+    "name": "Ice Quiver",
+    "kind": "quiver",
+    "rarity": "uncommon",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "buyPrice": 150,
+    "sellPrice": 75,
+    "quiverModifier": {
+      "kind": "slow",
+      "value": 2,
+      "turns": 1
+    }
+  },
+  {
+    "id": "thunder_quiver",
+    "name": "Thunder Quiver",
+    "kind": "quiver",
+    "rarity": "uncommon",
+    "region": "ashfall",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "buyPrice": 180,
+    "sellPrice": 90,
+    "quiverModifier": {
+      "kind": "thunder",
+      "value": 3,
+      "turns": 0
+    }
+  },
+  {
+    "id": "explosive_quiver",
+    "name": "Explosive Quiver",
+    "kind": "quiver",
+    "rarity": "rare",
+    "region": "ashfall",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "buyPrice": 320,
+    "sellPrice": 160,
+    "quiverModifier": {
+      "kind": "explosive",
+      "value": 3,
+      "turns": 0
+    }
+  },
+  {
+    "id": "flame_blade",
+    "name": "Flame Blade",
+    "kind": "weapon",
+    "rarity": "epic",
+    "region": "none",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "sword",
+    "sellPrice": 350,
+    "gearCardIds": [
+      "flame_blade_fire_slash",
+      "flame_blade_ignite",
+      "flame_blade_inferno_strike"
+    ]
+  },
+  {
+    "id": "frost_axe",
+    "name": "Frost Axe",
+    "kind": "weapon",
+    "rarity": "epic",
+    "region": "none",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "axe",
+    "sellPrice": 350,
+    "gearCardIds": [
+      "frost_axe_frost_chop",
+      "frost_axe_shatter",
+      "frost_axe_frozen_ground"
+    ]
+  },
+  {
+    "id": "paladins_aegis",
+    "name": "Paladin's Aegis",
+    "kind": "shield",
+    "rarity": "epic",
+    "region": "none",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "shield",
+    "sellPrice": 400,
+    "gearCardIds": [
+      "paladins_aegis_holy_block",
+      "paladins_aegis_radiant_shield",
+      "paladins_aegis_martyr"
+    ]
+  },
+  {
+    "id": "wraithbow",
+    "name": "Wraithbow",
+    "kind": "weapon",
+    "rarity": "epic",
+    "region": "none",
+    "gridSize": {
+      "width": 2,
+      "height": 3
+    },
+    "weaponClass": "bow",
+    "twoHanded": true,
+    "sellPrice": 450,
+    "gearCardIds": [
+      "wraithbow_soul_arrow",
+      "wraithbow_ghost_shot",
+      "wraithbow_phantom_volley",
+      "wraithbow_death_sight",
+      "wraithbow_spectral_nock",
+      "wraithbow_haunt"
+    ]
+  },
+  {
+    "id": "shadowfang",
+    "name": "Shadowfang",
+    "kind": "weapon",
+    "rarity": "legendary",
+    "region": "none",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "weaponClass": "dagger",
+    "sellPrice": 600,
+    "gearCardIds": [
+      "shadowfang_shadow_step",
+      "shadowfang_assassinate",
+      "shadowfang_vanish"
+    ]
+  },
+  {
+    "id": "doombow",
+    "name": "Doombow",
+    "kind": "weapon",
+    "rarity": "legendary",
+    "region": "none",
+    "gridSize": {
+      "width": 2,
+      "height": 3
+    },
+    "weaponClass": "bow",
+    "twoHanded": true,
+    "sellPrice": 700,
+    "gearCardIds": [
+      "doombow_doom_arrow",
+      "doombow_piercing_shot",
+      "doombow_death_mark",
+      "doombow_reapers_aim",
+      "doombow_shadow_nock",
+      "doombow_volley_of_ruin"
+    ]
+  },
+  {
+    "id": "excalibur",
+    "name": "Excalibur",
+    "kind": "weapon",
+    "rarity": "legendary",
+    "region": "none",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "weaponClass": "sword",
+    "sellPrice": 800,
+    "gearCardIds": [
+      "excalibur_holy_slash",
+      "excalibur_judgment",
+      "excalibur_radiance"
+    ]
+  },
+  {
+    "id": "bark_buckler",
+    "name": "Bark Buckler",
+    "kind": "shield",
+    "rarity": "common",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 1
+    },
+    "buyPrice": 60,
+    "sellPrice": 30,
+    "weaponClass": "shield",
+    "gearCardIds": [
+      "bark_buckler_bark_block",
+      "bark_buckler_sap_guard",
+      "bark_buckler_thorn_ward"
+    ]
+  },
+  {
+    "id": "thornwood_shortbow",
+    "name": "Thornwood Shortbow",
+    "kind": "weapon",
+    "rarity": "common",
+    "region": "thornwood",
+    "gridSize": {
+      "width": 1,
+      "height": 2
+    },
+    "buyPrice": 90,
+    "sellPrice": 45,
+    "weaponClass": "bow",
+    "gearCardIds": [
+      "thornwood_shortbow_briar_shot",
+      "thornwood_shortbow_thicket_shot",
+      "thornwood_shortbow_bramble_volley"
+    ]
+  }
+]

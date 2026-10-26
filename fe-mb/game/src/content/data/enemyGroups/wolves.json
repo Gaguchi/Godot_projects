@@ -1,0 +1,13 @@
+{
+  "id": "wolves",
+  "name": "Wolf Pack",
+  "members": [
+    {
+      "id": "wolf",
+      "name": "Wolf",
+      "classId": "wolf",
+      "level": 1,
+      "count": 3
+    }
+  ]
+}

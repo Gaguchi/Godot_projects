@@ -1,0 +1,24 @@
+{
+  "id": "mage_circle",
+  "name": "Mage Circle",
+  "members": [
+    {
+      "name": "Raider Mage",
+      "classId": "raider_mage",
+      "level": 3,
+      "count": 1
+    },
+    {
+      "name": "Raider Cleric",
+      "classId": "cleric",
+      "level": 3,
+      "count": 1
+    },
+    {
+      "name": "Circle Guard",
+      "classId": "bandit",
+      "level": 3,
+      "count": 2
+    }
+  ]
+}

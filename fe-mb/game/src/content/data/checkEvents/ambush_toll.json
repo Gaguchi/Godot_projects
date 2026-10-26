@@ -1,0 +1,68 @@
+{
+  "id": "ambush_toll",
+  "title": "Rope snaps taut across the path — an ambush",
+  "description": "Figures drop from the branches, daggers already out. \"Thirty gold,\" one hisses through a cloth mask, \"and you keep your blood.\"",
+  "choices": [
+    {
+      "id": "pay_toll",
+      "text": "Pay the toll. 30 gold.",
+      "check": {
+        "kind": "gold",
+        "amount": 30
+      },
+      "onPass": {
+        "narration": "Coin changes hands. The ropes go slack and the trees swallow them whole, as if they were never there.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": -30
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Your purse is too light, and they take that personally.",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "thornwood_ambush"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fight",
+      "text": "Draw steel.",
+      "onPass": {
+        "narration": "\"Wrong answer,\" the masked one sighs — and the thicket comes alive.",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "thornwood_ambush"
+          }
+        ]
+      }
+    },
+    {
+      "id": "slip_away",
+      "text": "Scatter into the underbrush.",
+      "check": {
+        "kind": "stat",
+        "stat": "spd",
+        "threshold": 8
+      },
+      "onPass": {
+        "narration": "You break formation and melt into the thicket before they can close the net. Their curses fade behind you.",
+        "effects": []
+      },
+      "onFail": {
+        "narration": "A tripline catches an ankle. By the time you're up, they're on you.",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "thornwood_ambush"
+          }
+        ]
+      }
+    }
+  ]
+}

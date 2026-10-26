@@ -1,0 +1,847 @@
+/* =============================================================================
+   Narrative overlays — the talk box (leather, letterboxed), the event card and name slip (parchment), the field
+   report (ledger page over the dimmed board), the prologue vista. Tokens from index.css; motion collapses with
+   --dur-* under reduced motion.
+   ========================================================================== */
+
+/* ── talk box ── */
+.talk {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+}
+/* A talk is a HARD INTERRUPT, and the world behind it has to stop being readable or the speakers read as two
+   sprites pasted onto a live map (GATE2-21: at 0.15 the road under the busts was still fully legible). The world
+   drops into shadow and loses most of its colour; the ground under the box goes nearly black so the leather
+   panel sits on something. Linear only — light falls, it does not pool (materials.md house rule). */
+.talk__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(23, 17, 12, 0.52) 0%, rgba(23, 17, 12, 0.66) 38%, rgba(23, 17, 12, 0.8) 62%, rgba(23, 17, 12, 0.95) 100%);
+  backdrop-filter: saturate(0.35) contrast(0.88) blur(2px);
+  animation: fadeIn var(--dur-settle) var(--ease-out-quart);
+}
+/* Over a STAGED frame (the prologue vista) there is nothing behind the box to stop reading — the scene was
+   composed for this beat. The scrim only seats the panel; it does not put the art out. */
+.talk__scrim--staged {
+  background: linear-gradient(180deg, rgba(23, 17, 12, 0) 0%, rgba(23, 17, 12, 0.08) 46%, rgba(23, 17, 12, 0.34) 74%, rgba(23, 17, 12, 0.78) 100%);
+  backdrop-filter: none;
+}
+/* A bust is ~800KB of sprite: it is HIDDEN until the image has decoded, then rises into the frame. The old
+   `animation: bustIn` ran on mount whether or not there was anything to show, so a fresh beat drew the box and
+   then streamed an axe-head over it (GATE2-20). */
+/* A BUST, not a figure (FINAL GATE B B.8). The slot used to hold the whole standing sprite at 340px — a 1216px
+   figure at 0.28, which puts the foundling's face on the glass 28px tall, and at 28px a painted face is a pale
+   oval with no features in it while a helmeted bandit opposite still reads as a helmet. The frame has no room to
+   fix that by growing: the box owns the bottom 180px, so a full figure can never be taller than ~540 and a face
+   never bigger than ~44. The window is a CROP instead — chest-up, at 0.55 — and the face lands at 55-70px on
+   every sprite in the build. The crop is generous on purpose: the eighteen portraits put their faces anywhere
+   between source y 131 and y 342, and this window holds all of them with headroom either side. */
+.talk-bust {
+  position: absolute;
+  bottom: 120px;
+  height: 400px;
+  width: 330px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  filter: brightness(0.5) saturate(0.5);
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity var(--dur-settle) var(--ease-out-quart), filter var(--dur-settle) var(--ease-out-quart), transform var(--dur-settle) var(--ease-out-quart);
+  pointer-events: none;
+}
+.talk-bust--shown { opacity: 1; transform: translateY(10px); }
+/* Seated INSIDE the box's column (x 120-1160) so the crop's bottom edge is never on the glass: the box covers it
+   where the fade has not already dissolved it. */
+.talk-bust--left { left: 132px; }
+.talk-bust--right { right: 132px; }
+/* The lit speaker is BRIGHTER and stands taller, with a heavier cast shadow — it does not emit (BRIEF §5). */
+.talk-bust--lit { filter: brightness(1.06) saturate(1) contrast(1.04); }
+.talk-bust--lit.talk-bust--shown { transform: translateY(0); }
+/* What the speaker stands in. A cut-out floating over the world was the fault this element was added to fix; now
+   that the slot is a crop, the same job is done at the bottom EDGE — the bust sinks into the dark the box rises
+   out of, so the cut reads as depth rather than as clipping (construction, not emission). */
+.talk-bust__cast {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 132px;
+  z-index: 2;
+  background: linear-gradient(to bottom, rgba(23, 17, 12, 0) 0%, rgba(23, 17, 12, 0.5) 44%, rgba(23, 17, 12, 0.94) 100%);
+}
+.talk-bust--lit .talk-bust__cast {
+  background: linear-gradient(to bottom, rgba(23, 17, 12, 0) 0%, rgba(23, 17, 12, 0.42) 46%, rgba(23, 17, 12, 0.92) 100%);
+}
+/* The crop, in numbers: every portrait is 832x1216, so at 0.55 the sheet is 458x669 and the window's top-left
+   corner lands on source (188, 60) — the point that puts the median head centre (x 416) on the window's midline
+   with 60px of source headroom above the tallest hair in the cast. */
+.talk-bust img {
+  position: absolute;
+  z-index: 1;
+  top: -33px;
+  left: 50%;
+  height: 669px;
+  width: auto;
+  margin-left: -229px;
+  transform: translateX(-64px);
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.65));
+}
+/* The mirror belongs to the SPRITE alone: on the element it also flips the stand-in, and a speaker with no
+   likeness then reads their own device backwards. */
+.talk-bust--right img { transform: translateX(-64px) scaleX(-1); }
+.talk-bust--lit img {
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.7));
+}
+/* The stand-in occupies the same volume as a painted bust and hangs in the same light (3.10). The strap is
+   masked away at the top so it comes down out of the dark instead of starting on a rule. */
+.talk-bust__stand-in {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 44px;
+  width: 250px;
+  height: 330px;
+  margin-left: -125px;
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.6));
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 1) 22%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 1) 22%);
+}
+.talk__box {
+  position: absolute;
+  left: 120px;
+  right: 120px;
+  bottom: 26px;
+  min-height: 96px;
+  padding: 22px 28px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: riseIn var(--dur-settle) var(--ease-out-quart);
+}
+/* The plaque is SEATED ON THE SPEAKER'S SIDE (`talk__plaque--left|--right`). Anchored to the top-left whoever
+   spoke, it named the bandit while sitting under the silent, unlit foundling on the other side of the frame. */
+.talk__plaque {
+  position: absolute;
+  top: -16px;
+  padding: 5px 16px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, var(--iron-edge-hi) 0%, var(--color-hearth-soft) 100%);
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 0 rgba(255, 240, 200, 0.5) inset, 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.talk__plaque--left { left: 22px; }
+.talk__plaque--right { right: 22px; }
+.talk__text {
+  margin: 4px 0 0;
+  font-family: var(--font-body);
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--color-parchment);
+}
+.talk__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.talk__key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-family: var(--font-numeric);
+  font-size: 10px;
+  color: var(--color-parchment);
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.talk__tag {
+  margin-left: 10px;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-family: var(--font-numeric);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--color-parchment-dim);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  vertical-align: 1px;
+  /* The badge is one reading — the drawn verdict (`components/CheckTag`) must never wrap away from the number it
+     answers for, and it sits ON the baseline of that number rather than after a space. */
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.talk__tag--ok { color: var(--color-mend-lit); }
+.talk__tag--risk { color: var(--color-damage-text); }
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(14px); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+}
+
+/* ── event card / name slip ── */
+.event {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+}
+.event__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(23, 17, 12, 0.66);
+  animation: fadeIn var(--dur-settle) var(--ease-out-quart);
+}
+.event__card {
+  position: relative;
+  width: 620px;
+  padding: 34px 44px 30px;
+  box-sizing: border-box;
+  border-radius: var(--radius-sm);
+  background: repeating-linear-gradient(180deg, transparent 0 29px, rgba(42, 33, 25, 0.09) 29px 30px), linear-gradient(168deg, var(--canvas-lit) 0%, var(--canvas-base) 42%, var(--canvas-mid) 100%);
+  box-shadow: var(--elevation-float), inset 0 0 0 1px rgba(255, 252, 244, 0.5);
+  animation: riseIn var(--dur-settle) var(--ease-out-quart);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.event__card--slip {
+  width: 480px;
+}
+.event__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.event__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-ink);
+}
+.event__text {
+  margin: 8px 0 12px;
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--color-parchment);
+}
+.event__choices {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.event__choices .btn-forged {
+  text-align: left;
+}
+.event__seal {
+  align-self: flex-start;
+  margin: 10px 0 0;
+  padding: 4px 14px;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-bone); /* the seal has its OWN dark fill, so it keeps bone inside a page scope */
+  transform: rotate(-2deg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.event__seal--pass { background: var(--color-mend); }
+.event__seal--fail { background: var(--color-ember); }
+/* nothing was rolled, so nothing is won or lost: plain walnut, the colour of a clerk's stamp */
+.event__seal--none { background: var(--color-ink-dim); }
+.ink-line {
+  width: 100%;
+  margin: 12px 0 6px;
+  padding: 8px 4px;
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1.5px solid var(--color-ink);
+  background: transparent;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 26px;
+  color: var(--color-ink);
+  letter-spacing: 0.02em;
+}
+.ink-line::placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.ink-line:focus {
+  border-bottom-color: var(--color-hearth);
+  box-shadow: 0 1px 0 var(--color-hearth);
+}
+/* the refusal under the rule: it holds its line whether or not it has anything to
+   say, so the Set button never jumps when the player types the first letter */
+.slip__why {
+  min-height: 15px;
+  margin-bottom: 6px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-damage-text);
+}
+
+/* ── field report ──────────────────────────────────────────────────────────────────────────────────────────
+   The screen is a TABLE, not a modal: the field on the left, the page written about it on the right. It used to
+   be a 640-wide sheet centred over a 588-wide board under a 0.62 scrim, so the read-only field the engine goes to
+   the trouble of freezing (`BattleReport.field`, `lastTile` kept on every corpse for exactly this) was invisible,
+   and CONTRACT §2's "the last hit / death plays on the field under the report" could not happen (GATE3-12).
+   ------------------------------------------------------------------------------------------------------------ */
+.report {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  align-items: center;
+  justify-items: end;
+  padding-right: 34px;
+}
+/* Dim enough that the page is plainly on top; light enough that the field is still a field. */
+.report__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(23, 17, 12, 0.44);
+  animation: fadeIn var(--dur-settle) var(--ease-out-quart);
+}
+.report .page-canvas {
+  margin: 0;
+  animation: riseIn var(--dur-settle) var(--ease-out-quart);
+}
+/* the plate's caption, above the frozen board */
+.report__plate-cap {
+  position: absolute;
+  z-index: 1;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+/* head, body, foot — the columns take the slack, so the loot list and the verbs never drift apart */
+.report__sheet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.report__verdict {
+  margin: 6px 0 0;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 17px;
+  color: var(--color-parchment);
+}
+.report__verdict--lost {
+  color: var(--color-damage-text);
+  font-style: italic;
+}
+/* What the page cost and where it was written: a real foot, and the thing that makes the sheet a document rather
+   than a card with 160px of ruled nothing under it (GATE2-16). */
+.report__foot {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--canvas-rule);
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+.report__spent {
+  text-align: right;
+}
+.report__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+.report__title {
+  margin: 2px 0 4px;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-ink);
+}
+.report__count {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin: 10px 0 18px;
+  font-size: 14px;
+  color: var(--color-parchment-dim);
+}
+.report__count b {
+  font-size: 18px;
+  color: var(--color-ink);
+}
+.report__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  min-height: 130px;
+  margin-bottom: 10px;
+}
+.report__label {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 6px 0 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--canvas-rule);
+}
+.report__label--fallen {
+  color: var(--color-damage-text);
+  margin-top: 14px;
+}
+.report__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-parchment);
+}
+.report__row--muted {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.report__row--fallen {
+  color: var(--color-damage-text);
+}
+.report__name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* A drop still waiting to be claimed: the name keeps a full line (no ellipsis on real content) and its two
+   verbs sit under it, so Take / leave never squeeze the item the player is deciding about. */
+.report__row--claim {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding-bottom: 8px;
+}
+.report__row--claim .report__name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+/* A drop's NAME is the whole point of the row: "Steel Grea…" tells the player nothing. Loot wraps instead. */
+.report__row--loot {
+  align-items: flex-start;
+}
+.report__row--loot .report__name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.report__claim {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.report__class {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.report__bar {
+  width: 70px;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(42, 33, 25, 0.22);
+  overflow: hidden;
+}
+.report__bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+}
+.report__hp {
+  width: 48px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--color-parchment-dim);
+}
+.report__verbs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* ── prologue vista ──
+   The game's FIRST image. It used to be framed on the empty middle of a 3:1 panorama and then darkened with a
+   radial vignette, so 78% of the opening frame was near-black and the one thing the painting has to offer — the
+   sun going down over the borderlands — sat crushed against the left edge (GATE2-22).
+
+   The painting is re-framed instead of re-lit: `object-position` pulls the sun onto the left third, the horizon
+   lands on the upper third, and the grass in the foreground is allowed to read. Dusk then FALLS from the sky and
+   pools on the ground, leaving the horizon band alone — no radial darkening (materials.md house rule: under an
+   open sky a vignette reads as a dirty lens). What is left is a composition with a light source, a middle
+   distance and a foreground, instead of a gradient. */
+.vista {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-ash);
+}
+.vista__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 15% puts the sun and its reflected column on the left third; the panorama is 3:1, so only x matters. */
+  object-position: 15% 50%;
+  filter: saturate(1.08) brightness(1.06) contrast(1.05);
+  animation: vistaIn 1400ms var(--ease-out-quart);
+}
+.vista__dusk {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(16, 12, 9, 0.74) 0%,
+    rgba(16, 12, 9, 0.3) 21%,
+    rgba(16, 12, 9, 0) 36%,
+    rgba(16, 12, 9, 0.06) 52%,
+    rgba(16, 12, 9, 0.42) 78%,
+    rgba(16, 12, 9, 0.82) 100%);
+}
+/* Two hairline bars — the frame is a SCENE, not a wallpaper; they also give the box and the busts a stage. */
+.vista__bars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, var(--color-ash) 0 44px, transparent 44px),
+    linear-gradient(0deg, var(--color-ash) 0 44px, transparent 44px);
+}
+.vista__bars::before,
+.vista__bars::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-hearth) 34%, transparent);
+}
+.vista__bars::before { top: 44px; }
+.vista__bars::after { bottom: 44px; }
+@keyframes vistaIn {
+  from { opacity: 0; transform: scale(1.04); }
+}
+
+/* ── the last page ────────────────────────────────────────────────────────────────────────────────────────────
+   TWO ceremonies out of ONE kit. GATE2-15 read the two terminal screens as the same page with one word changed —
+   same layout, same material, same palette, same rhythm, same button geometry — so a run that was WON and a run
+   that was LOST landed identically. They now differ in ground, in order and in what the eye lands on first:
+
+     won   warm leather under a lamp; the trophy the throne gave up is the largest object on the sheet; the
+           company's faces stand in daylight; the page RISES and the plate lands last on the reward easing.
+     lost  cold stone, no lamp; the page wears a mourning rule (the black border a death notice carried); the
+           roll of the fallen leads, faces drained and struck; the count is a muted foot. Nothing overshoots —
+           the page settles.
+   ------------------------------------------------------------------------------------------------------------ */
+.ledger-screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+/* the lamp on the table: a light SOURCE low behind the page, not a vignette (materials.md) */
+.ledger-screen--won {
+  background: linear-gradient(180deg, var(--iron-800) 0%, var(--iron-900) 55%, color-mix(in oklab, var(--color-ember) 16%, var(--color-ash)) 100%);
+}
+.ledger-screen__glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(115% 62% at 50% 96%, color-mix(in oklab, var(--color-hearth) 30%, transparent) 0%, transparent 64%);
+}
+/* stone, and nothing lit on it */
+.ledger-screen--lost {
+  background: linear-gradient(180deg, var(--stone-800) 0%, var(--stone-900) 62%, var(--color-ash) 100%);
+}
+.ledger-screen .page-canvas {
+  animation: riseIn var(--dur-settle) var(--ease-out-quart);
+}
+/* the losing page does not rise — it comes to rest (same specificity as the rule above, later in source) */
+.ledger-screen--lost .page-canvas {
+  animation: settleIn 620ms var(--ease-out-expo);
+}
+/* The mourning rule — the heavy black border a death notice was printed inside. It is the first thing that says
+   which of the two pages this is, before a word is read, and it is the one piece of furniture the won page has no
+   version of. Drawn inside the sheet, clear of the four pins. */
+.ledger-page--lost::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 11px solid color-mix(in oklab, var(--color-ink) 94%, black);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--canvas-lit) 45%, transparent), 0 0 0 1px color-mix(in oklab, var(--color-ash) 60%, transparent) inset;
+}
+@keyframes settleIn {
+  from { opacity: 0; transform: translateY(-10px); }
+}
+
+/* the sheet's own column: head, body, foot — the verbs sit on the page's bottom rule, never adrift in a void */
+.ledger__sheet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.ledger__title {
+  font-size: 40px;
+  margin-top: 0;
+}
+.ledger__title--lost {
+  font-size: 36px;
+  letter-spacing: 0.14em;
+  color: color-mix(in oklab, var(--color-ink) 88%, var(--color-ink-dim));
+}
+.ledger__line {
+  margin: 8px 0 0;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 18px;
+  color: var(--color-parchment);
+}
+.ledger__line--lost {
+  color: var(--color-parchment-dim);
+  font-style: italic;
+}
+
+/* ── the trophy: the one thing a win is FOR (DECISIONS) ───────────────────────────────────────────────────── */
+.trophy {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0 2px;
+  padding: 13px 20px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--rarity, var(--id-gold));
+  animation: trophyLand 380ms var(--ease-impact) 180ms backwards;
+}
+.trophy__mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 9999px;
+  background: var(--brass-fill);
+  color: var(--color-ash);
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.4), 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.trophy__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.trophy__eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-hearth);
+}
+.trophy__name {
+  font-size: 26px;
+  letter-spacing: 0.06em;
+  color: var(--color-parchment);
+}
+@keyframes trophyLand {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); }
+}
+
+/* ── the count ────────────────────────────────────────────────────────────────────────────────────────────── */
+.ledger__stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin: 18px 0 14px;
+}
+.ledger__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border-top: 1px solid var(--canvas-rule);
+  border-bottom: 1px solid var(--canvas-rule);
+}
+.ledger__stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.ledger__stat-label {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+/* a lost run's numbers are not the point: the count is the page's foot, at footnote weight */
+.ledger__stats--muted {
+  margin: 6px 0 8px;
+  gap: 4px;
+}
+.ledger__stats--muted .ledger__stat-label {
+  white-space: nowrap;
+}
+.ledger__stats--muted .ledger__stat {
+  padding: 5px 4px;
+  border-bottom: 0;
+}
+.ledger__stats--muted .ledger__stat-value {
+  font-size: 15px;
+  color: var(--color-parchment-dim);
+}
+.ledger__stats--muted .ledger__stat-label {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+
+/* ── the roll: the company as FACES, because a run is the people who walked it ─────────────────────────────── */
+/* The roll takes the page's remaining height and CENTRES itself in it. Left top-aligned it parked three portraits
+   under the count and left 160px of ruled nothing above the verbs — the same "tiny widget in a void" the gate
+   named on six screens (GATE2-16). Centred, the space below the count is composed by the thing it is there for. */
+.ledger__roll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.ledger__foot {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid var(--canvas-rule);
+}
+/* the page's bottom rule: the verbs sit ON it, so they read as the foot of a document rather than two buttons
+   that happened to land near the bottom edge */
+.ledger__sheet .report__verbs {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--canvas-rule);
+}
+.roll {
+  list-style: none;
+  margin: 12px 0 4px;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+.roll__entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 132px;
+  animation: rollIn var(--dur-settle) var(--ease-out-quart) var(--stagger, 0ms) backwards;
+}
+.roll__face {
+  width: 72px;
+  height: 72px;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklab, var(--canvas-deep) 80%, var(--color-ink));
+  box-shadow: 0 2px 5px rgba(30, 20, 10, 0.35);
+}
+.roll__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.roll__initials {
+  font-size: 18px;
+  color: var(--canvas-lit);
+}
+.roll--standing .roll__face {
+  border: 2px solid var(--color-hearth-soft);
+}
+/* the fallen are drained of colour and struck through — the read survives without the hue */
+.roll--fallen .roll__face {
+  border: 2px solid color-mix(in oklab, var(--color-ink) 60%, transparent);
+  filter: grayscale(1) brightness(0.78) contrast(0.92);
+}
+.roll--fallen .roll__name {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in oklab, var(--color-damage-text) 70%, transparent);
+  color: var(--color-damage-text);
+}
+.roll__name {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-parchment);
+  text-align: center;
+}
+/* The tracking is 0.06em rather than the eyebrow's usual 0.1em because the longest line this caption ever carries
+   — "fell in battle · 1st day", with the day now wearing the numeral face (FINAL GATE B B.3) — is 129px against
+   the 132px entry, and at 0.1em it wrapped onto a second line under three struck-through names. */
+.roll__sub {
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+.roll__sub .numeral {
+  letter-spacing: 0.01em;
+}
+@keyframes rollIn {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+/* names without faces: the shorter of the two lists on either page */
+.ledger__names {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.ledger__name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 3px 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-parchment);
+}

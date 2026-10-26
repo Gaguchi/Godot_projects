@@ -1,0 +1,27 @@
+{
+  "id": "darens_gang",
+  "name": "Daren's Gang",
+  "members": [
+    {
+      "name": "Bandit Thug",
+      "classId": "bandit",
+      "level": 2,
+      "count": 2
+    },
+    {
+      "id": "bandit_archer",
+      "name": "Bandit Archer",
+      "classId": "bandit_archer",
+      "level": 2,
+      "count": 1
+    },
+    {
+      "id": "daren",
+      "name": "Daren",
+      "classId": "bandit",
+      "level": 2,
+      "count": 1,
+      "bountyValue": 50
+    }
+  ]
+}

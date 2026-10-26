@@ -1,0 +1,83 @@
+{
+  "id": "road_merchant",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "speaker": "traveling_merchant",
+      "text": "Hail, travelers! I've got wares if you've got coin. Some fresh supplies, perhaps?",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "Buy food (10 gold)",
+          "visibleIf": {
+            "kind": "goldAtLeast",
+            "amount": 10
+          },
+          "effects": [
+            {
+              "kind": "addGold",
+              "amount": -10
+            },
+            {
+              "kind": "addFood",
+              "amount": 3
+            }
+          ],
+          "next": "buy_food"
+        },
+        {
+          "id": "c1",
+          "text": "Ask about the road ahead",
+          "effects": [],
+          "next": "road_info"
+        },
+        {
+          "id": "c2",
+          "text": "No thanks. Safe travels.",
+          "effects": [],
+          "next": "decline"
+        }
+      ]
+    },
+    "buy_food": {
+      "id": "buy_food",
+      "speaker": "traveling_merchant",
+      "text": "Three days' rations, packed and ready. You won't regret it on the long road ahead.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    },
+    "road_info": {
+      "id": "road_info",
+      "speaker": "traveling_merchant",
+      "text": "Watch yourself out there. I saw brigands camped near the southern crossroads. Nasty lot.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    },
+    "decline": {
+      "id": "decline",
+      "speaker": "traveling_merchant",
+      "text": "Suit yourself. The road is long and lonely — may fortune favor you.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    }
+  }
+}

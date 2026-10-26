@@ -1,0 +1,18 @@
+{
+  "id": "ashfall_raiders",
+  "name": "Ashfall Raiders",
+  "members": [
+    {
+      "name": "Obsidian Fighter",
+      "classId": "bandit",
+      "level": 3,
+      "count": 2
+    },
+    {
+      "name": "Ember Mage",
+      "classId": "ember_mage",
+      "level": 2,
+      "count": 1
+    }
+  ]
+}

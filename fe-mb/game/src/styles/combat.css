@@ -1,0 +1,957 @@
+/* =============================================================================
+   Combat surface — the FIELD ground (dark leather, brass edges). Every colour is a token from index.css; the
+   overlay grammar (one hue never means two things): field-blue = my movement range, attack-red = valid card
+   targets / enemy reach, red-purple = the enemy danger union, arcane = AoE preview, brass = the active unit,
+   ember = the pinned target. Keyframes live here (one stylesheet), all collapse under reduced motion.
+   ========================================================================== */
+
+.board {
+  position: absolute;
+  /* `geometry.ts#plateTransform` is plain stage arithmetic: the translate must apply from the element's own
+     top-left, never from its centre. Only the read-only field under the Field Report carries a transform. */
+  transform-origin: 0 0;
+  display: grid;
+  gap: 0;
+  box-shadow: 0 0 0 7px color-mix(in oklab, var(--iron-800) 92%, black), 0 0 0 8px color-mix(in oklab, var(--iron-edge) 55%, transparent), 0 18px 34px rgba(0, 0, 0, 0.45);
+  background: var(--iron-900);
+
+  /* The field's own reading of the threat role. The shared 26 % wash is tuned for a NEUTRAL ground; this board's
+     art carries maroon dirt, and a card's target tiles were landing at almost exactly the hue of a decorative
+     patch two tiles away — one hue meaning two things, with the cosmetic one winning on area. Terrain is
+     decoration here (DECISIONS: `terrain: off` — it grants nothing), so the chroma budget belongs to the signal:
+     the art gives its up below, and the wash is strong enough to read as something PUT on the board. */
+  --threat: color-mix(in oklab, var(--color-ember) 46%, transparent);
+  --threat-edge: color-mix(in oklab, var(--color-ember) 88%, transparent);
+  /* the same mark in the mending hue: a ward or a heal must not offer its tiles in the danger colour */
+  --mend-wash: color-mix(in oklab, var(--color-mend) 40%, transparent);
+  --mend-edge: color-mix(in oklab, var(--color-mend) 85%, transparent);
+}
+.board__cell {
+  position: relative;
+  width: var(--tile);
+  height: var(--tile);
+  overflow: hidden;
+  cursor: default;
+}
+.board__cell img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  /* Nearly all of the chroma is taken out of the ground: the tileset's green grass and maroon dirt are pure
+     decoration, and while they held saturated hue the blue reach wash, the red target wash and the purple danger
+     union were all competing with the floor for the same channel. The value structure survives, so the board still
+     reads as ground; the hue does not. */
+  filter: brightness(0.66) saturate(0.3);
+  pointer-events: none;
+}
+/* The frozen field under the Field Report carries no overlays at all, so nothing is competing with the ground for
+   the chroma budget — and it is being read through the report's scrim. It gets its colour back. */
+.board[data-source="report"] .board__cell img {
+  filter: brightness(0.86) saturate(0.62);
+}
+.board__cell::after {
+  /* the dark tint + a countable chess alternation, exactly the old board's read */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(43, 30, 20, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(74, 53, 33, 0.5);
+}
+.board__cell--alt::after {
+  background: rgba(43, 30, 20, 0.36);
+}
+.board__cell--wall {
+  background: linear-gradient(160deg, var(--iron-750) 0%, var(--iron-800) 100%);
+  box-shadow: inset 0 2px 0 rgba(214, 178, 108, 0.16), inset 0 -3px 6px rgba(0, 0, 0, 0.6);
+}
+.board__cell--wall::after {
+  background: transparent;
+}
+.board__cell--reach {
+  cursor: pointer;
+}
+.board__cell--reach::before,
+.board__cell--target::before,
+.board__cell--aoe::before,
+.board__cell--danger::before,
+.board__cell--pinned::before,
+.board__cell--drop::before,
+.board__cell--hover::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: 1;
+  pointer-events: none;
+}
+.board__cell--reach::before {
+  background: var(--reach);
+  box-shadow: inset 0 0 0 1px var(--reach-edge);
+}
+.board__cell--reach.board__cell--mode::before {
+  background: color-mix(in oklab, var(--color-ally) 40%, transparent);
+}
+.board__cell--danger::before {
+  background: var(--danger-zone);
+  opacity: 0.72;
+}
+.board__cell--target {
+  cursor: crosshair;
+}
+/* a target is MARKED, not tinted: the wash carries the hue and the crisp cell-aligned edge carries the shape, so
+   the read survives even where the ground behind it happens to be warm */
+.board__cell--target::before {
+  background: var(--threat);
+  box-shadow: inset 0 0 0 1.5px var(--threat-edge);
+}
+.board__cell--target.board__cell--mend::before {
+  background: var(--mend-wash);
+  box-shadow: inset 0 0 0 1.5px var(--mend-edge);
+}
+.board__cell--hover.board__cell--target.board__cell--mend::before {
+  background: color-mix(in oklab, var(--color-mend-lit) 48%, transparent);
+}
+.board__cell--aoe::before {
+  background: color-mix(in oklab, var(--color-gem-arcane) 36%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-gem-arcane) 70%, transparent);
+}
+.board__cell--pinned::before {
+  box-shadow: inset 0 0 0 2px var(--color-ember), inset 0 0 0 3px rgba(0, 0, 0, 0.4);
+}
+.board__cell--hover.board__cell--target::before {
+  background: color-mix(in oklab, var(--color-ember) 48%, transparent);
+}
+/* the tile a drag is hovering — the same ember pin read, so a drop lands where the ring is */
+.board__cell--drop::before {
+  box-shadow: inset 0 0 0 2px var(--color-ember), inset 0 0 0 3px rgba(0, 0, 0, 0.4);
+}
+
+.token {
+  position: absolute;
+  /* the living stand ON the field; a corpse or a prisoner lies UNDER whoever walks onto the tile */
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+  transition: left var(--dur-move) var(--ease-out-quart), top var(--dur-move) var(--ease-out-quart);
+}
+.token__hit {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.token__base {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  width: 62%;
+  height: 22%;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  opacity: 0.55;
+}
+.token--party .token__base {
+  background: var(--color-ally);
+  box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--color-ally) 55%, white);
+}
+.token--enemy .token__base {
+  background: var(--color-enemy);
+  box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--color-enemy) 55%, white);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  border-radius: 0;
+}
+.token__sprite {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  width: auto;
+  image-rendering: auto;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6));
+}
+.token--fallen,
+.token--captured {
+  z-index: 2;
+}
+.token--fallen {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+/* a prisoner is taken, not slain: upright, drained of colour, ironed */
+.token--captured {
+  opacity: 0.55;
+  filter: grayscale(0.85);
+}
+.token--captured .token__base {
+  background: var(--color-parchment-dim);
+  box-shadow: none;
+}
+.token--fallen .token__sprite {
+  transform: rotate(80deg) translateY(20%);
+}
+.token__ring {
+  position: absolute;
+  inset: 6%;
+  border-radius: 9999px;
+  border: 2.5px solid var(--color-hearth);
+  background: color-mix(in oklab, var(--color-hearth) 22%, transparent);
+  z-index: 2;
+}
+.token__ring--target {
+  border-color: var(--color-ember);
+  background: color-mix(in oklab, var(--color-ember) 18%, transparent);
+}
+.token__hp {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 4%;
+  height: 5px;
+  z-index: 2;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+.token__hp > i {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+  transition: width var(--dur-move) var(--ease-out-quart);
+}
+.token__name {
+  position: absolute;
+  top: -1.35em;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--color-parchment);
+  text-shadow: 0 0 3px var(--color-ash), 0 0 3px var(--color-ash), 0 1px 0 var(--color-ash);
+  z-index: 4;
+}
+.token__badge {
+  top: auto;
+  bottom: -1.3em;
+  color: var(--color-hearth);
+}
+.token__badge--muted {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+.token__initials {
+  position: relative;
+  z-index: 1;
+  width: 66%;
+  height: 66%;
+  margin-bottom: 14%;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-parchment);
+  background: var(--iron-700);
+  box-shadow: var(--bevel-iron);
+}
+
+.float {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-numeric);
+  font-weight: 700;
+  font-size: 18px;
+  pointer-events: none;
+  animation: floatUp 900ms var(--ease-out-quart) forwards;
+  text-shadow: 0 0 3px var(--color-ash), 0 0 3px var(--color-ash), 0 1px 0 var(--color-ash);
+}
+.float--hit { color: var(--color-damage-text); }
+.float--heal { color: var(--color-mend); }
+.float--armor { color: var(--color-parchment-dim); }
+.float--status { color: var(--color-gem-arcane); font-size: 13px; font-family: var(--font-display); }
+.float--miss { color: var(--color-parchment); font-size: 13px; font-family: var(--font-display); letter-spacing: 0.14em; }
+@keyframes floatUp {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(0.8); }
+  15% { opacity: 1; transform: translate(-50%, -4px) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(1); }
+}
+
+.hand {
+  /* centred a little left of the stage so the command stack at bottom-right never touches the fifth card */
+  position: absolute;
+  left: calc(50% - 90px);
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+/* The hand's place while somebody else is acting. The five wells hold EXACTLY the footprint the five tabs hold, so
+   nothing in the band moves between phases and the region is furniture rather than a hole in the stage: the cards
+   are put away, they have not ceased to exist. */
+/* `.hand` is already absolutely positioned, so it is the containing block the centred line needs — never give
+   this modifier a `position` of its own or the rail leaves the band entirely. */
+.card-well {
+  box-sizing: border-box; /* the well is the tab's box to the pixel, or the band shifts when the hand is put away */
+  width: 108px;
+  height: 148px;
+  position: relative;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklab, var(--iron-edge) 26%, transparent);
+  background: color-mix(in oklab, var(--iron-700) 24%, transparent);
+  box-shadow: inset 0 1px 0 rgba(214, 178, 108, 0.07), inset 0 -2px 6px rgba(0, 0, 0, 0.3);
+}
+/* the tooled lozenge off the card backs: a well reads as a card PUT AWAY, not as a hole cut in the band */
+.card-well::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border: 1px solid color-mix(in oklab, var(--iron-edge) 26%, transparent);
+}
+.hand__waiting {
+  position: absolute;
+  left: 50%;
+  top: 28px; /* on the shelf, clear of the tooled lozenges */
+  transform: translate(-50%, -50%);
+  padding: 5px 16px;
+  border-radius: 9999px;
+  background: rgba(20, 13, 7, 0.88);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--iron-edge) 55%, transparent);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-parchment-dim);
+}
+
+.card {
+  position: relative;
+  width: 108px;
+  height: 148px;
+  border-radius: var(--radius-md);
+  color: var(--color-parchment);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 10px 8px;
+  box-sizing: border-box;
+  cursor: pointer;
+  text-align: center;
+  border: 1px solid rgba(28, 18, 9, 0.9);
+  transform: translateY(0);
+}
+.card:hover:not(:disabled):not([aria-disabled='true']):not([aria-pressed='true']) {
+  transform: translateY(-8px);
+}
+.card[aria-pressed='true'] {
+  transform: translateY(-14px);
+}
+.card:disabled,
+.card[aria-disabled='true'] {
+  cursor: default;
+}
+.card__cost {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-numeric);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-ink);
+  background: var(--brass-fill);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.card__gem {
+  width: 12px;
+  height: 12px;
+  margin: 0 auto 4px;
+}
+.card__name {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+  min-height: 2.3em;
+}
+.card__number {
+  font-family: var(--font-numeric);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  margin: 8px 0 6px;
+}
+.card__number--attack { color: var(--color-damage-text); }
+.card__number--ward { color: var(--color-mend); }
+.card__number--arcane { color: color-mix(in oklab, var(--color-gem-arcane) 70%, white); }
+.card__number--focus { color: var(--color-hearth); }
+.card__foot {
+  margin-top: auto;
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.plaque {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 18px;
+  min-width: 440px;
+}
+.plaque__label {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.plaque__name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.05em;
+  color: var(--color-parchment);
+}
+
+/* ── the company rail: the left column, and the only home statuses have ─────────────────────────────────────── */
+/* The rail owns the left column outright — from under the initiative strip down to the hand's shelf — and the
+   cards share it, so three companions read as a composed column rather than three chips at the top of a void. */
+.company-rail {
+  position: absolute;
+  left: 14px;
+  top: 104px;
+  width: 300px;
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  z-index: 3;
+}
+.company-rail > .plaque__label {
+  margin-bottom: 1px;
+}
+.rail-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 122px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 11px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(158deg, color-mix(in oklab, var(--iron-700) 30%, var(--iron-900)) 0%, var(--iron-900) 100%);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 22%, transparent), var(--elevation-flat);
+  transition: box-shadow var(--dur-quick) var(--ease-out-quart);
+}
+/* whoever is acting is the one the board is waiting on: the same brass the token's ring uses */
+.rail-card--acting {
+  box-shadow: inset 0 0 0 1px var(--color-hearth-soft), var(--elevation-raised);
+}
+.rail-card--down {
+  opacity: 0.45;
+}
+.rail-card--down .rail-card__face {
+  filter: grayscale(1) brightness(0.7);
+}
+.rail-card__face {
+  width: 54px;
+  height: 54px;
+  flex: none;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--iron-900);
+  border: 2px solid color-mix(in oklab, var(--iron-edge) 38%, transparent);
+}
+.rail-card--acting .rail-card__face {
+  border-color: var(--color-hearth);
+}
+.rail-card__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.rail-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+}
+.rail-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.rail-card__name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  color: var(--color-parchment);
+}
+.rail-card__armor {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  color: var(--color-ash);
+  background: var(--brass-fill);
+}
+.rail-card__hp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rail-card__hp .hp-bar {
+  flex: 1;
+}
+.rail-card__hands {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rail-card__num {
+  width: 54px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--color-parchment-dim);
+}
+/* a status is a WORD and a countdown, never a bare icon: "taunt · 1" says what it is and how long it lasts */
+.rail-card__riders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 1px;
+}
+.rider {
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.1;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 26%, transparent);
+  color: var(--color-parchment-dim);
+}
+.rider b {
+  color: var(--color-parchment);
+}
+.rider--poison,
+.rider--burn,
+.rider--slow,
+.rider--immobilize {
+  color: var(--color-damage-text);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-ember) 45%, transparent);
+}
+.rider--taunt,
+.rider--riposte,
+.rider--empower {
+  color: var(--color-hearth);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-hearth) 40%, transparent);
+}
+
+/* ── the field roll: the right column's resting content, dimmed (never unmounted) under the play panel ─────── */
+.foe-roll {
+  position: absolute;
+  right: 16px;
+  top: 104px;
+  width: 300px;
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 2;
+  transition: opacity var(--dur-quick) var(--ease-out-quart);
+}
+.foe-roll--muted {
+  opacity: 0.14;
+  pointer-events: none;
+}
+.foe-roll > .plaque__label b {
+  font-size: 11px;
+  color: var(--color-parchment-dim);
+}
+.foe-roll__list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6px;
+}
+.foe-row {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 92px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(158deg, color-mix(in oklab, var(--color-enemy) 16%, var(--iron-900)) 0%, var(--iron-900) 100%);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-enemy) 32%, transparent);
+}
+.foe-row--acting {
+  box-shadow: inset 0 0 0 1px var(--color-hearth-soft), var(--elevation-raised);
+}
+.foe-row--down {
+  opacity: 0.4;
+}
+.foe-row--down .foe-row__face {
+  filter: grayscale(1) brightness(0.7);
+}
+.foe-row--down .foe-row__name {
+  text-decoration: line-through;
+}
+.foe-row__face {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--iron-900);
+  border: 1px solid color-mix(in oklab, var(--color-enemy) 55%, transparent);
+}
+.foe-row__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.foe-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.foe-row__name {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+  color: var(--color-parchment-dim);
+}
+
+.strip {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+}
+.strip__entry {
+  width: 44px;
+  text-align: center;
+  font-family: var(--font-numeric);
+  font-size: 10px;
+  color: var(--color-parchment-dim);
+}
+.strip__face {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 2px;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 2px solid rgba(176, 138, 62, 0.35);
+  background: var(--iron-900);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 12px;
+}
+.strip__entry--active .strip__face {
+  border-color: var(--color-hearth);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-hearth) 40%, transparent);
+}
+.strip__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.strip__entry--enemy .strip__face { border-style: dashed; }
+
+.forecast {
+  position: absolute;
+  right: 16px;
+  top: 130px;
+  width: 300px;
+  padding: 12px 14px;
+  font-size: 13px;
+  /* The forecast and the foe roll share one footprint by design — the panel stands IN the roll's place. The roll
+     kept `z-index: 2` while muted, so it went on painting over the card: a foe's green HP bar ran straight through
+     the "−15 HP" headline and its "76/76" printed itself twice inside it. The panel takes the lift instead (the
+     roll stays the 0.14 ghost it was meant to be everywhere the panel does not cover), and it is the one panel
+     that may not be glass — `--iron-900` is `.hud-panel`'s own bottom stop, so this changes no colour, it only
+     closes the last 3% the ghost was reading through. */
+  z-index: 3;
+  background-color: var(--iron-900);
+}
+/* Outcome first, at the size of the thing you are deciding; the reckoning under it, at the size of a footnote. */
+.forecast__outcome {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 2px 0 4px;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-damage-text);
+}
+.forecast__outcome--mend {
+  color: var(--color-mend);
+}
+.forecast__outcome--none {
+  color: var(--color-parchment-dim);
+  font-size: 16px;
+}
+.forecast__outcome .forecast__lethal {
+  font-size: 13px;
+}
+.forecast__state {
+  margin: 0 0 6px;
+  color: var(--color-parchment-dim);
+}
+.forecast__math {
+  font-family: var(--font-numeric);
+  color: var(--color-parchment-dim);
+  font-size: 12px;
+}
+/* the maths, demoted to a footnote: it is the audit trail for the line above, never the headline */
+.forecast__reckon {
+  margin-top: 4px;
+  font-family: var(--font-numeric);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.forecast__victims {
+  margin: 6px 0 2px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in oklab, var(--iron-edge) 40%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.forecast__lethal {
+  font-family: var(--font-display);
+  letter-spacing: 0.2em;
+  color: var(--color-damage-text);
+}
+
+.tutorial-hint {
+  position: absolute;
+  right: 16px;
+  top: 130px;
+  width: 300px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.tutorial-hint__step {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-hearth);
+}
+
+.commands {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.commands__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+/* End turn is the column's LEAD: it gets the full strap under the pair. Half a row in the left-hand corner made
+   the primary the smallest thing in its own cluster, which is why the two seconds beside it read as brass too. */
+.commands__grid > :last-child {
+  grid-column: 1 / -1;
+}
+.commands .btn-forged {
+  white-space: nowrap;
+}
+
+/* the bag: one row per distinct consumable, so the second potion is reachable */
+.item-tray {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.item-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 2px 8px;
+  text-align: left;
+}
+.item-row__name {
+  font-family: var(--font-display);
+  font-size: 12px;
+  /* the button recipe uppercases this, and caps under ~0.05em typeset like a memo (signals.md A) */
+  letter-spacing: 0.06em;
+}
+.item-row__count {
+  font-family: var(--font-numeric);
+  font-size: 12px;
+  color: var(--color-hearth);
+}
+.item-row__what {
+  grid-column: 1 / -1;
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+/* the drag ghost: what is in your hand, following the cursor; the hit tile carries the real feedback */
+.drag-ghost {
+  position: absolute;
+  z-index: 40;
+  transform: translate(10px, 10px);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(20, 13, 7, 0.9);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--iron-edge) 70%, transparent), 0 6px 14px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--color-parchment);
+  pointer-events: none;
+  white-space: nowrap;
+}
+/* Blow by blow — the running account under the company rail. It occupies the one measured void this screen had
+   left (256x144 at the bottom-left, RE-GATE B 2.9) with the one reading nothing else here carries: what actually
+   happened on the last few frames, after the floats have gone. It is a PLATE, not a console: four lines, the
+   newest at the foot, tone by what the line cost. */
+.chronicle {
+  position: absolute;
+  left: 14px;
+  top: 534px;
+  /* stops short of the hand: `.hand` is centred on 550 and 580 wide, so its first card begins at x 260 */
+  width: 238px;
+  height: 128px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 11px 7px;
+  box-sizing: border-box;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(158deg, color-mix(in oklab, var(--iron-700) 22%, var(--iron-900)) 0%, var(--iron-900) 100%);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 20%, transparent), var(--elevation-flat);
+  z-index: 3;
+}
+.chronicle__lines {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 3px;
+  overflow: hidden;
+  /* The newest line is always whole at the foot; an older one that no longer fits FADES off the top rather than
+     being cut. Nothing player-authored is ellipsised (ARCHITECTURE §5), and a company name is authored — so the
+     lines WRAP and the plate loses its oldest, which is what a running log does anyway. */
+  mask-image: linear-gradient(180deg, transparent 0, black 18px);
+}
+.chronicle__line {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: var(--color-parchment-dim);
+  overflow-wrap: anywhere;
+}
+.chronicle__line b {
+  font-size: 12.5px;
+  color: var(--color-parchment);
+}
+.chronicle__line--harm b { color: var(--color-damage-text); }
+.chronicle__line--mend b { color: var(--color-mend-lit); }
+.chronicle__line--idle { color: var(--color-text-muted); font-style: italic; }
+
+.danger-chip {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+}
+.keycap {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-right: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(176, 138, 62, 0.5);
+  background: rgba(0, 0, 0, 0.35);
+  font-family: var(--font-numeric);
+  font-size: 10px;
+  text-transform: uppercase; /* a key is a KEY everywhere: inherited casing rendered ESC in buttons, Esc in hints */
+  color: var(--color-parchment-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* the number still has to be READ — drop the travel, keep the float visible where it landed */
+  .float { animation: none; opacity: 1; transform: translate(-50%, -14px); }
+  .token, .card, .token__hp > i { transition: none; }
+}
+/* the same resting pose under `?motion=0` (ui/timings.ts stamps data-motion) */
+[data-motion="off"] .float { animation: none; opacity: 1; transform: translate(-50%, -14px); }
+[data-motion="off"] .token,
+[data-motion="off"] .card,
+[data-motion="off"] .token__hp > i { transition: none; }
+
+.hand-hint {
+  /* the one-line reason a selected card has nothing to aim at — sits just above the hand, in the plaque voice */
+  position: absolute;
+  left: calc(50% - 90px);
+  bottom: 178px;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  border-radius: 9999px;
+  background: rgba(20, 13, 7, 0.82);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--iron-edge) 60%, transparent);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--color-parchment-dim);
+  white-space: nowrap;
+  pointer-events: none;
+}

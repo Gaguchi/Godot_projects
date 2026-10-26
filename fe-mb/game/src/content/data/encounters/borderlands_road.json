@@ -1,0 +1,235 @@
+{
+  "id": "borderlands_road",
+  "regionId": "borderlands",
+  "entries": [
+    {
+      "id": "road_merchant",
+      "weight": 10,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "road_merchant"
+      }
+    },
+    {
+      "id": "bandit_threat",
+      "weight": 8,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "bandit_threat"
+      }
+    },
+    {
+      "id": "wounded_traveler",
+      "weight": 6,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "wounded_traveler"
+      }
+    },
+    {
+      "id": "bandit_ambush",
+      "weight": 8,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "bandits_small"
+      }
+    },
+    {
+      "id": "wolf_pack",
+      "weight": 6,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "wolves"
+      }
+    },
+    {
+      "id": "brigand_raiders",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "brigands"
+      }
+    },
+    {
+      "id": "stuck_caravan",
+      "weight": 8,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "checkEventId": "stuck_caravan"
+      }
+    },
+    {
+      "id": "scout_ahead",
+      "weight": 6,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "checkEventId": "scout_ahead"
+      }
+    },
+    {
+      "id": "shield_wall_patrol",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "shield_wall"
+      }
+    },
+    {
+      "id": "wolf_alpha_pack",
+      "weight": 5,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "wolf_alpha_pack"
+      }
+    },
+    {
+      "id": "wandering_blacksmith",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "checkEventId": "wandering_blacksmith"
+      }
+    },
+    {
+      "id": "injured_knight",
+      "weight": 3,
+      "oneShot": true,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "checkEventId": "injured_knight"
+      }
+    },
+    {
+      "id": "deserter_plea",
+      "weight": 5,
+      "oneShot": true,
+      "conditions": [
+        {
+          "kind": "notFlag",
+          "key": "deserter_helped"
+        },
+        {
+          "kind": "notFlag",
+          "key": "deserter_turned_in"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "deserter_plea"
+      }
+    },
+    {
+      "id": "deserter_repays",
+      "weight": 60,
+      "oneShot": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "key": "deserter_helped",
+          "equals": true
+        },
+        {
+          "kind": "notFlag",
+          "key": "deserter_repaid"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "deserter_repays"
+      }
+    },
+    {
+      "id": "deserters_brothers",
+      "weight": 60,
+      "oneShot": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "key": "deserter_turned_in",
+          "equals": true
+        },
+        {
+          "kind": "notFlag",
+          "key": "deserter_brothers_met"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "deserters_brothers"
+      }
+    },
+    {
+      "id": "sq_caravan_wreck",
+      "weight": 90,
+      "oneShot": false,
+      "conditions": [
+        {
+          "kind": "questStage",
+          "questId": "sq_missing_caravan",
+          "stage": "find_supplies"
+        },
+        {
+          "kind": "notFlag",
+          "key": "caravan_supplies_found"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "sq_caravan_found"
+      }
+    },
+    {
+      "id": "sq_blood_ties_encounter",
+      "weight": 100,
+      "oneShot": false,
+      "conditions": [
+        {
+          "kind": "questStage",
+          "questId": "sq_blood_ties",
+          "stage": "find_daren"
+        },
+        {
+          "kind": "flag",
+          "key": "darens_camp_marked",
+          "equals": true
+        }
+      ],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "darens_gang",
+        "captureTargets": [
+          {
+            "unitId": "daren",
+            "capturedDialogueId": "sq_blood_ties_daren_captured",
+            "killedDialogueId": "sq_blood_ties_daren_killed",
+            "capturedFlag": "daren_captured",
+            "killedFlag": "daren_killed"
+          }
+        ]
+      }
+    }
+  ]
+}

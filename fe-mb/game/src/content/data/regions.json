@@ -1,0 +1,38 @@
+[
+  {
+    "id": "borderlands",
+    "name": "The Borderlands",
+    "color": "#a07a40",
+    "tier": 1,
+    "encounterChancePerHop": 0.4,
+    "battlefieldIds": [
+      "open_ground",
+      "broken_fence",
+      "wagon_road"
+    ]
+  },
+  {
+    "id": "thornwood",
+    "name": "Thornwood",
+    "color": "#3a6a3e",
+    "tier": 2,
+    "encounterChancePerHop": 0.55,
+    "battlefieldIds": [
+      "thornwood_thicket",
+      "chapel_yard",
+      "open_ground"
+    ]
+  },
+  {
+    "id": "ashfall",
+    "name": "Ashfall",
+    "color": "#7a2010",
+    "tier": 3,
+    "encounterChancePerHop": 0.7,
+    "battlefieldIds": [
+      "ashfall_slabs",
+      "cinder_gully",
+      "open_ground"
+    ]
+  }
+]

@@ -1,0 +1,68 @@
+{
+  "id": "dripping_font",
+  "title": "Water comes clean out of the rock",
+  "description": "The only clean thing down here. It runs into a basin somebody cut for it, a long time ago.",
+  "choices": [
+    {
+      "id": "drink",
+      "text": "Fill the skins and drink.",
+      "check": {
+        "kind": "stat",
+        "stat": "res",
+        "threshold": 6
+      },
+      "onPass": {
+        "narration": "Cold, hard water, and it sits well. The company comes off the basin looking like itself again.",
+        "effects": [
+          {
+            "kind": "healParty",
+            "percent": 0.25
+          },
+          {
+            "kind": "addFood",
+            "amount": 1
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Something in it disagrees with everybody, one after another.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "search",
+      "text": "Search the basin.",
+      "check": {
+        "kind": "stat",
+        "stat": "skl",
+        "threshold": 5
+      },
+      "onPass": {
+        "narration": "Coins under the silt, left for luck by people who needed it more than you do.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 30
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Silt, and more silt. Whatever was in there is further down than an arm goes.",
+        "effects": []
+      }
+    },
+    {
+      "id": "leave",
+      "text": "Water the horses and move on.",
+      "onPass": {
+        "narration": "Nobody is thirsty enough to argue with strange water.",
+        "effects": []
+      }
+    }
+  ]
+}

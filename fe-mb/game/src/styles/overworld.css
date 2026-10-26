@@ -1,0 +1,631 @@
+/* =============================================================================
+   Overworld — the ledger band (leather) over the one open sheet (parchment). Ink colours come from the region
+   palette at render time; chrome colours are tokens from index.css. Keyframes here; all collapse under reduced
+   motion (see the media block at the end of index.css for --dur-*; the two animations below check it themselves).
+   ========================================================================== */
+
+.ow-screen {
+  position: absolute;
+  inset: 0;
+  background: var(--iron-900);
+  overflow: hidden;
+}
+
+/* ── the band ── */
+.ow-band {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 120px;
+  box-sizing: border-box;
+  display: grid;
+  /* Fixed columns for the reading blocks, ONE flexible track for the faces. The verbs column carries the only
+     route to Pause/Save & quit, so it is the last thing allowed to shrink: at the shipped party cap of 6 the
+     faces track gives way, never the chrome (`minmax(0, 1fr)` + overflow below). */
+  grid-template-columns: 62px 214px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px 14px;
+  background: linear-gradient(180deg, var(--iron-800) 0%, var(--iron-900) 100%);
+  box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--iron-edge) 55%, transparent), 0 6px 18px rgba(0, 0, 0, 0.45);
+  z-index: 3;
+}
+.ow-band__block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ow-band__block--right {
+  flex-direction: row;
+  gap: 18px;
+}
+.ow-band__block--verbs {
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+.ow-band__eyebrow {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.ow-band__big {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-parchment);
+}
+/* The banner the player named. It WRAPS — a name the player wrote is content, and
+   content is never ellipsised (GATE2-12). Two lines of Cinzel still clear the
+   120px band beside the eyebrow and the contract line. */
+.ow-band__company {
+  font-size: 18px;
+  line-height: 1.14;
+  color: var(--color-parchment);
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+/* "On the road · 2 hops to go" — a ledger reading, in the ledger, under the company's own name. It was a pill
+   parked at the top centre of the SHEET, over whatever node mark happened to be there for the whole journey. */
+.ow-band__road {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--color-parchment-dim);
+  white-space: nowrap;
+}
+.ow-band__road b {
+  color: var(--color-hearth);
+}
+.ow-band__quest {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-hearth);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ow-band__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.ow-band__num {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-parchment);
+}
+.ow-band__faces {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: flex-end;
+  min-width: 0;
+  overflow: hidden;
+}
+/* A portrait is as wide as the name under it needs, up to a cap; at the shipped
+   party sizes nothing is cut, and past the cap the name wraps to a second line
+   rather than losing its tail. */
+.ow-face {
+  flex: 0 1 auto;
+  min-width: 58px;
+  max-width: 116px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.ow-face__frame {
+  width: 46px;
+  height: 46px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: var(--iron-700);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--iron-edge) 70%, transparent), 0 2px 4px rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--color-parchment);
+}
+.ow-face__frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 8%;
+}
+.ow-face__hp {
+  width: 46px;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.ow-face__hp > i {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+}
+/* The name the player was given or chose. It wraps to a second line before it
+   gives up any letters; the old rule cut "The Foundling" to "The Found…" at
+   every party size and handed the rest to a `title=` (GATE2-12, GATE3-11). */
+.ow-face__name {
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  line-height: 1.16;
+  letter-spacing: 0.04em;
+  color: var(--color-parchment-dim);
+  text-align: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+/* Supplies running out: the numeral turns, AND it wears the ration sigil, AND it says the cost (BRIEF §5 rule 4). */
+.ow-band__num--low {
+  color: var(--color-damage-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── the sheet under its camera ── */
+.ow-viewport {
+  position: absolute;
+  left: 0;
+  overflow: hidden;
+  background: var(--iron-900);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.ow-viewport--dragging {
+  cursor: grabbing;
+}
+.ow-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+.ow-sheet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+.ow-sheet__paper,
+.ow-sheet__grain,
+.ow-sheet__stains,
+.ow-sheet__vignette,
+.ow-sheet__ink {
+  position: absolute;
+  inset: 0;
+}
+.ow-sheet__grain {
+  mix-blend-mode: multiply;
+  opacity: 0.18;
+  background-size: 300px 300px;
+}
+.ow-sheet__stains {
+  mix-blend-mode: multiply;
+  opacity: 0.4;
+  background-size: cover;
+}
+.ow-sheet__vignette {
+  box-shadow: inset 0 0 120px 30px rgba(90, 55, 20, 0.32), inset 0 0 30px 6px rgba(60, 35, 12, 0.28);
+}
+.ow-sheet__region {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.ow-roads {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+.ow-road-comet {
+  animation: owComet 1.6s linear infinite;
+}
+@keyframes owComet {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -400; }
+}
+
+/* ── nodes ── */
+.ow-node {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  z-index: 5;
+  outline: none;
+  transition: transform var(--dur-quick) var(--ease-out-quart);
+}
+/* The MARK lifts under the pointer, never the whole button: a name that moved on hover could walk into the
+   neighbour the cartographer just kept it clear of (see ui/overworld/labels.ts). */
+.ow-node__mark {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  transition: transform var(--dur-quick) var(--ease-out-quart);
+}
+.ow-node:hover .ow-node__mark {
+  transform: scale(1.08);
+}
+.ow-node:focus-visible .ow-node__disc {
+  box-shadow: var(--focus-ring) !important;
+}
+.ow-node__mark > * {
+  grid-area: 1 / 1;
+}
+.ow-node__shadow {
+  width: 36px;
+  height: 13px;
+  border-radius: 50%;
+  transform: translateY(14px);
+  background: radial-gradient(50% 50% at 50% 50%, rgba(70, 45, 20, 0.35), transparent 75%);
+  filter: blur(2px);
+}
+.ow-node__disc {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  box-sizing: border-box;
+}
+.ow-node__seal {
+  width: 46px;
+  height: 46px;
+  border-radius: 9999px;
+  border: 1.6px solid;
+  opacity: 0.55;
+  box-sizing: border-box;
+}
+.ow-node__invite {
+  width: 46px;
+  height: 46px;
+  border-radius: 9999px;
+  border: 1px dashed;
+  opacity: 0.4;
+  box-sizing: border-box;
+}
+.ow-node__sigil {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+.ow-node__badge {
+  position: absolute;
+  left: 32px;
+  top: 32px;
+  width: 15px;
+  height: 15px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--color-bone);
+  border: 1px solid color-mix(in srgb, var(--color-bone) 50%, transparent);
+  z-index: 2;
+}
+.ow-node__badge--lock {
+  font-size: 8px;
+}
+/* `left` / `top` are the planned centre of the name in the button's own 52px box (26,26 is the mark's centre);
+   the translate seats the box on that point. The plan comes from ui/overworld/labels.ts and is sheet-space, so it
+   does not move with the camera. */
+.ow-node__label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 11px;
+  line-height: 15px;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 3px var(--map-vellum), 0 0 3px var(--map-vellum), 0 0 5px var(--map-vellum);
+  pointer-events: none;
+}
+.ow-node--distant .ow-node__label {
+  opacity: 0.8;
+}
+/* A name the window's edge would SLICE is not lettered at all. "Cursed Clearing" printed as a bare "CUR" at
+   x = 1280 (RE-GATE C 3.20), and a three-letter stump of a place-name is not a name — §5.1: it fits, it wraps, or
+   it is a bug. It fades rather than blinks, so dragging the sheet reads as names coming in off the paper. */
+.ow-node__label {
+  transition: opacity var(--dur-quick) ease;
+}
+/* doubled class so it also outranks `.ow-node--distant .ow-node__label` above */
+.ow-node__label.ow-node__label--cut {
+  opacity: 0;
+}
+
+/* ── the company on the road ── */
+/* The company stands BEHIND the mark it is on, not over it: at -62 the sprite's boots covered the top third of
+   the sigil and the player could not tell a town from a camp while standing in it (GATE3-10). The token also
+   sits UNDER the marks and their names (z 4, below `.ow-node`), so the sheet's own reading — which place this is,
+   what it is called — is never hidden by the figure standing on it. */
+.ow-pawn {
+  position: absolute;
+  width: 48px;
+  height: 56px;
+  margin-left: -24px;
+  margin-top: -80px;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.ow-pawn__shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 30px;
+  height: 10px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(50, 30, 10, 0.45), transparent 75%);
+}
+.ow-pawn__sprite {
+  position: relative;
+  height: 52px;
+  filter: drop-shadow(0 2px 2px rgba(40, 20, 5, 0.5));
+}
+.ow-pawn--west .ow-pawn__sprite {
+  transform: scaleX(-1);
+}
+.ow-pawn__disc {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--color-hearth);
+  box-shadow: 0 0 0 2px var(--color-ink);
+}
+
+/* ── the hover cost, the walking line, the toast, the recentre ── */
+.ow-tip {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background: rgba(28, 20, 13, 0.92);
+  color: var(--color-parchment);
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--iron-edge) 60%, transparent), var(--elevation-raised);
+  pointer-events: none;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.ow-tip__warn {
+  color: var(--color-damage-text);
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+}
+/* the scouts' sentence, on the path the pointer is asking about: the same two voices the camp report uses —
+   trouble in the damage ink, a quiet road muted — so one ration reads the same wherever it is spent (0109) */
+.ow-tip__sight {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--color-damage-text);
+}
+.ow-tip__sight--quiet {
+  color: var(--color-text-muted);
+}
+.ow-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  background: rgba(28, 20, 13, 0.94);
+  color: var(--color-parchment);
+  font-family: var(--font-display);
+  font-size: 13px;
+  box-shadow: 0 0 0 1px var(--color-ember), var(--elevation-raised);
+  z-index: 9;
+  pointer-events: none;
+  animation: owToast var(--dur-settle) var(--ease-out-quart);
+}
+@keyframes owToast {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+/* The ONE strap that stands on the SHEET instead of on leather. `.btn-forged--ghost` letters itself in
+   `--color-parchment-dim`, which at the document root is dimmed bone — bone on vellum, so the only way back
+   to the company after a pan was painted at a measured 1.36:1 against its own plate while the band's chips
+   measure 14.55:1 (FINAL GATE B). A paper ground takes the paper ramp: the same token swap `.page-canvas` makes,
+   scoped to this control, so the base and the hover both flip with one declaration each. */
+/* ── the frame is a WINDOW ──
+   The sheet is 3060x850 behind a 1280x600 window and it used to end in a hard cut, with nothing anywhere saying
+   the map could be moved (RE-GATE C 3.20). The paper falls into shadow on each side that has more country behind
+   it — a property of the camera, so it is true while dragging and gone the moment the clamp reaches the paper's
+   edge. It is the frame's own iron falling across the sheet, never a glow. */
+.ow-edge {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 7;
+}
+.ow-edge__side {
+  position: absolute;
+}
+.ow-edge__side--l,
+.ow-edge__side--r {
+  top: 0;
+  bottom: 0;
+  width: 78px;
+}
+.ow-edge__side--t,
+.ow-edge__side--b {
+  left: 0;
+  right: 0;
+  height: 58px;
+}
+.ow-edge__side--l {
+  left: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--iron-900) 74%, transparent) 0%, color-mix(in srgb, var(--iron-900) 16%, transparent) 58%, transparent 100%);
+}
+.ow-edge__side--r {
+  right: 0;
+  background: linear-gradient(270deg, color-mix(in srgb, var(--iron-900) 74%, transparent) 0%, color-mix(in srgb, var(--iron-900) 16%, transparent) 58%, transparent 100%);
+}
+.ow-edge__side--t {
+  top: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--iron-900) 64%, transparent) 0%, color-mix(in srgb, var(--iron-900) 14%, transparent) 58%, transparent 100%);
+}
+.ow-edge__side--b {
+  bottom: 0;
+  background: linear-gradient(0deg, color-mix(in srgb, var(--iron-900) 64%, transparent) 0%, color-mix(in srgb, var(--iron-900) 14%, transparent) 58%, transparent 100%);
+}
+
+/* One corner, one thing: the gesture in words until the player has used it, the way back to the company after.
+   Ink on paper, like `.ow-recentre` below — the leather ramp does not reach the sheet (0114). */
+.ow-hint {
+  position: absolute;
+  right: 18px;
+  /* clear of the bottom shadow band above, so the sentence is read on lit paper */
+  bottom: 74px;
+  margin: 0;
+  max-width: 340px;
+  text-align: right;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--color-ink);
+  text-shadow: 0 0 3px var(--map-vellum), 0 0 5px var(--map-vellum);
+  pointer-events: none;
+  z-index: 8;
+}
+
+.ow-recentre {
+  --color-parchment: var(--color-ink);
+  --color-parchment-dim: var(--color-ink-dim);
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  font-size: 0.72rem;
+  padding: 0.4rem 0.9rem;
+  z-index: 8;
+}
+
+/* ── the node card ── */
+/* SEATED AT THE MARK IT NAMES (`OverworldScreen#seatCard`), with a notch pointing back at it. It used to open
+   pinned to the bottom centre of the stage whatever the player clicked — 562px from the node, with three quarters
+   of the map between the place and the panel about it (RE-GATE C 3.11). `left` / `top` / `bottom` come in as
+   inline stage pixels; `--tail-dx` carries how far the clamp had to move the card off the mark's own column. */
+.ow-card {
+  position: absolute;
+  transform: translateX(-50%);
+  min-width: 340px;
+  max-width: 560px;
+  padding: 14px 20px 16px;
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--map-vellum) 0%, var(--map-vellum-deep) 100%);
+  color: var(--color-ink);
+  box-shadow: 0 0 0 1px var(--map-edge), 0 0 0 3px var(--map-vellum), 0 0 0 4px color-mix(in srgb, var(--map-edge) 50%, transparent), var(--elevation-float);
+  z-index: 9;
+  animation: owCard var(--dur-settle) var(--ease-out-quart);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+@keyframes owCard {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+/* the notch: a nib of the same vellum on the edge that faces the mark, offset by however far the clamp had to
+   move the card off that mark's own column */
+.ow-card::before {
+  content: '';
+  position: absolute;
+  left: calc(50% + var(--tail-dx, 0px));
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+}
+.ow-card--below::before {
+  top: -13px;
+  border-bottom: 13px solid var(--map-vellum);
+}
+.ow-card--above::before {
+  bottom: -13px;
+  border-top: 13px solid var(--map-vellum-deep);
+}
+.ow-card__eyebrow {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-ink-dim);
+}
+.ow-card__title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-ink);
+}
+/* The one-way door, said on the card that offers it (0113). Body prose on canvas: it is a warning beside a legal
+   verb, not a refusal, so it reads as a sentence rather than a fragment on the glass. */
+.ow-card__warning {
+  margin: 6px 0 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--color-ink-dim);
+  border-top: 1px solid var(--map-edge);
+  padding-top: 6px;
+}
+.ow-card__verbs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* This rule shipped as `.ow-road-comet,` with no declaration block — a dangling
+   selector list, so the map's one looping animation was never gated by anything. */
+@media (prefers-reduced-motion: reduce) {
+  .ow-road-comet { animation: none; }
+}
+
+/* leather-ground button variants re-inked for the parchment card */
+.ow-card .btn-forged--ghost {
+  color: var(--color-ink-dim);
+  box-shadow: inset 0 0 0 1px rgba(91, 65, 38, 0.45);
+}
+.ow-card .btn-forged--ghost:hover {
+  color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px rgba(91, 65, 38, 0.8);
+}

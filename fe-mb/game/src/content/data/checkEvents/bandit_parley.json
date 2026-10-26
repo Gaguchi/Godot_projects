@@ -1,0 +1,87 @@
+{
+  "id": "bandit_parley",
+  "title": "Three bandits block the road, blades drawn but no orders given",
+  "description": "Their captain — leaner, more thoughtful than the rest — raises a hand. He'll talk before he fights.",
+  "choices": [
+    {
+      "id": "intimidate",
+      "text": "Show them why they should fear you.",
+      "check": {
+        "kind": "stat",
+        "stat": "str",
+        "threshold": 6
+      },
+      "onPass": {
+        "narration": "The captain reads the line of you, spits in the dust, and waves his men off the road. One of them leaves his purse behind in the hurry.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 25
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "They laugh. Steel rings free of scabbards.",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "brigands"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pay_toll",
+      "text": "Pay the toll. 30 gold.",
+      "check": {
+        "kind": "gold",
+        "amount": 30
+      },
+      "onPass": {
+        "narration": "They step aside, all smiles. The captain even nods you a good evening — thirty gold buys a quiet mile.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": -30
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Your purse comes up short. They take it as insult.",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "brigands"
+          }
+        ]
+      }
+    },
+    {
+      "id": "smooth_talk",
+      "text": "Talk your way through.",
+      "check": {
+        "kind": "stat",
+        "stat": "skl",
+        "threshold": 7
+      },
+      "onPass": {
+        "narration": "Whatever you said worked. They wave you on, almost embarrassed — and the captain points out the ford that saves you half a day's walk.",
+        "effects": [
+          {
+            "kind": "addFood",
+            "amount": 1
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The captain's eyes harden. \"Enough talk.\"",
+        "effects": [
+          {
+            "kind": "startCombat",
+            "enemyGroupId": "brigands"
+          }
+        ]
+      }
+    }
+  ]
+}

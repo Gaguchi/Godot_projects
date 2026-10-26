@@ -1,0 +1,20 @@
+{
+  "id": "obsidian_cavern",
+  "name": "Obsidian Cavern",
+  "regionId": "ashfall",
+  "combatEnemyGroupId": "brigands",
+  "eliteEnemyGroupId": "ashfall_raiders",
+  "bossEnemyGroupId": "mage_circle",
+  "roomEvents": [
+    "ancient_inscription",
+    "smuggler_cache",
+    "pale_growth",
+    "bad_air",
+    "collapsed_shaft",
+    "dripping_font"
+  ],
+  "battlefieldIds": [
+    "cave_pillars",
+    "cinder_gully"
+  ]
+}

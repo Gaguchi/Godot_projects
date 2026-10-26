@@ -1,0 +1,18 @@
+{
+  "id": "bandit_lookouts",
+  "name": "Bandit Lookouts",
+  "members": [
+    {
+      "name": "Lookout",
+      "classId": "bandit",
+      "level": 1,
+      "count": 2
+    },
+    {
+      "name": "Watchbow",
+      "classId": "bandit_archer",
+      "level": 1,
+      "count": 1
+    }
+  ]
+}

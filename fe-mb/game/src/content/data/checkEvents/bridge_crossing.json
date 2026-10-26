@@ -1,0 +1,42 @@
+{
+  "id": "bridge_crossing",
+  "title": "An old rope bridge sways across a ravine",
+  "description": "The shortcut saves a day's travel, but the planks are rotten and the wind is up.",
+  "choices": [
+    {
+      "id": "cross_carefully",
+      "text": "Send the most agile across first to scout.",
+      "check": {
+        "kind": "stat",
+        "stat": "spd",
+        "threshold": 5
+      },
+      "onPass": {
+        "narration": "The lead scout makes it. The party crosses with whispered footing. You save a day.",
+        "effects": [
+          {
+            "kind": "addFood",
+            "amount": 2
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "A plank gives way mid-cross. You haul them up, but the party loses a day backtracking.",
+        "effects": [
+          {
+            "kind": "addFood",
+            "amount": -1
+          }
+        ]
+      }
+    },
+    {
+      "id": "take_long_way",
+      "text": "Go the long way around. Safer.",
+      "onPass": {
+        "narration": "You take the road. Slow. Safe. No surprises.",
+        "effects": []
+      }
+    }
+  ]
+}

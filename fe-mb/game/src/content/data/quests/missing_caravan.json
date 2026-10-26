@@ -1,0 +1,30 @@
+{
+  "id": "sq_missing_caravan",
+  "name": "The Missing Caravan",
+  "initialStage": "find_supplies",
+  "stages": {
+    "find_supplies": {
+      "id": "find_supplies",
+      "label": "Search the Thornwood road for the caravan",
+      "onEnter": [],
+      "transitions": [
+        {
+          "when": {
+            "kind": "flag",
+            "key": "caravan_supplies_found",
+            "equals": true
+          },
+          "to": "return_reward"
+        }
+      ],
+      "onExit": []
+    },
+    "return_reward": {
+      "id": "return_reward",
+      "label": "Carry the news back to Guildmistress Anya",
+      "onEnter": [],
+      "transitions": [],
+      "onExit": []
+    }
+  }
+}

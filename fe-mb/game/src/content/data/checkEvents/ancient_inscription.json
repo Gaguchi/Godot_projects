@@ -1,0 +1,68 @@
+{
+  "id": "ancient_inscription",
+  "title": "An inscription on a fallen pillar",
+  "description": "The script flickers as if alive. Untranslated, it watches you.",
+  "choices": [
+    {
+      "id": "read_arcane",
+      "text": "Read the arcane script.",
+      "check": {
+        "kind": "stat",
+        "stat": "mag",
+        "threshold": 7
+      },
+      "onPass": {
+        "narration": "The pillar dissolves, revealing a vault. Gold and a glimmer of insight.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 60
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The script burns your eyes; you stagger back.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "cleric_prayer",
+      "text": "Set a warding prayer against it.",
+      "check": {
+        "kind": "stat",
+        "stat": "res",
+        "threshold": 7
+      },
+      "onPass": {
+        "narration": "Someone in your company still remembers the old words. The malice thins like smoke and the pillar yields its secrets.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 40
+          },
+          {
+            "kind": "healParty",
+            "percent": 0.25
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The words come out crooked. The script drinks them and gives nothing back.",
+        "effects": []
+      }
+    },
+    {
+      "id": "leave",
+      "text": "Leave it alone.",
+      "onPass": {
+        "narration": "You step quietly past.",
+        "effects": []
+      }
+    }
+  ]
+}

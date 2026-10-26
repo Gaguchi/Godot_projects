@@ -1,0 +1,20 @@
+{
+  "id": "smugglers_cave",
+  "name": "Smuggler's Cave",
+  "regionId": "borderlands",
+  "combatEnemyGroupId": "bandit_lookouts",
+  "eliteEnemyGroupId": "brigands",
+  "bossEnemyGroupId": "smuggler_crew",
+  "roomEvents": [
+    "blocked_passage",
+    "smuggler_cache",
+    "collapsed_shaft",
+    "black_water",
+    "bad_air",
+    "dripping_font"
+  ],
+  "battlefieldIds": [
+    "cave_pillars",
+    "collapsed_gallery"
+  ]
+}

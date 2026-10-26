@@ -1,0 +1,112 @@
+{
+  "id": "wounded_traveler",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "speaker": "wounded_traveler",
+      "text": "Please... help me. Bandits took everything. I just need some food to make it to the next town.",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "Give food (2 rations)",
+          "effects": [],
+          "check": {
+            "kind": "food",
+            "amount": 2
+          },
+          "onPass": "give_food",
+          "onFail": "refuse"
+        },
+        {
+          "id": "c1",
+          "text": "Give gold (5 gold)",
+          "visibleIf": {
+            "kind": "goldAtLeast",
+            "amount": 5
+          },
+          "effects": [
+            {
+              "kind": "addGold",
+              "amount": -5
+            },
+            {
+              "kind": "setFlag",
+              "key": "helped_traveler",
+              "value": true,
+              "scope": "permanent"
+            }
+          ],
+          "next": "give_gold"
+        },
+        {
+          "id": "c2",
+          "text": "Sorry, we can't spare anything.",
+          "effects": [],
+          "next": "refuse"
+        }
+      ]
+    },
+    "give_food": {
+      "id": "give_food",
+      "speaker": "wounded_traveler",
+      "text": "Bless you. Take this — it's all I have left, but you need it more than me now.",
+      "onEnter": [
+        {
+          "kind": "addFood",
+          "amount": -2
+        },
+        {
+          "kind": "setFlag",
+          "key": "helped_traveler",
+          "value": true,
+          "scope": "permanent"
+        },
+        {
+          "kind": "addGold",
+          "amount": 8
+        }
+      ],
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    },
+    "give_gold": {
+      "id": "give_gold",
+      "speaker": "wounded_traveler",
+      "text": "Thank you, kind souls. I heard there's a hidden cache near the old ruins. Maybe it'll help you.",
+      "onEnter": [
+        {
+          "kind": "addFood",
+          "amount": 1
+        }
+      ],
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    },
+    "refuse": {
+      "id": "refuse",
+      "speaker": "wounded_traveler",
+      "text": "I... I understand. The road is hard on everyone.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    }
+  }
+}

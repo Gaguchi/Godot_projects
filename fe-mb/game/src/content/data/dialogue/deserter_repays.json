@@ -1,0 +1,31 @@
+{
+  "id": "deserter_repays",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "speaker": "deserter",
+      "text": "A figure steps from behind a milestone — the deserter you spared, fed now, steadier. \"I scouted the pass ahead. Raiders wait beyond the ridge; take the low fork and you'll miss them clean. And this — I don't forget a debt.\" He presses a purse into your hands.",
+      "onEnter": [
+        {
+          "kind": "addGold",
+          "amount": 120
+        },
+        {
+          "kind": "setFlag",
+          "key": "deserter_repaid",
+          "value": true,
+          "scope": "permanent"
+        }
+      ],
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    }
+  }
+}

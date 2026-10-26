@@ -1,0 +1,69 @@
+{
+  "id": "bad_air",
+  "title": "The lamps burn low and blue",
+  "description": "The air down here is old. It has been breathing the same breath for years.",
+  "choices": [
+    {
+      "id": "run",
+      "text": "Cross the bad stretch at a run.",
+      "check": {
+        "kind": "stat",
+        "stat": "spd",
+        "threshold": 5
+      },
+      "onPass": {
+        "narration": "Out the far side gasping, and richer: a dropped purse in the middle of the stretch, where nobody stops to pick one up.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 30
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Halfway across the lamps go out. You come through it on hands and knees.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "wait",
+      "text": "Sit down and wait for the draught to turn.",
+      "check": {
+        "kind": "stat",
+        "stat": "lck",
+        "threshold": 4
+      },
+      "onPass": {
+        "narration": "The draught turns before the lamps do. An hour off the feet is an hour off the feet.",
+        "effects": [
+          {
+            "kind": "healParty",
+            "percent": 0.2
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The draught does not turn. You go through it anyway, later and no better for waiting.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "back",
+      "text": "Take the long way round it.",
+      "onPass": {
+        "narration": "Nobody argues.",
+        "effects": []
+      }
+    }
+  ]
+}

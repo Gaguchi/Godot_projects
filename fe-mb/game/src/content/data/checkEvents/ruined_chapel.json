@@ -1,0 +1,62 @@
+{
+  "id": "ruined_chapel",
+  "title": "A chapel the fire got to first",
+  "description": "Roof gone, walls black to the height of a man. The altar stone is whole, and something under the ash on it has kept its shape — a reliquary, sealed, warm to the touch though the fire is years dead.",
+  "choices": [
+    {
+      "id": "open",
+      "text": "Read the seal and open it.",
+      "check": {
+        "kind": "stat",
+        "stat": "mag",
+        "threshold": 7
+      },
+      "onPass": {
+        "narration": "The script is old temple-hand; the seal is a plea, not a lock. Inside, a vial of something that hums against the glass.",
+        "effects": [
+          {
+            "kind": "addItem",
+            "itemId": "power_elixir"
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The seal was a warning. Heat goes through the hand that touched it, up the arm, and out through every rib.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "smash",
+      "text": "Smash it. Whatever's inside spends.",
+      "onPass": {
+        "narration": "Silver fittings, at least. The thing inside cracks and goes to vapour before anyone can catch it.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 30
+          }
+        ]
+      }
+    },
+    {
+      "id": "leave",
+      "text": "Leave the dead their things.",
+      "onPass": {
+        "narration": "You set the ash back over it as you found it.",
+        "effects": [
+          {
+            "kind": "setFlag",
+            "key": "chapel_left_alone",
+            "value": true,
+            "scope": "run"
+          }
+        ]
+      }
+    }
+  ]
+}

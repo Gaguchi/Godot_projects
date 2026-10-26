@@ -1,0 +1,24 @@
+{
+  "id": "smuggler_crew",
+  "name": "The Cargo Crew",
+  "members": [
+    {
+      "name": "Cave Runner",
+      "classId": "thief",
+      "level": 2,
+      "count": 2
+    },
+    {
+      "name": "Crossbow Watch",
+      "classId": "bandit_archer",
+      "level": 2,
+      "count": 1
+    },
+    {
+      "name": "Cargo Master",
+      "classId": "shield_knight",
+      "level": 2,
+      "count": 1
+    }
+  ]
+}

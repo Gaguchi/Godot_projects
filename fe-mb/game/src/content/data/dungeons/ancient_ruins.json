@@ -1,0 +1,20 @@
+{
+  "id": "ancient_ruins",
+  "name": "Ancient Ruins",
+  "regionId": "thornwood",
+  "combatEnemyGroupId": "wolves",
+  "eliteEnemyGroupId": "thornwood_ambush",
+  "bossEnemyGroupId": "mage_circle",
+  "roomEvents": [
+    "ancient_inscription",
+    "disarm_trap",
+    "earlier_company",
+    "pale_growth",
+    "collapsed_shaft",
+    "dripping_font"
+  ],
+  "battlefieldIds": [
+    "collapsed_gallery",
+    "cave_pillars"
+  ]
+}

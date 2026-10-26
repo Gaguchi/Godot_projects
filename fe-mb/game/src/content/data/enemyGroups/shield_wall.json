@@ -1,0 +1,24 @@
+{
+  "id": "shield_wall",
+  "name": "Shield Wall",
+  "members": [
+    {
+      "name": "Shield Knight",
+      "classId": "shield_knight",
+      "level": 2,
+      "count": 1
+    },
+    {
+      "name": "Raider",
+      "classId": "bandit",
+      "level": 2,
+      "count": 1
+    },
+    {
+      "name": "Raider Archer",
+      "classId": "bandit_archer",
+      "level": 2,
+      "count": 1
+    }
+  ]
+}

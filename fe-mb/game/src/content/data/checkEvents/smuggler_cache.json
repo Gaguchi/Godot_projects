@@ -1,0 +1,68 @@
+{
+  "id": "smuggler_cache",
+  "title": "A hidden cache",
+  "description": "Crates lashed in oilcloth, half-buried under loose stones.",
+  "choices": [
+    {
+      "id": "pick_lock",
+      "text": "Pick the lock.",
+      "check": {
+        "kind": "stat",
+        "stat": "skl",
+        "threshold": 7
+      },
+      "onPass": {
+        "narration": "The catch springs open. You pocket the contents.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 35
+          },
+          {
+            "kind": "addFood",
+            "amount": 1
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The lock holds.",
+        "effects": []
+      }
+    },
+    {
+      "id": "smash",
+      "text": "Smash it.",
+      "check": {
+        "kind": "stat",
+        "stat": "str",
+        "threshold": 6
+      },
+      "onPass": {
+        "narration": "The wood splinters. Half the contents are crushed but you salvage some gold.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 20
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Your blow rebounds; you bruise your hand.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "leave",
+      "text": "Leave it.",
+      "onPass": {
+        "narration": "Best not.",
+        "effects": []
+      }
+    }
+  ]
+}

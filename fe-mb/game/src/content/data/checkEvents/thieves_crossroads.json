@@ -1,0 +1,68 @@
+{
+  "id": "thieves_crossroads",
+  "title": "Carved marks scar the crossroads post — thieves' cant",
+  "description": "Somebody left instructions here for those who can read them. A shadow shifts at the treeline, watching to see what you do.",
+  "choices": [
+    {
+      "id": "old_signs",
+      "text": "Answer with the old signs.",
+      "check": {
+        "kind": "class",
+        "classId": "bandit_archer"
+      },
+      "onPass": {
+        "narration": "The shadow steps out grinning, clasps arms with your bounty hunter, and presses a share of last week's take into their hands. \"For keeping the cant alive.\"",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 60
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Nobody in your company knows the signs. You fumble a guess — and pay for the insult when a sling stone takes your coin pouch clean off its cord.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": -20
+          }
+        ]
+      }
+    },
+    {
+      "id": "knife_game",
+      "text": "Play their game of knives.",
+      "check": {
+        "kind": "stat",
+        "stat": "skl",
+        "threshold": 5
+      },
+      "onPass": {
+        "narration": "Five throws, five hits. The watcher whistles low and tosses you the stake purse before vanishing into the trees.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 40
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Your third throw goes wide. The stake purse — with your coin in it — disappears into the canopy with a laugh.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": -25
+          }
+        ]
+      }
+    },
+    {
+      "id": "pass_by",
+      "text": "Keep to the road.",
+      "onPass": {
+        "narration": "You leave the post and its marks behind. The shadow loses interest.",
+        "effects": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+[
+  {
+    "id": "lord",
+    "name": "Lord",
+    "weaponClasses": ["sword", "greatsword", "shield"],
+    "baseStats": {
+      "str": 5,
+      "mag": 0,
+      "skl": 4,
+      "spd": 5,
+      "def": 3,
+      "res": 1,
+      "lck": 4
+    },
+    "startingHp": 26,
+    "startingMov": 5,
+    "innateCardIds": [
+      "lord_rally",
+      "lord_inspiring_strike",
+      "lord_nobility",
+      "lord_command",
+      "lord_charge"
+    ]
+  },
+  {
+    "id": "knight",
+    "name": "Knight",
+    "weaponClasses": ["lance", "sword", "shield"],
+    "baseStats": {
+      "str": 7,
+      "mag": 0,
+      "skl": 4,
+      "spd": 3,
+      "def": 8,
+      "res": 1,
+      "lck": 2
+    },
+    "startingHp": 32,
+    "startingMov": 4,
+    "innateCardIds": [
+      "knight_fortify",
+      "knight_bulwark",
+      "knight_hold_line",
+      "knight_shield_expertise",
+      "knight_taunt"
+    ]
+  },
+  {
+    "id": "mage",
+    "name": "Mage",
+    "weaponClasses": ["tome", "staff"],
+    "baseStats": {
+      "str": 1,
+      "mag": 7,
+      "skl": 5,
+      "spd": 5,
+      "def": 2,
+      "res": 7,
+      "lck": 3
+    },
+    "startingHp": 22,
+    "startingMov": 5,
+    "innateCardIds": [
+      "mage_focus",
+      "mage_arcane_burst",
+      "mage_barrier",
+      "mage_elemental_mastery"
+    ]
+  },
+  {
+    "id": "bandit",
+    "name": "Bandit",
+    "weaponClasses": ["axe", "sword", "dagger"],
+    "baseStats": {
+      "str": 5,
+      "mag": 0,
+      "skl": 3,
+      "spd": 4,
+      "def": 2,
+      "res": 1,
+      "lck": 2
+    },
+    "startingHp": 18,
+    "startingMov": 4,
+    "innateCardIds": [
+      "bandit_swing",
+      "bandit_charge"
+    ]
+  },
+  {
+    "id": "warlord",
+    "name": "Warlord",
+    "weaponClasses": ["greatsword", "axe", "sword", "shield"],
+    "baseStats": {
+      "str": 9,
+      "mag": 2,
+      "skl": 6,
+      "spd": 6,
+      "def": 7,
+      "res": 4,
+      "lck": 2
+    },
+    "startingHp": 46,
+    "startingMov": 4,
+    "innateCardIds": [
+      "iron_greatsword_heavy_slash",
+      "iron_greatsword_cleave",
+      "iron_greatsword_overhead_blow",
+      "iron_greatsword_whirlwind"
+    ]
+  },
+  {
+    "id": "wolf",
+    "name": "Wolf",
+    "weaponClasses": [],
+    "baseStats": {
+      "str": 5,
+      "mag": 0,
+      "skl": 4,
+      "spd": 7,
+      "def": 1,
+      "res": 1,
+      "lck": 3
+    },
+    "startingHp": 14,
+    "startingMov": 6,
+    "innateCardIds": [
+      "bandit_swing",
+      "bandit_charge"
+    ]
+  },
+  {
+    "id": "alpha_wolf",
+    "name": "Alpha Wolf",
+    "weaponClasses": [],
+    "baseStats": {
+      "str": 7,
+      "mag": 0,
+      "skl": 5,
+      "spd": 6,
+      "def": 4,
+      "res": 2,
+      "lck": 3
+    },
+    "startingHp": 38,
+    "startingMov": 5,
+    "innateCardIds": [
+      "bandit_swing",
+      "bandit_charge",
+      "iron_greatsword_cleave"
+    ]
+  },
+  {
+    "id": "shield_knight",
+    "name": "Shield Knight",
+    "weaponClasses": ["lance", "axe", "sword", "shield"],
+    "baseStats": {
+      "str": 6,
+      "mag": 0,
+      "skl": 3,
+      "spd": 2,
+      "def": 9,
+      "res": 2,
+      "lck": 1
+    },
+    "startingHp": 30,
+    "startingMov": 3,
+    "innateCardIds": [
+      "knight_hold_line",
+      "iron_tower_shield_fortress",
+      "iron_tower_shield_shield_wall",
+      "iron_tower_shield_cover"
+    ]
+  },
+  {
+    "id": "bandit_archer",
+    "name": "Bandit Archer",
+    "weaponClasses": ["bow", "crossbow", "dagger"],
+    "baseStats": {
+      "str": 3,
+      "mag": 0,
+      "skl": 6,
+      "spd": 5,
+      "def": 2,
+      "res": 1,
+      "lck": 3
+    },
+    "startingHp": 16,
+    "startingMov": 4,
+    "innateCardIds": [
+      "iron_bow_quick_shot",
+      "iron_bow_aimed_shot"
+    ]
+  },
+  {
+    "id": "raider_mage",
+    "name": "Raider Mage",
+    "weaponClasses": ["tome", "staff"],
+    "baseStats": {
+      "str": 1,
+      "mag": 7,
+      "skl": 4,
+      "spd": 4,
+      "def": 1,
+      "res": 5,
+      "lck": 2
+    },
+    "startingHp": 15,
+    "startingMov": 4,
+    "innateCardIds": [
+      "mage_arcane_burst",
+      "mage_chill",
+      "mage_focus"
+    ]
+  },
+  {
+    "id": "cleric",
+    "name": "Cleric",
+    "weaponClasses": ["staff", "tome"],
+    "baseStats": {
+      "str": 1,
+      "mag": 5,
+      "skl": 4,
+      "spd": 4,
+      "def": 2,
+      "res": 6,
+      "lck": 3
+    },
+    "startingHp": 17,
+    "startingMov": 4,
+    "innateCardIds": [
+      "heal_staff_heal",
+      "heal_staff_blessing",
+      "mage_arcane_burst"
+    ]
+  },
+  {
+    "id": "thief",
+    "name": "Thief",
+    "weaponClasses": ["dagger", "sword", "bow"],
+    "baseStats": {
+      "str": 4,
+      "mag": 0,
+      "skl": 6,
+      "spd": 8,
+      "def": 1,
+      "res": 2,
+      "lck": 4
+    },
+    "startingHp": 16,
+    "startingMov": 6,
+    "innateCardIds": [
+      "bone_dagger_stab",
+      "bone_dagger_lacerate"
+    ]
+  },
+  {
+    "id": "ember_mage",
+    "name": "Ember Mage",
+    "weaponClasses": ["tome", "staff"],
+    "baseStats": {
+      "str": 1,
+      "mag": 8,
+      "skl": 5,
+      "spd": 4,
+      "def": 2,
+      "res": 6,
+      "lck": 2
+    },
+    "startingHp": 16,
+    "startingMov": 4,
+    "innateCardIds": [
+      "ember_tome_ember",
+      "ember_tome_conflagrate",
+      "mage_focus"
+    ]
+  }
+]

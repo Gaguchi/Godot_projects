@@ -1,0 +1,73 @@
+{
+  "id": "collapsed_shaft",
+  "title": "The floor has fallen into the dark",
+  "description": "A shaft opens where the passage should be. Something down there is still dripping.",
+  "choices": [
+    {
+      "id": "bridge",
+      "text": "Lay the fallen timbers across.",
+      "check": {
+        "kind": "stat",
+        "stat": "str",
+        "threshold": 6
+      },
+      "onPass": {
+        "narration": "The beams hold. On the far ledge lies a strongbox that fell before you did.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 40
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The timber splits underfoot and the company goes down hard on the near lip.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "climb",
+      "text": "Climb the wall around it.",
+      "check": {
+        "kind": "stat",
+        "stat": "skl",
+        "threshold": 5
+      },
+      "onPass": {
+        "narration": "Hand over hand along the old cut marks. A miner's satchel is still hanging where he left it.",
+        "effects": [
+          {
+            "kind": "addFood",
+            "amount": 1
+          },
+          {
+            "kind": "addGold",
+            "amount": 15
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "A handhold crumbles. Nobody falls far, but everybody falls.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "back",
+      "text": "Go back and find another way round.",
+      "onPass": {
+        "narration": "An hour lost to a longer passage. Better an hour than a leg.",
+        "effects": []
+      }
+    }
+  ]
+}

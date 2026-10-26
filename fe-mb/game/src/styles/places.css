@@ -1,0 +1,1417 @@
+/* =============================================================================
+   Places — Town (vista + leather counter + satchel), Camp (night vista + fire + one card), Dungeon (stone chart).
+   Shared `.place__*` furniture; the bag grid lives here too because the shop is its first home.
+   ========================================================================== */
+
+.place {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--iron-900);
+  color: var(--color-parchment);
+}
+.place--stone {
+  background: radial-gradient(90% 70% at 50% 30%, var(--stone-800) 0%, var(--stone-900) 60%, var(--color-ash) 100%);
+}
+.place__vista {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  object-position: 50% 45%;
+  filter: saturate(0.85) brightness(0.85);
+}
+/* Same panorama as the prologue, a DIFFERENT stretch of it: the opening frame is composed on the sun at 15%, so
+   the night camp takes the country east of it and the sun is out of shot (GATE2-22, "the same art carries the
+   town header and the camp screen"). */
+.place__vista--night {
+  height: 100%;
+  object-position: 68% 50%;
+  filter: saturate(0.5) brightness(0.35) sepia(0.2);
+}
+.place__dusk {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(180deg, rgba(23, 17, 12, 0.35) 0%, rgba(23, 17, 12, 0.1) 40%, var(--iron-900) 100%);
+}
+.place__dusk--night {
+  height: 100%;
+  background: radial-gradient(60% 50% at 50% 70%, rgba(217, 140, 40, 0.16) 0%, transparent 60%), linear-gradient(180deg, rgba(23, 17, 12, 0.5) 0%, rgba(23, 17, 12, 0.75) 100%);
+}
+.place__head {
+  position: absolute;
+  left: 48px;
+  right: 48px;
+  top: 44px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  z-index: 2;
+}
+.place__head--stone {
+  top: 36px;
+}
+.place__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.place__title {
+  margin: 2px 0 4px;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-parchment);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+.place__desc {
+  margin: 0;
+  max-width: 620px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--color-parchment-dim);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+.place__purse {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.place__gold {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-hearth);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+/* the counter */
+.place__counter {
+  position: absolute;
+  left: 48px;
+  right: 48px;
+  top: 214px;
+  bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--iron-800) 0%, var(--iron-900) 100%);
+  box-shadow: var(--bevel-iron), var(--elevation-float);
+  z-index: 2;
+}
+.place__tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--iron-edge) 45%, transparent);
+}
+.place__tab {
+  padding: 10px 22px 9px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: transparent;
+  color: var(--color-parchment-dim);
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--dur-quick), background var(--dur-quick);
+}
+.place__tab:hover {
+  color: var(--color-parchment);
+}
+.place__tab--on {
+  color: var(--color-hearth);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--iron-700) 55%, transparent) 0%, transparent 100%);
+  border-color: color-mix(in oklab, var(--iron-edge) 55%, transparent);
+  box-shadow: inset 0 2px 0 var(--color-hearth);
+}
+.place__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 18px;
+  padding: 16px 18px 18px;
+  min-height: 0;
+}
+.place__main {
+  min-width: 0;
+  overflow: hidden;
+}
+.place__side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.place__pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+.place__lead {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--color-parchment);
+}
+.place__label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding-bottom: 4px;
+  border-bottom: 1px solid color-mix(in oklab, var(--iron-edge) 35%, transparent);
+  margin-top: 6px;
+}
+.place__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.place__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+.place__row--tall {
+  padding: 8px 0;
+  border-bottom: 1px dashed color-mix(in oklab, var(--iron-edge) 30%, transparent);
+}
+.place__stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.place__name {
+  flex: 1;
+  color: var(--color-parchment);
+}
+.place__sub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+.place__num {
+  width: 52px;
+  text-align: right;
+  color: var(--color-parchment-dim);
+}
+.place__hpbar {
+  width: 120px;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.place__hpbar > i {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
+}
+.place__bill {
+  width: 40px;
+  text-align: right;
+  color: var(--color-hearth);
+  font-size: 12px;
+}
+/* A DESIGNED empty state: a dimmed glyph, the fact, and the thing that would fill it. A line of italics in a
+   1fr box was the amateur read (crafting-game-ui signal C) and it was also what left three counters looking
+   half-built (GATE2-16). */
+.place__empty {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 18%, transparent);
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+}
+.place__empty-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 22%, transparent);
+  color: color-mix(in oklab, var(--color-text-muted) 70%, transparent);
+}
+.place__empty-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.place__empty-line {
+  font-size: 15px;
+  color: var(--color-parchment-dim);
+}
+.place__empty-hint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ── the inn's beds: the company at the size of the decision ─────────────────────────────────────────────── */
+.place__list--beds {
+  gap: 6px;
+}
+.place__bed {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 14%, transparent);
+  font-family: var(--font-body);
+  font-size: 15px;
+  opacity: 0.72;
+}
+.place__bed--wounded {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-hearth) 26%, transparent);
+}
+.place__face {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--iron-900);
+  border: 2px solid color-mix(in oklab, var(--iron-edge) 40%, transparent);
+}
+.place__bed--wounded .place__face {
+  border-color: var(--color-hearth-soft);
+}
+.place__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* ── the tavern's three registers ────────────────────────────────────────────────────────────────────────── */
+.place__pane--registers {
+  gap: 4px;
+}
+.place__reg {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.place__reg .place__label {
+  margin-top: 0;
+}
+.place__reg--talk {
+  flex: 0 0 auto;
+}
+
+/* ── the larder: what the road costs, on the counter where it is bought ──────────────────────────────────── */
+.larder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  align-self: stretch;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(160deg, color-mix(in oklab, var(--iron-700) 30%, var(--iron-900)) 0%, var(--iron-900) 100%);
+  box-shadow: var(--bevel-iron);
+  border-left: 3px solid color-mix(in oklab, var(--color-mend) 62%, var(--iron-900));
+}
+.larder--low {
+  border-left-color: var(--color-ember);
+}
+.larder__mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--color-parchment-dim);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 30%, transparent);
+}
+.larder--low .larder__mark {
+  color: var(--color-damage-text);
+}
+.larder__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.larder__label {
+  border-bottom: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+}
+.larder__read {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--color-parchment);
+}
+.larder__note {
+  margin-left: auto;
+  text-align: right;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+.larder--low .larder__note {
+  color: var(--color-damage-text);
+  font-style: normal;
+}
+.place__hint {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+.place__verbs {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 10px;
+}
+
+/* shop — ONE SHELF AT A TIME. This was a scrolling box: 913px of stock inside
+   323px, hidden behind a zero-width overlay scrollbar and a 22px fade that is
+   invisible at this contrast, with the third row of cards sliced through the
+   middle. From the chair the shop stocked nine things. It now holds four across
+   and two down, whole cards only, and the pager below says which shelf of how
+   many you are looking at. */
+.shop__stock {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 2px 2px 4px;
+}
+.shop__card {
+  padding: 10px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  min-height: 0;
+  box-shadow: var(--bevel-iron), inset 0 2px 0 var(--rarity);
+}
+.shop__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 4px 2px 2px;
+}
+.shop__pager-read {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.shop__pager-read .numeral {
+  font-size: 12px;
+  color: var(--color-parchment-dim);
+}
+.shop__glyph {
+  font-size: 22px;
+  line-height: 1.2;
+}
+.shop__name {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--rarity);
+}
+.shop__blurb {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+/* The satchel footprint: the item's real shape in pips, so the shelf never has
+   to print the authored grid code ("1×2"). Same brass ink as the bag rails. */
+.shop__foot {
+  display: inline-grid;
+  gap: 1px;
+  margin-left: 7px;
+  vertical-align: 0.5px;
+}
+.shop__foot i {
+  background: color-mix(in oklab, var(--iron-edge) 88%, transparent);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.6);
+}
+.shop__sell {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.22);
+  min-height: 42px;
+}
+
+/* tavern */
+.tavern__rumours {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tavern__rumour {
+  margin: 0;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--color-parchment-dim);
+}
+
+/* bag */
+.bag {
+  position: relative;
+  display: grid;
+  gap: 0;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 40%, transparent), inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.bag__cell {
+  box-shadow: inset 0 0 0 1px rgba(176, 138, 62, 0.14);
+}
+.bag__item {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 3px 4px;
+  border: 1px solid color-mix(in oklab, var(--rarity) 55%, transparent);
+  border-radius: 3px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--iron-700) 75%, var(--rarity)) 0%, var(--iron-800) 100%);
+  color: var(--color-parchment);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform var(--dur-quick) var(--ease-out-quart), box-shadow var(--dur-quick);
+}
+.bag__item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px var(--rarity);
+}
+.bag__item--selected {
+  box-shadow: 0 0 0 2px var(--color-hearth);
+}
+.bag__glyph {
+  font-size: 16px;
+  line-height: 1;
+}
+.bag__name {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bag__charges {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  font-size: 9px;
+  color: var(--color-parchment-dim);
+}
+
+/* camp */
+/* Firelight FALLS on the camp (BRIEF §5 "nothing glows"): a warm wash laid over the lower ground with a soft
+   top edge, not an ember pool radiating out of the floor. No flicker — light does not pulse on a still page. */
+.camp__fire {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 260px;
+  background: linear-gradient(180deg, transparent 0%, rgba(196, 118, 46, 0.14) 40%, rgba(219, 137, 55, 0.3) 100%);
+  pointer-events: none;
+}
+/* ── the camp itself: the frame's subject, seated under the card ──
+   The screen was a card floating in an empty dusk (RE-GATE B 2.7). The fire, the tent and the company are drawn
+   BEHIND the card and outside its 640px column, so the reading is unchanged and the frame finally has a picture
+   in it. Everything here is decoration: `pointer-events: none` all the way down. */
+.camp__scene {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+/* The fire and the tent live in the gutters either side of the card's fixed 702px column (`Camp#CARD_COLUMN`), so
+   the scene is clear of the card at EVERY height it takes — the scout report grows it from ~300px to 542px, and
+   the old seats were only clear of the short one (FINAL GATE B B.2). */
+.camp__hearth {
+  position: absolute;
+  left: 108px;
+  bottom: 46px;
+}
+/* The fire's inks (FINAL GATE B B.6). Every one is a palette token mixed DOWN into the dusk's own ash, so the
+   hottest cell in the frame still sits under the card's brass — the old flame was fully saturated red/orange/
+   yellow and was the loudest thing in the build. `crispEdges` is what makes it the same hand as the bakes beside
+   it: no cell is ever antialiased. */
+.camp__flame { shape-rendering: crispEdges; }
+.camp__flame .px-k  { fill: color-mix(in oklab, var(--color-ember) 44%, var(--color-ash)); }
+.camp__flame .px-e  { fill: color-mix(in oklab, var(--color-ember) 84%, var(--color-ash)); }
+.camp__flame .px-h  { fill: color-mix(in oklab, var(--color-hearth) 70%, var(--color-ember)); }
+.camp__flame .px-s  { fill: color-mix(in oklab, var(--color-hearth-soft) 88%, var(--color-parchment)); }
+/* the wood and the ring are DARK: they are what the fire lights, never a second light */
+.camp__flame .px-w  { fill: color-mix(in oklab, var(--color-ash) 76%, var(--iron-700)); }
+.camp__flame .px-wl { fill: color-mix(in oklab, var(--iron-700) 74%, var(--color-ash)); }
+.camp__flame .px-r  { fill: color-mix(in oklab, var(--color-ash) 70%, var(--iron-700)); }
+.camp__flame .px-rl { fill: color-mix(in oklab, var(--iron-700) 66%, var(--color-ash)); }
+
+/* the ground the fire lights: a pool ON THE GROUND, painted under the flame, not a halo around it */
+.camp__pool {
+  position: absolute;
+  left: 50%;
+  bottom: -34px;
+  width: 460px;
+  height: 190px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(50% 50% at 50% 50%, color-mix(in oklab, var(--color-hearth) 30%, transparent) 0%, transparent 74%);
+}
+/* clear of the card's column at every card height: the scenery frames the reading, it never sits under it */
+.camp__shelter {
+  position: absolute;
+  right: 36px;
+  bottom: 34px;
+}
+.camp__figure {
+  position: absolute;
+  display: block;
+}
+.camp__figure img {
+  display: block;
+  height: 104px;
+  width: auto;
+  /* firelight, not daylight: the company reads as figures at the edge of the fire, never as board tokens pasted
+     onto a photograph. A cast shadow seats them on the ground — light falls, it does not pool. */
+  filter: brightness(0.52) saturate(0.7) drop-shadow(0 3px 3px rgba(10, 6, 3, 0.75));
+}
+.camp__figure--flip img {
+  transform: scaleX(-1);
+}
+
+.camp__card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 640px;
+  padding: 26px 30px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: riseIn var(--dur-settle) var(--ease-out-quart);
+}
+.camp__choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 6px;
+}
+.camp__choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  text-align: left;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklab, var(--iron-edge) 45%, transparent);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--iron-700) 40%, var(--iron-800)) 0%, var(--iron-800) 100%);
+  color: var(--color-parchment);
+  cursor: pointer;
+  box-shadow: var(--bevel-iron);
+  transition: transform var(--dur-quick) var(--ease-out-quart), box-shadow var(--dur-quick);
+}
+.camp__choice:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--bevel-iron), 0 0 0 1px var(--color-hearth), 0 8px 18px rgba(0, 0, 0, 0.4);
+}
+.camp__choice:disabled {
+  cursor: default;
+  opacity: 0.55;
+  filter: saturate(0.4);
+}
+.camp__choice-title {
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-hearth);
+}
+.camp__choice-cost {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  font-size: 12px;
+  color: var(--color-parchment-dim);
+}
+.camp__choice-blurb {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-parchment-dim);
+}
+.camp__choice-why {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--color-damage-text);
+}
+.camp__report {
+  padding: 8px 12px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.25);
+}
+/* The scout report. Every row is EXACTLY one row tall and the cap is a whole
+   number of them, so the list can never be sliced through the middle of a road
+   the way the old `max-height: 260px` against 276px of content was (GATE2-8) —
+   the player spent a ration for this page. Thirteen roads (the shipped
+   depth-3 report) fit inside the cap with nothing hidden. */
+.camp__report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 22px;
+  row-gap: 0;
+  grid-auto-rows: var(--scout-row, 38px);
+  max-height: calc(var(--scout-row, 38px) * 8);
+  overflow-y: auto;
+}
+.camp__report-row {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+}
+.camp__report-road {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.15;
+  color: var(--color-parchment);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.camp__report-list .camp__sight {
+  font-size: 10px;
+  white-space: nowrap;
+}
+.camp__sight {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--color-damage-text);
+}
+.camp__sight--quiet {
+  color: var(--color-text-muted);
+}
+
+/* dungeon */
+/* The mouth's warning (0113): the descent is one way, said under the name of the place while the door is open. */
+.dungeon__warning {
+  position: absolute;
+  left: 50%;
+  top: 86px;
+  transform: translateX(-50%);
+  margin: 0;
+  width: 560px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  z-index: 2;
+}
+.dungeon__chart {
+  position: absolute;
+  left: 50%;
+  top: 112px;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+.dungeon__edges {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.dungeon__edges path {
+  fill: none;
+  stroke: color-mix(in oklab, var(--iron-edge) 45%, transparent);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+}
+.room {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in oklab, var(--iron-edge) 45%, transparent);
+  background: radial-gradient(circle at 50% 35%, var(--iron-700) 0%, var(--iron-800) 70%);
+  color: var(--color-parchment-dim);
+  display: grid;
+  place-items: center;
+  cursor: default;
+  box-shadow: var(--bevel-iron);
+  transition: transform var(--dur-quick) var(--ease-out-quart), box-shadow var(--dur-quick), border-color var(--dur-quick) ease, background-color var(--dur-quick) ease;
+}
+.room__glyph {
+  font-size: 20px;
+  line-height: 1;
+}
+.room--boss {
+  width: 60px;
+  height: 60px;
+  margin: -6px;
+  border-color: var(--color-ember);
+}
+.room--elite .room__glyph, .room__glyph--elite { color: var(--color-damage-text); }
+.room--treasure .room__glyph, .room__glyph--treasure { color: var(--color-hearth); }
+.room--rest .room__glyph, .room__glyph--rest { color: var(--color-mend); }
+.room--event .room__glyph, .room__glyph--event { color: var(--color-gem-arcane); }
+/* Reachable is RING WEIGHT plus the brass edge and a real cast shadow — no halo, no pulse (BRIEF §5). */
+.room--reach {
+  cursor: pointer;
+  border-width: 3px;
+  border-color: var(--color-hearth);
+  color: var(--color-parchment);
+  box-shadow: var(--bevel-iron), 0 0 0 1px color-mix(in oklab, var(--color-hearth) 45%, transparent), 0 4px 7px rgba(0, 0, 0, 0.5);
+}
+/* Hover has TWO channels, because one of them is switched off for a player who asked for less motion. The lift is
+   the motion channel; the lit stone face, the brass catchlight on the ring and the deeper contact shadow are the
+   still one, and they are what remains under `prefers-reduced-motion` / `?motion=0`. Before this, `transform` was
+   the whole of the state and the reduced-motion rules below deleted it, so the only clickable objects on the
+   screen had NO hover feedback at all (FINAL GATE B B.4). Nothing glows: the stone is lit, it does not emit. */
+.room--reach:hover {
+  transform: scale(1.1);
+  border-color: var(--iron-edge-hi);
+  background: radial-gradient(circle at 50% 35%, color-mix(in oklab, var(--iron-700) 74%, var(--color-parchment)) 0%, var(--iron-700) 70%);
+  color: var(--color-parchment);
+  box-shadow: var(--bevel-iron), 0 0 0 1px color-mix(in oklab, var(--color-hearth) 70%, transparent), 0 7px 12px rgba(0, 0, 0, 0.62);
+}
+.room--cleared {
+  opacity: 0.55;
+}
+.room--cleared .room__glyph {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+.room--here {
+  border-color: var(--color-parchment);
+  opacity: 1;
+}
+/* The company's mark: a brass ring around the room it stands in, lit from above rather than glowing. */
+.room__lantern {
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  border: 1.5px dashed color-mix(in oklab, var(--color-hearth) 70%, transparent);
+  background: linear-gradient(180deg, rgba(255, 214, 150, 0.16) 0%, transparent 70%);
+  pointer-events: none;
+}
+/* ── the descent's two side readings ─────────────────────────────────────────────────────────────────────────
+   The chart is 720px on a 1280px stage. Both thirds beside it were empty stone (GATE2-16) while the two questions
+   a descent is decided on — can we take another room, and how much is left — had no surface at all. */
+/* Both asides own their column outright — from under the header to the legend — so the two readings compose the
+   thirds instead of sitting as chips at the top of them. */
+/* `bottom` used to stop at 64px to clear a legend strip along the foot of the stage that said, glyph for glyph,
+   what the "Still below" tally beside it already says (FINAL GATE B B.7). The strip is gone and the two readings
+   the descent is decided on take the paper back. */
+.dungeon__aside {
+  position: absolute;
+  top: 118px;
+  bottom: 26px;
+  width: 244px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 2;
+}
+.dungeon__aside--left {
+  left: 20px;
+}
+.dungeon__aside--right {
+  right: 20px;
+}
+.dungeon__party {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.dungeon__member {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 116px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(160deg, color-mix(in oklab, var(--stone-800) 70%, var(--iron-900)) 0%, var(--stone-900) 100%);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 16%, transparent);
+}
+.dungeon__member-stack {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+.dungeon__member-stack .place__name {
+  grid-column: 1 / -1;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+.dungeon__member-stack .place__hpbar {
+  width: auto;
+}
+.dungeon__member-hp {
+  font-size: 11px;
+  color: var(--color-parchment-dim);
+}
+.dungeon__note {
+  margin: 10px 0 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+.dungeon__gauge {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 14%, transparent);
+}
+.dungeon__gauge-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-parchment);
+}
+.dungeon__gauge-label {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.dungeon__ahead {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-parchment-dim);
+}
+.dungeon__ahead li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.dungeon__ahead-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Only the LIFT is switched off — the lit face, the catchlight and the shadow above stay, so the room still
+   answers the pointer (FINAL GATE B B.4). */
+@media (prefers-reduced-motion: reduce) {
+  .room--reach:hover { transform: none; }
+}
+[data-motion="off"] .room--reach:hover { transform: none; }
+
+/* ── loadout modal ── */
+.loadout {
+  position: relative;
+  width: 1080px;
+  max-height: 660px;
+  padding: 18px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: riseIn var(--dur-settle) var(--ease-out-quart);
+  overflow: hidden;
+}
+.loadout__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.loadout__faces {
+  display: flex;
+  gap: 10px;
+}
+.loadout__face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-parchment-dim);
+  cursor: pointer;
+  width: 92px;
+}
+.loadout__face:hover {
+  color: var(--color-parchment);
+}
+.loadout__face--on {
+  border-color: color-mix(in oklab, var(--color-hearth) 60%, transparent);
+  background: color-mix(in oklab, var(--iron-700) 40%, transparent);
+  color: var(--color-hearth);
+}
+.loadout__face-name {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.loadout__body {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 22px;
+  min-height: 0;
+}
+.loadout__unit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.loadout__title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-parchment);
+}
+.loadout__sub {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-parchment-dim);
+}
+.loadout__stats {
+  display: flex;
+  gap: 6px;
+}
+.loadout__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 30%, transparent);
+}
+.loadout__stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-parchment);
+}
+.loadout__stat-label {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--color-text-muted);
+}
+.loadout__hands {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.loadout__hand {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklab, var(--iron-edge) 40%, transparent);
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 92px;
+  transition: box-shadow var(--dur-quick);
+}
+.loadout__hand--take {
+  border-color: var(--color-hearth);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-hearth) 40%, transparent), 0 0 16px color-mix(in oklab, var(--color-hearth) 30%, transparent);
+}
+.loadout__hand--locked {
+  opacity: 0.6;
+}
+.loadout__hand-item {
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.03em;
+}
+.loadout__hand-item--empty {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+.loadout__hand-verbs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+.loadout__deck {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 30%, transparent);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--iron-edge) 60%, transparent) transparent;
+}
+.loadout__group-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-hearth);
+  margin-bottom: 4px;
+}
+.loadout__cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.loadout__card {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 5px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--iron-700) 0%, var(--iron-800) 100%);
+  box-shadow: var(--bevel-iron);
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--color-parchment);
+}
+.loadout__card b {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--color-hearth-soft);
+  color: var(--color-ink);
+  font-size: 10px;
+}
+
+/* ── pause ── */
+.pause {
+  position: relative;
+  width: 360px;
+  padding: 22px 26px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: riseIn var(--dur-settle) var(--ease-out-quart);
+}
+.pause__title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-parchment);
+}
+/* Rank, not a stack: one brass strap, a pair beneath it, a switch, then the way
+   out below a rule. The five identical full-width slabs were a settings form. */
+.pause__verbs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+.pause__resume {
+  width: 100%;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  font-size: 0.92rem;
+  letter-spacing: 0.16em;
+}
+.pause__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.pause__pair .btn-forged {
+  width: 100%;
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+  font-size: 0.72rem;
+}
+.pause__rule {
+  margin: 12px 0 2px;
+}
+.pause__leave {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pause__leave .btn-forged {
+  font-size: 0.72rem;
+  padding: 0.4rem 0.9rem;
+}
+.pause__hint {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+/* The sound switch (`ui/components/Switch`): the knob's side is the state, the
+   word beside it says the same thing again, so hue is never the only channel. */
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.24);
+  border: 1px solid color-mix(in oklab, var(--iron-edge) 28%, transparent);
+  cursor: pointer;
+  transition: border-color var(--dur-quick) ease, background-color var(--dur-quick) ease;
+}
+.switch:hover {
+  border-color: color-mix(in oklab, var(--iron-edge) 62%, transparent);
+  background: rgba(0, 0, 0, 0.34);
+}
+.switch:active {
+  transform: translateY(1px);
+}
+.switch:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+.switch__label {
+  flex: 1;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-parchment-dim);
+}
+.switch__state {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.switch[aria-checked="true"] .switch__state {
+  color: var(--color-hearth);
+}
+.switch__track {
+  position: relative;
+  width: 42px;
+  height: 20px;
+  flex: none;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iron-edge) 34%, transparent), inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--iron-700);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  transition: left var(--dur-quick) var(--ease-out-quart), background var(--dur-quick) ease;
+}
+.switch[aria-checked="true"] .switch__knob {
+  left: 25px;
+  background: var(--brass-fill);
+}
+/* A contract is a NAME and what the company is doing about it. The stage was a three-word derivation of its own
+   id ("Find daren") and sat in a column beside the name; it is authored prose now (FINAL GATE C 3.4), and at a
+   sentence long it squeezed "Blood Ties" into "Blood T…" — and nothing player-authored is ellipsised (§5.1). The
+   objective takes a line of its OWN under the name, in the reading voice, so both are whole at any length. */
+.quest__row {
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--canvas-rule);
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.quest__row .report__name {
+  order: 1;
+  flex: 1 1 auto;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.quest__row .report__class { order: 2; }
+.quest__stage {
+  order: 3;
+  flex: 1 0 100%;
+  margin: 2px 0 0 19px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--color-hearth);
+}
+.quest__tally {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin: 8px 0 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.quest__tally b {
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
+/* the page-scope twin of `.place__empty`: a dimmed glyph, the fact, and what would fill it */
+.ledger-empty {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0 6px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--canvas-deep) 55%, transparent);
+  box-shadow: inset 0 0 0 1px var(--canvas-rule);
+  font-family: var(--font-body);
+}
+.ledger-empty__mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--canvas-deep) 80%, var(--color-ink));
+  color: var(--canvas-lit);
+}
+.ledger-empty__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.ledger-empty__line {
+  font-size: 16px;
+  color: var(--color-parchment);
+}
+.ledger-empty__hint {
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+}
+
+.quest__row--done .report__name {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+/* The refusal toast (`ui/components/RefusalToast`): the sentence the reducer refused with, spoken over the screen
+   for a beat. Never interactive, never in the way of the counter. Mounted ONCE at the frame, so it is seated
+   against the stage rather than against a screen, and the one screen whose foot is furniture says so below. */
+.place__toast {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  background: rgba(28, 20, 13, 0.94);
+  color: var(--color-parchment);
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  box-shadow: 0 0 0 1px var(--color-ember), var(--elevation-raised);
+  z-index: 30;
+  pointer-events: none;
+  animation: placeToast var(--dur-settle) var(--ease-out-quart);
+}
+@keyframes placeToast {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+}
+/* On the battle screens the foot of the stage is the card hand (y 558-706): a refusal printed there would cover
+   the cards the player is choosing between, which is the one place a refusal is most often earned. It sits above
+   them instead — same voice, same seat everywhere else. */
+/* The raised seat belongs to the ONE screen whose foot is the card hand. `battleEnd` puts the hand away
+   (App.tsx renders the board without it), so 178px lifted the sentence off an empty foot and onto the Field
+   Report page instead — 2056px² of it over the paper (SHIP GATE B). Its foot is empty; it uses the normal seat. */
+.place__toast[data-screen="combat"] {
+  /* clear of the hand (y 558) AND of the hint rail that sits on top of it (y 518-542) — at 178px the reducer's
+     sentence printed straight across "no foe within reach of …", two answers to the same press, one unreadable. */
+  bottom: 214px;
+}

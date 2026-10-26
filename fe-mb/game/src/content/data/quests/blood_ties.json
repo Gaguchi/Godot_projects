@@ -1,0 +1,57 @@
+{
+  "id": "sq_blood_ties",
+  "name": "Blood Ties",
+  "initialStage": "find_daren",
+  "stages": {
+    "find_daren": {
+      "id": "find_daren",
+      "label": "Find Daren's gang on the Frontier Camp road",
+      "onEnter": [
+        {
+          "kind": "spawnNode",
+          "ref": {
+            "mapKind": "overworld",
+            "mapId": "world",
+            "nodeId": "darens_camp"
+          }
+        },
+        {
+          "kind": "unlockNode",
+          "ref": {
+            "mapKind": "overworld",
+            "mapId": "world",
+            "nodeId": "smugglers_cave"
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "when": {
+            "kind": "anyOf",
+            "preds": [
+              {
+                "kind": "flag",
+                "key": "daren_captured",
+                "equals": true
+              },
+              {
+                "kind": "flag",
+                "key": "daren_killed",
+                "equals": true
+              }
+            ]
+          },
+          "to": "daren_resolved"
+        }
+      ],
+      "onExit": []
+    },
+    "daren_resolved": {
+      "id": "daren_resolved",
+      "label": "Daren is answered for",
+      "onEnter": [],
+      "transitions": [],
+      "onExit": []
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "id": "bandit_hideout",
+  "title": "A hideout, and nobody home",
+  "description": "A cave mouth behind a fallen oak, ash still warm in the pit. They left in a hurry. A rope trips the dark past the first bend, and beyond it something glints.",
+  "choices": [
+    {
+      "id": "search",
+      "text": "Step over the tripline and search the back.",
+      "check": {
+        "kind": "stat",
+        "stat": "skl",
+        "threshold": 5
+      },
+      "onPass": {
+        "narration": "The rope is tied to a hanging log, and the log stays hung. Behind a false wall of brush: a strongbox, unlocked, because who robs a robber.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 40
+          },
+          {
+            "kind": "addItem",
+            "itemId": "healing_potion"
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The log comes down out of the dark and catches the first one in with a sound you feel in your own ribs. The strongbox is there. It was not free.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 5
+          },
+          {
+            "kind": "addGold",
+            "amount": 40
+          }
+        ]
+      }
+    },
+    {
+      "id": "burn",
+      "text": "Burn the place so they don't come back.",
+      "onPass": {
+        "narration": "The brush catches fast. Whatever they hid in there is gone with it, and so is the hideout.",
+        "effects": [
+          {
+            "kind": "setFlag",
+            "key": "hideout_burned",
+            "value": true,
+            "scope": "run"
+          }
+        ]
+      }
+    },
+    {
+      "id": "leave",
+      "text": "Not worth a rope in the dark.",
+      "onPass": {
+        "narration": "You mark the oak and keep to the road.",
+        "effects": []
+      }
+    }
+  ]
+}

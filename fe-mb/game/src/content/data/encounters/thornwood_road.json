@@ -1,0 +1,116 @@
+{
+  "id": "thornwood_road",
+  "regionId": "thornwood",
+  "entries": [
+    {
+      "id": "thornwood_brigands",
+      "weight": 10,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "brigands"
+      }
+    },
+    {
+      "id": "thornwood_wolf_pack",
+      "weight": 8,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "wolves"
+      }
+    },
+    {
+      "id": "thornwood_merchant",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "road_merchant"
+      }
+    },
+    {
+      "id": "thornwood_bandit_parley",
+      "weight": 5,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "checkEventId": "bandit_parley"
+      }
+    },
+    {
+      "id": "thornwood_ambush_battle",
+      "weight": 6,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "thornwood_ambush"
+      }
+    },
+    {
+      "id": "mage_circle_battle",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "battle",
+        "enemyGroupId": "mage_circle"
+      }
+    },
+    {
+      "id": "ambush_toll",
+      "weight": 4,
+      "oneShot": false,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "checkEventId": "ambush_toll"
+      }
+    },
+    {
+      "id": "thieves_crossroads",
+      "weight": 3,
+      "oneShot": true,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "checkEventId": "thieves_crossroads"
+      }
+    },
+    {
+      "id": "thornwood_bridge_crossing",
+      "weight": 4,
+      "oneShot": true,
+      "conditions": [],
+      "outcome": {
+        "kind": "checkEvent",
+        "checkEventId": "bridge_crossing"
+      }
+    },
+    {
+      "id": "sq_caravan_wreck_tw",
+      "weight": 90,
+      "oneShot": false,
+      "conditions": [
+        {
+          "kind": "questStage",
+          "questId": "sq_missing_caravan",
+          "stage": "find_supplies"
+        },
+        {
+          "kind": "notFlag",
+          "key": "caravan_supplies_found"
+        }
+      ],
+      "outcome": {
+        "kind": "dialogue",
+        "dialogueId": "sq_caravan_found"
+      }
+    }
+  ]
+}

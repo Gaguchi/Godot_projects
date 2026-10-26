@@ -1,0 +1,21 @@
+{
+  "id": "ashford_company",
+  "name": "The Ashford Company",
+  "members": [
+    {
+      "id": "mercer_kaine",
+      "name": "Mercer Kaine",
+      "classId": "warlord",
+      "level": 7,
+      "count": 1,
+      "armor": 10
+    },
+    {
+      "name": "Ashford Marksman",
+      "classId": "bandit_archer",
+      "level": 7,
+      "count": 1,
+      "armor": 5
+    }
+  ]
+}

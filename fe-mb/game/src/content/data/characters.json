@@ -1,0 +1,476 @@
+[
+  {
+    "kind": "unit",
+    "id": "mc",
+    "displayName": "The Foundling",
+    "classId": "lord",
+    "level": 1,
+    "team": "party",
+    "spriteId": "roy",
+    "startingGear": {
+      "left": "iron_sword",
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "gold",
+      "faction": "party",
+      "shape": "circle"
+    },
+    "starter": true,
+    "recruitable": true
+  },
+  {
+    "kind": "unit",
+    "id": "oak",
+    "displayName": "Bagrat \"Oak\"",
+    "classId": "shield_knight",
+    "level": 1,
+    "team": "party",
+    "spriteId": "marcus",
+    "startingGear": {
+      "left": "iron_lance",
+      "right": "iron_buckler"
+    },
+    "signatureCardIds": [],
+    "passiveIds": [
+      "genatsvale"
+    ],
+    "portrait": {
+      "accent": "steel",
+      "faction": "party",
+      "shape": "square"
+    },
+    "starter": true,
+    "recruitable": true
+  },
+  {
+    "kind": "unit",
+    "id": "lilina",
+    "displayName": "Lilina",
+    "classId": "mage",
+    "level": 1,
+    "team": "party",
+    "spriteId": "lilina",
+    "startingGear": {
+      "left": "fire_tome",
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "rose",
+      "faction": "mystic",
+      "shape": "diamond"
+    },
+    "starter": true,
+    "recruitable": true
+  },
+  {
+    "kind": "unit",
+    "id": "kael",
+    "displayName": "Kael",
+    "classId": "bandit_archer",
+    "level": 3,
+    "team": "party",
+    "spriteId": "kael",
+    "startingGear": {
+      "left": "iron_bow",
+      "right": null
+    },
+    "statOverrides": {
+      "str": 7,
+      "skl": 9,
+      "spd": 8,
+      "def": 4,
+      "res": 3,
+      "lck": 6
+    },
+    "signatureCardIds": [
+      "kael_hunters_patience",
+      "kael_hamstring"
+    ],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "ember",
+      "faction": "neutral",
+      "shape": "hex"
+    },
+    "joinDialogueId": "sq_blood_ties_daren_captured",
+    "starter": false,
+    "recruitable": true
+  },
+  {
+    "kind": "unit",
+    "id": "garrik",
+    "displayName": "Garrik",
+    "classId": "knight",
+    "level": 1,
+    "team": "party",
+    "spriteId": "garrik",
+    "startingGear": {
+      "left": "iron_lance",
+      "right": "iron_buckler"
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "slate",
+      "faction": "party",
+      "shape": "square"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "lyra",
+    "displayName": "Lyra",
+    "classId": "mage",
+    "level": 1,
+    "team": "party",
+    "spriteId": "lyra",
+    "startingGear": {
+      "left": "fire_tome",
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "moss",
+      "faction": "party",
+      "shape": "circle"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "daren",
+    "displayName": "Daren",
+    "classId": "bandit",
+    "level": 2,
+    "team": "enemy",
+    "spriteId": "daren",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "wine",
+      "faction": "enemy",
+      "shape": "hex"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "mercer_kaine",
+    "displayName": "Mercer Kaine",
+    "classId": "warlord",
+    "level": 7,
+    "team": "enemy",
+    "spriteId": "warlord",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "statOverrides": {
+      "spd": 4
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "wine",
+      "faction": "enemy",
+      "shape": "hex"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "bandit",
+    "displayName": "Bandit",
+    "classId": "bandit",
+    "level": 1,
+    "team": "enemy",
+    "spriteId": "bandit",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "ember",
+      "faction": "enemy",
+      "shape": "square"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "bandit_archer",
+    "displayName": "Bandit Archer",
+    "classId": "bandit_archer",
+    "level": 1,
+    "team": "enemy",
+    "spriteId": "bandit_archer",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "ember",
+      "faction": "enemy",
+      "shape": "square"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "brigand_chief",
+    "displayName": "Brigand Chief",
+    "classId": "bandit",
+    "level": 2,
+    "team": "enemy",
+    "spriteId": "brigand_chief",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "wine",
+      "faction": "enemy",
+      "shape": "hex"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "wolf",
+    "displayName": "Wolf",
+    "classId": "wolf",
+    "level": 1,
+    "team": "enemy",
+    "spriteId": "wolf",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "slate",
+      "faction": "enemy",
+      "shape": "triangle"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "alpha_wolf",
+    "displayName": "Alpha Wolf",
+    "classId": "alpha_wolf",
+    "level": 2,
+    "team": "enemy",
+    "spriteId": "alpha_wolf",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "gold",
+      "faction": "enemy",
+      "shape": "triangle"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "shield_knight",
+    "displayName": "Shield Knight",
+    "classId": "shield_knight",
+    "level": 2,
+    "team": "enemy",
+    "spriteId": "shield_knight",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "slate",
+      "faction": "enemy",
+      "shape": "square"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "raider_mage",
+    "displayName": "Raider Mage",
+    "classId": "raider_mage",
+    "level": 3,
+    "team": "enemy",
+    "spriteId": "raider_mage",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "arcane",
+      "faction": "enemy",
+      "shape": "diamond"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "cleric",
+    "displayName": "Raider Cleric",
+    "classId": "cleric",
+    "level": 3,
+    "team": "enemy",
+    "spriteId": "raider_cleric",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "moss",
+      "faction": "enemy",
+      "shape": "diamond"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "thief",
+    "displayName": "Thief",
+    "classId": "thief",
+    "level": 3,
+    "team": "enemy",
+    "spriteId": "thief",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "moss",
+      "faction": "enemy",
+      "shape": "triangle"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "unit",
+    "id": "ember_mage",
+    "displayName": "Ember Mage",
+    "classId": "ember_mage",
+    "level": 5,
+    "team": "enemy",
+    "spriteId": "ember_mage",
+    "startingGear": {
+      "left": null,
+      "right": null
+    },
+    "signatureCardIds": [],
+    "passiveIds": [],
+    "portrait": {
+      "accent": "ember",
+      "faction": "enemy",
+      "shape": "diamond"
+    },
+    "starter": false,
+    "recruitable": false
+  },
+  {
+    "kind": "npc",
+    "id": "bandit_leader",
+    "displayName": "Bandit Leader",
+    "spriteId": "brigand_chief",
+    "portrait": {
+      "accent": "ember",
+      "faction": "enemy",
+      "shape": "square"
+    }
+  },
+  {
+    "kind": "npc",
+    "id": "deserter",
+    "displayName": "Deserter",
+    "portrait": {
+      "accent": "slate",
+      "faction": "neutral",
+      "shape": "circle"
+    }
+  },
+  {
+    "kind": "npc",
+    "id": "legion_brother",
+    "displayName": "Legion Brother",
+    "portrait": {
+      "accent": "wine",
+      "faction": "enemy",
+      "shape": "square"
+    }
+  },
+  {
+    "kind": "npc",
+    "id": "traveling_merchant",
+    "displayName": "Merchant",
+    "portrait": {
+      "accent": "moss",
+      "faction": "neutral",
+      "shape": "square"
+    }
+  },
+  {
+    "kind": "npc",
+    "id": "guildmistress_anya",
+    "displayName": "Guildmistress Anya",
+    "portrait": {
+      "accent": "gold",
+      "faction": "noble",
+      "shape": "diamond"
+    }
+  },
+  {
+    "kind": "npc",
+    "id": "wounded_traveler",
+    "displayName": "Traveler",
+    "portrait": {
+      "accent": "rose",
+      "faction": "neutral",
+      "shape": "triangle"
+    }
+  }
+]

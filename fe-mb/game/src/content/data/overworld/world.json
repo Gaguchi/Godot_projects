@@ -1,0 +1,905 @@
+{
+  "id": "world",
+  "name": "Embermarch",
+  "width": 3060,
+  "height": 850,
+  "startNodeId": "frontier_camp",
+  "nodes": [
+    {
+      "id": "frontier_camp",
+      "name": "Frontier Camp",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 60,
+        "y": 118
+      }
+    },
+    {
+      "id": "darens_camp",
+      "name": "Daren's Camp",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 140,
+        "y": 205
+      },
+      "sigil": "battle",
+      "hidden": true,
+      "discoveryEventId": "darens_camp"
+    },
+    {
+      "id": "riverside_market",
+      "name": "Riverside Market",
+      "type": "TOWN",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 274,
+        "y": 91
+      }
+    },
+    {
+      "id": "south_road_ambush",
+      "name": "South Road Ambush",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 260,
+        "y": 154
+      },
+      "sigil": "battle",
+      "discoveryEventId": "south_road_ambush"
+    },
+    {
+      "id": "old_mill_crossing",
+      "name": "Old Mill Crossing",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 488,
+        "y": 72
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "bandit_hideout",
+      "name": "Bandit Hideout",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 459,
+        "y": 118
+      },
+      "sigil": "battle",
+      "discoveryEventId": "bandit_hideout"
+    },
+    {
+      "id": "south_junction",
+      "name": "South Junction",
+      "type": "TOWN",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 459,
+        "y": 164
+      }
+    },
+    {
+      "id": "watchtower_ridge",
+      "name": "Watchtower Ridge",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 687,
+        "y": 52
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "pine_crossing",
+      "name": "Pine Crossing",
+      "type": "TOWN",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 687,
+        "y": 105
+      }
+    },
+    {
+      "id": "smugglers_cave",
+      "name": "Smuggler's Cave",
+      "type": "DUNGEON",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 658,
+        "y": 164
+      },
+      "sigil": "dungeon",
+      "locked": true
+    },
+    {
+      "id": "border_fortress",
+      "name": "Border Fortress",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 886,
+        "y": 78
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "rodericks_camp",
+      "name": "Roderick's Camp",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 886,
+        "y": 131
+      }
+    },
+    {
+      "id": "traders_rest",
+      "name": "Trader's Rest",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 146,
+        "y": 78
+      }
+    },
+    {
+      "id": "north_ridge_path",
+      "name": "North Ridge Path",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 587,
+        "y": 35
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "broken_bridge",
+      "name": "Broken Bridge",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 573,
+        "y": 190
+      },
+      "sigil": "bridge"
+    },
+    {
+      "id": "borderland_shrine",
+      "name": "Borderland Shrine",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 1000,
+        "y": 45
+      },
+      "sigil": "shrine",
+      "discoveryEventId": "borderland_shrine"
+    },
+    {
+      "id": "thornwood_gate",
+      "name": "Thornwood Gate",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1082,
+        "y": 378
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "southern_trail",
+      "name": "Southern Trail",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1060,
+        "y": 457
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "thornwood_chapel",
+      "name": "Thornwood Chapel",
+      "type": "TOWN",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1344,
+        "y": 358
+      }
+    },
+    {
+      "id": "dark_hollow",
+      "name": "Dark Hollow",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1344,
+        "y": 411
+      }
+    },
+    {
+      "id": "cursed_clearing",
+      "name": "Cursed Clearing",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1344,
+        "y": 464
+      }
+    },
+    {
+      "id": "hermits_tower",
+      "name": "Hermit's Tower",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1650,
+        "y": 365
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "wolf_den",
+      "name": "Wolf Den",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1650,
+        "y": 418
+      },
+      "sigil": "dungeon"
+    },
+    {
+      "id": "witchs_hut",
+      "name": "Witch's Hut",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1650,
+        "y": 470
+      }
+    },
+    {
+      "id": "ancient_ruins",
+      "name": "Ancient Ruins",
+      "type": "DUNGEON",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 2000,
+        "y": 391
+      }
+    },
+    {
+      "id": "morganas_grove",
+      "name": "Morgana's Grove",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 2000,
+        "y": 444
+      }
+    },
+    {
+      "id": "foggy_marsh",
+      "name": "Foggy Marsh",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1213,
+        "y": 395
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "spiders_nest",
+      "name": "Spider's Nest",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1213,
+        "y": 484
+      }
+    },
+    {
+      "id": "druids_circle",
+      "name": "Druid's Circle",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1497,
+        "y": 335
+      }
+    },
+    {
+      "id": "moonlit_glade",
+      "name": "Moonlit Glade",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1825,
+        "y": 345
+      }
+    },
+    {
+      "id": "thornwood_depths",
+      "name": "Thornwood Depths",
+      "type": "DUNGEON",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 1825,
+        "y": 490
+      }
+    },
+    {
+      "id": "mountain_pass",
+      "name": "Mountain Pass",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2060,
+        "y": 670
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "ashfall_trail",
+      "name": "Ashfall Trail",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2060,
+        "y": 748
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "ashfall_outpost",
+      "name": "Ashfall Outpost",
+      "type": "TOWN",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2266,
+        "y": 649
+      }
+    },
+    {
+      "id": "lava_fields",
+      "name": "Lava Fields",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2266,
+        "y": 706
+      }
+    },
+    {
+      "id": "scorched_village",
+      "name": "Scorched Village",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2266,
+        "y": 762
+      }
+    },
+    {
+      "id": "dragons_lookout",
+      "name": "Dragon's Lookout",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2472,
+        "y": 656
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "iron_mine",
+      "name": "Iron Mine",
+      "type": "DUNGEON",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2472,
+        "y": 713
+      },
+      "sigil": "dungeon"
+    },
+    {
+      "id": "sulfur_springs",
+      "name": "Sulfur Springs",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2472,
+        "y": 769
+      }
+    },
+    {
+      "id": "cragmaw_fortress",
+      "name": "Cragmaw Fortress",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2707,
+        "y": 685
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "final_approach",
+      "name": "Final Approach",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2707,
+        "y": 741
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "the_iron_throne",
+      "name": "The Iron Throne",
+      "type": "BOSS",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 3000,
+        "y": 713
+      },
+      "sigil": "boss",
+      "enemyGroupId": "ashford_company",
+      "battlefieldId": "throne_hall"
+    },
+    {
+      "id": "ember_creek",
+      "name": "Ember Creek",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2163,
+        "y": 688
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "ruined_chapel",
+      "name": "Ruined Chapel",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2163,
+        "y": 783
+      },
+      "sigil": "shrine",
+      "discoveryEventId": "ruined_chapel"
+    },
+    {
+      "id": "obsidian_cavern",
+      "name": "Obsidian Cavern",
+      "type": "DUNGEON",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2589,
+        "y": 635
+      },
+      "sigil": "dungeon"
+    },
+    {
+      "id": "warlords_camp",
+      "name": "Warlord's Camp",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2589,
+        "y": 790
+      },
+      "sigil": "battle",
+      "discoveryEventId": "warlords_camp"
+    },
+    {
+      "id": "ashen_gate",
+      "name": "Ashen Gate",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 2839,
+        "y": 713
+      },
+      "sigil": "fortress"
+    }
+  ],
+  "edges": [
+    {
+      "from": "frontier_camp",
+      "to": "riverside_market",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "frontier_camp",
+      "to": "south_road_ambush",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "frontier_camp",
+      "to": "traders_rest",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "riverside_market",
+      "to": "old_mill_crossing",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "riverside_market",
+      "to": "bandit_hideout",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "south_road_ambush",
+      "to": "south_junction",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_mill_crossing",
+      "to": "watchtower_ridge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_mill_crossing",
+      "to": "pine_crossing",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_mill_crossing",
+      "to": "north_ridge_path",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "bandit_hideout",
+      "to": "south_junction",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "bandit_hideout",
+      "to": "pine_crossing",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "south_junction",
+      "to": "smugglers_cave",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "south_junction",
+      "to": "broken_bridge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "watchtower_ridge",
+      "to": "border_fortress",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "watchtower_ridge",
+      "to": "north_ridge_path",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "pine_crossing",
+      "to": "border_fortress",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "pine_crossing",
+      "to": "rodericks_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "smugglers_cave",
+      "to": "rodericks_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "smugglers_cave",
+      "to": "broken_bridge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "border_fortress",
+      "to": "borderland_shrine",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "thornwood_gate",
+      "to": "thornwood_chapel",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "thornwood_gate",
+      "to": "dark_hollow",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "thornwood_gate",
+      "to": "foggy_marsh",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "southern_trail",
+      "to": "cursed_clearing",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "southern_trail",
+      "to": "spiders_nest",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "thornwood_chapel",
+      "to": "hermits_tower",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "thornwood_chapel",
+      "to": "druids_circle",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "dark_hollow",
+      "to": "cursed_clearing",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "dark_hollow",
+      "to": "wolf_den",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "dark_hollow",
+      "to": "foggy_marsh",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "cursed_clearing",
+      "to": "witchs_hut",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "cursed_clearing",
+      "to": "spiders_nest",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "hermits_tower",
+      "to": "ancient_ruins",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "hermits_tower",
+      "to": "moonlit_glade",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "wolf_den",
+      "to": "ancient_ruins",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "wolf_den",
+      "to": "morganas_grove",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "witchs_hut",
+      "to": "morganas_grove",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "witchs_hut",
+      "to": "thornwood_depths",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "ancient_ruins",
+      "to": "moonlit_glade",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "morganas_grove",
+      "to": "thornwood_depths",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "mountain_pass",
+      "to": "ashfall_outpost",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "mountain_pass",
+      "to": "lava_fields",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "mountain_pass",
+      "to": "ember_creek",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ashfall_trail",
+      "to": "scorched_village",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ashfall_trail",
+      "to": "ruined_chapel",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ashfall_outpost",
+      "to": "dragons_lookout",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lava_fields",
+      "to": "scorched_village",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lava_fields",
+      "to": "iron_mine",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lava_fields",
+      "to": "ember_creek",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "scorched_village",
+      "to": "sulfur_springs",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "scorched_village",
+      "to": "ruined_chapel",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "dragons_lookout",
+      "to": "cragmaw_fortress",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "dragons_lookout",
+      "to": "obsidian_cavern",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "iron_mine",
+      "to": "cragmaw_fortress",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "iron_mine",
+      "to": "final_approach",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "sulfur_springs",
+      "to": "final_approach",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "sulfur_springs",
+      "to": "warlords_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "cragmaw_fortress",
+      "to": "obsidian_cavern",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "cragmaw_fortress",
+      "to": "ashen_gate",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "final_approach",
+      "to": "warlords_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "final_approach",
+      "to": "ashen_gate",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "the_iron_throne",
+      "to": "ashen_gate",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "border_fortress",
+      "to": "thornwood_gate",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "rodericks_camp",
+      "to": "southern_trail",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "ancient_ruins",
+      "to": "mountain_pass",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "morganas_grove",
+      "to": "ashfall_trail",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "frontier_camp",
+      "to": "darens_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "darens_camp",
+      "to": "south_road_ambush",
+      "encounterTableId": "borderlands_road"
+    }
+  ]
+}

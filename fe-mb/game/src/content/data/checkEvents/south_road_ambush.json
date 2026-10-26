@@ -1,0 +1,61 @@
+{
+  "id": "south_road_ambush",
+  "title": "Wreckage on the south road",
+  "description": "A cart on its side, a dead ox, arrows still standing in the boards. Whoever did this took the horses and left the flour. Somewhere under the cart, someone is breathing.",
+  "choices": [
+    {
+      "id": "dig",
+      "text": "Lift the cart. Someone's alive under there.",
+      "check": {
+        "kind": "stat",
+        "stat": "str",
+        "threshold": 6
+      },
+      "onPass": {
+        "narration": "The cart comes up on your shoulders and a carter crawls out, bloodied and grateful. He presses his purse into your hands before you can refuse it.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 25
+          },
+          {
+            "kind": "addFood",
+            "amount": 1
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The cart shifts, slips, and comes down on your fingers before you get it clear. The carter is alive. Your hands will remember this.",
+        "effects": [
+          {
+            "kind": "damageParty",
+            "amount": 2
+          },
+          {
+            "kind": "addFood",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "salvage",
+      "text": "Take the flour and move on.",
+      "onPass": {
+        "narration": "Two sacks, dusty but whole. The breathing under the cart stops while you tie them on. You do not look back.",
+        "effects": [
+          {
+            "kind": "addFood",
+            "amount": 2
+          },
+          {
+            "kind": "setFlag",
+            "key": "left_the_carter",
+            "value": true,
+            "scope": "run"
+          }
+        ]
+      }
+    }
+  ]
+}

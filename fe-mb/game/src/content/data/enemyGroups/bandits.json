@@ -1,0 +1,20 @@
+{
+  "id": "bandits_small",
+  "name": "Bandit Ambush",
+  "members": [
+    {
+      "name": "Bandit",
+      "classId": "bandit",
+      "level": 1,
+      "count": 3
+    },
+    {
+      "id": "bandit_archer",
+      "name": "Bandit Archer",
+      "classId": "bandit_archer",
+      "level": 1,
+      "count": 1
+    }
+  ],
+  "victoryEvent": "interrogate_survivor"
+}

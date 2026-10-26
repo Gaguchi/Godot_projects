@@ -1,0 +1,47 @@
+{
+  "classId": "raider_mage",
+  "role": "archer",
+  "movement": 4,
+  "preferredRange": {
+    "min": 2,
+    "max": 3
+  },
+  "actions": [
+    {
+      "id": "arcane_bolt",
+      "kind": "attack",
+      "range": {
+        "min": 2,
+        "max": 3
+      },
+      "amount": 6,
+      "damageStat": "mag",
+      "weight": 70,
+      "situation": "always"
+    },
+    {
+      "id": "overload",
+      "kind": "attack",
+      "range": {
+        "min": 2,
+        "max": 3
+      },
+      "amount": 9,
+      "damageStat": "mag",
+      "weight": 30,
+      "situation": "target_low_hp"
+    },
+    {
+      "id": "staff_jab",
+      "kind": "attack",
+      "range": {
+        "min": 1,
+        "max": 1
+      },
+      "amount": 2,
+      "damageStat": "mag",
+      "weight": 100,
+      "situation": "self_low_hp"
+    }
+  ]
+}

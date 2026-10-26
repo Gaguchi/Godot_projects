@@ -1,0 +1,108 @@
+{
+  "id": "sq_blood_ties_accept",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "speaker": "kael",
+      "text": "You there. You look like capable fighters. I have a job, if you've got the stomach for it.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "explain"
+        }
+      ]
+    },
+    "explain": {
+      "id": "explain",
+      "speaker": "kael",
+      "text": "My brother Daren fell in with a bandit gang. They've been raiding travelers on the road near Frontier Camp.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "request"
+        }
+      ]
+    },
+    "request": {
+      "id": "request",
+      "speaker": "kael",
+      "text": "I need him captured alive. Not killed. Wear him down first, then Capture him before his friends can cut him loose.",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "We'll bring him back alive.",
+          "effects": [],
+          "next": "accept"
+        },
+        {
+          "id": "c1",
+          "text": "What's in it for us?",
+          "effects": [],
+          "next": "offer"
+        },
+        {
+          "id": "c2",
+          "text": "Not our problem.",
+          "effects": [],
+          "next": "decline"
+        }
+      ]
+    },
+    "offer": {
+      "id": "offer",
+      "speaker": "kael",
+      "text": "Capture Daren, and I'll join your company. I'm a bounty hunter by trade. If he dies... I'll pay you 80 gold, but we part ways after that.",
+      "choices": [
+        {
+          "id": "c0",
+          "text": "You have a deal.",
+          "effects": [],
+          "next": "accept"
+        },
+        {
+          "id": "c1",
+          "text": "We'll think about it.",
+          "effects": [],
+          "next": "decline"
+        }
+      ]
+    },
+    "accept": {
+      "id": "accept",
+      "speaker": "kael",
+      "text": "Good. Daren's gang has been spotted on the road between here and Frontier Camp. Travel that way and you'll find them. Remember — Capture only takes a foe who is already hurt.",
+      "onEnter": [
+        {
+          "kind": "startQuest",
+          "questId": "sq_blood_ties"
+        }
+      ],
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    },
+    "decline": {
+      "id": "decline",
+      "speaker": "kael",
+      "text": "Suit yourself. I'll be here if you change your mind.",
+      "choices": [
+        {
+          "id": "continue",
+          "text": "Continue",
+          "effects": [],
+          "next": "end"
+        }
+      ]
+    }
+  }
+}

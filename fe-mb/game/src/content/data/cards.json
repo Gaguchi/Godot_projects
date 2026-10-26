@@ -1,0 +1,3764 @@
+[
+  {
+    "id": "lord_rally",
+    "name": "Rally",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "DrawCards",
+        "target": "self",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "id": "lord_inspiring_strike",
+    "name": "Inspiring Strike",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "physical"
+      },
+      {
+        "kind": "GainAp",
+        "target": "self",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "lord_nobility",
+    "name": "Nobility",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 1
+    },
+    "targetKind": "ally",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "target",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "lord_command",
+    "name": "Command",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "GainAp",
+        "target": "target",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "knight_fortify",
+    "name": "Fortify",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 5
+      }
+    ]
+  },
+  {
+    "id": "knight_bulwark",
+    "name": "Bulwark",
+    "apCost": 2,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 4
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "taunt",
+        "value": 1,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "knight_hold_line",
+    "name": "Hold the Line",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 3,
+        "damageType": "physical"
+      },
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "knight_shield_expertise",
+    "name": "Shield Expertise",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 6
+      }
+    ]
+  },
+  {
+    "id": "mage_focus",
+    "name": "Focus",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "DrawCards",
+        "target": "self",
+        "count": 1,
+        "gainAp": 1
+      }
+    ]
+  },
+  {
+    "id": "mage_arcane_burst",
+    "name": "Arcane Burst",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 6,
+        "damageType": "magic"
+      }
+    ]
+  },
+  {
+    "id": "mage_barrier",
+    "name": "Barrier",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 1
+    },
+    "targetKind": "ally",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "target",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "mage_elemental_mastery",
+    "name": "Elemental Mastery",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "magic"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "burn",
+        "value": 2,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "iron_sword_slash",
+    "name": "Slash",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_sword_thrust",
+    "name": "Thrust",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 8,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_sword_guard_break",
+    "name": "Guard Break",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 3,
+        "damageType": "physical"
+      },
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "armor",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "steel_sword_slash",
+    "name": "Steel Slash",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 6,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_sword_thrust",
+    "name": "Steel Thrust",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 11,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_sword_guard_break",
+    "name": "Steel Guard Break",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      },
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "armor",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "iron_lance_jab",
+    "name": "Jab",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_lance_impale",
+    "name": "Impale",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 10,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_lance_brace",
+    "name": "Brace",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "physical"
+      },
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "obsidian_chop",
+    "name": "Obsidian Chop",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "obsidian_magma_swing",
+    "name": "Magma Swing",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 5,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "area",
+        "effectId": "burn",
+        "value": 3,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "obsidian_shatter",
+    "name": "Shatter",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "physical"
+      },
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "armor",
+        "amount": 4
+      }
+    ]
+  },
+  {
+    "id": "iron_buckler_block",
+    "name": "Block",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 4
+      }
+    ]
+  },
+  {
+    "id": "iron_buckler_parry",
+    "name": "Parry",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 3
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "riposte",
+        "value": 2,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "iron_buckler_deflect",
+    "name": "Deflect",
+    "apCost": 0,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "darkwood_thorn_arrow",
+    "name": "Thorn Arrow",
+    "apCost": 1,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "darkwood_natures_aim",
+    "name": "Nature's Aim",
+    "apCost": 2,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 10,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "poison",
+        "value": 2,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "darkwood_briar_volley",
+    "name": "Briar Volley",
+    "apCost": 3,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "tile",
+    "aoeRadius": 1,
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 3,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "area",
+        "effectId": "poison",
+        "value": 1,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "iron_crossbow_bolt",
+    "name": "Bolt",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_crossbow_heavy_bolt",
+    "name": "Heavy Bolt",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 10,
+        "damageType": "physical"
+      },
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "armor",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "iron_crossbow_pinning_shot",
+    "name": "Pinning Shot",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 3,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "immobilize",
+        "value": 1,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "fire_tome_fire",
+    "name": "Fire",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "magic"
+      }
+    ]
+  },
+  {
+    "id": "fire_tome_blaze",
+    "name": "Blaze",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 8,
+        "damageType": "magic"
+      }
+    ]
+  },
+  {
+    "id": "fire_tome_flame_burst",
+    "name": "Flame Burst",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "tile",
+    "aoeRadius": 2,
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 4,
+        "damageType": "magic"
+      }
+    ]
+  },
+  {
+    "id": "heal_staff_heal",
+    "name": "Heal",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "Heal",
+        "target": "target",
+        "amount": 8
+      }
+    ]
+  },
+  {
+    "id": "heal_staff_restore",
+    "name": "Restore",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "Heal",
+        "target": "target",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "heal_staff_purify",
+    "name": "Purify",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "debuff",
+        "all": true
+      }
+    ]
+  },
+  {
+    "id": "lord_charge",
+    "name": "Charge",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Move",
+        "target": "self",
+        "distance": 2
+      },
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "knight_taunt",
+    "name": "Taunt",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "taunt",
+        "value": 1,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "mage_chill",
+    "name": "Chill",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 2,
+        "damageType": "magic"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "slow",
+        "value": 1,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "iron_sword_riposte",
+    "name": "Riposte Stance",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "sword",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "riposte",
+        "value": 3,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "fire_tome_ember",
+    "name": "Ember",
+    "apCost": 0,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 1,
+        "damageType": "magic"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "burn",
+        "value": 1,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "heal_staff_blessing",
+    "name": "Blessing",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "Heal",
+        "target": "target",
+        "amount": 6
+      },
+      {
+        "kind": "GrantArmor",
+        "target": "target",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "bandit_swing",
+    "name": "Swing",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "bandit_charge",
+    "name": "Charge",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Move",
+        "target": "self",
+        "distance": 2
+      },
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_greatsword_heavy_slash",
+    "name": "Heavy Slash",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "greatsword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_greatsword_cleave",
+    "name": "Cleave",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "greatsword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_greatsword_overhead_blow",
+    "name": "Overhead Blow",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "greatsword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 12,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_greatsword_whirlwind",
+    "name": "Whirlwind",
+    "apCost": 3,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "greatsword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 7,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_greatsword_power_stance",
+    "name": "Power Stance",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "greatsword",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "empower",
+        "value": 4,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "iron_greatsword_guard",
+    "name": "Guard",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "greatsword",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "steel_lance_jab",
+    "name": "Steel Jab",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_lance_impale",
+    "name": "Steel Impale",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 14,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_lance_brace",
+    "name": "Steel Brace",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 6,
+        "damageType": "physical"
+      },
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "iron_axe_chop",
+    "name": "Chop",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_axe_wild_swing",
+    "name": "Wild Swing",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 4,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_axe_rend",
+    "name": "Rend",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 3,
+        "damageType": "physical"
+      },
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "armor",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "steel_axe_chop",
+    "name": "Steel Chop",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_axe_wild_swing",
+    "name": "Steel Wild Swing",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 6,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_axe_rend",
+    "name": "Steel Rend",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      },
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "armor",
+        "amount": 4
+      }
+    ]
+  },
+  {
+    "id": "iron_bow_quick_shot",
+    "name": "Quick Shot",
+    "apCost": 1,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_bow_aimed_shot",
+    "name": "Aimed Shot",
+    "apCost": 2,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 9,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "iron_bow_volley",
+    "name": "Volley",
+    "apCost": 3,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "tile",
+    "aoeRadius": 1,
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 3,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_bow_quick_shot",
+    "name": "Steel Quick Shot",
+    "apCost": 1,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 6,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_bow_aimed_shot",
+    "name": "Steel Aimed Shot",
+    "apCost": 2,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 12,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_bow_volley",
+    "name": "Steel Volley",
+    "apCost": 3,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "tile",
+    "aoeRadius": 1,
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_crossbow_bolt",
+    "name": "Steel Bolt",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_crossbow_heavy_bolt",
+    "name": "Steel Heavy Bolt",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 13,
+        "damageType": "physical"
+      },
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "armor",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "steel_crossbow_pinning_shot",
+    "name": "Steel Pinning Shot",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "immobilize",
+        "value": 1,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "thunder_tome_thunder",
+    "name": "Thunder",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 6,
+        "damageType": "magic"
+      }
+    ]
+  },
+  {
+    "id": "thunder_tome_thoron",
+    "name": "Thoron",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 11,
+        "damageType": "magic"
+      }
+    ]
+  },
+  {
+    "id": "thunder_tome_lightning",
+    "name": "Lightning",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "tile",
+    "aoeRadius": 2,
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 5,
+        "damageType": "magic"
+      }
+    ]
+  },
+  {
+    "id": "mend_staff_heal",
+    "name": "Heal",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "Heal",
+        "target": "target",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "mend_staff_restore",
+    "name": "Restore",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "Heal",
+        "target": "target",
+        "amount": 20
+      }
+    ]
+  },
+  {
+    "id": "mend_staff_purify",
+    "name": "Purify",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "debuff",
+        "all": true
+      },
+      {
+        "kind": "Heal",
+        "target": "target",
+        "amount": 5
+      }
+    ]
+  },
+  {
+    "id": "bone_dagger_stab",
+    "name": "Stab",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "dagger",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "bone_dagger_lacerate",
+    "name": "Lacerate",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "dagger",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 3,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "poison",
+        "value": 2,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "bone_dagger_twist_blade",
+    "name": "Twist Blade",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "dagger",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "poison",
+        "value": 3,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "venom_lance_toxic_jab",
+    "name": "Toxic Jab",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "poison",
+        "value": 1,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "venom_lance_venom_impale",
+    "name": "Venom Impale",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 9,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "poison",
+        "value": 3,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "venom_lance_poison_brace",
+    "name": "Poison Brace",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "lance",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 3,
+        "damageType": "physical"
+      },
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 2
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "poison",
+        "value": 1,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "thorn_staff_natures_touch",
+    "name": "Nature's Touch",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "Heal",
+        "target": "target",
+        "amount": 10
+      }
+    ]
+  },
+  {
+    "id": "thorn_staff_regrowth",
+    "name": "Regrowth",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "ally",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "Heal",
+        "target": "target",
+        "amount": 12
+      }
+    ],
+    "todoMechanic": "heal-over-time"
+  },
+  {
+    "id": "thorn_staff_entangle",
+    "name": "Entangle",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "staff",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "immobilize",
+        "value": 1,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "serpent_blade_fang_strike",
+    "name": "Fang Strike",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 6,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "poison",
+        "value": 2,
+        "turns": 3
+      }
+    ]
+  },
+  {
+    "id": "serpent_blade_cobra_lunge",
+    "name": "Cobra Lunge",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 10,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "poison",
+        "value": 3,
+        "turns": 3
+      }
+    ]
+  },
+  {
+    "id": "serpent_blade_shed_skin",
+    "name": "Shed Skin",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "sword",
+    "effects": [
+      {
+        "kind": "RemoveStatus",
+        "target": "self",
+        "remove": "debuff",
+        "all": true
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "riposte",
+        "value": 4,
+        "turns": 1
+      }
+    ],
+    "todoMechanic": "self-centred enemy AOE"
+  },
+  {
+    "id": "magma_blade_flame_slash",
+    "name": "Flame Slash",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 6,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "burn",
+        "value": 2,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "magma_blade_eruption_strike",
+    "name": "Eruption Strike",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 10,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "burn",
+        "value": 3,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "magma_blade_molten_edge",
+    "name": "Molten Edge",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      }
+    ],
+    "todoMechanic": "conditional damage vs a burning target"
+  },
+  {
+    "id": "ember_tome_ember",
+    "name": "Ember",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "magic"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "burn",
+        "value": 2,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "ember_tome_conflagrate",
+    "name": "Conflagrate",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "tile",
+    "aoeRadius": 2,
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 4,
+        "damageType": "magic"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "area",
+        "effectId": "burn",
+        "value": 2,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "ember_tome_volcanic_surge",
+    "name": "Volcanic Surge",
+    "apCost": 3,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 12,
+        "damageType": "magic"
+      }
+    ]
+  },
+  {
+    "id": "molten_crossbow_fire_bolt",
+    "name": "Fire Bolt",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 6,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "burn",
+        "value": 1,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "molten_crossbow_magma_bolt",
+    "name": "Magma Bolt",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "crossbow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 11,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "burn",
+        "value": 2,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "molten_crossbow_explosive_bolt",
+    "name": "Explosive Bolt",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "crossbow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 5,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "area",
+        "effectId": "burn",
+        "value": 3,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "hellfire_tome_hellfire",
+    "name": "Hellfire",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "enemy",
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "magic"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "burn",
+        "value": 3,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "hellfire_tome_inferno",
+    "name": "Inferno",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "tile",
+    "aoeRadius": 2,
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 5,
+        "damageType": "magic"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "area",
+        "effectId": "burn",
+        "value": 3,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "hellfire_tome_pyroclasm",
+    "name": "Pyroclasm",
+    "apCost": 3,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "tile",
+    "aoeRadius": 2,
+    "weaponType": "tome",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 8,
+        "damageType": "magic"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "area",
+        "effectId": "burn",
+        "value": 2,
+        "turns": 2
+      }
+    ],
+    "todoMechanic": "true all_enemies targeting"
+  },
+  {
+    "id": "steel_buckler_block",
+    "name": "Steel Block",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 6
+      }
+    ]
+  },
+  {
+    "id": "steel_buckler_parry",
+    "name": "Steel Parry",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 4
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "riposte",
+        "value": 3,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "steel_buckler_deflect",
+    "name": "Steel Deflect",
+    "apCost": 0,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "iron_tower_shield_fortress",
+    "name": "Fortress",
+    "apCost": 2,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 8
+      }
+    ]
+  },
+  {
+    "id": "iron_tower_shield_shield_wall",
+    "name": "Shield Wall",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 1
+    },
+    "targetKind": "ally",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "target",
+        "amount": 4
+      }
+    ],
+    "todoMechanic": "multi-target ally armor splash"
+  },
+  {
+    "id": "iron_tower_shield_cover",
+    "name": "Cover",
+    "apCost": 2,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 2
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "taunt",
+        "value": 1,
+        "turns": 1
+      }
+    ],
+    "todoMechanic": "attack redirect / cover-ally targeting"
+  },
+  {
+    "id": "steel_tower_shield_fortress",
+    "name": "Steel Fortress",
+    "apCost": 2,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 11
+      }
+    ]
+  },
+  {
+    "id": "steel_tower_shield_shield_wall",
+    "name": "Steel Shield Wall",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 1
+    },
+    "targetKind": "ally",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "target",
+        "amount": 6
+      }
+    ],
+    "todoMechanic": "multi-target ally armor splash"
+  },
+  {
+    "id": "steel_tower_shield_cover",
+    "name": "Steel Cover",
+    "apCost": 2,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 3
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "taunt",
+        "value": 1,
+        "turns": 1
+      }
+    ],
+    "todoMechanic": "attack redirect / cover-ally targeting"
+  },
+  {
+    "id": "bark_shield_thorn_block",
+    "name": "Thorn Block",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 4
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "riposte",
+        "value": 2,
+        "turns": 1
+      }
+    ],
+    "todoMechanic": "persistent thorns aura"
+  },
+  {
+    "id": "bark_shield_root_guard",
+    "name": "Root Guard",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "immobilize",
+        "value": 1,
+        "turns": 1
+      },
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "bark_shield_natures_shell",
+    "name": "Nature's Shell",
+    "apCost": 0,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 2
+      },
+      {
+        "kind": "Heal",
+        "target": "self",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "volcanic_tower_shield_magma_fortress",
+    "name": "Magma Fortress",
+    "apCost": 2,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 9
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "riposte",
+        "value": 3,
+        "turns": 1
+      }
+    ],
+    "todoMechanic": "self-centred enemy AOE"
+  },
+  {
+    "id": "volcanic_tower_shield_lava_wall",
+    "name": "Lava Wall",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 1
+    },
+    "targetKind": "ally",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "target",
+        "amount": 5
+      }
+    ]
+  },
+  {
+    "id": "volcanic_tower_shield_heat_shield",
+    "name": "Heat Shield",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 4
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "riposte",
+        "value": 4,
+        "turns": 1
+      }
+    ],
+    "todoMechanic": "riposte that applies a status"
+  },
+  {
+    "id": "steel_greatsword_heavy_slash",
+    "name": "Steel Heavy Slash",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "greatsword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 10,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_greatsword_cleave",
+    "name": "Steel Cleave",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "greatsword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 7,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_greatsword_overhead_blow",
+    "name": "Steel Overhead Blow",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "greatsword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 16,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_greatsword_whirlwind",
+    "name": "Steel Whirlwind",
+    "apCost": 3,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "greatsword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 9,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "steel_greatsword_power_stance",
+    "name": "Steel Power Stance",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "greatsword",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "empower",
+        "value": 6,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "steel_greatsword_guard",
+    "name": "Steel Guard",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "greatsword",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 4
+      }
+    ]
+  },
+  {
+    "id": "longbow_long_shot",
+    "name": "Long Shot",
+    "apCost": 1,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "longbow_snipe",
+    "name": "Snipe",
+    "apCost": 2,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 12,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "longbow_rain_of_arrows",
+    "name": "Rain of Arrows",
+    "apCost": 3,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "tile",
+    "aoeRadius": 1,
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 4,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "longbow_steady_aim",
+    "name": "Steady Aim",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "bow",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "empower",
+        "value": 5,
+        "turns": 1
+      }
+    ],
+    "todoMechanic": "ranged-only empower"
+  },
+  {
+    "id": "longbow_quick_nock",
+    "name": "Quick Nock",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "bow",
+    "effects": [
+      {
+        "kind": "DrawCards",
+        "target": "self",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "longbow_covering_fire",
+    "name": "Covering Fire",
+    "apCost": 1,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 3,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "immobilize",
+        "value": 1,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "composite_bow_long_shot",
+    "name": "Long Shot",
+    "apCost": 1,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "composite_bow_snipe",
+    "name": "Snipe",
+    "apCost": 2,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 16,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "composite_bow_rain_of_arrows",
+    "name": "Rain of Arrows",
+    "apCost": 3,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "tile",
+    "aoeRadius": 1,
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 6,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "composite_bow_steady_aim",
+    "name": "Steady Aim",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "bow",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "empower",
+        "value": 7,
+        "turns": 1
+      }
+    ],
+    "todoMechanic": "ranged-only empower"
+  },
+  {
+    "id": "composite_bow_quick_nock",
+    "name": "Quick Nock",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "bow",
+    "effects": [
+      {
+        "kind": "DrawCards",
+        "target": "self",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "composite_bow_covering_fire",
+    "name": "Covering Fire",
+    "apCost": 1,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 5,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "immobilize",
+        "value": 1,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "flame_blade_fire_slash",
+    "name": "Fire Slash",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "burn",
+        "value": 3,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "flame_blade_ignite",
+    "name": "Ignite",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 5,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "area",
+        "effectId": "burn",
+        "value": 2,
+        "turns": 2
+      }
+    ],
+    "todoMechanic": "ring-only AOE (exclude the centre target)"
+  },
+  {
+    "id": "flame_blade_inferno_strike",
+    "name": "Inferno Strike",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 14,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "frost_axe_frost_chop",
+    "name": "Frost Chop",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 7,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "slow",
+        "value": 2,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "frost_axe_shatter",
+    "name": "Shatter",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "axe",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 10,
+        "damageType": "physical"
+      },
+      {
+        "kind": "RemoveStatus",
+        "target": "target",
+        "remove": "armor",
+        "all": true
+      }
+    ]
+  },
+  {
+    "id": "frost_axe_frozen_ground",
+    "name": "Frozen Ground",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "tile",
+    "aoeRadius": 1,
+    "weaponType": "axe",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "area",
+        "effectId": "slow",
+        "value": 2,
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "paladins_aegis_holy_block",
+    "name": "Holy Block",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 6
+      },
+      {
+        "kind": "Heal",
+        "target": "self",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "paladins_aegis_radiant_shield",
+    "name": "Radiant Shield",
+    "apCost": 2,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 8
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "riposte",
+        "value": 4,
+        "turns": 1
+      }
+    ],
+    "todoMechanic": "self-centred enemy AOE"
+  },
+  {
+    "id": "paladins_aegis_martyr",
+    "name": "Martyr",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "taunt",
+        "value": 1,
+        "turns": 1
+      },
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 3
+      }
+    ],
+    "todoMechanic": "attack interception / bodyguard redirect"
+  },
+  {
+    "id": "wraithbow_soul_arrow",
+    "name": "Soul Arrow",
+    "apCost": 1,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 9,
+        "damageType": "physical"
+      }
+    ],
+    "todoMechanic": "lifesteal-on-hit"
+  },
+  {
+    "id": "wraithbow_ghost_shot",
+    "name": "Ghost Shot",
+    "apCost": 2,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 14,
+        "damageType": "physical",
+        "armorPiercing": true
+      }
+    ]
+  },
+  {
+    "id": "wraithbow_phantom_volley",
+    "name": "Phantom Volley",
+    "apCost": 3,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "tile",
+    "aoeRadius": 1,
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 6,
+        "damageType": "physical"
+      }
+    ],
+    "todoMechanic": "per-target-hit lifesteal"
+  },
+  {
+    "id": "wraithbow_death_sight",
+    "name": "Death Sight",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "bow",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "empower",
+        "value": 7,
+        "turns": 1
+      },
+      {
+        "kind": "DrawCards",
+        "target": "self",
+        "count": 1
+      }
+    ],
+    "todoMechanic": "ranged-only empower"
+  },
+  {
+    "id": "wraithbow_spectral_nock",
+    "name": "Spectral Nock",
+    "apCost": 0,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "bow",
+    "effects": [
+      {
+        "kind": "DrawCards",
+        "target": "self",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "wraithbow_haunt",
+    "name": "Haunt",
+    "apCost": 1,
+    "range": {
+      "min": 3,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "slow",
+        "value": 3,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "shadowfang_shadow_step",
+    "name": "Shadow Step",
+    "apCost": 0,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "dagger",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 6,
+        "damageType": "physical"
+      }
+    ],
+    "todoMechanic": "teleport/reposition"
+  },
+  {
+    "id": "shadowfang_assassinate",
+    "name": "Assassinate",
+    "apCost": 3,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "dagger",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 22,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "shadowfang_vanish",
+    "name": "Vanish",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "dagger",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 8
+      }
+    ],
+    "todoMechanic": "untargetable status"
+  },
+  {
+    "id": "doombow_doom_arrow",
+    "name": "Doom Arrow",
+    "apCost": 2,
+    "range": {
+      "min": 2,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 16,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "doombow_piercing_shot",
+    "name": "Piercing Shot",
+    "apCost": 1,
+    "range": {
+      "min": 2,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "aoeRadius": 1,
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 8,
+        "damageType": "physical"
+      }
+    ],
+    "todoMechanic": "straight-line pierce"
+  },
+  {
+    "id": "doombow_death_mark",
+    "name": "Death Mark",
+    "apCost": 1,
+    "range": {
+      "min": 2,
+      "max": 4
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "poison",
+        "value": 5,
+        "turns": 2
+      }
+    ],
+    "todoMechanic": "damage-amplification mark"
+  },
+  {
+    "id": "doombow_reapers_aim",
+    "name": "Reaper's Aim",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "bow",
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "empower",
+        "value": 8,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "doombow_shadow_nock",
+    "name": "Shadow Nock",
+    "apCost": 0,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "bow",
+    "effects": [
+      {
+        "kind": "DrawCards",
+        "target": "self",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "id": "doombow_volley_of_ruin",
+    "name": "Volley of Ruin",
+    "apCost": 3,
+    "range": {
+      "min": 2,
+      "max": 4
+    },
+    "targetKind": "tile",
+    "aoeRadius": 1,
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 8,
+        "damageType": "physical"
+      }
+    ],
+    "todoMechanic": "mark + conditional double damage"
+  },
+  {
+    "id": "excalibur_holy_slash",
+    "name": "Holy Slash",
+    "apCost": 1,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 10,
+        "damageType": "physical"
+      }
+    ],
+    "todoMechanic": "lifesteal-on-hit"
+  },
+  {
+    "id": "excalibur_judgment",
+    "name": "Judgment",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 1
+    },
+    "targetKind": "enemy",
+    "weaponType": "sword",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 17,
+        "damageType": "physical"
+      }
+    ],
+    "todoMechanic": "HP-threshold execute"
+  },
+  {
+    "id": "excalibur_radiance",
+    "name": "Radiance",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "targetKind": "tile",
+    "aoeRadius": 2,
+    "weaponType": "sword",
+    "damageStat": "mag",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 6,
+        "damageType": "magic"
+      }
+    ],
+    "todoMechanic": "true all_enemies targeting + dual-team effect resolution"
+  },
+  {
+    "id": "bark_buckler_bark_block",
+    "name": "Bark Block",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 4
+      }
+    ]
+  },
+  {
+    "id": "bark_buckler_sap_guard",
+    "name": "Sap Guard",
+    "apCost": 0,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "bark_buckler_thorn_ward",
+    "name": "Thorn Ward",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": "shield",
+    "effects": [
+      {
+        "kind": "GrantArmor",
+        "target": "self",
+        "amount": 2
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "riposte",
+        "value": 2,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "thornwood_shortbow_briar_shot",
+    "name": "Briar Shot",
+    "apCost": 1,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "thornwood_shortbow_thicket_shot",
+    "name": "Thicket Shot",
+    "apCost": 2,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 8,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "thornwood_shortbow_bramble_volley",
+    "name": "Bramble Volley",
+    "apCost": 3,
+    "range": {
+      "min": 2,
+      "max": 3
+    },
+    "targetKind": "tile",
+    "aoeRadius": 1,
+    "weaponType": "bow",
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "area",
+        "base": 3,
+        "damageType": "physical"
+      }
+    ]
+  },
+  {
+    "id": "kael_hunters_patience",
+    "name": "Hunter's Patience",
+    "apCost": 1,
+    "range": {
+      "min": 0,
+      "max": 0
+    },
+    "targetKind": "self",
+    "weaponType": null,
+    "effects": [
+      {
+        "kind": "ApplyStatus",
+        "target": "self",
+        "effectId": "empower",
+        "value": 3,
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "kael_hamstring",
+    "name": "Hamstring",
+    "apCost": 2,
+    "range": {
+      "min": 1,
+      "max": 3
+    },
+    "targetKind": "enemy",
+    "weaponType": null,
+    "damageStat": "str",
+    "effects": [
+      {
+        "kind": "Damage",
+        "target": "target",
+        "base": 4,
+        "damageType": "physical"
+      },
+      {
+        "kind": "ApplyStatus",
+        "target": "target",
+        "effectId": "slow",
+        "value": 2,
+        "turns": 1
+      }
+    ]
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "id": "earlier_company",
+  "title": "Someone came this far before you",
+  "description": "Four of them, by the mail. Nobody came back to bury them.",
+  "choices": [
+    {
+      "id": "take",
+      "text": "Take what they no longer need.",
+      "check": {
+        "kind": "stat",
+        "stat": "lck",
+        "threshold": 4
+      },
+      "onPass": {
+        "narration": "A purse under the mail, dry as the day it was tied. They would have done the same.",
+        "effects": [
+          {
+            "kind": "addGold",
+            "amount": 55
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "The strap rots through in your hand and the pack goes over the edge into the dark.",
+        "effects": []
+      }
+    },
+    {
+      "id": "words",
+      "text": "Say the words over them first.",
+      "check": {
+        "kind": "stat",
+        "stat": "res",
+        "threshold": 6
+      },
+      "onPass": {
+        "narration": "Somebody remembers enough of the words to finish them. The company walks on steadier than it stopped.",
+        "effects": [
+          {
+            "kind": "healParty",
+            "percent": 0.25
+          }
+        ]
+      },
+      "onFail": {
+        "narration": "Half the words, then nothing. The silence afterwards is worse than none at all.",
+        "effects": []
+      }
+    },
+    {
+      "id": "leave",
+      "text": "Step around them.",
+      "onPass": {
+        "narration": "Nobody looks twice, and everybody looks once.",
+        "effects": []
+      }
+    }
+  ]
+}
