@@ -1,0 +1,251 @@
+{
+ "summary": "phaser/ is a 566-file, ~32K-LOC (22,094 src + 7,927 tests + 2,664 scripts) Vite+React19+Phaser4+Zustand+Zod project with 9 runtime deps and 31 devDeps, of which 3 runtime deps are dead weight (framer-motion and howler have ZERO importers; react-aria hooks pkg has one) and an entire Storybook stack (8 devDeps, 3 stories, 8.3MB static output) has no bug-catching evidence since 2026-05-10. The tooling that demonstrably earned its keep is small and portable: the headless CLI (scripts/cli/play.ts+combat.ts+render.ts, 843 LOC) that drives the real stores and whose stalemate metric exposed the three engine bugs behind \"balance\" story 475; the 5 ESLint invariants (Math.random ban, dispatch chokepoint, three layer-import fences); lint-content.ts; the unmasked Playwright visual/boot/second-battle specs; and the multi-round reducer tests written after the AP-never-resets P0 slipped past 527 green unit tests. Current health: tsc green on both configs, vitest 590/590 in 14.9s, eslint RED with 18 errors (16 from react-hooks v7 set-state-in-effect/refs) and therefore excluded from `npm run verify`; there is no CI at all (no .github). The biggest debt is not tooling but superseded systems still on disk: the entire Oregon-Trail overworld strip UI (~3.5K LOC + ~12MB backdrops/dual-grid tiles) is obsolete under the 2026-08 \"one open sheet\" decision, there are three overlapping tile/terrain pipelines, and a rejected hand-pixel sprite toolkit (273 LOC + 4 scripts + 11 JSONs + 9 dead PNGs) is still wired into npm scripts. 32.8MB of binary assets are tracked in git (18 unit originals at 832x1216, a 1.96MB tile-demo output, an identical duplicate backdrop). The branded-ID system costs 352 `as unknown as` casts in src; BoardScene.ts (1,240 LOC), App.tsx (627 LOC, 39 commits), and runStore.ts (684 LOC, 45 action cases) are god files; five seed*Battle files duplicate placement logic (the dungeon one forgot to place the party, a P1). Critically, the newest and best pipeline (autotile.ts, boardFloor.ts, map-tool.ts, bake-board-sprites.ts, public/art/terrain/px/, tools/map-builder.html) is UNCOMMITTED in the working tree while CONTEXT.md already documents it as shipped; the rebuilder must harvest from the working tree, not HEAD. CONTEXT.md (279 lines, 32KB) plus its grep-based drift checker is a maintenance tax that scans only 4 of the 5 dirs its own protocol names and passes on any substring mention.",
+ "requirements": [
+  {
+   "id": "T-01",
+   "text": "Math.random() is lint-banned project-wide (no-restricted-properties); all randomness threads an RNG parameter; sub-RNGs via deriveRng(parent, label) with Mulberry32 and a saved counter that fast-forwards on createRng so save/resume continues the same stream.",
+   "source": "phaser/eslint.config.js (rule block 1); phaser/src/systems/rng.ts; CONTEXT.md §1.6, §5",
+   "priority": "must"
+  },
+  {
+   "id": "T-02",
+   "text": "Store mutation goes through a single dispatch(action) chokepoint per store; ESLint no-restricted-syntax forbids useRunStore/useCombatStore/useMetaStore.setState outside src/state/** (tests/stories exempt). Storybook decorators currently violate this (src/storybook/decorators.tsx) — do not reintroduce that exemption.",
+   "source": "phaser/eslint.config.js (rule block 2); CONTEXT.md §1.2",
+   "priority": "must"
+  },
+  {
+   "id": "T-03",
+   "text": "Layer fences enforced by no-restricted-imports: src/ui/** may not import phaser or raw react-aria(-components); src/game/** may not import react/react-dom; src/systems/** and src/procgen/** may not import phaser/react/react-dom. Keep these three fences even if the UI library changes.",
+   "source": "phaser/eslint.config.js (rule blocks 3-5); phaser/.claude/CLAUDE.md 'Architecture Invariants' 1,3",
+   "priority": "must"
+  },
+  {
+   "id": "T-04",
+   "text": "Dev server pinned to port 5183 with strictPort:true; Playwright baseURL defaults to http://localhost:5183 with PW_BASE_URL override and reuseExistingServer only when !CI. Port 5173 belongs to another app on this machine and reuseExistingServer would silently test it.",
+   "source": "phaser/vite.config.ts lines 7-9; phaser/playwright.config.ts lines 3-7, 24; memory lesson_port_5173_collision",
+   "priority": "must"
+  },
+  {
+   "id": "T-05",
+   "text": "Fixed 1280x720 authored stage, CSS transform-scaled and letterboxed by a GameStage wrapper; position:fixed descendants resolve against the stage; overlays (modal/tooltip/popover) must portal INTO the stage container; after each rescale call game.scale.refresh() so canvas input stays mapped; Playwright viewport is 1280x720 with reducedMotion:'reduce'.",
+   "source": "phaser/src/ui/GameStage.tsx; phaser/src/ui/stage.ts; CONTEXT.md §1.1b; phaser/playwright.config.ts projects[0]",
+   "priority": "must"
+  },
+  {
+   "id": "T-06",
+   "text": "A headless CLI must drive the REAL stores + pure systems via tsx with no browser: interactive REPL (play/move/select/targets/auto/end/show/state), scripted --seed N --cmds 'a; b' --json, piped stdin, --autobattle --runs N with first-blood-gated stalemate detection (150-round cap, 12 stale rounds), --report --seeds N --loadout matrix ('none|default|roy=iron_sword+iron_buckler'), --scenario stub|dungeon:<id>:<room>|boss, and a dialogue walker. Combat log derived by diffing unit state.",
+   "source": "phaser/scripts/cli/README.md; phaser/scripts/cli/play.ts; phaser/scripts/cli/combat.ts (autoBattle, applyCommand, battleOutcome)",
+   "priority": "must"
+  },
+  {
+   "id": "T-07",
+   "text": "The CLI combat engine must be importable as a library so golden-scenario Vitest tests (determinism: same seed => same outcome + turn count; engagement: HP actually drops; termination: autoBattle always ends) run in npm test.",
+   "source": "phaser/tests/unit/scenarios/combat.scenario.test.ts; phaser/scripts/cli/README.md 'Companion dev tools'",
+   "priority": "must"
+  },
+  {
+   "id": "T-08",
+   "text": "Every turn/round/cycle system must have a test that runs >=3 FULL cycles and asserts per-turn restoration invariants each cycle (AP reset, hand refill to 5, discard reshuffle with no card loss, status expiry). Single-transition tests cannot see these; the beta shipped an AP-never-resets P0 past 527 unit + 22 e2e green tests.",
+   "source": "phaser/tests/unit/systems/combatReducer.gear.test.ts lines 272-330; memory lesson_multiturn_blindspot; commit a58fe8d",
+   "priority": "must"
+  },
+  {
+   "id": "T-09",
+   "text": "Treat a 100%-stalemate or 0%-win sim result as an ENGINE smoke alarm before touching balance numbers: reproduce one battle by hand and verify damage lands, enemies close distance, and both sides are on the board (corpse shadowing, axis-only stepToward, unpositioned dungeon party were all sim 'stalemates'). The greedy sim AI is a FLOOR; validate tuning against manual play.",
+   "source": "docs/research/balance-rebaseline-2026-08-28.md; memory lesson_balance_inverted; phaser/tests/unit/systems/combatReducer.p1fixes.test.ts",
+   "priority": "must"
+  },
+  {
+   "id": "T-10",
+   "text": "Visual snapshot tests must be UNMASKED with tight tolerance (maxDiffPixelRatio 0.0005), deterministic seed + reducedMotion, fonts.ready awaited; never mask the canvas/container (previous baselines were solid-magenta blanks that could never fail). Also assert zero console errors on boot per scene and no horizontal overflow past the stage.",
+   "source": "phaser/tests/e2e/visual.spec.ts; commit 7aaadf4 'make the visual snapshots able to fail'",
+   "priority": "must"
+  },
+  {
+   "id": "T-11",
+   "text": "The canvas container must be permanently mounted and visibility-toggled, never unmounted between views; an e2e test must run TWO battles in one page session and assert the canvas is attached and the scene display list is populated (>50 children) both times.",
+   "source": "phaser/tests/e2e/second-battle-board.spec.ts; commit 8b94151 'board invisible from battle 2 on'",
+   "priority": "must"
+  },
+  {
+   "id": "T-12",
+   "text": "Dev-only test contract: ?view=combat|overworld|town|dungeon|camp fast-path seeds a representative run (party via buildStarterParty + 80 gold + 5 food, no prologue) and window.__debug exposes the stores (getState/dispatch), busRefs and diag; window.__game exposes the Phaser game. E2E resolves battles through the sanctioned dispatch (playCard with a 999-damage inline card + animationsCompleted), not by canvas clicking. Board clicks in e2e compute canvas coords from the SAME boardGeometry the game uses (tileSize/gridOriginX/Y), never hardcoded.",
+   "source": "phaser/src/App.tsx lines 56-100; phaser/src/main.tsx; phaser/tests/e2e/helpers.ts; phaser/tests/e2e/journey.spec.ts winBattle; phaser/tests/e2e/combat-movement.spec.ts",
+   "priority": "should"
+  },
+  {
+   "id": "T-13",
+   "text": "Static content lint runs in the green gate: broken class innate-card refs and dangling dialogue node refs (next/onPass/onFail/startNodeId) are errors (exit 1); a class with no Damage card is a warning. Extend with the backlog: unreachable quest stages, card range > board reach.",
+   "source": "phaser/scripts/lint-content.ts; phaser/scripts/cli/README.md 'Remaining backlog' #5",
+   "priority": "must"
+  },
+  {
+   "id": "T-14",
+   "text": "Boot-time Zod validation of ALL content JSON with a fatal error overlay was specified but never wired — validateContent in src/data/load.ts is only called from tests. The rebuild must validate content at boot (or at build) so the 15 tests/unit/data/*.test.ts schema tests collapse into one gate.",
+   "source": "docs/superpowers/specs/2026-05-05-phaser-migration-design.md 'Boot-time data validation (Zod, fatal)'; CONTEXT.md §9 NOTE on data/load.ts; phaser/src/data/load.ts",
+   "priority": "must"
+  },
+  {
+   "id": "T-15",
+   "text": "A composite `verify` gate (typecheck + lint + lint:content + unit tests) must be GREEN and must include eslint from day one; add a CI workflow (there is no .github/workflows today and README admits 'run verify yourself'). Do not let a red lint be excluded from the gate again.",
+   "source": "phaser/package.json scripts.verify; phaser/README.md 'Known gaps'; CONTEXT.md line 277",
+   "priority": "must"
+  },
+  {
+   "id": "T-16",
+   "text": "Save/load parity guard: any optional field added to the run hydrate action must ALSO be added to the Zod SerializedRunSchema (Zod strips undeclared keys silently); encode this as a full-hydration round-trip test over the REAL load path, not serializeRun alone.",
+   "source": "CONTEXT.md §3 hydrateFromSave; phaser/tests/unit/persistence/fullHydration.test.ts; commit f120373",
+   "priority": "must"
+  },
+  {
+   "id": "T-17",
+   "text": "Board unit sprites must be pre-downscaled offline (÷8 box filter into public/sprites/units/board/) and loaded with LINEAR filtering; scaling the 832x1216 ComfyUI originals under pixelArt/nearest sampling was the pixelated-characters bug. Portraits consume the originals.",
+   "source": "CONTEXT.md §8 data/unitSprites.ts entry; phaser/scripts/cli/bake-board-sprites.ts (uncommitted)",
+   "priority": "must"
+  },
+  {
+   "id": "T-18",
+   "text": "Character/building/decoration art is generated by the local ComfyUI pipeline (comfy-gen.ts driving template.workflow.json: waiIllustrious SDXL + DFSV1 pixel-sprite LoRA + RemBG; per-kind preambles; flood-key cutout for buildings; seed derived from id+prompt to defeat ComfyUI caching; VRAM free before batch) rated in sprite-lab; per-asset prompt manifests live in art/**/*.json. The hand/procedural pixel toolkit is rejected for characters.",
+   "source": "phaser/scripts/cli/comfy-gen.ts; phaser/scripts/cli/cutout.ts; phaser/scripts/cli/sprite-lab.ts; phaser/art/world-bible.md §3; memory reference_comfyui_sprite_pipeline",
+   "priority": "should"
+  },
+  {
+   "id": "T-19",
+   "text": "Map authoring pipeline: the model writes an ASCII plan or map-builder JSON; `map-tool ascii|autotile|lint` does the tile work (47-piece blob autotile keys = PNGs under public/art/terrain/px/ = map-builder palette) and design lint (unreachable cells FAIL, one-tile passages WARN, dead space >35% WARN, enemy:party outside 2-3x WARN). Never place blob pieces by hand.",
+   "source": "phaser/scripts/cli/map-tool.ts (uncommitted); phaser/src/systems/autotile.ts (uncommitted); phaser/tools/map-builder.html (untracked); CONTEXT.md §8 systems/autotile + systems/boardFloor",
+   "priority": "should"
+  },
+  {
+   "id": "T-20",
+   "text": "TypeScript strict with noUncheckedIndexedAccess, exactOptionalPropertyTypes, noUnusedLocals/Parameters, noImplicitReturns, noFallthroughCasesInSwitch; ONE tsconfig whose include covers src, tests AND scripts so `tsc --noEmit` typechecks the CLI (today it needs a separate tsconfig.scripts.json and a separate npm script that agents forget).",
+   "source": "phaser/tsconfig.json; phaser/tsconfig.scripts.json; phaser/package.json typecheck:cli",
+   "priority": "should"
+  },
+  {
+   "id": "T-21",
+   "text": "Never share array references across systems; .slice()/[...arr] at every boundary (Godot lesson that recurred). Phaser Scene 'data' field is reserved — name game data 'gameData'.",
+   "source": "CONTEXT.md §11 Known Gotchas; memory lesson_shared_arrays",
+   "priority": "must"
+  },
+  {
+   "id": "T-22",
+   "text": "Gzipped JS bundle budget gate: baseline + 40 KB headroom (beta baseline 528.08 KB gz). Keep as an optional script, but make it NOT trigger a build as a side effect.",
+   "source": "phaser/scripts/measure-bundle.mjs lines 8-15",
+   "priority": "could"
+  },
+  {
+   "id": "T-23",
+   "text": "If a living architecture doc is kept: hard 300-line cap with per-section budgets, code wins over doc, and the drift checker must cover every dir the update protocol names (today it skips src/systems) and match exported names as identifiers, not substrings. Otherwise drop the doc+checker and rely on typed contracts.",
+   "source": "docs/superpowers/specs/2026-05-08-phaser-foundations-v2-design.md §24; phaser/scripts/check-context-doc.ts; CONTEXT.md line 277 caveats",
+   "priority": "could"
+  },
+  {
+   "id": "T-24",
+   "text": "Desktop shell is Electron (Tauri rejected: Steam Overlay does not hook WebView2), a LOCKED 1280x720 content-size window (resizable/movable/maximizable/fullscreenable all false, autoHideMenuBar, no app menu, backgroundColor #050403), loading FEMB_URL or http://localhost:5183/. Defer the electron devDep to the packaging milestone; keep the 30-line main.cjs.",
+   "source": "phaser/electron/main.cjs; docs/superpowers/specs/2026-05-05-phaser-migration-design.md stack table + 'Tauri' rejection; memory reference_desktop_shell",
+   "priority": "could"
+  },
+  {
+   "id": "T-25",
+   "text": "Vitest unit env is jsdom with a setup that forces matchMedia('prefers-reduced-motion: reduce') to true so animation hooks (typewriter) skip to final state, and cleans up RTL after each test.",
+   "source": "phaser/tests/setup.ts; phaser/vite.config.ts test block",
+   "priority": "should"
+  },
+  {
+   "id": "T-26",
+   "text": "Playwright MCP is wired for the AI iteration loop (.mcp.json: @playwright/mcp --vision auto); keep it, it is the only 'CI' the project has had.",
+   "source": "phaser/.mcp.json; docs/superpowers/specs/2026-05-05-phaser-migration-design.md 'Web stack with Playwright MCP'",
+   "priority": "could"
+  }
+ ],
+ "keep": [
+  "phaser/scripts/cli/play.ts + combat.ts + render.ts + README.md — the headless CLI (843 LOC): REPL, scripted --seed/--cmds/--json, --autobattle --runs, --report --seeds --loadout matrix, dialogue walker, state-diff combat log; port near-verbatim, only imports change",
+  "phaser/scripts/lint-content.ts (77 LOC) — content lint; keep and extend",
+  "phaser/eslint.config.js — ONLY the five custom rule blocks (Math.random ban, dispatch-chokepoint no-restricted-syntax selector, ui/game/systems import fences); drop the storybook + react-refresh extends",
+  "phaser/vite.config.ts (port 5183 strictPort, es2022 target, vitest inline config) and phaser/playwright.config.ts (PW_BASE_URL, workers 1, reducedMotion, 1280x720 viewport)",
+  "phaser/tests/setup.ts — jest-dom + RTL cleanup + matchMedia reduced-motion shim",
+  "phaser/src/systems/rng.ts — Mulberry32 + hashLabel deriveRng + counter fast-forward (66 LOC, algorithm verbatim)",
+  "phaser/src/ui/GameStage.tsx + src/ui/stage.ts (STAGE_W/H 1280x720, transform scale, game.scale.refresh after rescale) and src/domain/boardGeometry.ts (TILE 48, tileSize(w,h) in [40,96] even, BAND_TOP 120, gridOriginX/Y, clientToStage)",
+  "phaser/src/index.css — the Field Ledger token system (634 lines, 63 custom props, @theme block, .page-canvas scope, leather/brass recipes, reduced-motion kill) and its canvas mirror phaser/src/game/boardPalette.ts (140 LOC)",
+  "phaser/tests/unit/systems/combatReducer.gear.test.ts (turn-start restoration, lines 272-330), combatReducer.p1fixes.test.ts (corpse shadowing / fresh self-buff / sidestep / dungeon placement), tests/unit/scenarios/combat.scenario.test.ts, tests/unit/persistence/fullHydration.test.ts, tests/unit/systems/rng.test.ts — the tests that encode real regressions",
+  "phaser/tests/e2e/helpers.ts, second-battle-board.spec.ts, visual.spec.ts, combat-movement.spec.ts, journey.spec.ts, boot.spec.ts — the e2e that caught layout/lifecycle bugs the CLI cannot",
+  "phaser/scripts/cli/map-tool.ts (UNCOMMITTED) + phaser/src/systems/autotile.ts (UNCOMMITTED, 47-case blob autotiler) + src/systems/boardFloor.ts (UNCOMMITTED) + phaser/tools/map-builder.html (UNTRACKED 941KB single-file editor) + phaser/public/art/terrain/px/ (UNTRACKED, 61 PNGs, 115KB) — the drawing-maps pipeline; harvest from the working tree",
+  "phaser/scripts/cli/bake-board-sprites.ts (UNCOMMITTED) + phaser/public/sprites/units/board/ (UNTRACKED) — the ÷8 board-sprite bake",
+  "phaser/scripts/cli/comfy-gen.ts + cutout.ts + sprite-lab.ts + scripts/cli/comfy/template.workflow.json (+ control/*.png) + phaser/art/**/*.json (34 prompt manifests) + phaser/art/world-bible.md — the ComfyUI art pipeline",
+  "phaser/public/sprites/units/*.png (18 originals) + public/sprites/buildings/*.png (8) + public/fonts/ (self-hosted Cinzel + EB Garamond woff2, 344K) + public/icons.svg + public/favicon.svg — shipped art; consider Git LFS",
+  "phaser/src/data/content/**/*.json (68 files, 219KB: cards 62.8KB, items 18.7KB, encounters, overworld, classes, dungeons, dialogue, quests, enemyAI, enemyGroups, towns, curves) — the CLI/lint depend on cards.json + classes.json shape",
+  "phaser/src/ui/components/Icon.tsx (243 LOC inline-SVG icon set; rule: no emoji in player-visible JSX) and src/ui/data/characters.ts identity-ramp hashing idea (rename the FE6 placeholder cast)",
+  "phaser/electron/main.cjs (30 lines) as a reference for the packaging milestone",
+  "phaser/scripts/measure-bundle.mjs — optional budget gate (baseline 528.08 KB gz + 40 KB)",
+  "phaser/.mcp.json (Playwright MCP) and phaser/.gitignore (lab/review galleries, test-results, storybook-static, *.log)",
+  "phaser/src/App.tsx lines 56-100 — the ?view= dev fast-path + window.__debug contract (re-implement as a 40-line devBoot.ts, not inside App)",
+  "phaser/src/state/combatUiStore.ts (20 LOC) + src/game/runtime/CombatRuntime.ts (36 LOC) — the tiny, correct shape of the Phaser firewall",
+  "docs/research/balance-rebaseline-2026-08-28.md — sim targets (stub w/ starters 55-75% win, boss w/ epic+ 40-60%, 0% stalemates, 4-10 turns) and the 'engine bug first' method"
+ ],
+ "drop": [
+  "framer-motion (runtime dep) — ZERO importers in src; locked in by spec 2026-05-09 §'Animation library' but CSS transitions did the work",
+  "howler + @types/howler — ZERO importers; audio is a 212-LOC WebAudio synth (src/audio/engine.ts) with no asset files",
+  "react-aria-components + react-aria — used only by 8 wrapper files in src/ui/components/; costs 3 lint rules, a barrel, 10 ceremony test files (~500 LOC), and the portal-into-stage gotcha; native <button>/<dialog> + a 40-line stage-portal helper covers the invariants",
+  "storybook + @storybook/react-vite + @storybook/addon-docs + @storybook/addon-onboarding + @chromatic-com/storybook + eslint-plugin-storybook + .storybook/ + src/storybook/ (152 LOC decorators that call useRunStore.setState, bypassing the chokepoint) + 3 *.stories.tsx (223 LOC) + storybook-static/ (8.3MB) + debug-storybook.log — untouched since 2026-05-10, zero bug-catching evidence",
+  "electron devDep (v42) — nothing packages it (no electron-builder); keep main.cjs as text, add the dep at the packaging milestone",
+  "@vitest/ui — never referenced by any script; vitest.shims.d.ts references @vitest/browser which is not installed",
+  "eslint-plugin-react-refresh — only produces only-export-components noise; if react-hooks v7 is kept, either fix its 16 set-state-in-effect/refs errors or pin the plugin's recommended set to the classic two rules",
+  "tsconfig.app.json + tsconfig.node.json — orphan Vite-scaffold leftovers; tsconfig.json has no `references`, so `tsc -b` never reads them; also tsconfig.scripts.json (fold scripts into the one tsconfig include)",
+  "src/systems/pixel/ (renderSprite.ts 196 + shapes.ts 77 LOC) + src/data/content/sprites/*.json (11 files, ~30KB) + scripts/cli/bake-sprites.ts, gen-mage.ts, gen-variants.ts, png.ts (own PNG encoder duplicating pngjs) + npm scripts bake-sprites/gen-mage/gen-variants + public/sprites/{mage_v1_chibi,mage_v2_heroic,mage_v3_chunky,mage_v4_balanced,pose_casting,pose_staffbearer,pose_tome,tile_grass,unit_mage}.png — the hand pixel toolkit REJECTED for characters (memory reference_comfyui_sprite_pipeline); only imported by scripts, never by src",
+  "The Oregon-Trail split-view overworld: src/ui/screens/OverworldScene.tsx (970 LOC, 26 hooks, 4 lint errors, 3 eslint-disables, 19 commits) + src/ui/screens/overworld/ (2,105 LOC: TravelBand 569, bandArt 407 procedural art, PaperMap 258, NodeBeacon 190, Caravan 165, OverworldRoads 157, TerrainCanvas 105, roadStyle 94, terrain 85, palette 75) + src/systems/overworldLayout.ts (108) + scripts/cli/respread-overworld.ts + overworld-backdrop-control.ts + public/art/backdrops/*.png (4 x ~0.9MB; borderlands.png and borderlands_alt.png are byte-identical) — superseded by the 'one open sheet' decision (Atlas epic 160, memory project_direction_decisions_2026_08); the engine graph walker (overworldPath.buildGraph) survives, the strip presentation does not",
+  "The dual-grid marching-squares terrain pipeline: scripts/cli/cut-tiles.ts + tile-demo.ts + public/art/terrain/{grass,dirt,stone,water}[_1..14].png (60 files) + public/art/terrain/src/*.png (4 x ~1MB source textures) + public/art/terrain/_demo.png (1.96MB committed demo output) — only consumed by the superseded overworld TerrainCanvas; the board uses the 47-blob px_ autotiler instead",
+  "scripts/convert-dialogue.mjs, convert-overworld.mjs, convert-towns.mjs (410 LOC) — one-shot Godot->phaser converters; Godot data is frozen",
+  "src/mapRegistry/registry.ts (63 LOC) — imported by nothing in src, only its own test (spec v2 §8 MapRegistry never got consumers)",
+  "src/persistence/replay.ts (15 LOC) + tests/unit/persistence/replay.test.ts — reproduceCombatAction has no src consumer",
+  "src/state/diagLog.ts (145 LOC ring buffer + window.__debug.diag API) + errorBus + eventBus + actionLog + busRefs + DevHud panels that README says are 'both empty — nothing emits on the bus yet' — four observability channels for a solo project with no CI; keep ONE (a console-mirrored diag) at most",
+  "scripts/check-context-doc.ts + the CONTEXT.md maintenance protocol — 89-LOC substring grep with a 60-name allowSkip that scans only domain/contracts/state/persistence (not systems, contrary to its own protocol) and passes on any mention; 32KB of dense prose to re-read every session. Replace with typed contracts + a short README",
+  "tests/unit/ui/components/*.test.tsx (10 files, ~500 LOC) — test react-aria's own behaviour; Heading.test.tsx asserts the Tailwind class 'text-amber-100' which is a Forged&Lit-era value already superseded by Field Ledger tokens",
+  "tests/e2e/check-travel-event.spec.ts — asserts only that an h1 contains GAME_TITLE",
+  "tests/unit/data/*.test.ts (15 files) — replace with ONE boot/build-time validateContent gate (T-14)",
+  "Five seed*Battle files (seedStub 117, seedDungeon 139, seedGroup 110, seedBoss 85, seedTutorial 78 = 529 LOC) — one seedBattle({party, enemies, grid, floor, placement}) replaces them; the dungeon one forgot to place the party (P1)",
+  "Root cruft: .devserver.log, debug-storybook.log, dev-5174.log, electron-err.log, electron-out.log, tsconfig.tsbuildinfo, dist/ (74MB stale build), test-results/, public/sprites/lab (41MB untracked candidate gallery) — none should exist in a fresh tree",
+  "package-lock.json bloat: 579 node_modules entries / 281 top-level packages for a game with 9 runtime deps — dropping storybook/electron/react-aria/framer/howler/@vitest/ui cuts this roughly in half"
+ ],
+ "risks": [
+  "HARVEST FROM THE WORKING TREE, NOT HEAD: git status shows src/systems/autotile.ts, boardFloor.ts, scripts/cli/map-tool.ts, bake-board-sprites.ts, public/art/terrain/px/ (61 files), public/sprites/units/board/, tools/ (map-builder.html 941KB), plus modified BoardScene/CombatHud/InitiativeStrip/CONTEXT.md/package.json as UNCOMMITTED. CONTEXT.md §8 and CLAUDE.md already describe them as shipped. A rebuild that clones HEAD loses the newest, best pipeline.",
+  "Do not re-litigate settled direction: one open-sheet map (not the three-region strip), Field Ledger UI (not candle-lit Forged & Lit), engine-gaps-first. Rejected options are recorded so they are not re-proposed (memory project_direction_decisions_2026_08). Several docs still teach the old look (docs/research/visual-style-brief.md, .claude/skills/crafting-game-ui/materials.md §1.4/§5, phaser/art/world-bible.md §2-4) — reading them will re-candle the UI.",
+  "Green tests are not evidence of a working turn loop: 527 unit + 22 e2e were green when AP never reset after round 1 (a58fe8d), and the sim reported 90-100% stalemates for two months that were three engine bugs (f4c4bef). Write multi-cycle tests first and hand-play a battle before trusting any sim number.",
+  "The visual snapshot suite was silently useless for months: masks painted the whole 1280x720 frame magenta so three byte-identical baselines could never fail (7aaadf4). Never mask the container; verify a deliberate colour change actually fails the suite.",
+  "Port 5183 vs 5173: Playwright's reuseExistingServer will happily test whatever other app is on the port; pin strictPort and check what a port serves before debugging e2e (lesson_port_5173_collision).",
+  "Branded IDs (17 types in domain/ids.ts) fight Record<string,T> keys and yielded 352 `as unknown as` casts in src (BoardScene 65, combatReducer 39, runStore 28, enemyAI 20) plus 28 in the CLI. Either use plain string ids with runtime validation, or make the maps keyed by the branded type from the start — do not carry the cast pattern over.",
+  "Zod .parse strips undeclared keys: the real save->load path silently dropped daysElapsed/runStats/oneShotsFired for weeks because serializeRun wrote fields the schema did not declare (f120373). Use .strict() or a round-trip test over the real load path.",
+  "Designed-but-never-wired systems fooled every reader: eventBus.emit had zero call sites (quest listeners were dead data), hop RNG never advanced, captureTargets was read by nothing, validateContent is test-only, metaStore is never persisted, QuestEffect recruitUnit/spawnNode/unlockNode are no-op stubs. In the rebuild, a feature is not done until a test or the CLI exercises its emit/call site.",
+  "Storybook decorators mutate stores via setState (src/storybook/decorators.tsx), exempted from the chokepoint lint — any playground you add must go through dispatch or it will diverge from real state shapes.",
+  "react-hooks ESLint v7 introduced set-state-in-effect/refs rules that produced 16 new errors; lint was then dropped from `verify` rather than fixed. Pin plugin versions and put lint in the gate on day one, or the gate rots the same way.",
+  "The unit-test suite spends 237s cumulative in jsdom environment setup for 14.9s of wall time; UI component tests dominate. Keep DOM tests for modal FLOWS only (PartyLoadout, Dialogue, PauseMenu) and keep pure-system tests environment: node.",
+  "32.8MB of PNGs are tracked in git (118 files) and 41MB more sit untracked in public/sprites/lab; the repo will bloat with every art iteration. Use Git LFS or keep originals outside the repo and commit only the board bakes + portraits actually referenced by data/unitSprites.ts.",
+  "Phaser is used by exactly two files (createGame.ts 22 LOC, BoardScene.ts 1240 LOC) for a 14x10 grid with tweens; the whole UI is React. Decide up front whether a 1.2MB framework is worth it for that — if kept, keep BoardScene split (grid/overlays/units/effects/enemy-driver are five classes crammed into one file, 42 commits of churn).",
+  "App.tsx (627 LOC, 39 commits) is simultaneously router, battle seeder, save orchestrator, audio controller, tutorial gate and dev seeder; runStore.ts is a 45-case switch. The rebuild needs a thin shell + per-feature slices or the same god files reappear within a month.",
+  "tools/map-builder.html is a 941KB single-file app with 408 base64-embedded tiles; the palette must stay byte-identical to public/art/terrain/px/ or autotile keys break. Generate it from px/ rather than hand-editing.",
+  "Specs are append-only and now number 15 (~380KB) + 17 plans + 20 research docs; CONTEXT.md is capped at 300 lines but is 32KB of dense prose. The doc surface has become larger than the code an agent needs to read — the rebuild should ship ONE short architecture README and let the typed contracts + lint fences carry the invariants."
+ ],
+ "numbers": [
+  "LOC (.ts/.tsx): src 22,094 in 188 files; tests 7,927 in 106 files; scripts 2,664 in 18 files; .storybook 38; tools/electron 0 (html/cjs)",
+  "src by folder: ui 12,291 (78 files) | systems 3,317 (31) | game 1,967 (9) | state 1,294 (13) | domain 849 (19) | data 666 (20 .ts + 68 .json = 219,092 bytes) | persistence 396 | audio 212 | procgen 168 | storybook 152 | contracts 65 | mapRegistry 63",
+  "ui by area: modals 2,879 | screens 2,179 + overworld 2,105 + town 842 | scenes/combat 1,556 | components 1,681 | overlays 306 | data 281 | hooks 172",
+  "Largest files: BoardScene.ts 1,240 | OverworldScene.tsx 970 | combatReducer.ts 779 | PartyLoadoutModal.tsx 693 | runStore.ts 684 (45 action cases) | App.tsx 627 (39 commits, 8 useEffects) | TravelBand.tsx 569 | DialogueModal.tsx 530 | BattleEndModal.tsx 459 | DungeonScene.tsx 446 | bandArt.ts 407",
+  "Deps: 9 runtime (framer-motion ^12.38, howler ^2.2.4, phaser ^4.1.0, react ^19.2.5, react-aria ^3.48, react-aria-components ^1.17, react-dom ^19.2.5, zod ^3.25.76, zustand ^5.0.13); 31 devDeps; typescript ~6.0.2; vite ^8.0.10; vitest ^2.1.9; @playwright/test ^1.59.1; electron ^42.3.0; storybook ^10.3.6; tailwindcss ^4.2.4; package-lock 298,895 bytes with 579 node_modules entries; 281 top-level node_modules dirs",
+  "Import usage (files): framer-motion 0 | howler 0 | react-aria 1 | react-aria-components 7 | phaser 2 | zustand 5 | zod 18 | @storybook 4",
+  "Tests: vitest 590 tests / 96 files, all pass, 14.92s wall (transform 7.48s, setup 50.18s, collect 58.37s, tests 8.75s, environment 237.06s); Playwright 23 tests across 9 spec files (README count) — 19 literal test() calls + loops; e2e snapshots: 3 PNGs (combat/overworld/town) chromium-win32",
+  "ESLint (npx eslint src): 18 errors + 3 warnings over 188 files — react-hooks/set-state-in-effect 11, react-hooks/refs 5, react-hooks/exhaustive-deps 1, react-hooks/immutability 1 (OverworldScene.tsx:276 'executeHop accessed before declared'), 2 unused eslint-disable no-console directives; 10 eslint-disable-next-line comments in src; tsc --noEmit exit 0 on both tsconfigs",
+  "Debt markers: `as unknown as` 352 in src (BoardScene 65, combatReducer 39, runStore 28, enemyAI 20, PartyLoadoutModal 13, OverworldScene 11, DungeonScene 11, App 11) + combat.ts 28 / play.ts 11 / render.ts 10 in scripts; TODO/FIXME/HACK 0; @ts-expect-error 1; ': any' 2",
+  "Git: 233 commits touch phaser/ (2026-05-05 to 2026-08-29); 566 tracked files; 13 tags (beta-0.1 = 2026-07-06); most-churned: App.tsx 39, BoardScene.ts 22 (+CombatScene.ts 20 before rename), OverworldScene.tsx 19, runStore.ts 18, combatReducer.ts 14",
+  "Tracked bytes: public 32,822,168 (118 files: art 73, sprites 35, fonts 7) | tests 2,580,363 | src 1,110,599 | scripts 898,518 | art 27,333; largest: art/terrain/_demo.png 1,958,381; sprites/buildings/watchtower.png 1,155,787; art/terrain/src/water.png 1,040,288; sprites/units/shield_knight.png 1,033,560; backdrops borderlands.png == borderlands_alt.png 917,812 (identical md5 7652a924…)",
+  "On disk: public 73M (sprites 60M incl. untracked lab 41M + review 200K; art 14M; fonts 344K); dist 74M; storybook-static 8.3M; public/art/terrain/px 61 files 115K (untracked); tools 1,049,876 bytes (map-builder.html 941,233 with 408 base64 blobs, 599 lines, 1 script tag; 3 sample JSON maps ~36KB each)",
+  "CONTEXT.md 279 lines / 32,391 bytes (cap 300; per-section caps 25/30/40/30/15/25/20/15/25/15/30/30); check-context-doc.ts 89 LOC, scans 4 dirs (domain, contracts, state, persistence), allowSkip 60 names",
+  "Scripts LOC: combat.ts 389 | play.ts 318 | comfy-gen.ts 259 | convert-dialogue.mjs 231 | map-tool.ts 221 | gen-variants.ts 163 | gen-mage.ts 143 | render.ts 136 | overworld-backdrop-control.ts 127 | png.ts 116 | respread-overworld.ts 108 | sprite-lab.ts 104 | convert-overworld.mjs 94 | cut-tiles.ts 91 | bake-sprites.ts 91 | check-context-doc.ts 89 | cutout.ts 86 | convert-towns.mjs 85 | tile-demo.ts 79 | lint-content.ts 77 | bake-board-sprites.ts 67 | measure-bundle.mjs 43",
+  "Ports/config: vite 5183 strictPort (5173 is another app); sprite-lab 5180; storybook 6006; ComfyUI COMFY_URL default http://127.0.0.1:8188; Playwright workers 1, retries 0, fullyParallel false, webServer timeout 30_000, viewport 1280x720, reducedMotion 'reduce'; snapshot maxDiffPixelRatio 0.0005 (was 0.02); bootScene settle waitForTimeout 400ms; journey test timeout 120_000; second-battle 90_000",
+  "Bundle gate: BASELINE_KB 528.08 gz (2026-07-06 beta), CEILING_DELTA_KB 40 => ceiling 568.08; previous baseline 432.67 + 75",
+  "Stage/board: STAGE 1280x720; TILE 48; tileSize in [TILE_MIN 40, TILE_MAX 96] even; BAND_TOP 120; 5x5 tutorial => 84px, 14x10 field => 42px; HAND_SIZE 5; 3 AP/turn; grid 14x10",
+  "CLI sim: autoBattle maxRounds 150, stalemateRounds 12, enemy-turn guard 60, party-turn guard 14, drawPlays cap 2; score weights heal 90+(1-hp%)*30 (only if target <75%), lethal 80 / damage 50 + dmg - apCost*2, empower 60, stance 45, armor 40 (engaged && armor<4), draw 15; DEFAULT_LOADOUT 'roy=iron_sword+iron_buckler;marcus=iron_lance+iron_buckler;lilina=fire_tome'; dev fast-path seeds 80 gold + 5 food; report default 30 seeds over stub, dungeon:smugglers_cave:{combat,elite,boss}",
+  "Balance targets (unchanged since 2026-07-06): stub w/ starters 55-75% win, boss w/ epic+ 40-60%, 0% stalemates, 4-10 avg turns; measured 2026-08-28 after engine fixes: 100% win everywhere, avg turns 2.0 (stub default) / 4.3 (no gear) / 2.6 (dungeon) / 3.0 (dungeon boss) / 3.9 (Iron Throne), 50/50 VICTORY bulk",
+  "map-tool lint thresholds: dead space >35% WARN (>3 steps off any critical path), enemy:party 2-3x band, one-tile passage WARN, unreachable enemy spawn FAIL; boardFloor dirt <=35% of board, 2 CA passes; autotile 47-case blob, keys px_<terrain>[_edge_n|_outer_nw|_b<missing>_<notch>]",
+  "ComfyUI: template nodes 4=prompt, 3=sampler, 13=save, 11-14 RemBG tail, 6=VAE decode, 8=latent (portrait default; 1024x1024 for scene/cutout; backdrop 1216x832), 1=checkpoint, 2=LoRA; poll 300 x 2.4s (~12 min); seed = FNV-1a(id|prompt) % 1e9; cutout tolerance 36*3, haloLuma 232; unit originals 832x1216, board bake ÷8",
+  "Persistence: SAVE_VERSION '0.7.0-gear'; 3 localStorage slots at fe-mb:save:slot:N + meta at fe-mb:save:meta; diagLog ring 500 entries; settleQuests bounded 8 passes; Inn heal 8g/unit; dungeon rest heals 30%; starvation 3 HP/unit; recruitmentCost = base x (1 + (level-1) x 0.5); bag grid 8x4; 49 items / 161 cards / 14 dialogue trees / 5 towns / 5 dungeons / 9 enemy groups / 46 overworld nodes across 3 regions"
+ ]
+}

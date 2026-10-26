@@ -1,0 +1,482 @@
+{
+ "summary": "The phaser shell is one React tree (App.tsx, 627 lines) holding a `View` union `'title'|'combat'|'overworld'|'town'|'dungeon'|'camp'` in useState with no router; every screen is React DOM except the combat board, which is a single Phaser scene (`game/scenes/BoardScene.ts`, 1240 lines) created once at boot into a permanently-mounted, visibility-toggled `#game-canvas-container` and covered by a `pointer-events:none` React `CombatHud` overlay. Everything is authored at a fixed 1280x720 stage that `ui/GameStage.tsx` CSS-transform-scales into a letterbox, so `position:fixed` resolves against the stage and every react-aria overlay must portal into `#game-stage`. Player flow: Title -> New Game (80g, 5 food, starter party) -> first-ever run gets a 5x5 tutorial battle -> overworld + prologue dialogue -> click a node to auto-path (700ms per hop, 1 food per hop, encounter roll per hop that can suspend travel into a DialogueModal, CheckEventModal or a seeded group battle) -> on arrival at town/camp/dungeon/exit an M&B quick-action menu -> Town (Inn/Shop/Tavern ledger spread) | Camp (Rest 20%/1 food) | Dungeon (StS row graph; combat rooms return to the dungeon) | Exit node -> Iron Throne boss -> BattleEndModal (Victory / Defeat / Run Complete / Game Over) -> Continue (consumes pending hop, returns to overworld or dungeon) or New Run / Return to Title. Root-mounted global surfaces: PauseMenu (Esc, top-right button), Save/Load (3 localStorage slots), QuestLog (Q), PartyLoadoutModal (I), DialogueModal (driven by runStore.pendingDialogue), CheckEventModal (local state in three callers), QuitModal, and a backtick-toggled DevHud. The combat HUD anatomy is: herald plaque TopBar (turn, sigil, name, HP meter, AP pips), top-left InitiativeStrip (selector-derived, 8 visible), ModeLabel instruction strip, PhaseBanner on team flip, top-right ForecastPanel (pin-then-confirm, same damage fn as the reducer), bottom-center CardHand (5 cards, click-to-select or StS drag-to-play), bottom-right Move/End Turn, bottom-left Tab danger-zone chip and capture buttons, click-pinned UnitDetailPanel, and a state-derived TutorialOverlay. The strongest asset is the Field Ledger token system in `src/index.css` (two ground scopes that re-declare the text/HP ramp so components invert automatically, three type voices, leather=act / canvas=read, fixed motion tokens, all loops collapsed under reduced-motion) and should be ported verbatim; `game/boardPalette.ts` exists only because Phaser cannot read CSS vars. The two-render-layer split produced most of the debt: a shared geometry module so DOM drag and canvas picking agree, a numeric palette mirror, a `combatUiStore` side channel from Phaser to React, a synthesized Tab KeyboardEvent so a React chip can flip Phaser-owned state, an Esc `defaultPrevented` handshake, `walkingUnits` race guards because store subscriptions render synchronously inside dispatch, a canvas-detach P0, a StrictMode-killed BootScene, `game.scale.refresh()` after every rescale, and the enemy AI turn loop living inside the render layer; a single-layer rebuild (DOM/SVG board or one canvas owning HUD too) removes all of it. Dev conveniences worth keeping: `?view=combat|overworld|town|dungeon|camp` (DEV-only run seeding that skips tutorial+prologue), `window.__debug` (three stores, busRefs, diag ring buffer), `window.__game`, `window.__openCheckEvent`, and the locked 1280x720 Electron shell (`electron/main.cjs`) that loads Vite on the pinned :5183 port.",
+ "requirements": [
+  {
+   "id": "FLOW-01",
+   "text": "Top-level navigation is a single `View` state ('title'|'combat'|'overworld'|'town'|'dungeon'|'camp') with no router; screens receive callbacks (onTravelToCombat, onEnterTown(nodeId, panel?), onEnterCamp, onEnterDungeon, onWin, onLeave, onClearAndExit, onCombatRoom(roomType)) and the shell flips the view. Non-title views show a PauseButton top-right (z-120).",
+   "source": "phaser/src/App.tsx:67-77,445-534; phaser/src/ui/view.ts:12",
+   "priority": "must"
+  },
+  {
+   "id": "FLOW-02",
+   "text": "New Game: metaStore startNewRun; run gets addGold 80 and applyQuestEffects [{kind:'addFood',amount:5}]; starter party from buildStarterParty() is recruited only if partyOrder is empty; if !metaStore.tutorialSeen seed seedTutorialBattle with deriveRng(createRng(run.rngState),'battle:tutorial'), markTutorialSeen, view='combat'; else view='overworld' and if !flags.has('prologue_seen') dispatch startDialogue {dialogueId:'prologue', nodeId:'start'}.",
+   "source": "phaser/src/App.tsx:247-282; ship plan §12 Tutorial Battle",
+   "priority": "must"
+  },
+  {
+   "id": "FLOW-03",
+   "text": "Tutorial->overworld handoff: onContinueToOverworld detects battleTag==='tutorial' and, if prologue not yet seen, starts the prologue dialogue after landing on the overworld.",
+   "source": "phaser/src/App.tsx:417-443",
+   "priority": "must"
+  },
+  {
+   "id": "FLOW-04",
+   "text": "Battle-end sync must fire ONCE per phase transition (track lastPhase; an every-change subscription re-dispatched fallenUnit on every update). On VICTORY/DEFEAT: dispatch fallenUnit {unitId, cause:'battle', turn} per dead party unit. On VICTORY additionally: sweepFallenUnits, battleId=`${worldPosition.nodeId}:d${daysElapsed}`, resolveBattle({state, battleId, partyIds, enemyIds, consumedTravelHop:null, lootRng: deriveRng(createRng(run.rngState), `loot:${battleId}`), lootPool: allItemDefs()}), applyBattleResult, eventBus.replayAll(result.emittedEvents), resolveCaptureTargets(run.pendingCaptureTargets, {capturedIds, survivingEnemyIds}) -> applyQuestEffects then setPendingCaptureTargets [], battleTag==='finalBoss' -> metaStore recordRunCompleted {won:true}, sfx('victory'). On DEFEAT: recordRunCompleted {won:false}, sfx('defeat').",
+   "source": "phaser/src/App.tsx:166-245",
+   "priority": "must"
+  },
+  {
+   "id": "FLOW-05",
+   "text": "Continue after victory: if pendingTravelPath.remainingNodeIds non-empty, arriveAtNode(next) and startTravelPath with remainingNodeIds []; reset combatStore; return to 'dungeon' when run.activeDungeon !== null && battleTag !== 'finalBoss', else 'overworld' (dungeon boss room clears activeDungeon before this runs).",
+   "source": "phaser/src/App.tsx:417-443; commit 04074ee",
+   "priority": "must"
+  },
+  {
+   "id": "FLOW-06",
+   "text": "Battle seeding routes: travel encounter -> seedGroupBattle(enemyGroupId, enemyLevelFor(mapId, `${mapId}:${nodeId}:${daysElapsed}`), deriveRng(run rng, `battle:${groupId}:${nodeId}`).state(), livingParty); dungeon room -> seedDungeonBattle(dungeonId ?? 'smugglers_cave', roomType, deriveRng(`battle:${dungeonId}:${roomType}`), livingParty); exit node -> seedBossBattle(deriveRng('battle:finalBoss'), livingParty) with battleTag 'finalBoss'; combat phase BOOT (dev ?view=combat) -> BoardScene.create seeds seedStubBattle(run.rngState, recruitedParty). Seeder throws are caught, diag-logged and the view still flips to combat (silent stub fallback) — the rebuild must fail loudly instead.",
+   "source": "phaser/src/App.tsx:370-415; phaser/src/game/scenes/BoardScene.ts:177-186; seed*.ts",
+   "priority": "must"
+  },
+  {
+   "id": "FLOW-07",
+   "text": "livingParty = party.partyOrder mapped to units, filtered hp.current > 0; every seeder places at most 6 party units into PARTY_SLOTS [[2,4],[2,5],[1,4],[1,5],[0,4],[0,5]] and resets ap:3, armor:0, statuses:[] and team:'party'; decks are built per unit with buildDeckForUnit (innate + hand-slot gear cards).",
+   "source": "phaser/src/game/scenes/seedGroupBattle.ts:37-39,91-106; seedDungeonBattle.ts:106-127",
+   "priority": "must"
+  },
+  {
+   "id": "FLOW-08",
+   "text": "Save: buildSaveFile({meta:{gameStarted,totalRuns}, run: full runStore state, combat: combat state only when phase==='COMBAT' else null, actionLog: actionLog.serialize()}) -> writeSlot(slotId, save, `Slot ${n+1}`); closes save modal and pause menu. Load: readSlot -> if ok dispatch hydrateFromSave {gold, worldPosition, partyUnits, partyOrder, inventoryItems, flags, questStates, rngState, daysElapsed, runStats, oneShotsFired, visitedNodes, clearedEncounters, deathLog} -> combatStore.reset() -> view 'overworld'. Bad save closes silently (no toast).",
+   "source": "phaser/src/App.tsx:288-340; CONTEXT.md §3 hydrateFromSave",
+   "priority": "must"
+  },
+  {
+   "id": "FLOW-09",
+   "text": "Global keys: Q toggles QuestLog and I toggles Loadout only in overworld/town/dungeon/camp; Esc first closes an open modal (save -> load -> questlog -> loadout), in combat is ignored when subPhase !== 'IDLE' (BoardScene cancels selection and calls preventDefault; App checks e.defaultPrevented), otherwise toggles PauseMenu; never on title. Backtick toggles DevHud (dev). Tab toggles danger zone; right-click cancels selection; left-click during a walk animation skips it.",
+   "source": "phaser/src/App.tsx:125-163; phaser/src/game/scenes/BoardScene.ts:192-229; phaser/src/ui/DevHud.tsx:32-37",
+   "priority": "must"
+  },
+  {
+   "id": "FLOW-10",
+   "text": "Audio: unlockAudio on first pointerdown/keydown; setMusicContext by view (combat->'combat', town->'town', overworld|camp|dungeon->'overworld', title->'none'); setMuted follows metaStore.audioMuted; ambient music is currently disabled by MUSIC_ENABLED=false (SFX stay: victory, defeat, heal, hitMagic, hitPhysical).",
+   "source": "phaser/src/App.tsx:103-123; phaser/src/audio/engine.ts:160-167",
+   "priority": "should"
+  },
+  {
+   "id": "FLOW-11",
+   "text": "Quit: try window.close(); if the tab survives show QuitModal ('Thanks for playing' / 'You can close this tab now.' / Back to title). Return to Title (pause or battle end) resets combatStore then setView('title'). Battle Restart currently resets combat and flips title->combat after a 50ms setTimeout to force the scene to reseed — replace with an explicit reseed.",
+   "source": "phaser/src/App.tsx:342-368",
+   "priority": "should"
+  },
+  {
+   "id": "STAGE-01",
+   "text": "Fixed 1280x720 design stage (STAGE_W/STAGE_H in ui/stage.ts) inside a full-viewport letterbox (#17110c) scaled by transform: scale(min(innerWidth/1280, innerHeight/720)), transformOrigin center; screens fill with h-full w-full (never h-screen); use STAGE_W/STAGE_H for layout math; react-aria Modal/Popover/Tooltip MUST portal into #game-stage via stagePortalContainer() or they render unscaled at document.body; after each rescale call window.__game.scale.refresh() in a rAF so canvas picking stays aligned.",
+   "source": "phaser/src/ui/stage.ts; phaser/src/ui/GameStage.tsx; CONTEXT.md §1 1b; Field Ledger spec §3",
+   "priority": "must"
+  },
+  {
+   "id": "STAGE-02",
+   "text": "If Phaser is retained: createGame(parent) with width 1280, height 720, transparent:true (DOM backdrop shows through), pixelArt:true, disableContextMenu, single scene BoardScene keyed 'combat' (BootScene removed — delayedCall scene.start broke under React StrictMode double-mount); main.tsx mounts Phaser in a rAF loop only after #game-canvas-container exists; the container must stay mounted for the app lifetime and be visibility-toggled, never unmounted (unmounting destroyed the canvas and every later battle drew into a detached canvas).",
+   "source": "phaser/src/game/createGame.ts; phaser/src/main.tsx:13-27; phaser/src/App.tsx:449-460; commits 8b94151, f4a5a54",
+   "priority": "must"
+  },
+  {
+   "id": "STAGE-03",
+   "text": "Game-surface discipline: html/body user-select none, cursor default, overscroll-behavior none, touch-action manipulation; inputs/textarea opt back in; img/canvas/svg -webkit-user-drag none; scrollbars thin leather (rgba(106,75,47,0.55) thumb, 8px).",
+   "source": "phaser/src/index.css:240-281",
+   "priority": "should"
+  },
+  {
+   "id": "SCR-TITLE",
+   "text": "Title = reference PAGE: oak-table gradient (168deg #3f2e1d->#2e2115->#241a10) with plank lines, an 820px linen sheet (top/bottom inset 26, gradient #f3ecda->canvas-base->canvas-mid->canvas-deep), linen weave (iron-grain multiply 0.5), 35px ruling masked 16%-84%, double margin rule at 52/56px from sheet edge, four brass pins, daylight wash, 6 dust motes (emberRise). Center: title GAME_TITLE 'Embermarch' voice-display 6xl uppercase walnut ink between two flat ink rules with brass corner brackets, tagline 'a tactical roguelite', nav w-72: New Game (primary — the only leather), Load Game (ghost; disabled when no non-empty slot, tooltip 'No chronicle yet — forge a new one.' via a role=button wrapper because disabled buttons emit no pointer events), Quit (ghost); footer 'steel remembers'.",
+   "source": "phaser/src/ui/screens/TitleScreen.tsx; project-hooks.md §Quality bar",
+   "priority": "should"
+  },
+  {
+   "id": "SCR-OVERWORLD-LAYOUT",
+   "text": "Shipped overworld is the Oregon-Trail split view: TravelBand y 0-264 (decorative, aria-hidden, CSS-keyframe parallax paused via animation-play-state when idle, .is-westward reverses), 12px carved seam, PaperMap y 276-720 (444 tall) panning X only with camera clamp [STAGE_W - map.width, 0] and a 775px center bias, mouse drag with 8px threshold; three authored region JSONs (borderlands/thornwood/ashfall) joined by regionEdges rendered as pressable gateway buttons; GameHud surface='parchment' roster docked `left-4 bottom-6`; bottom status line 'click a node to travel · drag to pan' until first completed hop, 'traveling… N hop(s) left' while moving. NOTE: the owner decided 2026-08 on ONE open-sheet 2-D map (25-40 nodes, hub towns) replacing the three strips — rebuild the map as a 2-D pannable sheet; keep only the travel/encounter rules below.",
+   "source": "phaser/src/ui/screens/OverworldScene.tsx:77-89,173-228,569-937; spec 2026-06-12 §Layout; memory project_direction_decisions_2026_08",
+   "priority": "should"
+  },
+  {
+   "id": "SCR-OVERWORLD-TRAVEL",
+   "text": "Click a node = go (no plan/confirm): findPath(buildGraph(map.edges), current, target) -> startTravelPath {remainingNodeIds, totalHopsThisLeg, rngBranch}. A hop driver effect executes the next hop after HOP_DELAY_MS 700 only while no pendingDialogue, no open quick menu, no active check event. executeHop: dispatch consumeFoodPerHop (starvation 3 HP/unit when food is 0); region-edge hop -> enterMap {mapId, nodeId} with no roll; hopRng = deriveRng(parent, `hop:${mapId}:${from}->${to}#${pass}`) where pass = edgeTraversals count; rollChance = (edge.rollChance ?? 0.3) × cooldown, cooldown = (pass===0 || daysSince>=3) ? 1 : max(0.25, daysSince/3); never roll for town/dungeon/exit targets or a hop already rolled this attempt (rolledHopsRef, cleared on landing); rollEncounter(table for region, predicateStateFromRun, oneShotsFired, deriveRng(`encounter:${mapId}:${from}->${to}`)); oneShot -> markEncounterFired; outcome dialogue -> startDialogue (suspends), battle -> setPendingCaptureTargets(captureTargets ?? []) then onTravelToCombat(nodeId, enemyGroupId) (suspends), checkEvent -> local CheckEventModal (suspends). No encounter -> arriveAtNode, recordEdgeTraversal, emitDomainEvent LocationArrived, consumeHopHead; if final destination is town/camp/dungeon/exit open the quick-action menu.",
+   "source": "phaser/src/ui/screens/OverworldScene.tsx:239-512; CONTEXT.md §3 recordEdgeTraversal",
+   "priority": "must"
+  },
+  {
+   "id": "SCR-OVERWORLD-MENU",
+   "text": "NodeQuickActionMenu (M&B style) opens on arrival at a destination or when clicking the current node: town -> Enter Town (primary) / Visit Inn / Visit Shop / Visit Tavern (deep-link initialPanel); camp -> Make Camp; dungeon -> Enter Dungeon; exit -> 'Challenge the Iron Throne' (onWin); mid-journey adds Continue Travel and Stay Here (clears path). Digit keys 1-9 choose rows, Esc / outside click dismiss, first enabled row auto-focused; menu flips to the left side when node.x+cameraX+36+220 > STAGE_W-8. An open menu pauses the hop driver, so commitTravel must close it. Clicking during a dialogue or while traveling is ignored.",
+   "source": "phaser/src/ui/screens/OverworldScene.tsx:475-512,831-893; phaser/src/ui/components/NodeQuickActionMenu.tsx",
+   "priority": "must"
+  },
+  {
+   "id": "SCR-OVERWORLD-FEEDBACK",
+   "text": "Hover a node (not traveling) shows a hud-panel tip pinned beside it: '<n> hop(s) · cost <n> food' with food tinted parchment/warn/crit and, when food < hops, 'starvation: <(hops-food)*3> HP/unit'; the hover path's edges light up (roadStyles hover) and the active hop gets an accent stroke + marching comet (.road-comet). Node labels are voice-display, centered in a 160px box, alternate above/below by id hash, use a paper-colored 3px paint-order stroke (never white-on-black), hide when off-screen or when that node's menu is open. Arrival flashes the node name on the band for 1200ms. Caravan token walks the road Bézier (MARKER_WALK_MS 600) and, when settled, sits beside the disc at x-46.",
+   "source": "phaser/src/ui/screens/OverworldScene.tsx:251-263,746-829; overworld/Caravan.tsx; overworld/OverworldRoads.tsx; overworld/roadStyle.ts",
+   "priority": "should"
+  },
+  {
+   "id": "SCR-TOWN",
+   "text": "Town = two-page ledger spread on the oak table (page-canvas): left index (INDEX_W 272) with town name, region label, three ghost entries The Inn 'Board & Care' / The Shop 'Goods & Coin' / The Tavern 'Word & Hire' (active = brass margin pin + solid rule + ink weight), Leave Town at the foot; right page scrolls with a top/bottom mask fade and pt-[88px] under the fixed GameHud (showParty=false, surface parchment); panel switch resets scrollTop and plays townEntryIn. Town resolved from worldPosition.nodeId via a 5-entry TOWN_REGISTRY; region label via REGION_DISPLAY. Inn: heals every wounded unit to full for HEAL_COST_PER_UNIT 8g each (button label 'Rest (Ng)' / 'Short Ng' / 'Everyone is healthy'). Shop: shopStockFor(town, items) rarity-gated; rows = kind socket + rarity-inked name + traits line + card count + price column + one Buy/Sell tab (ghost + 'Short Ng' when unaffordable); Your Bag lists every item with Sell. Tavern: quoted rumors, quest board (Talk to <npc> -> startDialogue, first entry primary), empty bounty board, recruitment rows (cost = costOverride ?? recruitmentCost(classId, level); Hire -> addGold(-cost) + recruitUnit(buildUnit(classId, level, name, id)) + setFlag `tavern.recruited.<id>` scope run; hidden once flagged or visibleIf fails).",
+   "source": "phaser/src/ui/screens/TownScene.tsx; town/InnPanel.tsx; town/ShopPanel.tsx; town/TavernPanel.tsx; town/townUi.tsx; ship plan §11",
+   "priority": "must"
+  },
+  {
+   "id": "SCR-CAMP",
+   "text": "Camp is a FIELD surface (leather hud-panels on trodden earth): three options — Rest (primary; enabled when food > 0 and party non-empty; dispatches consumeFoodPerHop then restParty {percent:0.2}; footer '<food> food remaining · <n> wounded'), Scout (disabled 'Coming soon'), Leave — plus a Party panel (3-up grid, name + HP numeral + hp-bar) with a 'No one left to muster' empty state. GameHud location='Camp', showParty=false.",
+   "source": "phaser/src/ui/screens/CampScene.tsx",
+   "priority": "should"
+  },
+  {
+   "id": "SCR-DUNGEON",
+   "text": "Dungeon: if no run.activeDungeon, generateDungeon(deriveRng(run rng,'dungeon:smugglers_cave'), {dungeonId:'smugglers_cave'}) and dispatch enterDungeon; rows render bottom-up (entry row at the bottom), curved SVG passages, 56px round rooms (boss is the only square), reachable = rooms with an edge from the current room; room click -> advanceDungeonRoom then by type: combat/elite/boss -> onCombatRoom(type); rest -> restParty {percent:0.3}; shop -> 2 deterministic offers from items.json (deriveRng `dungeon-shop:${id}`, +10% price for non-common) in a Black-Market Stall dialog with buyItem; treasure -> addGold 50; event -> CheckEventModal from dungeon roomEvents (deriveRng `dungeon-event:${id}`) else addGold 30. Legend chip bottom-right (icon carries hue, word carries meaning), Retreat (danger) top-right at right-16, 'Exit Dungeon' primary when standing on the boss row with clearedRooms >= bossRow -> exitDungeon + onClearAndExit. Dungeon id, name and DUNGEON_DEFS are hardcoded to smugglers_cave although 5 dungeon JSONs exist.",
+   "source": "phaser/src/ui/screens/DungeonScene.tsx; CONTEXT.md OQ-1",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-01",
+   "text": "CombatHud root is `pointer-events-none absolute inset-0 z-[100]`; each interactive child opts in with pointer-events-auto so the board underneath receives tile/unit clicks. Composition: top-center column (TopBar plaque then ModeLabel, flowing — no magic offsets), InitiativeStrip top-3 left-3, PhaseBanner, ForecastPanel, CardHand, CaptureBtn, UnitDetailPanel, Move+EndTurn bottom-4 right-4, DangerZoneToggle bottom-3 left-3. The command zone (hand, Move/End Turn, danger chip) exists only while phase==='COMBAT'; on VICTORY/DEFEAT it plays a COMMAND_EXIT_MS 380 staggered drop-and-fade then unmounts, CaptureBtn is hard-gated, and TopBar swaps to a neutral 'Battle Ended' plate with only the turn count so nothing shouts 'act now' behind the battle-end scrim.",
+   "source": "phaser/src/ui/scenes/combat/CombatHud.tsx:86-171; TopBar.tsx:29-51; commit 1f78a3c; spec 2026-05-09 §Combat HUD layer",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-02",
+   "text": "TopBar herald plaque (hud-panel): 'Turn' label chip + numeral | hud-divider | TeamSigil (shield=ally / fangs=enemy, never colour alone) + active unit name in voice-display (enemy in --color-enemy) + 'Your Turn'/'Enemy Turn' small caps | 'Health' HpMeter width 84 + tier-colored numeral current/max | on party turns 'Actions' ApPips current/3. Numbers are the largest text on any combat element.",
+   "source": "phaser/src/ui/scenes/combat/TopBar.tsx; hudBits.tsx; index.css header rules",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-03",
+   "text": "InitiativeStrip is selector-derived, never stored: useInitiativeQueue = buildInitiativeQueue(alive units) rotated so the active unit is first, memoized on (phase, units, turn.unitId); returns [] outside COMBAT. Shows up to MAX_VISIBLE 8 entries + a '+N' overflow disc; active entry = 54px portrait, scale-110, 2px team ring (hearth for party, enemy red), caret above; others 40px at opacity-75 with a faint ring; each has a team sigil badge and a 10px HP numeral tier-colored. Read-only, always present during COMBAT, independent of selection.",
+   "source": "phaser/src/ui/hooks/useInitiativeQueue.ts; InitiativeStrip.tsx; InitiativeEntry.tsx; spec 2026-05-10 §1",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-04",
+   "text": "CardHand renders deck.hand.slice(0,5) for the active party unit as <Card>: gem SHAPE by archetype (attack blade / arcane diamond / ward shield / focus eye; type derived from effects: Damage magic->arcane else attack; GrantArmor|Heal->ward; else focus), headline magnitude (Damage base|amount, Heal amount|base, GrantArmor amount) or an effect summary when none ('Draw N', '+N AP', 'Ally +N AP', status words Taunt/Riposte/Empower/Root/Slow/Poison, 'Cleanse', 'Shift N'), footer effect word + target label (one foe / an ally / self / a tile / all foes / all allies), AP coin top-right, L/R gear-source chip top-left, unaffordable = spent hatch + Tooltip 'Needs N AP, you have M' + disabled. Click -> selectCard (ignored while RESOLVING). Drag: pointerdown captures, movement > 14px activates (selects the card, clears pinned detail), an SVG quadratic arrow (#e8a93a, dashed 10 7, ring at cursor) follows; release on a valid tile (in card range AND occupant matches targetKind: enemy/all_enemies need an enemy, ally/all_allies an ally, self = own tile, tile anywhere in range) plays instantly through the same playCard payload; self cards play when released above HAND_TOP_Y 560; anything else cancelSelection.",
+   "source": "phaser/src/ui/scenes/combat/CardHand.tsx; phaser/src/ui/components/Card.tsx; commit b432a68",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-05",
+   "text": "Targeting is pin-then-play: with a card selected, valid tiles (tilesInRange from the active unit, card.range.min..max) paint attack-red; hovering a valid tile brightens it, draws the AoE preview (aoeRadius) and a floating '-N'/'+N' forecast number plus a 'KO' badge if lethal; first click on a valid tile dispatches pinTarget (opens ForecastPanel, ModeLabel hides while pinned); second click on the same tile, or the panel's Confirm, dispatches playCard {cardId, srcId, targets:[tile], card:{apCost, effects, targetKind, damageStat?, aoeRadius?}} using the COMBAT rng (createRng(state.rng) — a fresh seed once broke replay determinism); clicking an invalid tile cancels selection (silent dead clicks felt broken); Cancel -> unpinTarget keeps the card selected; clicking a unit during targeting targets its tile.",
+   "source": "phaser/src/game/scenes/BoardScene.ts:386-476,564-652,672-702,827-892; ForecastPanel.tsx:28-59; ModeLabel.tsx:27; spec 2026-05-10 §2 Interactions",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-06",
+   "text": "ForecastPanel (hud-panel, absolute top-14 right-4 w-80, role=dialog) appears only when selectedCardId AND pinnedTargetTile resolve to a target unit: header card name + 'LETHAL' chip + 'N AP'; combatant row source portrait -> arrow -> target portrait; HP bar with remaining segment + predicted-loss segment and 'current/max -> after' numerals, Armor bar only when target.armor > 0; math row collapsed to '<total> damage (−a armor, −h HP)' expandable to '<base> base + <stat> STAT − <dr> DR = <total>' (heal shows '+N healed'); status chips with ×stacks; Confirm (primary) / Cancel (ghost). Numbers come from systems/damage.computeForecast(card, source, target, terrainDr=0) — the same function the reducer applies, so shown === applied.",
+   "source": "phaser/src/ui/scenes/combat/ForecastPanel.tsx; ForecastHpBar.tsx; ForecastMathRow.tsx; useForecastPreview.ts; spec 2026-05-10 §2",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-07",
+   "text": "Movement is Fire-Emblem style: while IDLE on a party turn the active unit's reachable tiles (tilesReachable by class startingMov, blocked by living units) are tinted field-blue at MOVE_RANGE_IDLE_ALPHA 0.42 and a click on one moves immediately; the Move button enters SELECTING_MOVE (alpha 0.72, label 'Cancel Move') as a fallback; the active unit can be dragged like a chess piece (press, >10px starts drag, hovered reachable tile brightens to 0.95, drop on a reachable tile moves, otherwise snaps home). One free move per turn (hasMovedThisTurn). Moves capture findMovePath before dispatch and animate tile-by-tile at STEP_MS 120 with click-to-skip; walkingUnits must be marked BEFORE dispatch because the store subscription re-renders synchronously and would snap the sprite to the destination.",
+   "source": "phaser/src/game/scenes/BoardScene.ts:386-445,704-825,1118-1167; MoveBtn.tsx; commits 359b006, f4a5a54",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-08",
+   "text": "End Turn button (primary) enabled when phase COMBAT, party turn, subPhase !== RESOLVING; dispatches endTurn with createRng(state.rng). Both Move and End Turn are !min-w-[140px] leather buttons bottom-right.",
+   "source": "phaser/src/ui/scenes/combat/EndTurnBtn.tsx; MoveBtn.tsx",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-09",
+   "text": "Capture buttons (danger variant, stacked bottom-12 left-3 above the danger chip) appear on party turns for every living enemy at manhattan distance 1 from the active unit with hp fraction < 0.5; label 'Capture <name> (<pct>%)' where chance = clamp((1 − hpFrac) × 0.6 + 0.25, 0, 1) (UI estimate of the reducer formula, single attacker); dispatch capture {targetId, attackerIds:[activeId]}; Tooltip explains the roll. Any enemy class is capturable.",
+   "source": "phaser/src/ui/scenes/combat/CaptureBtn.tsx",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-10",
+   "text": "Threat reading: hovering any living unit in IDLE previews its move range (ally blue / enemy purple) and a 1-step attack ring; Tab toggles the global danger union (every enemy's reach + 1 step) in DANGER_UNION at alpha 0.72 under any selection overlay. The bottom-left chip shows a Tab keycap + 'Danger zone' + a state pip; because BoardScene owns the toggle, the chip synthesizes a window KeyboardEvent('keydown',{key:'Tab',keyCode:9}) and mirrors state by listening to Tab keydowns — in the rebuild keep this flag in one store.",
+   "source": "phaser/src/game/scenes/BoardScene.ts:143-144,211-216,478-562; CombatHud.tsx:17-84",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-11",
+   "text": "UnitDetailPanel (hud-panel fixed top-36 right-4 w-[270px]) pins on a plain unit click via combatUiStore.pinnedDetailUnitId (Phaser writes, React reads; not in the reducer, not saved); hidden entirely during SELECTING_TARGET; shows portrait + sigil + name, class + Lv, HP meter + numeral, Armor (if > 0), AP pips, a 2-column grid of str/mag/skl/spd/def/res/lck numerals, status chips with 'Nt', and a Close button.",
+   "source": "phaser/src/ui/scenes/combat/UnitDetailPanel.tsx; phaser/src/state/combatUiStore.ts",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-12",
+   "text": "PhaseBanner: when turn.team flips mid-COMBAT a full-width band ('YOUR TURN' brass / 'ENEMY PHASE' enemy red, voice-display 3xl tracking 0.4em) wipes across at top-1/2 for 1300ms using the phaseBanner keyframe; collapses under reduced motion. ModeLabel shows 'Choose a highlighted tile' (SELECTING_MOVE) / 'Choose a target' (SELECTING_TARGET) with Esc + RMB keycaps 'cancel'.",
+   "source": "phaser/src/ui/scenes/combat/PhaseBanner.tsx; ModeLabel.tsx; index.css:582-593",
+   "priority": "should"
+  },
+  {
+   "id": "HUD-13",
+   "text": "TutorialOverlay renders only while battleTag==='tutorial' && phase==='COMBAT' and derives its step from state (no step machine): enemy turn -> 'The bandit takes its turn. Watch what it does.'; SELECTING_TARGET -> step 3 'Now click the bandit to strike. The forecast shows the damage before you commit.'; active unit not moved -> step 1 'Every unit gets one free MOVE per turn. Drag Roy like a chess piece — or click a blue tile — to advance toward the bandit.'; else step 2 'Pick a card from your hand below. The amber coin is its ACTION POINT cost — you have 3 AP each turn.'; no enemy alive -> step 4 'The bandit falls. Victory is yours.'. Skip hides it and dispatches markTutorialSeen. Tutorial battle: 5x5 grid, Roy (lord, iron_sword in handLeft) at 0,2 vs 'Bandit' hp 10 str 2 spd 1 at 4,2, authored dirt floor lane along the critical path.",
+   "source": "phaser/src/ui/overlays/TutorialOverlay.tsx; phaser/src/game/scenes/seedTutorialBattle.ts; ship plan §12",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-14",
+   "text": "Board render contract: grid sized/centered per battle by boardGeometry (tileSize/gridOriginX/Y) inside the play band between top chrome and the hand; ground = px_grass tiles flipped by a per-cell hash + 47-piece autotiled dirt (seeder floor or generateDirtRegion(rng 'floor')), a shadow slab and brass-edged leather frame; interactive tile rects (TILE−2) with checker variance on TILE_BASE; units = ally disc r16 / enemy 4-point star (9/17) with 2.5 rim, or a baked board sprite (÷8 box-filtered, LINEAR filter) over a team-colored base ellipse; transparent r22 hit circle; HP bar 36×6 well + 32×4 fill tier-colored (ok/warn/crit) at +20; name label (Cinzel 11px, stroked) only for the ACTIVE unit; depth = container.y (painter's order); active unit brass ring r23, pinned target ember ring; dead units hidden. Overlay paint order: hover preview < Tab danger union < idle move range < SELECTING_MOVE range < card-target tiles (hot when hovered/pinned). Effects: PlayTween walks a path or yoyo-lunges (duration/2), HitFlash (sprite alpha 0.4 or white fill), FloatDamage (+/−N monospace 20px, rises 40px over 600ms, plays sfx), ShakeCamera, WaitForAnimations; animationsCompleted dispatched when pendingAnimations hits 0 in RESOLVING.",
+   "source": "phaser/src/game/scenes/BoardScene.ts:295-384,894-1116; phaser/src/game/boardPalette.ts; phaser/src/domain/boardGeometry.ts",
+   "priority": "must"
+  },
+  {
+   "id": "HUD-15",
+   "text": "Enemy turns run from the render layer: when phase COMBAT, subPhase IDLE, team enemy and turn.unitId set, planTurn(state, rng, unitId) fills a queue; first dispatch after 500ms; moveUnit events mark walkingUnits then schedule the next after 150ms; animation-producing events wait for maybeAnimationsComplete (+300ms); endTurn drains and immediately re-plans if the next unit is also an enemy (otherwise the loop stalls because the subscription fired while enemyTurnRunning was true). The rebuild should drive this from a non-render game-flow controller that awaits animation promises.",
+   "source": "phaser/src/game/scenes/BoardScene.ts:1169-1226; commit 22218dd",
+   "priority": "must"
+  },
+  {
+   "id": "MOD-01",
+   "text": "Dialog wrapper: RAC ModalOverlay `fixed inset-0 z-[800]` portaled into the stage; position 'center' (surface-iron panel, min-w-[400px] max-w-[80vw], rounded-md, p-6 unless unpadded, scale-95/translate-y-3 enter) or 'bottom' (full-width band, bg-stone-950/95, rises from translate-y-5); backdrop 'heavy' bg-black/70 or 'veil' bg-black/55 + blur 2px (pause/save/load); isDismissable default true (Esc + backdrop). Tooltip wrapper = hud-panel body-xs with an ink/brass arrow, delay 500ms, portaled likewise; Focusable is re-exported for wrapping disabled triggers. Raw react-aria(-components) imports outside ui/components are lint-banned.",
+   "source": "phaser/src/ui/components/Dialog.tsx; Tooltip.tsx; eslint.config.js:61-75; CONTEXT.md §1 1b",
+   "priority": "must"
+  },
+  {
+   "id": "MOD-02",
+   "text": "PauseMenu (Dialog veil, w-[392px], page-canvas ledger sheet): 'Paused' / 'the world holds its breath'; Resume = primary leather (autoFocus); ruled ghost lines Save Game (disabled outside a run with 'nothing to save outside a campaign'), Load Game; heavier rule; Return to Title (inline confirm 'Return to Title?' / 'Unsaved progress will be lost — the march ends here.' with danger button + Cancel), Quit; footer Sound toggle (speaker glyph + ap-pip + ON/OFF numeral) dispatching metaStore setAudioMuted. Lines get a brass margin tick on hover/focus; entrance is a staggered Rise (0/30/60/90/120/150ms).",
+   "source": "phaser/src/ui/modals/PauseMenu.tsx",
+   "priority": "must"
+  },
+  {
+   "id": "MOD-03",
+   "text": "Save/Load modals (Dialog veil, w-[476px], page-canvas): three slots (NUM_SLOTS 3, localStorage keys fe-mb:save:slot:N + sidecar fe-mb:save:meta) rendered as ledger lines — inked folio number, formatLocationName(summary.location) in voice-display, party/gold/food glyph numerals, formatSaveDate at right; empty slot = outlined folio + 'blank page'. Save: choosing a written slot shows an inline confirm row 'Overwrite this chronicle?' with a danger Overwrite + Cancel (other rows dim to 0.4); subtitle 'three folios — choose the line to write on'. Load: empty slots disabled; all-empty shows the empty state whose copy must keep the phrase 'No saved games' (e2e boot contract) — 'No saved games yet — the chronicle is unwritten.' / 'Save from the pause menu, out on the road.'.",
+   "source": "phaser/src/ui/modals/SaveGameModal.tsx; LoadGameModal.tsx; phaser/src/persistence/saveSlots.ts (CONTEXT.md §8)",
+   "priority": "must"
+  },
+  {
+   "id": "MOD-04",
+   "text": "QuestLog (Dialog, w-[540px], toggled by Q): lists runStore.questStates; 'N contract(s) standing' subtitle; each entry = brass seal pin (open) or inked ring + check (settled), name from a local QUEST_DESCRIPTIONS table then the quest registry ('Unmarked entry' last resort), stage prose from the table ('The trail is cold.' fallback), settled entries strikethrough + 'Settled' chip; empty state 'No work on the books.' / 'Taverns post jobs on the notice board — ask around.'. Quest names/stage prose should come from quest JSON in the rebuild (the table once mis-keyed sq_blood_ties).",
+   "source": "phaser/src/ui/overlays/QuestLog.tsx; commit 04074ee",
+   "priority": "should"
+  },
+  {
+   "id": "MOD-05",
+   "text": "PartyLoadoutModal (Dialog, w-[860px], toggled by I): left column = muster tabs (portrait + name; active tab has an inset brass edge), In hand = Left/Right slot wells (rarity edge + gem, item name in rarity ink, '+N cards' numeral, kind · 2H, Unequip ghost; right slot shows 'Locked — two-handed weapon' when left is 2H; empty = sword watermark 'empty'), Deck next battle preview grouped by source (Class / Left hand / Right hand) built with buildDeckForUnit; right column = bag manifest stacked by definition id with ×N tally, kind line, Equip L (primary only on the line under the pointer/keyboard) + Equip R; disabled equips stay fully opaque, struck through, with a Tooltip carrying planEquip's reason translated to fiction (two-handed / 'Both hands grip the two-handed weapon.' / bag full / etc.); footer '+N consumable(s) (food, potions)'. All mutations via equipItem/unequipItem dispatch.",
+   "source": "phaser/src/ui/modals/PartyLoadoutModal.tsx; CONTEXT.md §3 equipItem/unequipItem",
+   "priority": "must"
+  },
+  {
+   "id": "MOD-06",
+   "text": "DialogueModal is driven entirely by runStore.pendingDialogue {dialogueId, nodeId}: non-dismissable bottom band (page-canvas strip with ruling and weave) over a 55% dim; two persistent bust slots — a speaker claims left then right on first line and keeps it, a third speaker replaces the non-speaking slot, the speaking bust is lit/forward and the listener is brightness 0.68 + translateY 6px + scale 0.95, busts are full-body sprites (height 300, right side mirrored) or a 120px portrait fallback; narrator lines show a centered NARRATOR sigil banner and italic dim prose; name plate = surface-parchment tag with a 2px --id-* identity underline, anchored inboard of the bust column (left-52 / right-52). Text reveals at 36 cps (useTypewriter; reduced motion = instant); clicking the text skips the reveal or advances the single unconditional Continue choice; branching choices render only after reveal as ruled ghost entries (.dlg-choice) that take a leather strap on hover/focus, disabled choices stay legible (muted italic, dead chevron); gated choices use CheckButton, stat checks open CheckCandidatePicker then advance with attemptingUnitId. Node onEnter effects dispatch applyQuestEffects once per (dialogueId,nodeId); step() effects dispatch likewise; nextNodeId 'end' -> endDialogue else startDialogue next. Missing tree/node render an error dialog with Close.",
+   "source": "phaser/src/ui/modals/DialogueModal.tsx; phaser/src/ui/hooks/useTypewriter.ts; phaser/src/ui/data/characters.ts; commit 0f426d3",
+   "priority": "must"
+  },
+  {
+   "id": "MOD-07",
+   "text": "CheckEventModal (shared by overworld encounters, dungeon event rooms and post-victory events): title (voice-display hearth), description, choices as CheckButton (requirement chip 'STR 7' when someone can pass, 'needs STR 7' when nobody can; class/gold/food checks auto-resolve; stat checks open CheckCandidatePicker 'Who tries this? [STR 7]' listing living party with stat value and check/cross, failing candidates still selectable); after resolution narration replaces the description and Continue calls onResolve -> caller dispatches applyQuestEffects(outcome.effects). BattleEndModal fires 'interrogate_survivor' when any dead unit's classId contains 'bandit' (should key on the enemy group's victoryEvent) and suppresses the verdict until it resolves; tutorial and finalBoss skip it.",
+   "source": "phaser/src/ui/modals/CheckEventModal.tsx; components/CheckButton.tsx; components/CheckCandidatePicker.tsx; BattleEndModal.tsx:102-184",
+   "priority": "must"
+  },
+  {
+   "id": "MOD-08",
+   "text": "BattleEndModal (non-dismissable, mounted at root, opens when combat phase is VICTORY or DEFEAT): page-canvas report sheet (victory = linen canvas-base->mid; defeat = same mixed 14% toward #a8a49a) with 34px ruling, weave, corner brackets in brass (win) or oxblood (loss); label 'Field Report' or 'Final Entry'; heading VICTORY / GAME OVER / THE THRONE IS YOURS (finalBoss) between flat rules; flavour line ('The field is yours. The road goes on.' / 'Your party has fallen. The road claims another company.' / 'The Warlord is defeated. The frontier is crossed.'); ordinary victory shows the enemies-defeated numeral as the largest text, Survivors chips (ally diamond) and Fallen chips (strikethrough, 'Lost for good. The company marches lighter.'); run-ended states show daysElapsed 'Days on the Road' and a dotted-leader ledger of runStats (Hops traveled, Battles won, Enemies defeated, Enemies captured, Companions lost, Gold earned, Gear found; zero -> '—'); buttons Continue (primary) / Restart / Return to Title, or New Run (primary) / Return to Title. Ceremony: heading back-out 400ms, children rise staggered from 240ms in 60ms steps (rows 40ms), all off under reduced motion; opens ~250ms after the phase flips so the HUD exit reads as a handoff.",
+   "source": "phaser/src/ui/modals/BattleEndModal.tsx; ship plan §12 Win/Game Over Screen",
+   "priority": "must"
+  },
+  {
+   "id": "MOD-09",
+   "text": "GameHud (non-combat screens): fixed top-center context/resource plate — region small-caps + location voice-display | Day numeral | Food numeral (parchment when >4, hp-warn 1-4, hp-crit + 800ms pulse at 0; scale-pops when a hop consumes one) | Gold numeral in --color-hearth via var() (Tailwind's text-hearth bakes the root value and ignores the page scope) — and an optional party roster card (portrait clipped circle(50%), name, tier numeral, hp-bar; dead units 40% grayscale) plus an objective line for the first incomplete quest. surface='parchment' turns both into .surface-parchment page cards (band-safe inset shadow); 'dark' uses hud-panel. showParty and partyClassName control the roster.",
+   "source": "phaser/src/ui/components/GameHud.tsx",
+   "priority": "must"
+  },
+  {
+   "id": "TOK-01",
+   "text": "Ground scopes are the whole trick: `.page-canvas` (a screen) and `.surface-parchment` (a card) re-declare --color-parchment #2a2119, --color-parchment-dim #57493a, --color-text-muted #5e5040, --color-hearth/--color-hearth-soft #6e4705, --color-damage-text/--hp-crit-text #9a2c22, --hp-warn #6e4705, --hp-ok #445b24 and set color: var(--color-ink); `.surface-iron, .hud-panel, .btn-forged:not(.btn-forged--ghost), .forged-card` re-assert the bone ramp (#f1e9d8 / #d5c8ad / #b3a68e / #d9a93f / #c99a33 / #e8806c / #e8806c / #d9a93f / #7ba33f). Components read tokens by ROLE (--color-parchment = primary text on THIS ground) so they invert automatically by specificity; ghost buttons deliberately take the ground's ramp.",
+   "source": "phaser/src/index.css:11-35,165-209; project-hooks.md §token system",
+   "priority": "must"
+  },
+  {
+   "id": "TOK-02",
+   "text": "Type voices: --font-display \"Cinzel\" (Trajan Pro, Georgia, serif) for names/titles/places (lowercase renders as small caps), --font-body \"EB Garamond\" (Georgia, Times New Roman, serif) for prose/dialogue/labels, --font-numeric ui-monospace/SFMono-Regular/Cascadia Mono/Consolas for raw numbers only; utilities .voice-display (letter-spacing 0.04em) and .numeral (tabular-nums, 0.01em). Fonts are self-hosted variable woff2 in public/fonts (fonts.css) and preloaded from index.html — no CDN.",
+   "source": "phaser/src/index.css:37-46,288-300; phaser/index.html",
+   "priority": "must"
+  },
+  {
+   "id": "TOK-03",
+   "text": "Material recipes to port verbatim: .surface-iron (158deg iron-700 42% over iron-900, --bevel-iron, 40% brass border), .surface-parchment (180deg canvas-base->mid 72%->deep, 1px dashed --canvas-rule, --elevation-flat + inner 1px #fffcf4/0.5), .hud-panel (four --rivet-* radial layers + 158deg rgba(74,52,33,0.96)->rgba(28,20,13,0.97), 1px rgba(28,18,9,0.9) border, radius-md, --bevel-iron + inset 5px rgba(176,138,62,0.3) tooled line, backdrop-blur 3px), .hud-panel-header (1px dashed rgba(176,138,62,0.38) bottom), .hud-divider (1px rgba(176,138,62,0.3); page scope -> --canvas-rule), .ap-pip 9px brass disc (--full gradient #e6c887->iron-edge->#7a5a1e, --empty rgba(0,0,0,0.4)), .hp-bar 6px pill + .hp-bar__fill (width transition --dur-move), .iron-grain (SVG fractalNoise 0.85/3 octaves, 180px, overlay, 0.09), .hearth-glow(-strong) = top-down daylight wash only, .btn-forged base + --primary (brass edge, #fbf3e2 text) / --danger (oxblood) / --ghost (transparent, etched on hover) with data-hovered/pressed/focus-visible/disabled states, .btn-prose opt-out, .forged-card (bevel, hover inset brass 0.55, selected inset 2px iron-edge, disabled saturate .4 brightness .72).",
+   "source": "phaser/src/index.css:283-558",
+   "priority": "must"
+  },
+  {
+   "id": "TOK-04",
+   "text": "Binding rules: no new hex values in components (add tokens to index.css); canvas colours only in the boardPalette mirror; never bypass Button/Dialog/Tooltip/Menu/ListBox wrappers with raw elements; texture on chrome only, never on numeric data; numbers are the largest text on any combat element; every small-text pair clears AA 4.5:1 against its OWN ground and, on a page, against both --canvas-base and --canvas-mid (keep small muted text out of the bottom ~15% deep band, audited 4.16:1); colour is never the only channel (shield/fangs sigils, gem shapes, disc vs star, brass pin + rule weight for selection); ONE primary (leather) per page; NOTHING glows — no radial pools, flicker, vignettes, emissive rims, glow-on-hover (hearthFlicker is retained inert); light falls, never emits; every loop collapses under prefers-reduced-motion (the :root --dur-* override plus explicit animation:none on named loops and [style*=\"...\"] inline ones).",
+   "source": "phaser/src/index.css:32-35,609-634; project-hooks.md §Rules; Field Ledger spec §1,§3",
+   "priority": "must"
+  },
+  {
+   "id": "TOK-05",
+   "text": "Board overlay grammar (one hue never means two things): field-blue = my movement range (MOVE_RANGE 0x24455f; idle 0.42 / mode 0.72 / drag 0.95), attack-red = valid card targets & enemy strike reach (CARD_TARGET_FILL 0x5e1a13 / edge 0xb8402c; 0.52, hot 0.85), red-purple = enemy danger union (0x3c1c36 @0.72; hover-enemy-move 0x4c2846), arcane = AoE preview (0x8f74d2, fill 0.25 edge 0.8), brass = the active unit ring (0xd9a93f), ember = pinned target ring (0xb8402c); units ally 0x6f93bd rim 0x16293a, enemy 0xc0644e rim 0x3a170f; HP tier fills ok 0x7ba33f / warn 0xd9a93f / crit 0xa6432f; text name #f1e9d8, outline #000, heal #8fd45f, damage #ff7a5c, magic #8fb4e8, KO #f1e9d8 on #6e1d16.",
+   "source": "phaser/src/game/boardPalette.ts",
+   "priority": "must"
+  },
+  {
+   "id": "TOK-06",
+   "text": "Identity ramp (--id-gold/steel/rose/moss/arcane/ember/slate/wine, each a color-mix of an existing token toward the ground's text colour) is used ONLY for who someone is: portrait rings/fills (color-mix accent 26% into ink; ring 55%) and the 2px name-plate underline. ui/data/characters.ts maps speaker name -> {displayName, initials, sprite?, accent, faction party|enemy|neutral|narrator|noble|mystic, shape circle|square|hex|diamond|triangle}; unknown speakers hash into the same ramp; enemy-team combat units without a registry entry are forced to --color-enemy. CharacterPortrait resolves art by unitId/classId via data/unitSprites (never by display name), crops the top ~45% (objectPosition 50% 12%, scale 1.9), and falls back to initials.",
+   "source": "phaser/src/index.css:76-89; phaser/src/ui/data/characters.ts; phaser/src/ui/components/CharacterPortrait.tsx; commit e157814",
+   "priority": "should"
+  },
+  {
+   "id": "TOK-07",
+   "text": "Rarity is a NAME colour + a quiet edge, never a saturated border: RARITY_TEXT/RARITY_EDGE mix gem-ward 55% (uncommon), ally 65% (rare), gem-arcane 60% (epic), gem-focus 72% (legendary) toward --color-parchment; on a linen page legendary must drop to 45% (72% measured 3.30:1 base / 2.94:1 mid); the loadout also draws a per-rarity gem SHAPE (circle/square/diamond/triangle/star) so rank survives colour-blindness. Legendary never uses --color-hearth (reserved for 'act here').",
+   "source": "phaser/src/ui/rarity.ts; phaser/src/ui/modals/PartyLoadoutModal.tsx:116-166",
+   "priority": "should"
+  },
+  {
+   "id": "TOK-08",
+   "text": "Icons are one inline-SVG component (24 viewBox, stroke 1.8, round caps/joins, currentColor; aria-hidden unless aria-label given) with names town/camp/dungeon/exit/combat/elite/boss/rest/shop/event/treasure/visited/quest/narrator/chevron-right/chevron-down/arrow-right/pause/skull/check/cross/shield/fangs/bolt; NO emoji or pictograph unicode in player-visible JSX; physical keys render as Keycap chips (Tab/Esc/RMB), never '[Tab]'. Screen-local glyph sets (town item kinds, save-slot party/gold/food, speaker, sword) follow the same grammar and should fold into the one set.",
+   "source": "phaser/src/ui/components/Icon.tsx; scenes/combat/hudBits.tsx; screens/town/townUi.tsx; modals/SaveGameModal.tsx:128-173",
+   "priority": "must"
+  },
+  {
+   "id": "TOK-09",
+   "text": "Ledger page furniture pattern (currently copy-pasted 6×): a Sheet = 168deg gradient #f3ecda -> canvas-base 42% -> canvas-mid (never canvas-deep), iron-grain multiply 0.4, feint ruling every 30px at rgba(42,33,25,0.09), double margin rule at gutter 26/30 (0.34/0.16), four 8px brass pins (radial #f0d79a -> iron-edge 52% -> #6d5218, shadow 0 1px 2px rgba(46,32,16,0.5)); PageHead = uppercase voice-display title tracking 0.26em + italic body subtitle + ghost close, then rules of weight 0.46 and 0.22 separated by 3px; content column pl-[42px] pr-6; 'Rule' = 1px rgba(42,33,25,weight). Build ONE <LedgerPage> kit and use it for pause/save/load/quest/loadout/battle-end/town/title.",
+   "source": "phaser/src/ui/modals/SaveGameModal.tsx:12-126 (canonical exports PageSheet/PagePins/PageHead/ModalRule); duplicates in PauseMenu.tsx, QuestLog.tsx, PartyLoadoutModal.tsx, BattleEndModal.tsx, TownScene.tsx, TitleScreen.tsx",
+   "priority": "should"
+  },
+  {
+   "id": "DEV-01",
+   "text": "DEV-only `?view=` fast path: 'combat'|'overworld'|'town'|'dungeon'|'camp' sets the initial view and, once, seeds a representative run (addGold 80, addFood 5, buildStarterParty recruited) with NO prologue/tutorial so manual and Playwright testing skip the ~16-node prologue; production ignores the param. Playwright helpers boot via '/?view=combat' and wait for window.__debug.combatStore phase 'COMBAT' + a <canvas>.",
+   "source": "phaser/src/App.tsx:68-101; phaser/tests/e2e/helpers.ts:42-46",
+   "priority": "should"
+  },
+  {
+   "id": "DEV-02",
+   "text": "Debug surfaces (DEV only): window.__debug = {combatStore, runStore, metaStore, busRefs, diag} where diag is the 500-entry ring buffer (recent/byCategory/byLevel/since/search/dump/categories/clear); window.__game = the Phaser.Game (also used by GameStage for scale.refresh); window.__openCheckEvent(event) opens the overworld check-event modal deterministically. Seeding idiom for tests: dispatch applyQuestEffects with a startCombat effect, or store.setState for HP/phase.",
+   "source": "phaser/src/App.tsx:55-65; phaser/src/main.tsx:19-23; phaser/src/ui/screens/OverworldScene.tsx:116-123; project-hooks.md §screenshot loop",
+   "priority": "should"
+  },
+  {
+   "id": "DEV-03",
+   "text": "DevHud: dev-only, closed by default, backtick toggles; fixed bottom-right 360×320 monospace panel listing last 5 errorBus entries, last 10 domain events, last 10 actionLog entries (polled every 500ms); z 99999.",
+   "source": "phaser/src/ui/DevHud.tsx",
+   "priority": "could"
+  },
+  {
+   "id": "DEV-04",
+   "text": "Electron desktop shell (`npm run app`): BrowserWindow 1280×720 with useContentSize:true (content area = stage, renders 1x), resizable/movable/maximizable/fullscreenable all false, minimizable true, center, title 'FE_MB', autoHideMenuBar, backgroundColor '#050403', webPreferences contextIsolation:true, application menu null, loads process.env.FEMB_URL || 'http://localhost:5183/'; quits on window-all-closed. Tauri was rejected (Rust/MSVC toolchain would not fit on C:).",
+   "source": "phaser/electron/main.cjs; memory reference_desktop_shell",
+   "priority": "should"
+  },
+  {
+   "id": "DEV-05",
+   "text": "Tooling contract: Vite dev on :5183 (strictPort; :5173 belongs to another app), Playwright config reuses a running :5183 server (override PW_BASE_URL), visual snapshots are unmasked with tolerance 0.0005 (they were once masked solid magenta and could never fail), `npm run verify` = typecheck + typecheck:cli + lint:content + check-context-doc + unit tests; there is NO CI pipeline — gates run only locally.",
+   "source": "phaser/.claude/CLAUDE.md §Run; CONTEXT.md update protocol",
+   "priority": "should"
+  }
+ ],
+ "keep": [
+  "phaser/src/index.css — the entire Field Ledger token system + material recipes (lines 1-634); port verbatim, only re-wrap the @theme block if Tailwind is dropped",
+  "phaser/src/game/boardPalette.ts — the numeric board palette, overlay grammar comments and HP_TIER_THRESHOLDS {warn:0.5, crit:0.25}; in a single-layer rebuild fold the values back into CSS vars and delete the mirror",
+  "phaser/src/domain/boardGeometry.ts — TILE 48, TILE_MIN 40, TILE_MAX 96, HAND_TOP_Y 560, BAND_TOP 120, tileSize/gridOriginX/gridOriginY/tileAtStagePoint/clientToStage (pure, framework-free board math)",
+  "phaser/src/ui/GameStage.tsx + phaser/src/ui/stage.ts — fixed 1280×720 letterboxed transform-scale stage and the stagePortalContainer() portal rule",
+  "phaser/src/ui/components/Button.tsx, Dialog.tsx, Tooltip.tsx, Pressable.tsx, Icon.tsx — thin react-aria wrappers that consume the CSS recipes (Button = 4 variants + prose flag; Dialog = center/bottom, heavy/veil, unpadded)",
+  "phaser/src/ui/components/Card.tsx — combat card anatomy (gem shape header, art well with headline numeral or effect summary, footer, AP coin, L/R source chip, spent hatch)",
+  "phaser/src/ui/scenes/combat/hudBits.tsx (ApPips, HpMeter, Keycap, TeamSigil) + hpTier.ts — the single shared HUD readout primitives",
+  "phaser/src/ui/scenes/combat/CardHand.tsx — deriveCardType/deriveMagnitude/deriveEffectSummary/STATUS_WORD/TARGET_LABEL tables and the StS drag-to-play state machine (14px threshold, isValidDrop, self-play above HAND_TOP_Y)",
+  "phaser/src/ui/scenes/combat/ForecastPanel.tsx + ForecastHpBar/MathRow/StatusRow + hooks/useForecastPreview.ts — pin-then-confirm forecast layout and the 'shown === applied' contract via systems/damage.computeForecast",
+  "phaser/src/ui/hooks/useInitiativeQueue.ts + InitiativeStrip.tsx + InitiativeEntry.tsx — selector-derived turn order (never stored), 8-visible + overflow",
+  "phaser/src/ui/scenes/combat/TopBar.tsx, ModeLabel.tsx, PhaseBanner.tsx, UnitDetailPanel.tsx, CaptureBtn.tsx — herald plaque hierarchy, instruction strip, team-flip banner, pinned detail, capture candidates + chance formula",
+  "phaser/src/game/scenes/BoardScene.ts — port the BEHAVIOURS: renderTargeting overlay paint order, reachableForActive/tryMoveActiveUnit/chess drag, walkAlongPath with click-to-skip, hover threat preview, global danger union, KO badge, painter-order depth, active-only name labels",
+  "phaser/src/game/scenes/seedTutorialBattle.ts, seedBossBattle.ts, seedGroupBattle.ts (PARTY_SLOTS, enemy placement), seedDungeonBattle.ts — authored battle seeds",
+  "phaser/src/ui/overlays/TutorialOverlay.tsx — declarative step derivation and the four instruction strings",
+  "phaser/src/ui/modals/BattleEndModal.tsx — ceremony structure, copy, run-stat ledger, defeat weathering",
+  "phaser/src/ui/modals/DialogueModal.tsx — bust-slot claiming logic, click-to-skip/advance rules, .dlg-choice CSS, name-plate placement",
+  "phaser/src/ui/hooks/useTypewriter.ts — rAF typewriter with reduced-motion bypass",
+  "phaser/src/ui/modals/CheckEventModal.tsx + components/CheckButton.tsx + CheckCandidatePicker.tsx — two-phase check event, requirement chip, 'who tries this?' picker",
+  "phaser/src/ui/modals/PauseMenu.tsx, SaveGameModal.tsx (PageSheet/PagePins/PageHead/SlotCard/ModalRule exports), LoadGameModal.tsx — ledger-line menu and 3-slot save UX incl. inline overwrite confirm",
+  "phaser/src/ui/modals/PartyLoadoutModal.tsx — hand-slot wells, deck-by-source preview, stacked bag manifest, lit-line equip control, reasonFiction()",
+  "phaser/src/ui/screens/TitleScreen.tsx — the reference PAGE composition (820px sheet on the oak table, one leather primary)",
+  "phaser/src/ui/screens/town/townUi.tsx — EntryHeading/SectionLabel/ColumnHeader/EmptyState/KindSocket + item-kind glyphs; the ledger-row grammar for Inn/Shop/Tavern panels",
+  "phaser/src/ui/components/GameHud.tsx — food three-tier tint + pop, surface switch, roster card",
+  "phaser/src/ui/components/NodeQuickActionMenu.tsx — M&B quick-action menu (digit hotkeys, Esc, outside-click, side flip, primary accent bar)",
+  "phaser/src/ui/screens/overworld/roadStyle.ts (edgePath quadratic bow, hashEdgeId FNV, edgeKey, roadStyles per state), PaperMap.tsx NodeMapSymbol + parchment layers, palette.ts RegionPalette shape, terrain.ts biomeGrid — deterministic, position-agnostic cartography that survives the open-sheet rewrite",
+  "phaser/src/ui/screens/overworld/NodeBeacon.tsx — 3-element node stack (offset sepia contact ellipse, disc + ink ring, sigil) and the nodePing ring-not-disc rule",
+  "phaser/src/ui/screens/overworld/overworld-band.css discipline (CSS keyframes only, animation-play-state pause, pose loops declared only under .is-traveling, translate3d/rotate only) — keep the technique even if the band itself is cut",
+  "phaser/src/ui/data/characters.ts — speaker registry with identity accents/shapes/sprites and hashed fallback",
+  "phaser/src/ui/strings.ts — GAME_TITLE 'Embermarch', GAME_TAGLINE, formatLocationName, formatSaveDate",
+  "phaser/src/ui/DevHud.tsx + window.__debug/__game/__openCheckEvent hooks + ?view= fast path — dev ergonomics that made the screenshot/Playwright loop work",
+  "phaser/electron/main.cjs — locked 1280×720 shell",
+  "phaser/public/fonts (self-hosted Cinzel + EB Garamond woff2 + fonts.css) and the index.html preload",
+  "phaser/tests/e2e/helpers.ts — fireMouse on the canvas + bootCombat seeding idiom",
+  "phaser/tools/map-builder.html + public/art/terrain/px autotile PNGs — the drawing-maps pipeline the board floor and BoardScene preload share"
+ ],
+ "drop": [
+  "The two-render-layer split itself (Phaser canvas board + React DOM HUD): the board is rectangles, sprites, tweens and hit circles on a 14×10 grid — rendering it in DOM/SVG (or drawing HUD on the same canvas) deletes boardPalette.ts, combatUiStore.ts, the synthesized Tab KeyboardEvent, the Esc defaultPrevented handshake, walkingUnits race guards, game.scale.refresh(), the permanently-mounted canvas host, BootScene/StrictMode bugs and the AI loop hiding in a Phaser scene",
+  "phaser/src/game/runtime/CombatRuntime.ts — 37-line POJO the scene news up and resets but never reads (unitViews lives on the scene); spec vestige",
+  "phaser/src/App.tsx battle-end orchestration (lines 166-245) and seeding callbacks living in a React effect/component — move to a framework-free game-flow controller; React should only render",
+  "onBattleRestart setView('title') + setTimeout(50) hack (App.tsx:350-355) — reseed explicitly",
+  "Duplicate run seeding: onNewGame and the ?view= effect both hand-roll 80g/5 food/starter party — one seedNewRun()",
+  "CombatHud.stories.tsx, CheckEventModal.stories.tsx, DialogueModal.stories.tsx + Storybook deps/config/storybook-static — 3 stories, unmaintained, not part of any gate",
+  "framer-motion dependency — in package.json, imported nowhere (ModeLabel explicitly avoided it)",
+  "ui/components/ListBox.tsx and Menu.tsx — stock-Tailwind wrappers exported from the barrel with zero consumers",
+  "ui/components/PartyChip.tsx — superseded by GameHud's roster; zero consumers; own HP thresholds/colours, native title= tooltip, stock palette",
+  "ui/screens/overworld/TerrainCanvas.tsx + terrain.ts decorationScatter/dualConfig + public/art/terrain dual-grid tiles and decoration PNGs — retired by the paper-map restyle, no consumer",
+  "roadStyle 'planned' state, OverworldRoads plannedEdgeKeys prop and the NO_EDGE_KEYS stable set; NodeBeacon 'planned' state and 'failed' progress — dead since click=go replaced plan-then-confirm",
+  "The three-region horizontal-strip overworld (BAND_H/SEAM/MAP_H layout, X-only camera with 775 bias, regionEdges gateway buttons, REGIONS/MAPS/ENCOUNTER_TABLES hand-imported per region, region palettes and baked 1536×512 backdrops, TravelBand/bandArt 1000+ lines) — owner decided ONE open-sheet 2-D map; don't rebuild the strip",
+  "Six copy-pasted ledger-page furniture sets (Sheet/Rule/Pins in PauseMenu, QuestLog, PartyLoadoutModal; PageSheet in SaveGameModal; inline in TitleScreen, TownScene, BattleEndModal) — one <LedgerPage> kit",
+  "Four HP-tier implementations (hpTier.ts canonical; CampScene hpFill/hpTextColor; GameHud hpFill/hpText; PartyChip) — one",
+  "Per-component inline <style> keyframe blocks (TownScene townEntryIn, DialogueModal, BattleEndModal, GameHud food pulse/pop, CharacterPortrait portraitBreath, Caravan caravanSettlePulse, NodeQuickActionMenu nodeMenuIn, OverworldScene overworldPulse) — centralize in index.css so the reduced-motion override covers them without [style*=] hacks",
+  "InnPanel heal = addGold(-cost) + recruitUnit(cloned unit at full HP) — abuses recruitUnit as an update; add a healParty action",
+  "BattleEndModal victory event hard-bound to classId.includes('bandit') -> 'interrogate_survivor' — key on the enemy group's authored victoryEvent",
+  "QuestLog QUEST_DESCRIPTIONS prose table and TavernPanel's literal 'Active quest: Blood Ties (in progress)' — quest names/stage text belong in quest JSON",
+  "OverworldScene hardcoded quest badge (mapId==='borderlands' && node.id==='pine_crossing' && no quests) and TownScene REGION_DISPLAY/TOWN_REGISTRY hand imports — data-driven",
+  "DungeonScene hardcoded 'smugglers_cave' / \"Smuggler's Cave\" HUD label / DUNGEON_DEFS with one entry while 5 dungeon JSONs exist",
+  "Heading.tsx baked `text-amber-100` — forces `!text-*` overrides in every page modal; Heading should take the ground's ramp",
+  "Stock-Tailwind colour residue: ForecastCombatantRow/MathRow/StatusRow/HpBar (amber-*/stone-*/red-*/emerald-*), CheckCandidatePicker, QuitModal, ErrorBoundary, TutorialOverlay amber-*, NodeBeacon ring-amber-500, Card text-stone-950/text-amber-100, GameHud ring-amber-700/50 — tokens only",
+  "Token names frozen by the boardPalette mirror (--color-parchment meaning 'text on this ground', --color-hearth, .hearth-glow, hearthFlicker inert keyframe, emberRise meaning dust) — with no mirror to protect, rename by role (--text-primary, --accent-brass, .daylight-wash)",
+  "App.tsx `<div id=\"react-shell\" />` — empty, unused",
+  "BoardScene GRID_W/GRID_H 14×10 constants with Math.min clamps and the `glow`/`koSkull` field names — the grid should come only from state",
+  "QuitModal + window.close() attempt — in the Electron shell use an IPC quit; in browser just return to title",
+  "tests/e2e visual snapshots tied to the strip overworld and every screen's exact pixels at tolerance 0.0005 — re-baseline against the rebuilt screens, don't port",
+  "Repo litter: phaser/dist, storybook-static, test-results, debug-storybook.log, dev-5174.log, electron-out.log, electron-err.log, tsconfig.tsbuildinfo — none belong in the tree",
+  "react-aria-components as the base for every button/dialog if the rebuild targets Electron only — it exists for keyboard/focus/portal correctness in a browser; keep the data-* state contract but consider a 200-line in-house Pressable/Modal"
+ ],
+ "risks": [
+  "Canvas detach P0 (commit 8b94151): rendering the Phaser host only while view==='combat' destroyed the canvas on the first exit and every later battle drew into a detached canvas — any canvas host must be mounted for the app lifetime",
+  "React StrictMode double-mount silently killed a Phaser BootScene delayedCall -> scene.start (commit f4a5a54); never gate boot on timers inside a scene",
+  "Store subscriptions fire SYNCHRONOUSLY inside dispatch: renderUnits snapped sprites to their destination before the effect drain could animate them (walkingUnits guard); an every-change VICTORY subscription re-dispatched fallenUnit on every store update (F-26/story 458) — always diff on phase transitions and sequence effects after state commits",
+  "Two owners of one input: Esc handled by both BoardScene (cancel) and App (pause) needed a defaultPrevented handshake; Tab danger-zone state owned by Phaser forced the React chip to synthesize a KeyboardEvent with keyCode 9 — keep every toggle in one store",
+  "react-aria overlays portal to document.body by default, which is OUTSIDE the transform-scaled stage: they render unscaled/viewport-relative unless UNSTABLE_portalContainer points at #game-stage",
+  "A CSS transform on the stage makes position:fixed resolve against the stage — fine here, but every fixed offset (top-36 right-4 etc.) is a stage coordinate, and window.inner* must never be used for layout math",
+  "Disabled <button>s swallow pointer events, so RAC hover never fires — disabled-reason tooltips need a role=button wrapper (TitleScreen Load, loadout Equip); missing role/tabIndex fired an ARIA warning every boot",
+  "react-aria stops mousedown before it reaches an ancestor pan handler: the overworld `moved` flag latched true after one pan and every node click was swallowed (commit 04074ee); a 3px drag threshold also swallowed jittery clicks (05e7ee4, now 8px) — separate pan and press gestures explicitly",
+  "Region gateways were plain <div>s with no handler, so Thornwood and the Iron Throne were unreachable and the run had no ending (04074ee) — every exit from a map must be a real pressable and E2E must reach the boss",
+  "Hop driver effects must depend on AND guard on every suspender (dialogue, quick menu, check event); missing the check-event dependency left the wagon 'traveling…' forever, and re-rolling a suspended hop from unchanged rngState reproduced the same encounter 34× (8b94151) — roll at most once per hop attempt and only bump edge traversal when the hop LANDS",
+  "Dungeon combat rooms used to eject the player to the overworld after every fight, making a multi-room crawl impossible (04074ee); the boss row was pushed twice into the graph (duplicate node) — flow after battle must be tag/context-aware",
+  "AP was never reset and every test resolved battles in one turn, so a P0 shipped (a58fe8d; lesson_multiturn_blindspot) — test 3+ full turn cycles and run a manual playtest before calling combat done",
+  "ForecastPanel Confirm once dispatched with createRng seed 0 instead of state.rng and broke replay determinism — every dispatch site must thread the combat RNG",
+  "Tailwind @theme colour utilities (text-hearth) bake the ROOT value and ignore the .page-canvas scope override — use var(--color-hearth) inline where a page scope must win; unlayered .btn-forged CSS outranks Tailwind utilities, forcing `!` overrides everywhere (put recipes in a @layer or drop Tailwind)",
+  "Muted text over the bottom ~15% of a page gradient measured 4.16:1 (fails AA) — page gradients stop at --canvas-mid; legendary rarity at 72% brass measured 3.30:1 on linen",
+  "Phaser pixelArt nearest sampling turned 1216px portrait renders into 1-in-25-pixel mush on 48px tiles — board sprites are pre-baked ÷8 with LINEAR filtering; sprite/portrait lookups must key on unit id, never display name (e157814 — enemies rendered on the ally disc when a stale class-fragment list decided team)",
+  "Seeder exceptions are swallowed with a diag warning and the view still flips to combat, silently starting the stub bandit battle instead of the authored one (App.tsx onDungeonCombat/onTravelToCombat) — fail loudly",
+  "Name-label wall, roster overlapping headings, legend under the pause button, node labels 80px right of their discs — every overlap was found only by screenshot audit (a58fe8d); the Iron Rule (render + look) is mandatory, no layout is done by reading code",
+  "The owner's 2026-08 decisions are settled: ONE open-sheet map (not the region strips), Field Ledger (no candle-lit glows, vignettes, flicker), balance tuned UP not down — do not re-litigate or re-candle",
+  "Port 5173 belongs to another app; Playwright reuses whatever serves :5183, so it can silently test the wrong app — pin and verify",
+  "No CI exists; `npm run verify` and the visual suite only run when someone runs them, and the visual suite was once masked into solid magenta blanks that could never fail",
+  "Ambient music was disabled by user feedback (MUSIC_ENABLED=false) — don't reintroduce a drone; SFX cues (hit/heal/victory/defeat) were kept"
+ ],
+ "numbers": [
+  "Stage: STAGE_W 1280, STAGE_H 720, scale = min(innerWidth/1280, innerHeight/720), letterbox #17110c, stage frame shadow '0 0 0 1px rgba(120,98,60,0.25), 0 24px 80px rgba(0,0,0,0.7)'; Phaser 1280×720 transparent pixelArt",
+  "Z order: GameHud z-60, CardHand z-10 inside HUD, HUD root z-100, InitiativeStrip/TopBar z-90, ForecastPanel/UnitDetailPanel z-95, PhaseBanner z-110, PauseButton z-120, dungeon legend z-70, Dialog overlay z-800, dungeon shop dialog z-200, DevHud z-99999; battle-end dialog opens ~250ms after phase flips; COMMAND_EXIT_MS 380, CARD_EXIT_STAGGER_MS 40",
+  "Board geometry: TILE 48 (unit chrome tuned here), TILE_MIN 40, TILE_MAX 96, HAND_TOP_Y 560, BAND_TOP 120, BAND_H = 560−120 = 440, BAND_MARGIN_X 40, BAND_PAD_Y 8; tileSize(w,h) = max(40, evenDown(min(96, floor((1280−80)/w), floor((440−16)/h)))) → 5×5 = 84px, 14×10 = 42px; gridOriginX = round((1280 − w·t)/2); gridOriginY = max(120, 120 + round((440 − h·t)/2)); standard grid 14×10, tutorial 5×5",
+  "Board chrome (× UNIT_K = tile/48): ally disc r16, enemy star 4 points inner 9 outer 17, rim stroke 2.5, sheen r5/r4 white 0.18, hit circle r22 alpha 0.001, name y −24 (−40 with sprite) Cinzel 11px stroke 3, HP well 36×6 at y+20, HP fill 32×4 origin(0,0.5) at x−16, sprite base ellipse 28×10 at y+14 alpha 0.45, sprite origin (0.5,0.82) scaled to tile/sourceHeight(152), active ring r23 alpha 0.22 stroke 2.5 @0.95, frame slab +36 offset y+10 alpha 0.3, frame +14 alpha 0.5 stroke 2 @0.8, tile rect TILE−2 stroke 1; per-tile checker +5/−3 and hash variance (h%7)−3",
+  "Board timings: walk STEP_MS 120 per tile, drag threshold 10px (unit) / 14px (card) / 8px (map pan), lunge = durationMs/2 yoyo, FloatDamage rises 40px over 600ms Quad.easeOut, HitFlash sprite alpha 0.4, enemy AI first dispatch 500ms, between moves 150ms, after animations 300ms, findMovePath buffer dx+dy+2 for AI",
+  "Overlay alphas: TILE_FILL_ALPHA 0.26, TILE_STROKE_ALPHA 0.5, MOVE_RANGE idle 0.42 / mode 0.72 / drag 0.95, CARD_TARGET 0.52 / hot 0.85 / edge 0.92 (stroke 1.25 → 2 hot), DANGER_UNION 0.72, HOVER 0.72, AOE fill 0.25 edge 0.8, damage preview 20px monospace at y−30, KO badge 18px bold at y−6 padding 5/1",
+  "Combat rules surfaced in UI: hand = deck.hand.slice(0,5); AP 3 per turn (ApPips max 3); one free move per turn; capture needs adjacency (manhattan 1) and hp < 50%, chance = clamp((1−hpFrac)×0.6+0.25, 0, 1); HP tiers warn ≤0.5 crit ≤0.25; initiative MAX_VISIBLE 8, portraits 54 active / 40 upcoming; ForecastPanel w-80 (320px) top-14 right-4; UnitDetailPanel w-[270px] top-36 right-4; Card w-24 h-36 (96×144) hover −translate-y-6 scale 1.05, pressed −4 / 1.02, selected −3; AP coin 28px at −6/−6; PhaseBanner 1300ms; ModeLabel transition 150ms; drag arrow #e8a93a width 3.5 dash '10 7' control point y−90 ring r7",
+  "Party placement: PARTY_SLOTS [[2,4],[2,5],[1,4],[1,5],[0,4],[0,5]] (max 6); group battle enemies x = 9 + (i%2), y = 3 + floor(i/2)×2, level = max(member.level, nodeLevel); dungeon enemies x = 12 + (i%2), y = 4 + floor(i/2); stub bandits (8,4),(8,5),(9,4); tutorial Roy (0,2) with iron_sword vs Bandit (4,2) hp 10 str 2 spd 1, floor ['0,2','1,2','2,2','3,2','4,2','1,3','2,1','3,1']; boss 'The Warlord' warlord lvl 7 hp 55 armor 6 spd 3 at (10,4) + 'Throne Guard' ×2 bandit lvl 5 hp 24 armor 2 at (9,3),(9,6), battleTag 'finalBoss'",
+  "Run economy in UI: New Game 80 gold + 5 food; Inn HEAL_COST_PER_UNIT 8g; Camp HEAL_PERCENT 0.2 for 1 food; dungeon rest 0.3, treasure +50g, event fallback +30g, shop 2 offers at buyPrice × (common 1.0 : 1.1); starvation 3 HP/unit per food-less hop; hover cost = hops food; ship plan §11 prices Common 50-120g, Uncommon 120-250g, Rare 300-500g, sell 50%, battle gold 10 + level×5 per enemy",
+  "Overworld (strip, superseded): BAND_H 264, SEAM_H 12, MAP_TOP 276, MAP_H 444, map width 2120 (node Y 70-380), camera clamp [1280−map.width, 0], centering 775 − node.x, HOP_DELAY_MS 700, MARKER_WALK_MS 600, arrival flash 1200ms, default edge rollChance 0.3, COOLDOWN_DAYS 3, cooldown = (pass===0 || daysSince>=3) ? 1 : max(0.25, daysSince/3); label box 160 (font 12, stroke 3px rgba(240,231,206,0.95)), label hidden if screenX<40 or >1240, clamp 86..1194, above/below by id hash parity; hover tip TIP_W 184; node Pressable 52px, disc 38, current ring 46, ping ring 38 → scale 2.1 over 2.4s stagger (charCode%7)×0.22; quick menu MENU_W 220, offsetX 36, offsetY −8, MAP_ZONE_H 444, estHeight 52 + 38·n, flip left when node.x+cameraX+256 > 1272; caravan settled at x−46/y−26, followers at f−0.1/f−0.19",
+  "Travel band (superseded content, keep technique): SILHOUETTE_TILE_W 640, BAND_DESIGN_H 264, MID_BASELINE 215, CARAVAN_X 400, rig 200×110 @0.85 ground y100, ROAD_BASELINE_FROM_BOTTOM 31, backdrops 1536×512 tiled mirror [img, flipX], far tile w = max(width, round(height×3)), far 8px/s (198s per 1584px), mid 30px/s (21.3s/640), ground 80px/s (8s/640), fog 55s/600px, wheel spin 1s, leg swing ±12° 0.7s, walker bob 1.5px, idle breath 2px/3s, lantern flicker 2.2s steps, ember 6s (−56,−150), region fade 600ms, arrival fade 2600ms; fog mix thornwood 20% else 30%, back row 45/55",
+  "Title: SHEET_W 820, sheet inset 26 top/bottom, ruling 35px masked 16-84%, margin rules at SHEET_W/2−52 and −56, pins 22px in at y 44, title text-6xl letter-spacing 0.16em weight 700, tagline 0.78rem tracking 0.58em, nav w-72 mt-14, 6 motes 2-3px at bottom 26%",
+  "Town: INDEX_W 272 (+12 padding), right page pt-[88px], mask fade 34→82px top / 96% bottom, ruling 33px, shop grid '1.75rem minmax(0,1fr) 3.25rem 5rem 5.75rem', inn grid 'minmax(0,1fr) 5.5rem 4.5rem', tavern grid 'minmax(0,1fr) 5rem 5.75rem'; GameHud roster w-60 (240px), resource plate top-4 centered",
+  "Dungeon: ROW_HEIGHT 78, COL_WIDTH 140, 4 columns, MAP_GUTTER 36, room 56px (left x−28 top y−28), curve bow min(36, len×0.18), Retreat at top-4 right-16, legend bottom-3 right-4",
+  "Modals: Pause w-[392px]; Save/Load w-[476px], max-h 70vh (load); QuestLog w-[540px] max-h 80vh; Loadout w-[860px] max-h 80vh, bag column w-[310px], slot well min-h 82; BattleEnd min-w 460 max-w 560 px-10 pt/pb-8, defeat grey #a8a49a at 14%, heading 400ms cubic-bezier(0.34,1.56,0.64,1), rise from 240ms step 60 (rows 40); Dialog center min-w 400 max-w 80vw; DialogueModal busts height 300 mb −8, name plate −top-4 left-52/right-52, text min-h 84 text-lg, typewriter 36 cps (hook default 30); CheckCandidatePicker min-w 320; QuitModal min-w 360; NUM_SLOTS 3",
+  "Fonts: --font-display \"Cinzel\", \"Trajan Pro\", \"Georgia\", serif; --font-body \"EB Garamond\", \"Georgia\", \"Times New Roman\", serif; --font-numeric ui-monospace, \"SFMono-Regular\", \"Cascadia Mono\", \"Consolas\", monospace",
+  "Palette (leather ground): --color-hearth #d9a93f; --color-hearth-soft #b8862b; --color-ember #9a2c22; --color-ink #2a2119; --color-ash #17110c; --color-parchment #f1e9d8; --color-parchment-dim #d5c8ad; --color-text-muted #b3a68e; --color-damage-text #e8806c; --color-ally #3f628a; --color-enemy #a6432f; gems attack #b8402c arcane #7d63c4 ward #4a8f6a focus #c9932f; --hp-ok #5d7a33 warn #bd7d20 crit #9a2c22 crit-text #e8806c; --iron-900 #1c140d, -800 #2b1e14, -700 #6a4b2f, --iron-edge #b08a3e; --canvas-base #e7dec9, -mid #ddd2b8, -deep #cbbc9c, --canvas-rule rgba(42,33,25,0.28)",
+  "Page scope overrides (.page-canvas/.surface-parchment): parchment #2a2119 (11.8:1 base / 10.5:1 mid), parchment-dim #57493a (6.5/5.8/4.6 deep), text-muted #5e5040 (5.8/5.2), hearth + hearth-soft #6e4705 (6.1/5.5), damage-text + hp-crit-text #9a2c22 (5.7/5.1), hp-warn #6e4705, hp-ok #445b24 (5.7/5.1); chrome scope re-asserts #f1e9d8 / #d5c8ad / #b3a68e / #d9a93f / #c99a33 / #e8806c / #e8806c / #d9a93f / #7ba33f; raw brass on canvas ≈3.2:1 (never small text)",
+  "Identity ramp: --id-gold mix(hearth-soft 62%, parchment-dim); --id-steel mix(ally 66%, parchment-dim); --id-rose mix(ember 40%, parchment); --id-moss mix(gem-ward 62%, parchment-dim); --id-arcane mix(gem-arcane 60%, parchment-dim); --id-ember mix(ember 55%, parchment-dim); --id-slate mix(ally 22%, text-muted); --id-wine mix(ember 55%, gem-arcane); portrait fill mix(accent 26%, ink), border mix(accent 70%, transparent), ring mix(accent 55%, transparent)",
+  "Motion: --dur-instant 90ms, --dur-quick 160ms, --dur-move 260ms, --dur-settle 420ms (all 1ms under reduced motion); --ease-out-quart cubic-bezier(0.165,0.84,0.44,1); --ease-out-expo cubic-bezier(0.16,1,0.3,1); --ease-impact cubic-bezier(0.34,1.3,0.64,1); exit easing cubic-bezier(0.32,0,0.67,0); phaseBanner 1.3s; fogDriftSlow 90s (600,200) / fogDriftFast 60s (−800,−300); roadDash 0.85s −24; roadComet 1.1s −220 dash '14 9999'; nodePing 0.7→2.1 scale; emberRise −96px, --ember-drift default 10px; portraitBreath 2.5s scale 1.03; hudFoodPulse 800ms; townEntryIn 6px",
+  "Materials: --bevel-iron 'inset 0 1px 0 rgba(214,178,108,0.26), inset 0 −2px 5px rgba(0,0,0,0.5), 0 3px 8px rgba(0,0,0,0.42)'; rivet radial circle 2.6px at 8px corners #e6c887 → iron-edge 52% → rgba(0,0,0,0.55) 76% → transparent 79%; --elevation-flat 0 1px 2px rgba(30,20,10,0.28), -raised 0 3px 10px rgba(30,20,10,0.3), -float 0 14px 34px rgba(20,13,6,0.5); --focus-ring 0 0 0 2px var(--color-ash), 0 0 0 4px var(--color-hearth); --radius-sm 2px, -md 4px, -lg 6px; --key-light-dx 3px, --key-light-dy 4px; --threat mix(ember 26%) / --threat-edge 62%; --reach mix(ally 24%) / --reach-edge 60%; brass pin radial 'circle at 36% 32%, #f0d79a 0%, var(--iron-edge) 52%, #6d5218 100%'; ink rules rgba(42,33,25,0.46/0.22/0.18) and INK_RULE mix(ink 24%) / INK_RULE_STRONG mix(ink 52%); .btn-forged text-transform uppercase, letter-spacing 0.1em, weight 600, 0.8rem; .btn-prose 0.95rem weight 500 0.01em; disabled opacity 0.52 saturate 0.35",
+  "Combat backdrop DOM layers: 'linear-gradient(to bottom, #33261a 0%, #241a11 52%, #191209 100%)', SVG noise 220px baseFrequency 1.0 numOctaves 2 at opacity 0.20 overlay, daylight wash 'rgba(255,248,228,0.05) 0% → transparent 26% → rgba(24,17,10,0.32) 100%'; camp ground mix(iron-700 46%, iron-900) → iron-800 48% → iron-900; dungeon ground mix(iron-700 30%) → iron-900 34% → mix(ash 70%, iron-900) 72% → ash",
+  "Electron: width 1280, height 720, useContentSize true, backgroundColor '#050403', URL FEMB_URL || 'http://localhost:5183/'; Vite strictPort 5183; Playwright snapshot tolerance 0.0005; DevHud 360×320 poll 500ms, last 5 errors / 10 events / 10 actions; diag ring buffer 500 entries",
+  "Copy worth keeping verbatim: GAME_TITLE 'Embermarch', GAME_TAGLINE 'a tactical roguelite', 'steel remembers', 'No chronicle yet — forge a new one.', 'No saved games yet — the chronicle is unwritten.', 'the world holds its breath', 'nothing to save outside a campaign', 'Unsaved progress will be lost — the march ends here.', 'Overwrite this chronicle?', 'three folios — choose the line to write on', 'No work on the books.' / 'Taverns post jobs on the notice board — ask around.', 'hands and bag, as issued', 'Lost for good. The company marches lighter.', 'The field is yours. The road goes on.', 'Your party has fallen. The road claims another company.', 'The Warlord is defeated. The frontier is crossed.', 'Challenge the Iron Throne', 'Kit spread on the grass, horses picketed. The road waits.', tavern name 'The Drunken Boar', 'Black-Market Stall' / 'A hooded smuggler nudges a few items toward you.'"
+ ]
+}

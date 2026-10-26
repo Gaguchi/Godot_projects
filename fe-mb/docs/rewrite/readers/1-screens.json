@@ -1,0 +1,403 @@
+{
+ "summary": "327 commits on feature/phase1-equipment-cards (HEAD 04074ee, 2026-08-29); the phaser/ tree is 22,094 src TS/TSX lines in 258 files, of which 12,291 lines (56%) are React UI, with four monoliths over 600 lines (BoardScene.ts 1240, OverworldScene.tsx 970, combatReducer.ts 779, runStore.ts 684, App.tsx 627). Beta-0.1 (2026-07-06) shipped with 527 unit + 22 e2e tests green and was still unplayable: AP never reset (a58fe8d), the board went black from battle 2 (8b94151), and a 2026-08-28/29 full-run playtest found nine more P1s across combat, overworld, dungeon and persistence — the dominant failure class in this history is \"designed, declared, never called\" plumbing (eventBus had zero emitters for 3 months, captureTargets read by nothing, seedDungeonBattle dead code, InitiativeStrip specced but never built, save fields serialized but stripped on load) and \"tests that cannot fail\" (single-turn harnesses, visual snapshots masked to solid magenta, a full-hydration test that bypassed the real load path). Balance story 475 sat open two months on sim numbers (0% win / 90-100% stalemate) that were entirely engine bugs — corpse shadowing, melee AI stall, dungeon party never positioned — and once fixed the game wins 100% in 2-6 turns even gearless, so the standing direction is tune THREAT UP and treat any sim stalemate as an engine smoke alarm. The owner has settled, via the question picker, three forks that must not be re-litigated: ONE open-sheet 25-40 node 2-D map with hub towns (not three chained west-march strips), FIELD LEDGER UI (daylight linen page + saddle-leather field; candle-lit grimdark and Banner & Rope / Campaign Map rejected), and engine-gaps-first (done). Game-design decisions locked in docs/superpowers/specs/2026-03-29-ship-plan-design.md and memory design_decisions_core: deterministic card combat (capture is the sole RNG roll), gear-IS-the-deck via two hand slots, no morale, no auto-heals, weapon triangle / sharpness / quick slots / blacksmith cut, enemies use authored AI not cards, permadeath. Narrative truth is docs/worldbuilding/story-bible.md (M&B free mercenary company, dragon-egg spine, Corwin Vale / Mercer Kaine / Bagrat \"Oak\"), built turn-by-turn with the owner — generated creative docs were explicitly rejected. There is UNCOMMITTED work on disk dated 2026-09-04 (drawing-maps skill, autotile.ts, boardFloor.ts, map-tool.ts, bake-board-sprites.ts, board render fixes in 12 modified files) that a scorched-earth rebuild would lose. The rebuilder's real inheritance is the pure-systems layer, the content JSON, the Field Ledger tokens, the ComfyUI sprite pipeline, the headless CLI concept, and a short list of regression tests that encode every shipped bug.",
+ "requirements": [
+  {
+   "id": "H-01",
+   "text": "Every turn/round loop must have ONE test that runs 3+ FULL cycles and asserts restoration invariants each cycle: AP back to AP_PER_TURN, hand refilled to HAND_SIZE, discard reshuffled into draw with zero card loss, statuses expire. Single-transition tests shipped a P0.",
+   "source": "memory lesson_multiturn_blindspot.md; commit a58fe8d; phaser/tests/unit/systems/combatReducer.gear.test.ts:272 ('endTurn: turn-start restoration')",
+   "priority": "must"
+  },
+  {
+   "id": "H-02",
+   "text": "Before tuning any number against a sim, reproduce one battle by hand and confirm damage lands, enemies close, and both sides are on the board. A 100%-stalemate sim result is an engine bug until proven otherwise; the sim AI is a floor, validate against manual play.",
+   "source": "memory lesson_balance_inverted.md; docs/research/balance-rebaseline-2026-08-28.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-03",
+   "text": "Balance direction is UP on enemy threat (HP, pack size, burst), NOT up on party power. Post-fix baseline is 100% win in 2-6 turns everywhere including the boss, gearless. Targets: stub w/ starters 55-75% win, boss w/ epic+ 40-60%, 0% stalemates, 4-10 turns.",
+   "source": "docs/research/balance-rebaseline-2026-08-28.md §Reading; memory lesson_balance_inverted.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-04",
+   "text": "Target resolution must require a LIVING unit at the tile. A live enemy standing on a corpse was immune to every single-target card.",
+   "source": "commit f4c4bef; phaser/tests/unit/systems/combatReducer.p1fixes.test.ts:37",
+   "priority": "must"
+  },
+  {
+   "id": "H-05",
+   "text": "Melee AI approach must path around blockers (BFS distance field from destination), never axis-greedy stepToward. One party unit on the sole approach tile froze enemies into bare endTurns forever — the sim's dominant 'stalemate'.",
+   "source": "commit f4c4bef; phaser/src/systems/enemyAI.ts",
+   "priority": "must"
+  },
+  {
+   "id": "H-06",
+   "text": "Every battle seeder must place the party on the board. Run-store units carry position:null; seedDungeonBattle skipped placement so all dungeon rooms soft-locked at the turn cap.",
+   "source": "commit f4c4bef; phaser/src/game/scenes/seedDungeonBattle.ts",
+   "priority": "must"
+  },
+  {
+   "id": "H-07",
+   "text": "A 1-turn self-buff (taunt/riposte/cover) played on the unit's own turn must survive the following enemy phase (ActiveStatus.fresh exemption). Otherwise every such card pays AP for nothing.",
+   "source": "commit f4c4bef; combatReducer.p1fixes.test.ts:53",
+   "priority": "must"
+  },
+  {
+   "id": "H-08",
+   "text": "Team membership is an explicit Unit.team field with ONE helper (systems/team.ts). Never a classId/name substring heuristic and never duplicated per view — 5 of 9 enemy groups rendered as allies, capture was silently bandit-only, and the CLI renderer kept its own stale list.",
+   "source": "commits 976a4ea, f4c4bef; phaser/CONTEXT.md §11 'Team detection'",
+   "priority": "must"
+  },
+  {
+   "id": "H-09",
+   "text": "Unit identity (sprites, portraits, capture, quest predicates) keys on unit id, never display name. Capture sets a flag, never mutates the name. Renames must be data-only.",
+   "source": "commit e157814; memory project_cast_long_carry.md; phaser/src/data/unitSprites.ts",
+   "priority": "must"
+  },
+  {
+   "id": "H-10",
+   "text": "The game canvas container must be permanently mounted and visibility-toggled, never conditionally rendered per view. Unmounting detached the Phaser canvas and every battle after the first drew into a void.",
+   "source": "commit 8b94151; phaser/tests/e2e/second-battle-board.spec.ts",
+   "priority": "must"
+  },
+  {
+   "id": "H-11",
+   "text": "Hop/travel driver rules: roll an encounter at most ONCE per hop (a retried hop re-rolled the same event 34x); the resume effect must depend on EVERY modal that can pause it (check events, dialogue, quick menu); commitTravel must close any open quick menu; per-map UI state resets on mapId change.",
+   "source": "commit 8b94151; memory project_overworld_grounding.md; commit 05e7ee4",
+   "priority": "must"
+  },
+  {
+   "id": "H-12",
+   "text": "Hop RNG must advance between crossings of the same road (edgeTraversals count in the rng label, bumped only when a hop LANDS, 3-day cooldown). Otherwise a road re-rolls the same encounter all run.",
+   "source": "commit c1304c4; phaser/CONTEXT.md §3 recordEdgeTraversal",
+   "priority": "must"
+  },
+  {
+   "id": "H-13",
+   "text": "Save round-trip test must go through the REAL load path (serialize → buildSaveFile → saveToString → loadFromString). Zod strips undeclared keys, so any field serialized but missing from the load schema is silently dropped (daysElapsed, runStats, oneShotsFired were).",
+   "source": "commit f120373; phaser/tests/unit/persistence/fullHydration.test.ts:80",
+   "priority": "must"
+  },
+  {
+   "id": "H-14",
+   "text": "No 'declared, never called' plumbing. Any bus, listener table, or contract field must have a real emitter/reader in the same commit or must not exist. eventBus had ZERO emit call sites for ~3 months; captureTargets was in the domain type + Zod schema and read by nothing.",
+   "source": "commit c1304c4; memory project_direction_decisions_2026_08.md §1",
+   "priority": "must"
+  },
+  {
+   "id": "H-15",
+   "text": "Every navigational affordance is a real pressable whose hit RECT covers its visual (react-aria cancels a press released outside the element rect). The region gateway was a plain div for months; an overhanging building sprite over a 48px dot was unclickable.",
+   "source": "commit 04074ee; memory lesson_ui_input_layering.md 'React Aria press-rect gotcha'",
+   "priority": "must"
+  },
+  {
+   "id": "H-16",
+   "text": "Pan-vs-click gating must reset after the gesture's own click (macrotask), not only on the pan path, so a single drag cannot latch every later node click closed.",
+   "source": "commit 04074ee",
+   "priority": "must"
+  },
+  {
+   "id": "H-17",
+   "text": "Victory inside a dungeon returns to the dungeon (boss room clears activeDungeon first); never eject to the world map mid-crawl.",
+   "source": "commit 04074ee",
+   "priority": "must"
+  },
+  {
+   "id": "H-18",
+   "text": "Generated graphs must have unique node ids (dungeon boss room was built by the column scan AND pushed again). Quest display tables must fall back to the quest registry so a missing entry can never lose the quest's identity.",
+   "source": "commit 04074ee",
+   "priority": "should"
+  },
+  {
+   "id": "H-19",
+   "text": "Combat must engage on turn 1: enemies spawn within one move+attack of the party (bandits at col 8-9 vs party col 0-2 on a 14-wide grid). An 11-tile gap read as 'combat is broken'.",
+   "source": "commit 94bb909",
+   "priority": "must"
+  },
+  {
+   "id": "H-20",
+   "text": "Clicking the current node re-enters its scene (town/camp/dungeon) with no hop and no food cost. Drag threshold 8px, not 3px.",
+   "source": "commit 05e7ee4",
+   "priority": "must"
+  },
+  {
+   "id": "H-21",
+   "text": "Overworld travel is click-to-go: one click on a node travels immediately, auto-pathing intermediate stops; hover shows hop/food cost. The plan-then-confirm itinerary bar was removed because it read as 'points aren't clickable'.",
+   "source": "memory project_overworld_grounding.md; docs/superpowers/specs/2026-06-12-overworld-splitview-design.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-22",
+   "text": "All randomness threads through an RNG parameter with hierarchical deriveRng(parent,label); Math.random lint-banned; replay from action log must be deterministic (ForecastPanel once used a hardcoded seed-0 stream and broke replay).",
+   "source": "phaser/CONTEXT.md §5; commits e8de989, f4c4bef",
+   "priority": "must"
+  },
+  {
+   "id": "H-23",
+   "text": "The pure reducer is the authority for legality (moveUnit validates bounds + occupancy); views never gate rules. Pure systems never mutate inputs; copy arrays at every boundary (.slice()/[...arr]) — the Godot deck evaporated through one shared hand array.",
+   "source": "commit f4c4bef; memory lesson_shared_arrays.md; phaser/CONTEXT.md §11",
+   "priority": "must"
+  },
+  {
+   "id": "H-24",
+   "text": "UI lives in DOM; the canvas renders board things only (tiles, units, in-world animations, spatial pickers). Adding a button/menu to canvas reopens the rex-ui-clone trap. HUD overlay is pointer-events-none with pointer-events-auto children.",
+   "source": "docs/superpowers/specs/2026-05-09-ui-input-overhaul-design.md §'Architectural decision' + 'Component cutoff'; memory lesson_ui_input_layering.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-25",
+   "text": "Fixed 1280×720 authored stage, uniformly transform-scaled and letterboxed; all overlays/modals/tooltips portal INTO the stage (react-aria defaults to document.body and rendered unscaled); layout math uses STAGE_W/H not window.inner*.",
+   "source": "phaser/CONTEXT.md §1 1b; commit f37b10c; memory project_ui_forged_and_lit.md 'Fixed stage'",
+   "priority": "must"
+  },
+  {
+   "id": "H-26",
+   "text": "Esc that cancels a selection must not also open the pause menu; battle end must retire the command chrome and NAME THE FALLEN (permadeath had zero acknowledgement).",
+   "source": "commits f4c4bef, 1f78a3c",
+   "priority": "should"
+  },
+  {
+   "id": "H-27",
+   "text": "Visual snapshot tests must be provably able to fail: no full-stage masks, tolerance 0.0005 (at 0.02 the suite could not see the accent colour change), and a deliberate token change must red the suite.",
+   "source": "commit 7aaadf4; phaser/.claude/CLAUDE.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-28",
+   "text": "Dev server pinned to a non-default port with strictPort (5183; :5173 belongs to another app on this machine); Electron/desktop URL and docs must match; Playwright reuseExistingServer must never silently test a foreign app (PW_BASE_URL override).",
+   "source": "memory lesson_port_5173_collision.md; commit 947559f",
+   "priority": "must"
+  },
+  {
+   "id": "H-29",
+   "text": "Content validation (Zod over all content JSON) must actually run at boot, not only in tests. The old validateContent was called from tests only despite the invariant.",
+   "source": "phaser/CONTEXT.md §9 note on data/load.ts",
+   "priority": "should"
+  },
+  {
+   "id": "H-30",
+   "text": "Combat is deterministic: no hit/miss/crit; card damage = card.damage + STR (or MAG) − floor(DEF/2) (or RES/2) − terrain, min 0. Capture is the SOLE RNG roll. Enemies use authored role AI (rusher/archer/healer/tank), not cards.",
+   "source": "docs/superpowers/specs/2026-03-29-ship-plan-design.md §1 Design Rules, §2 Damage Formula; memory design_decisions_core.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-31",
+   "text": "Gear IS the deck: deck = innate class cards (4-5) + left hand (3-4) + right hand (3-4); 2H weapon in left locks right; quivers modify bow cards and contribute none; no mid-combat swaps; cards carry a source tag.",
+   "source": "ship-plan-design.md §2-3, §8; phaser/src/systems/deckBuilder.ts, equipment.ts",
+   "priority": "must"
+  },
+  {
+   "id": "H-32",
+   "text": "Deck cycles Slay-the-Spire style: all cards start in draw, deal HAND_SIZE, ending unit discards whole hand, next draws to HAND_SIZE, reshuffle discard when dry. Pre-cycling every fight stalemated with empty hands.",
+   "source": "commit 976a4ea; phaser/CONTEXT.md §1 item 4",
+   "priority": "must"
+  },
+  {
+   "id": "H-33",
+   "text": "Two-phase turn: one free move per unit per turn (no AP), then AP_PER_TURN of card plays; capture costs 2 AP.",
+   "source": "commit 4435352; memory design_decisions_core.md §Combat",
+   "priority": "must"
+  },
+  {
+   "id": "H-34",
+   "text": "CUT and do not reintroduce: morale, auto-heals, weapon triangle, weapon sharpness, quick slots, blacksmith, whetstone, camp sharpen, BATTLE/EVENT map node types. Healing is a player choice (Inn costs gold, camp/rest costs food).",
+   "source": "ship-plan-design.md §10 Systems Removed; memory design_decisions_core.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-35",
+   "text": "Map model is ONE open sheet: a single contiguous 25-40 node 2-D world with hub towns, omnidirectional travel (M&B-style), replacing the three chained west-march region strips. Rejected alternatives: cheap backtracking, cycle-of-realms. Do not re-propose.",
+   "source": "memory project_direction_decisions_2026_08.md §2; docs/worldbuilding/story-bible.md Pillars",
+   "priority": "must"
+  },
+  {
+   "id": "H-36",
+   "text": "Before building the overworld, resolve the recorded tension: omnidirectional sandbox vs the node-map + food-per-hop economy that assumes directed travel. Keep the travel-risk model (more hops = more encounter rolls + more food) but not a one-way march; difficulty must not key on region tier → level band alone.",
+   "source": "memory design_decisions_core.md 'Open design questions'; story-bible.md 'Open forks'; project_direction_decisions_2026_08.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-37",
+   "text": "UI tone is FIELD LEDGER: quartermaster's ledger and camp table in daylight. PAGE (linen canvas, walnut ink, brass pins) for information screens; FIELD (saddle leather + brass over dark earth) for combat. Canvas = read, leather = act; one primary per view; nothing glows. Candle-lit / Forged & Lit look is rejected; the token SYSTEM survives.",
+   "source": "docs/superpowers/specs/2026-08-28-ui-retheme-field-ledger-design.md §1-3; memory feedback_ui_direction_candlelit_out.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-38",
+   "text": "No player-facing UI change is done until it has been screenshotted rendered and swept against the amateur-signals checklist (Iron Rule). The beta UI shipped 'artificial and amateurish' because no step looked at the screen.",
+   "source": "memory project_game_ui_skill.md; .claude/skills/crafting-game-ui/SKILL.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-39",
+   "text": "Map work: the model emits a structured plan (ASCII route sketch), code does tiling/autotiling/lint, then render and look. Rules: critical path first, no one-tile passages, enemies 2-3× player units placed per 'where the player is on turn N'.",
+   "source": "memory project_drawing_maps_skill.md, reference_map_design_resources.md; .claude/skills/drawing-maps/SKILL.md (UNCOMMITTED)",
+   "priority": "should"
+  },
+  {
+   "id": "H-40",
+   "text": "Character art comes from the local ComfyUI pipeline in the Fire-Emblem look (vibrant heroic anime-fantasy pixel sprites); the muted GoT restyle and the procedural pixel toolkit were rejected for characters. Board sprites are pre-baked ÷8 with LINEAR filtering (nearest-downscaling 1216px PNGs was the pixelated-characters bug).",
+   "source": "memory reference_comfyui_sprite_pipeline.md; phaser/CONTEXT.md §8 data/unitSprites.ts",
+   "priority": "should"
+  },
+  {
+   "id": "H-41",
+   "text": "Story pillars are locked and not up for re-pitching: grounded M&B mercenary company; dragons the one fantastical element, extinct ~300 years; player-named foundling MC; BG3-style companions recruited via quests (NOT tavern shop-row hires); Corwin Vale killed by Mercer Kaine over the dragon egg; Kaine is the final boss with a three-act escalation ladder; Bagrat 'Oak' is the first companion with Genatsvale (first blow aimed at an adjacent ally lands on him, per ally per turn).",
+   "source": "docs/worldbuilding/story-bible.md (locked sections); memory project_story_bible_direction.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-42",
+   "text": "Creative direction (story/world/characters/tone) is built turn-by-turn with the owner as sketches; never deliver a finished generated creative doc; the bible records only (locked) decisions. Choices go through the AskUserQuestion picker, never prose 'X or Y?'. Implementation is autonomous — stop only for a concrete artifact or a genuine fork.",
+   "source": "memory feedback_creative_collaboration.md, feedback_use_question_tool.md, feedback_autonomous_execution.md",
+   "priority": "must"
+  },
+  {
+   "id": "H-43",
+   "text": "FE6 placeholder names (Roy/Marcus/Lilina) and the title 'Embermarch' are provisional; the rename waits for the owner and must be a content edit.",
+   "source": "memory project_story_bible_direction.md 'Naming / code status'",
+   "priority": "should"
+  },
+  {
+   "id": "H-44",
+   "text": "Difficulty scales by map position, not party levels (party power = gear): enemy level band per tier, +2 HP/level, +1 str/def every 2 levels, +1 skl/spd/res every 3; loot rarity keys off the same level.",
+   "source": "phaser/src/systems/difficulty.ts; ship-plan-design.md §12 Difficulty Scaling",
+   "priority": "should"
+  },
+  {
+   "id": "H-45",
+   "text": "Save/load is atomic (parse → alias → Zod → swap stores in one batch); validation failure returns to title, never half-loaded. Pre-alpha policy: schema changes nuke saves with a loud warning; track saveVersion, no migration ladder yet.",
+   "source": "phaser/CONTEXT.md §11 'Save-load is atomic', 'Pre-alpha save policy'",
+   "priority": "should"
+  },
+  {
+   "id": "H-46",
+   "text": "Manual playtest of a FULL run (title → tutorial → map → dungeon → boss → win/lose) before any build is called a beta. Two rounds of 'all green' harnesses preceded unfinishable builds.",
+   "source": "memory lesson_multiturn_blindspot.md; commits a58fe8d, 04074ee",
+   "priority": "must"
+  },
+  {
+   "id": "H-47",
+   "text": "Kill background node/tsx process TREES on Windows (Get-CimInstance … Stop-Process), not just the wrapper; orphans contend for the GPU/ports.",
+   "source": "memory lesson_taskstop_orphans.md",
+   "priority": "could"
+  }
+ ],
+ "keep": [
+  "phaser/src/systems/combatReducer.ts — the reducer over a CombatEvent union returning {state, effects}, WITH the p1 fixes (living-unit targeting, fresh buffs, DrawCards gainAp, moveUnit validation); port the logic, not the 779-line file",
+  "phaser/tests/unit/systems/combatReducer.gear.test.ts:272 ('endTurn: turn-start restoration') and :311 (multi-round reshuffle) — the multi-turn regression tests; port verbatim as the first tests of the new reducer",
+  "phaser/tests/unit/systems/combatReducer.p1fixes.test.ts — corpse shadowing, fresh self-buffs, gainAp, board validation",
+  "phaser/tests/unit/persistence/fullHydration.test.ts:80 — the real-load-path round-trip test (the only one that catches Zod strip)",
+  "phaser/tests/e2e/second-battle-board.spec.ts and journey.spec.ts — the two e2e specs that encode real shipped P0s (detached canvas; full-run completability)",
+  "phaser/src/systems/rng.ts (Mulberry32 + deriveRng(parent,label)) + the ESLint Math.random ban (phaser/eslint.config.js) — replay determinism worked from day one",
+  "phaser/src/systems/predicates.ts + phaser/src/data/schemas/predicate.ts — declarative Predicate AST (flag/questStage/partyHas/hasItem/goldAtLeast/visited/cleared/allOf/anyOf/not) that round-trips through save; one evaluator for quests, dialogue, map gates, shops",
+  "phaser/src/systems/capture.ts — capture formula: (1−hp%)×0.6 + 0.25/adjacent attacker + 0.15 bounty hunter, cap 1.0",
+  "phaser/src/systems/difficulty.ts — enemyLevelFor + scaleEnemyForLevel gear-pace curve (rewire the tier lookup for the open sheet)",
+  "phaser/src/systems/enemyAI.ts — role-based planTurn (rusher/archer/healer/tank) with the BFS stepToward, taunt lock-on, aoeRadius sweep; and phaser/src/data/content/enemyAI/*.json",
+  "phaser/src/systems/team.ts — isEnemyUnit over explicit Unit.team",
+  "phaser/src/systems/equipment.ts (planEquip/planUnequip dry-run plans, BAG 8×4, 2H lock) + phaser/src/systems/deckBuilder.ts (innate + gear cards, source tags, quiver cardMods)",
+  "phaser/src/systems/statusEffects.ts + effectPipeline.ts — deterministic poison (non-stacking, ignores armor) / burn (stacking, magic split) / slow / immobilize / empower; 6-stage middleware order source-mod → target-mod → terrain → card → armor → clamp",
+  "phaser/src/systems/targeting.ts — manhattan range, AOE coverage with obstacle exclusion, tilesReachable 4-dir BFS",
+  "phaser/src/systems/captureTargets.ts + state/questEngine.ts settleQuests (bounded fixed-point, 8 passes) — the finally-wired quest/capture resolution",
+  "phaser/src/data/content/**/*.json (68 files): items.json (49 items) + cards.json (161 cards), 9 enemy groups, 5 towns, 5 dungeons, 14 dialogue trees, 2 quests (sq_blood_ties, sq_missing_caravan), 3 encounter tables, classes.json — authored per ship-plan §7 detail tables; deviations logged in docs/research/gear-content-deviations.md",
+  "phaser/src/domain/*.ts branded IDs + Zod mirrors in phaser/src/data/schemas/ — keep the shape, drop the drift-checker ceremony",
+  "phaser/src/index.css Field Ledger token block (@theme + :root + .page-canvas scope) and phaser/src/game/boardPalette.ts (numeric mirror; the only canvas colour module) — the retheme is DONE in tokens, wave 1+2 landed",
+  "phaser/public/fonts/ (self-hosted Cinzel + EB Garamond woff2 + fonts.css) — type voice: Cinzel display, EB Garamond body, tabular numerals for numbers only",
+  "phaser/public/sprites/units/*.png (ComfyUI cast + 6 enemy sprites) and public/sprites/units/board/ (÷8 bakes, UNCOMMITTED) + phaser/scripts/cli/comfy-gen.ts, comfy/template.workflow.json, cutout.ts, sprite-lab.ts — the only art pipeline that met the owner's bar",
+  "phaser/src/systems/autotile.ts (47-case blob autotiler, verified against a Python reference) + boardFloor.ts + scripts/cli/map-tool.ts + tools/map-builder.html + .claude/skills/drawing-maps/ — ALL UNCOMMITTED as of 2026-09-04; copy off disk before any reset",
+  "phaser/src/domain/boardGeometry.ts — tileSize(w,h) per-battle pitch (TILE 48, min 40, max 96, BAND_TOP 120; 5×5→84px, 14×10→42px), gridOrigin, clientToStage, tileAtStagePoint",
+  "phaser/src/ui/GameStage.tsx + ui/stage.ts (fixed 1280×720 transform-scaled stage, stagePortalContainer) — small and correct",
+  "phaser/scripts/cli/{play.ts,combat.ts,render.ts} — headless REPL / autobattle / --report matrix / --loadout / --scenario boss over the REAL stores; the concept and the golden scenario test tests/unit/scenarios/combat.scenario.test.ts",
+  "phaser/src/persistence/saveSlots.ts — 3-slot localStorage manager with sidecar meta; and the atomic hydrate pattern in persistence/load.ts",
+  "phaser/src/audio/engine.ts — WebAudio synth SFX with no asset files (keep SFX, keep MUSIC_ENABLED=false)",
+  ".claude/skills/crafting-game-ui/ (SKILL.md, signals.md, juice.md, genre-grammar.md, materials.md, project-hooks.md) — the Iron Rule; refresh project-hooks for the new tree",
+  "docs/worldbuilding/story-bible.md — the narrative source of truth (locked/proposed markers)",
+  "docs/superpowers/specs/2026-03-29-ship-plan-design.md — authoritative game design (§1-§12); note §7 summary table (39) contradicts its detail tables (46) — the detail tables shipped",
+  "docs/superpowers/specs/2026-08-28-ui-retheme-field-ledger-design.md — binding UI spec",
+  "docs/research/balance-rebaseline-2026-08-28.md, balance-baseline-2026-07-06.md, enemy-scaling-curves.md, stat-growth-math.md, sts-procgen.md, roguelite-rng.md, recruitment-cost.md, fe_ai_logic.md, godot-quest-audit.md — research already paid for",
+  "memory game_ui_design_guide.md — show outcomes not components; only actionable info; never block input on animation"
+ ],
+ "drop": [
+  "The three-region strip overworld (phaser/src/data/content/maps borderlands/thornwood/ashfall, 46 nodes, region gateways, difficulty tier-by-region, ungated exit node) — superseded by the owner's one open-sheet decision; only the undirected graph walker (overworldPath BFS) is reusable",
+  "phaser/src/ui/screens/OverworldScene.tsx (970 lines, 13 useEffects) — the hop driver produced three distinct soft-lock modes (quick-menu pause, check-event resume, retried-hop re-roll) and the pan-latch bug; rebuild travel as a small explicit state machine in a store, not effects",
+  "phaser/src/ui/screens/overworld/TravelBand.tsx + bandArt.ts + overworld-band.css + Caravan.tsx (~1000+ lines of CSS-keyframe side-view vista) — authored for a west-march strip (.is-westward) and three baked region vistas; the owner liked the band+map composition, so keep the IDEA at a fraction of the code",
+  "phaser/src/game/scenes/BoardScene.ts (1240 lines) — monolith mixing render, drag-to-target, move phase, hover/danger overlays, sprite depth sort; split into board render + input adapters and keep the CombatRuntime POJO firewall",
+  "Storybook (storybook-static/, .storybook, stories, debug-storybook.log) — added 2026-05-10, never mentioned again in any lesson or fix",
+  "RALPH_PROGRESS.md, docs/superpowers/plans/*loop-prompt.md, and the ~20 'chore(ralph): sha record' commits — process debris from the autonomous loop; historical only",
+  "The three-bus infrastructure (state/eventBus.ts, errorBus.ts, actionLog.ts, appBus.ts, busRefs) plus DevHud panels — sat unwired for 3 months; a rebuild needs at most one typed event emitter with a test that asserts each event has an emitter",
+  "phaser/scripts/check-context-doc.ts + the 300-line CONTEXT.md drift protocol — there was never a CI pipeline; it only ran when someone ran verify, and it didn't scan systems/ despite claiming to; replace with a short README",
+  "phaser/src/state/combatUiStore.ts and diagLog.ts 500-entry ring buffer + window.__debug surface — dev conveniences that grew into architecture",
+  "Candle-lit / Forged & Lit policy docs: docs/research/visual-style-brief.md tone sections, phaser/art/world-bible.md, .claude/skills/crafting-game-ui/materials.md §1.4/§5 — partially updated in ba132e0 but still the #1 way a future agent re-candles the UI",
+  "docs/superpowers/specs/2026-07-18-cast-the-long-carry-design.md + plans/2026-07-18-character-identity-layer.md — the generated cast the owner rejected ('I don't particularly care for the one you came up with'); parked, do not build on",
+  "Tavern shop-row recruitment (TavernRecruitEntry, recruitmentCost, TavernPanel hire flow, 2 authored pools) — the bible locks BG3-style quest-recruited companions",
+  "FE6 placeholder names Roy/Marcus/Lilina and GAME_TITLE 'Embermarch' as anything but placeholders",
+  "howler in package.json dependencies — audio is a hand-rolled WebAudio synth; ambient drone music was disabled per owner feedback (MUSIC_ENABLED=false)",
+  "The entire Godot tree (autoload/, scenes/, scripts/, data/, resources/, themes/, root CLAUDE.md) — frozen; Wave 7a was never even tested in Godot; every lesson from it is already in memory",
+  "phaser/src/systems/pixel/* (renderSprite/shapes/bake-sprites/gen-variants) — the procedural pixel toolkit rejected for characters; ComfyUI is the pipeline",
+  "QuestEffect stubs spawnNode/unlockNode/recruitUnit (no-ops), procgen/overworldGenerator stub, the unwired BattleMap domain type, contentAliases migration scaffolding — declared, never used; the pre-alpha policy is 'nuke saves'",
+  "Godot-era docs: docs/DEVELOPMENT_PLAN.md, MVP_CONTENT_PLAN.md, PROJECT_OVERVIEW.md, roadmap.md, GAME_DESIGN_DOCUMENT.md (hit/avoid/crit + weapon triangle era), mechanics_ideas.md — contradict the authoritative ship plan",
+  "Superseded specs: 2026-05-05-phaser-sandbox.md (abandoned), 2026-05-08-phaser-foundations-design.md (v1), 2026-05-22-overworld-redesign + 2026-06-06 grounding (painterly backdrop, retired same week), 2026-06-12 splitview three-region strip parts",
+  "phaser/dist/, storybook-static/, test-results/, *.log files, tsconfig.tsbuildinfo — committed or lingering build output",
+  "The 10 eslint-disable / react-hooks set-state-in-effect debts and the not-in-verify `npm run lint` — symptoms of effect-driven flow control",
+  "Electron shell as-is (electron/main.cjs shipped pointing at :5174 for two months) — keep a locked 1280×720 window only if the owner still wants desktop; fix the URL from the same config as vite"
+ ],
+ "risks": [
+  "MULTI-TURN BLIND SPOT: 527 unit + 22 e2e green shipped a P0 (AP never reset → all cards dead by round 3) because every harness resolved battles in one turn. Any turn/round/cycle system needs a 3+-cycle restoration test before it is 'done' (a58fe8d, lesson_multiturn_blindspot.md).",
+  "SIM AS ORACLE: two months of 'balance' work chased 0%-win/100%-stalemate numbers that were three engine bugs (corpse shadowing, axis-greedy AI stall, party spawned off-board). A stalemate metric is an engine smoke alarm; probing AP/hand and clearing them stopped one layer too early — targeting, pathing and seeding also need a hand-played repro (lesson_balance_inverted.md).",
+  "DECLARED-NEVER-CALLED: eventBus.emit had zero call sites; captureTargets was schema'd and read by nothing; seedDungeonBattle was dead code (every dungeon fight was 3 stub bandits); InitiativeStrip was specced and never built; Zod stripped serialized fields on load. Require an emitter/reader/test in the same commit as every declaration (c1304c4, 976a4ea, d9cd7bd, f120373).",
+  "TESTS THAT CANNOT FAIL: visual snapshots were masked into byte-identical solid-magenta squares at 2% tolerance; the full-hydration test bypassed loadFromString. Prove every safety net can red before trusting it (7aaadf4, f120373).",
+  "SHARED ARRAY REFERENCES: Godot's card_hand_ui set _current_hand = dm.hand then .clear()'d it — cards evaporated every turn, hours lost. Copy at every boundary; pure systems never mutate inputs (lesson_shared_arrays.md).",
+  "INPUT LAYERING: invisible anchor containers ate clicks (Godot MOUSE_FILTER_STOP; React overlays without pointer-events-none); react-aria cancels presses released outside the element RECT so overhanging visuals are unclickable; Phaser canvas listens to MouseEvent not PointerEvent (Playwright trap); targeting mode transitions must explicitly re-enable input (lesson_ui_input_layering.md, 4435352, a522e43).",
+  "CANVAS LIFECYCLE: conditionally mounting the canvas container destroyed Phaser after battle 1; queueMicrotask ran before React 19 committed the container (rAF poll fix); BootScene delayedCall → scene.start silently died under StrictMode double-mount; renderUnits running synchronously on dispatch snapped units before the walk tween (8b94151, b576638, f4a5a54).",
+  "PORT COLLISION: another app owns :5173 and Playwright's reuseExistingServer silently ran visual tests against it (75-92% diffs, phantom failures); the Electron default then pointed at :5174 for two months. Pin a port with strictPort and derive every consumer from one config (lesson_port_5173_collision.md).",
+  "TASKSTOP ORPHANS: on Windows, stopping a background bash/npm kills only the wrapper; detached node/tsx children keep running (three ComfyUI batches raced on a 6 GB GPU). Kill the process tree by CommandLine match (lesson_taskstop_orphans.md).",
+  "NAME/SUBSTRING IDENTITY: team detection by 'bandit' substring made wolves/brigands allies and a non-bandit boss impossible; sprites keyed on name substrings in three duplicated maps; capture mutated the display name. Key everything on ids and one helper (976a4ea, e157814).",
+  "HOP DRIVER AS useEffects: three separate soft-locks (quick menu open on commitTravel, check-event resume deps, retried hop re-rolling 34x) plus a pan latch and decorative gateways all came from effect-driven travel logic in a 970-line component. Model travel as explicit store state with a single pump (8b94151, 04074ee, project_overworld_grounding.md).",
+  "EMPTY FIRST TURNS: an 11-tile spawn gap on a 14-wide grid made working combat read as 'broken' (94bb909). Spawn distance is a feel requirement, not a tuning afterthought.",
+  "UI WITHOUT LOOKING: the beta UI shipped 'artificial and amateurish' because feature work never included a rendered-screenshot step; agents critique well when pointed at a screenshot but never do it unprompted (project_game_ui_skill.md). The overworld's first grounding attempt was rated 2/10 by the owner.",
+  "RE-CANDLING: three repo docs still partially teach the rejected candle-lit look and the memory explicitly predicts a future agent will re-candle the UI from them; read the 2026-08-28 spec first, not the older briefs (feedback_ui_direction_candlelit_out.md).",
+  "UNREQUESTED CREATIVE DOCS: the 419-line 'Long Carry' cast spec + 956-line identity plan were generated and rejected as direction in one session — big generated creative artifacts land badly even when craft-solid (feedback_creative_collaboration.md).",
+  "OPEN DESIGN TENSION LEFT UNRESOLVED: omnidirectional sandbox (locked in the bible) vs food-per-hop directed-travel economy and tier→level difficulty. Building either side without deciding recreates the west-march the owner rejected (design_decisions_core.md, story-bible.md).",
+  "UNCOMMITTED WORK ON DISK (2026-09-04): .claude/skills/drawing-maps/, src/systems/autotile.ts + boardFloor.ts + tests, scripts/cli/map-tool.ts + bake-board-sprites.ts, public/art/terrain/px/, public/sprites/units/board/, tools/map-builder.html, and edits to 12 tracked files (boardGeometry, BoardScene, CombatHud, InitiativeStrip, seedTutorialBattle, combatState, CONTEXT.md, package.json). A reset-from-scratch loses it unless copied first.",
+  "SPEC SELF-CONTRADICTION: ship-plan §7 summary table says 39 items, its detail tables say 46; 27 mechanic approximations were logged in docs/research/gear-content-deviations.md. Treat detail tables as truth and lint content totals.",
+  "BURST, NOT TOTALS: with the engine fixed, three party units at 3 AP × ~11 dmg focus-fire ~99 dmg/turn into a 54-HP bandit pool; conversely mage_circle can one-shot a level-1 party (13×2 in one enemy phase). Tune pack burst and HP pools together, and validate by hand — the greedy sim is a floor.",
+  "ARCHITECTURE CEREMONY OUTGREW THE GAME: three stores + three buses + contracts + drift checker + 300-line living doc + ralph loop produced 22k lines of which 56% is UI, and still shipped unfinishable. The invariants worth keeping are five: pure reducer, RNG parameter, DOM-for-UI, copy-at-boundaries, one team/id source of truth.",
+  "NO CI EVER EXISTED: 'verify' was local-only; lint was red and excluded; the doc-drift 'CI' never ran anywhere. Either wire a real pipeline on day one or stop pretending gates exist.",
+  "STALEMATE CAP MASKS BUGS: the sim's 150-round cap / 12 quiet rounds ('51-turn cap' in the rebaseline) turned soft-locks into a tidy 'STALEMATE' statistic. Any cap hit should fail loudly with a per-round state dump."
+ ],
+ "numbers": [
+  "HAND_SIZE = 5; AP_PER_TURN = 3 (phaser/src/systems/combatReducer.ts:51,54)",
+  "BAG_WIDTH = 8; BAG_HEIGHT = 4 → 32-cell shared grid bag (phaser/src/systems/equipment.ts:18-19)",
+  "Combat grid 14×10 tiles; tutorial 5×5 (Roy vs 1 Bandit, ~60 s); stage 1280×720 fixed; TILE 48, TILE_MIN 40, TILE_MAX 96, BAND_TOP 120; 5×5 → 84px tiles, 14×10 → 42px (boardGeometry.ts)",
+  "Capture chance = (1 − hp/maxHp) × 0.6 + 0.25 × adjacentAttackers + 0.15 if bountyHunter, capped at 1.0; costs 2 AP (phaser/src/systems/capture.ts:11-14)",
+  "Physical DMG = gear_card.damage + unit.STR − floor(target.DEF/2) − terrain_bonus; Magic uses MAG / floor(RES/2); minimum 0 (ship-plan §2). Armor = breakable shield absorbing physical; magic: half to armor, half bypasses to HP",
+  "Deck = innate (4-5) + hand_left (3-4) + hand_right (3-4) ≈ 11-14 cards; 2H weapons 6-8 cards; shields 3-4; tomes/staves 3-4; quivers 0 own cards (ship-plan §2-3)",
+  "Class startingHp / mov (classes.json, after +4 starter tune in 7640892): lord 26/5, knight 32/4, mage 22/5, bandit 18/4, warlord 46/4, wolf 14/6, alpha_wolf 38/5, shield_knight 30/3, bandit_archer 16/4, raider_mage 15/4, raider_cleric 17/4, thief 16/6",
+  "Iron Throne boss as seeded: Warlord 55 HP, armor 6, spd 3, sweep AOE, + 2 guards, battleTag 'finalBoss' (commit 976a4ea)",
+  "Enemy level band by tier: 1→[1,2], 2→[3,4], 3→[5,6]; scaleEnemyForLevel: hp + 2×(level−1), str/def +1 every 2 levels, skl/spd/res +1 every 3 (difficulty.ts). Ship-plan §12: start L1-2, mid L3-4, near exit L5-6, dungeon boss L7+",
+  "Gold per kill = 10 + enemy_level × 5; Inn heal 8g per unit; starting 80 gold + 5 Food Rations (App.tsx:95); starvationDamagePerHop = 3 HP per living unit (runStore.ts:264); dungeon rest heals 30% (DungeonScene.tsx:139); 1 ration + 1 day per hop",
+  "Prices (§11): Common 50-120g, Uncommon 120-250g, Rare 300-500g, Epic not sold (sells 300-500g), Legendary not sold (sells 500-800g); sell = 50%",
+  "Loot rarity by enemy level (§11): L1-2 80% Common/20% Uncommon; L3-4 50/40/10 Rare; L5+ 30 Uncommon/50 Rare/20 Epic",
+  "recruitmentCost(classId, level) = base × (1 + (level − 1) × 0.5) (docs/research/recruitment-cost.md; OQ-3) — to be dropped with shop-row recruits",
+  "Content shipped: 49 items / 161 cards, 9 enemy groups, 46 overworld nodes across 3 regions, 5 towns, 5 dungeons, 14 dialogue trees, 2 quest JSONs, 68 content JSON files",
+  "Godot-era: encounter rate 35% per hop; enemy weapon might 5 + floor(level/2); grid 14×10 @ 64px (godot_legacy_reference.md)",
+  "Sim baseline 2026-07-06 (greedy AI, seeds 10-20): stub/no-gear 0% win 0% loss 100% stale 16.0 turns; stub/starters 20/0/80 9.8; boss/starters 0/10/90 15.7; boss/legendary 0/55/45 9.9. After party-AI upgrade: 0/0/100 everywhere",
+  "Sim rebaseline 2026-08-28 (engine fixed, 20 seeds/scenario, 50-run bulk): stub default 100% win 2.0 turns; stub NO gear 100% 4.3; dungeon combat/elite 100% 2.6; dungeon boss 100% 3.0; Iron Throne 100% 3.9; bulk 50/50 VICTORY avg 2.0",
+  "Balance targets (unchanged since 07-06): stub w/ starters 55-75% win; boss w/ epic+ 40-60%; 0% stalemates; 4-10 turns. Observed: 3 units × 3 AP × ~11 dmg ≈ 99 dmg/turn into a 54-HP L1 bandit pool; mage_circle 13×2 burst in one enemy phase",
+  "autoBattle(maxRounds = 150, stalemateRounds = 12) (scripts/cli/combat.ts:278); rebaseline cites the '51-turn cap'",
+  "Tests at HEAD: 579 unit (04074ee) across 96 files / 7,237 lines; 23 e2e in 8 spec files; visual tolerance 0.0005 (was 0.02); a token change fails combat by 3087px, town by 576px",
+  "Codebase: 327 commits; phaser/src 22,094 TS/TSX lines in 258 files — ui 12,291 (79 files), systems 3,317 (31), game 1,967 (9), state 1,294 (13), domain 849, persistence 396, contracts 65; scripts/cli 3,117 lines (34 files); biggest files BoardScene.ts 1240, OverworldScene.tsx 970, combatReducer.ts 779, PartyLoadoutModal.tsx 693, runStore.ts 684, App.tsx 627, TravelBand.tsx 569, DialogueModal.tsx 530",
+  "Bundle gate: 528.08 KB + 40 KB headroom (7640892); earlier ceiling +75 KB per milestone",
+  "Runtime deps: framer-motion, howler, phaser, react, react-aria, react-aria-components, react-dom, zod, zustand; 31 devDeps; 28 npm scripts",
+  "Ports: vite 5183 strictPort; 5173 = foreign app (Bazro); electron default was 5174 until 947559f. Storybook 6006-ish, sprite-lab 5180, ComfyUI 127.0.0.1:8188",
+  "Save: SAVE_VERSION '0.7.0-gear'; 3 localStorage slots at fe-mb:save:slot:N + fe-mb:save:meta; action log ring default 200; diagLog ring 500",
+  "Quest engine: settleQuests bounded at 8 passes; edge re-roll cooldown 3 days; hop RNG label embeds pass number",
+  "Overworld feel: HOP_DELAY_MS 350 with 320 ms marker transition; drag threshold 8px (was 3); bandits spawn col 8-9 vs party col 0-2; travel band y 0-264, seam 264-276, map 276-720",
+  "Field Ledger tokens: canvas #e7dec9, ink #2a2119, leather --iron-700 #6a4b2f, brass edge #b08a3e, brass #d9a93f / #b8862b, oxblood #9a2c22, ally #3f628a, enemy #a6432f, --hp-ok #5d7a33; AA 4.5:1 small text on both grounds; known edge 4.16:1 in bottom 15% of page gradient",
+  "Open-sheet map decision: 25-40 nodes, hub towns, estimated 18-25 days (project_direction_decisions_2026_08.md)",
+  "ComfyUI recipe: waiIllustriousSDXL_v160 + DarkFantasy-PixelSprite-000008 LoRA 0.8, trigger DFSV1, 30 steps, cfg 7, dpmpp_2m/karras, 832×1216 (1024² for scene/tile/cutout); GTX 1660 6 GB — POST /free at batch start; seed MUST change per submission or ComfyUI returns cache",
+  "Status effects: poison fixed dmg/turn non-stacking refreshes and ignores armor; burn stacks and respects magic split; slow −SPD; immobilize MOV=0; all fixed numbers (f2ebf3d, combatReducer.gear.test.ts)",
+  "Dungeon: StS-style 6+1 rows, weighted room typing (Combat/Event/Rest/Elite/Boss + shop/treasure), full reveal at entry, deterministic per (runSeed, dungeonId); 20 rooms / 20 unique ids after 04074ee"
+ ]
+}

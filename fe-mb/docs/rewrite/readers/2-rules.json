@@ -1,0 +1,364 @@
+{
+ "summary": "The rules engine is ~4.3k lines of pure TypeScript under phaser/src/{domain,systems,procgen}, with combat as a single 780-line reducer (systems/combatReducer.ts) over a CombatEvent union, plus ~20 small pure helpers (damage, targeting, turnOrder, statusEffects, enemyAI, deckBuilder, equipment, loot, difficulty, encounterRoller, predicates, questRunner, dialogueRunner, checkResolver, capture, battleResolver, dungeonGenerator, rng). Combat is per-unit initiative (SPD desc, party wins ties, id tiebreak), 3 AP + one free class-MOV move per turn, hand of 5 dealt from a cycling gear-as-deck (innate 4 + 3-4 cards per hand slot, 6 for 2H), whole hand discarded at end of turn, damage = max(0, base + stat + empower − floor(DEF|RES/2)) then armor-first split (magic: floor half to armor, ceil half pierces); no hit/crit/doubling anywhere; statuses poison/burn/slow/immobilize/taunt/riposte/empower tick at the end of the afflicted unit's turn with a 'fresh' exemption hack. Enemy AI is JSON-driven role planning (rusher/tank/archer/healer) that synthesizes a single 1-AP attack per turn and never touches the enemy's deck. Capture is the sole RNG in combat: clamp((1−hp%)×0.6 + 0.25×adjacent + 0.15 bounty) with no AP cost. Determinism rests on Mulberry32 + counter fast-forward + label-hashed deriveRng, but the reducer discards the RNG it is handed (capture/AI rolls never advance state.rng). The shipped implementation diverges from the 2026-03-29 ship plan in several concrete places (no terrain DR, several innate/gear card mechanics approximated, RemoveStatus/GainAp/Move params partially ignored, dungeon battles unscaled, enemies deck-less, capture free instead of a 2-AP Bounty Hunter card), and the effectPipeline / StatusEffectDef hook surface / tickStatus event are dead code. The 2026-08-28 rebaseline shows the game is far too easy (100% win in 2-4 turns on every scenario) because three engine bugs had been faking difficulty; threat must be tuned UP in the rebuild. Unit tests under tests/unit/systems (34 files) plus tests/unit/scenarios, procgen, data, and persistence/replay encode the behaviours worth carrying as acceptance tests.",
+ "requirements": [
+  {
+   "id": "R01",
+   "priority": "must",
+   "source": "phaser/src/systems/rng.ts; docs/research/roguelite-rng.md; foundations v2 spec §10",
+   "text": "RNG contract: RngState = {seed, counter, label?}. createRng(state) rebuilds Mulberry32 from seed and fast-forwards `counter` draws so save/resume continues the same stream. Every next/nextInt/pick advances counter by 1; shuffle advances once per Fisher-Yates swap (n-1). deriveRng(parent, label) = createRng({seed: hashLabel(parent.seed, label), counter 0}) — child depends only on the parent SEED, never its counter, so streams are independent and the run-level rngState never needs to advance. Math.random is lint-banned."
+  },
+  {
+   "id": "R02",
+   "priority": "must",
+   "source": "phaser/src/App.tsx:206,267,381,391,407; OverworldScene.tsx:307,358; BoardScene.ts:319; DungeonScene.tsx:108,142,170",
+   "text": "RNG label domain map actually used: `hop:${mapId}:${from}->${to}#${pass}` (roll-or-not), `encounter:${mapId}:${from}->${to}` (table pick), `battle:${enemyGroupId}:${nodeId}` | `battle:tutorial` | `battle:finalBoss` | `battle:${dungeonId}:${roomType}` (combat seed), `loot:${battleId}`, `floor` (derived from combat rng for cosmetic dirt), `dungeon:<id>`, `dungeon-shop:<id>`, `dungeon-event:<id>`. Pass number and daysElapsed are the only sources of run-time variety because run rngState is never advanced."
+  },
+  {
+   "id": "R03",
+   "priority": "must",
+   "source": "phaser/src/systems/combatReducer.ts (startBattle/endTurn); systems/turnOrder.ts",
+   "text": "Turn structure is per-UNIT initiative, not team phases. Queue = alive units sorted by (stats.spd + statusSpdDelta [slow subtracts stacks] + modifiers) desc; SPD tie → party before enemy; then localeCompare on unit id. Queue is REBUILT from alive units at every endTurn (deaths and new slows re-sort live). turn.number increments when the index wraps to 0."
+  },
+  {
+   "id": "R04",
+   "priority": "must",
+   "source": "phaser/src/systems/combatReducer.ts endTurn case (lines 219-298)",
+   "text": "endTurn sequence, in order: (1) tick statuses of the ENDING unit only (DOT damage, decrement, expire; 'fresh' statuses skip once and clear the flag); (2) checkEnd → VICTORY/DEFEAT short-circuits; (3) the NEXT unit gets ap = AP_PER_TURN (3) and hasMovedThisTurn = false; (4) the ENDING unit discards its entire hand; the next unit draws up to HAND_SIZE (5), reshuffling discard into draw with the combat rng when draw runs dry; (5) subPhase IDLE, selectedCard/pinnedTarget cleared. Armor is NOT reset — it persists and stacks across turns indefinitely."
+  },
+  {
+   "id": "R05",
+   "priority": "must",
+   "source": "combatReducer.ts startBattle (169-207); systems/deckBuilder.ts",
+   "text": "startBattle: index units by id; first unit = initiative[0]; decks arriving with an EMPTY hand and non-empty draw are shuffled with the battle rng and dealt HAND_SIZE (empty hand is the 'not yet dealt' sentinel); decks with pre-set hands pass through untouched (test/replay path). battleTag ('tutorial' | 'finalBoss' | 'boss:<dungeonId>' | null) is carried on state."
+  },
+  {
+   "id": "R06",
+   "priority": "must",
+   "source": "combatReducer.ts playCard (345-683)",
+   "text": "playCard resolution order: refuse if src.ap < apCost (state unchanged, no effects); move the card from hand to discard FIRST (so draw riders cannot redraw it); resolve targets = LIVING unit at each target tile (corpses keep their position and must never shadow a living unit); expand by aoeRadius (manhattan ≤ r from each target tile, living units only); split into foeTargets/allyTargets relative to src's team; resolve each effect template in order; apply quiver cardMods to foes; deduct AP (floor 0); emit PlayTween(250ms) toward first target, ShakeCamera when total non-heal FloatDamage ≥ 10, then WaitForAnimations; subPhase RESOLVING; checkEnd."
+  },
+  {
+   "id": "R07",
+   "priority": "must",
+   "source": "combatReducer.ts Damage branch (437-497); systems/damage.ts computeForecast",
+   "text": "Damage formula per foe: statBonus = src.stats[card.damageStat] (str|mag|skl, else 0) + empowerBonus (consumed on the first Damage effect of the card); dr = floor(target.res/2) if damageType==='magic' else floor(target.def/2); afterDr = max(0, base + statBonus − dr); then applyDamage split. Ship plan §2 also subtracts terrain_bonus — NEVER applied (computeForecast takes terrainDr but every caller passes 0; battle grids have no terrain)."
+  },
+  {
+   "id": "R08",
+   "priority": "must",
+   "source": "phaser/src/systems/damage.ts applyDamage (23-49)",
+   "text": "Armor split: physical → armor absorbs first, overflow to HP. Magic → armoredPortion = floor(amount/2) hits armor (leak to HP), piercingPortion = ceil(amount/2) always hits HP. hpLost is clamped to current HP; HP floors at 0. amount ≤ 0 is a no-op."
+  },
+  {
+   "id": "R09",
+   "priority": "must",
+   "source": "systems/damage.ts computeForecast; tests/unit/systems/forecastVsApplied.test.ts",
+   "text": "Anti-drift invariant: the forecast shown in the HUD and the damage applied by the reducer MUST be computed by the same function (computeForecast/applyDamage). Forecast exposes breakdown terms (baseTerm, statName/statTerm, drTerm, terrainDr, damageBefore, hpLost, armorLost, predictedHp/Armor, lethal, heal). Heal forecast = min(max, cur+amount) − cur."
+  },
+  {
+   "id": "R10",
+   "priority": "must",
+   "source": "combatReducer.ts riposte block (478-496); statusEffects.ts RIPOSTE",
+   "text": "Riposte: when a foe with an active riposte status takes PHYSICAL damage > 0 from an ADJACENT (orthogonal) attacker, the attacker loses riposte.stacks HP directly (ignores armor). Riposte is not consumed by the hit — every qualifying attacker takes it for the status duration."
+  },
+  {
+   "id": "R11",
+   "priority": "must",
+   "source": "combatReducer.ts Heal/GrantArmor branches (498-524); tests combatReducer.aoe.test.ts",
+   "text": "Beneficial-rider routing: Heal and GrantArmor on an enemy-target card go to the SOURCE (lifesteal / Brace family); on ally-target cards they go to the ally targets, or to the source when no ally was targeted. params.magic and params.scalesWithShield on GrantArmor are ignored today."
+  },
+  {
+   "id": "R12",
+   "priority": "must",
+   "source": "combatReducer.ts ApplyStatus branch (553-572); statusEffects.ts mergeStatus",
+   "text": "ApplyStatus: enemy-target cards afflict foeTargets only; other cards afflict targetUnits (or self when none). params: effectId, value→stacks (default 1), turns (default 1), splash:'adjacent' additionally hits FOES orthogonally adjacent to each target. mergeStatus: stackable (burn) → stacks add, duration = max; non-stackable (poison, slow, immobilize, taunt, riposte, empower) → stacks = max, duration = max; unknown ids default non-stackable. BUG to avoid: tile-target cards (targetKind 'tile') apply statuses to ALLIES caught in the radius."
+  },
+  {
+   "id": "R13",
+   "priority": "must",
+   "source": "combatReducer.ts applyStatusTo (417-432) + tickUnitStatuses (112-150); domain/unit.ts ActiveStatus.fresh",
+   "text": "Fresh-status rule: a status applied to the unit whose turn it currently is (self-buffs like taunt/riposte/empower/cover) is flagged fresh; the end-of-turn tick skips it once (no DOT, no decrement) and clears the flag, so a '1 turn' defensive buff survives the following enemy phase. Statuses inflicted outside the victim's turn tick normally. Rebuild should replace the flag with an explicit expiry model (e.g. 'expires at start of owner's next turn')."
+  },
+  {
+   "id": "R14",
+   "priority": "must",
+   "source": "systems/statusEffects.ts; tests combatReducer.gear.test.ts endTurn block",
+   "text": "Status catalogue: poison (non-stack, onTurnEnd Damage = stacks, armorPiercing: goes straight to HP), burn (stackable, onTurnEnd Damage = stacks, magic → armor split), slow (−stacks SPD in initiative while active), immobilize (moveUnit refused), taunt (AI rusher/tank/archer must target taunters), riposte (R10), empower (next Damage card +stacks, consumed on use, not on turn end). DOT death flips phase to VICTORY/DEFEAT at the tick."
+  },
+  {
+   "id": "R15",
+   "priority": "must",
+   "source": "combatReducer.ts RemoveStatus branch (525-547)",
+   "text": "RemoveStatus kind 'armor' → foes lose params.amount armor (floor 0); kind 'debuff' → strip {poison, burn, slow, immobilize} from ally targets or self. params.all is ignored (frost_axe_shatter {kind:'armor', all:true} currently removes 0 armor — a bug)."
+  },
+  {
+   "id": "R16",
+   "priority": "must",
+   "source": "combatReducer.ts GainAp/DrawCards branches (548-601); cards.json mage_focus, lord_command",
+   "text": "GainAp always credits the SOURCE (params.target 'ally' on lord_command is ignored — spec intent is the ally). DrawCards: draw params.count with reshuffle-when-dry using the combat rng, plus params.gainAp AP refund to source. The 'Move' effect kind (lord_charge/bandit_charge {distance:2}) is NOT implemented — those cards deal damage only."
+  },
+  {
+   "id": "R17",
+   "priority": "must",
+   "source": "combatReducer.ts quiver block (604-644); domain/item.ts QuiverModifier; systems/deckBuilder.ts",
+   "text": "Quiver modifiers are baked per bow damage card at deck-build time (DeckState.cardMods) and applied after the card's own effects, per foe target: poison → applyStatus poison(value, turns); slow → slow(value, turns); thunder → value HP loss ignoring armor entirely (FloatDamage magic); explosive → value PHYSICAL damage (armor split) to every FOE orthogonally adjacent to the target. Content values: poison 2/2t, ice(slow) 2/1t, thunder 3, explosive 3."
+  },
+  {
+   "id": "R18",
+   "priority": "must",
+   "source": "systems/deckBuilder.ts; ship plan §2-4, §8; tests deckBuilder.test.ts",
+   "text": "Gear-as-deck: deck = class innateCardIds + handLeft.gearCardIds + handRight.gearCardIds, each tagged with source innate|hand_left|hand_right (DeckState.sources). Quiver in either hand modifies DAMAGE cards of a bow (weaponClass 'bow') in the other hand; quiver alone or bow alone = nothing; 2H bow occupies left with right empty so it can never pair. All cards start in draw, hand empty, discard empty; returned arrays are detached copies. Actual deck sizes 10-12 (spec §2 says 11-13)."
+  },
+  {
+   "id": "R19",
+   "priority": "must",
+   "source": "systems/equipment.ts; ship plan §3; tests equipment.test.ts",
+   "text": "Hand-slot rules: any 1H gear (weapon|shield|quiver|tome|staff) in either slot; 2H always occupies LEFT and clears/locks RIGHT; equipping over an occupied slot returns the old item to the bag; equipping a 1H into right while left holds a 2H is rejected; replacing a 2H in left unlocks right; non-gear or not-in-bag items rejected; every displaced item must fit the bag or the whole plan is rejected (atomic). Bag = 8×4 = 32 single cells (gridSize cosmetic). Loadout is locked for the battle (no mid-combat swaps)."
+  },
+  {
+   "id": "R20",
+   "priority": "must",
+   "source": "combatReducer.ts moveUnit (692-727); BoardScene.ts movementRangeForClass; systems/targeting.ts tilesReachable/findMovePath",
+   "text": "Movement: exactly one free move per turn (hasMovedThisTurn), no AP cost, refused while immobilized. Range = class startingMov (lord 5, knight 4, mage 5, bandit 4, wolf 6, thief 6, shield_knight 3, others 4) — enforced ONLY in BoardScene today; the reducer validates bounds, obstacles and occupancy-by-living-unit but not range. Reachability is 4-directional BFS through unoccupied, non-obstacle tiles (living units block; corpses don't). Rebuild: reducer must validate range too."
+  },
+  {
+   "id": "R21",
+   "priority": "must",
+   "source": "systems/targeting.ts; domain/card.ts Card.range/aoeRadius",
+   "text": "Targeting: card range is manhattan distance in [range.min, range.max] from the source tile, excluding obstacle tiles, no line-of-sight. AOE = tiles within manhattan aoeRadius of the chosen tile (center included). Reducer does NOT validate range/targetKind (only the view does) — rebuild must validate in the reducer (see tests/unit/scenarios 'rejects an out-of-range play')."
+  },
+  {
+   "id": "R22",
+   "priority": "must",
+   "source": "combatReducer.ts checkEnd (152-165); systems/team.ts",
+   "text": "End condition: after every playCard, capture and endTurn — no party unit alive → DEFEAT; no enemy alive → VICTORY. Team is the explicit Unit.team field ('party'|'enemy'); the classId-fragment fallback ['bandit','brigand','wolf','warlord'] exists only for legacy fixtures and should not be ported."
+  },
+  {
+   "id": "R23",
+   "priority": "must",
+   "source": "systems/enemyAI.ts planTurn/pickRoleTargets/stepToward/pickAction; data/content/enemyAI/*.json",
+   "text": "Enemy AI decision procedure per enemy turn: look up EnemyClassAI by classId (fallback bandit); pick role targets — rusher/tank: taunters override, else min(hp.current×100 + distance), desired tile = free orthogonal neighbour of target closest to self; archer: taunters override, else nearest party unit, desired tile = free tile at preferredRange (default 2-3) with minimal move cost; healer: lowest HP-fraction wounded ally within preferredRange (default 1-2) else the FURTHEST party unit cursed from current position. Then walk up to ai.movement steps via BFS distance field flooded from the destination (living units are walls, corpses aren't, visited tiles banned) — emitted as ONE moveUnit. Then pick one action whose range fits the post-move distance and whose situation matches (self_low_hp: self hp < 40%; target_low_hp: target hp < 40%; ally_wounded: target hp < max), weighted by rng.nextInt(0,total−1). Emit ONE synthesized playCard {apCost 1, damageStat, targetKind enemy|ally, aoeRadius?, effects:[Damage{base}|Heal{amount}]} then endTurn. Enemies never draw or play deck cards and never spend more than 1 of their 3 AP."
+  },
+  {
+   "id": "R24",
+   "priority": "must",
+   "source": "systems/capture.ts; combatReducer.ts capture case (729-777); ui/scenes/combat/CaptureBtn.tsx",
+   "text": "Capture: chance = clamp01((1 − hp/max)×0.6 + 0.25×adjacentAttackers + (bountyHunter ? 0.15 : 0)); UI offers it only for enemies orthogonally adjacent to the active unit with hp < 50% and always passes attackerIds=[active] (so +0.25 flat; bountyHunter never true). Roll = rng.next() < chance. Success → hp 0 + captured:true (stays off-grid like a corpse, name untouched); failure → nothing. No AP cost, no action consumed, no limit per turn. Ship plan §4 intended a 2-AP Bounty Hunter 'Capture' card instead."
+  },
+  {
+   "id": "R25",
+   "priority": "must",
+   "source": "systems/battleResolver.ts; contracts/crossStoreActions.ts BattleResult",
+   "text": "Battle resolution: outcome = defeat if no party survivor, victory if no enemy alive, else fled. goldEarned = Σ (10 + 5×level) over DEAD non-captured enemies; captured enemies pay no gold and are reported as capturedIds/capturedEnemies{id,classId,level}. xpAwards are all 0 (no XP/levelling exists). Loot only on victory when lootRng+pool supplied, keyed by the highest level among dead enemies. emittedEvents = BattleVictory{battleId, survivors, capturedIds} | BattleDefeat{battleId}, plus UnitDied{unitId, cause:'battle'} per fallen party unit."
+  },
+  {
+   "id": "R26",
+   "priority": "must",
+   "source": "systems/loot.ts; ship plan §11; tests loot.test.ts",
+   "text": "Loot: 40% (LOOT_DROP_CHANCE) chance of exactly one hand-slot gear item on victory. Rarity by max defeated level: ≤2 → common 80 / uncommon 20; 3-4 → common 50 / uncommon 40 / rare 10; ≥5 → uncommon 30 / rare 50 / epic 20. If the pool lacks the rolled rarity fall through legendary→epic→rare→uncommon→common→nothing. Consumables never drop."
+  },
+  {
+   "id": "R27",
+   "priority": "must",
+   "source": "systems/difficulty.ts; App.tsx:406; game/scenes/seedGroupBattle.ts; ship plan §12",
+   "text": "Difficulty: no party levelling — power is gear. Region tier (borderlands 1, thornwood 2, ashfall 3) → enemy level band [2t−1, 2t] chosen by FNV hash of salt `${mapId}:${nodeId}:${daysElapsed}` % 2 (level re-rolls per day). Travel battles: member level = max(authored, nodeLevel); scaleEnemyForLevel: hp = base + 2(L−1); str, def, mag(if >0) += floor((L−1)/2); skl, spd, res += floor((L−1)/3); lck flat. Dungeon battles are NOT scaled (raw class base stats, authored level). Boss and tutorial are authored."
+  },
+  {
+   "id": "R28",
+   "priority": "must",
+   "source": "game/scenes/seedBossBattle.ts; seedTutorialBattle.ts; seedGroupBattle.ts PARTY_SLOTS; seedDungeonBattle.ts",
+   "text": "Authored battles: Iron Throne = Warlord L7 hp 55 armor 6 spd 3 (other stats warlord base) + 2 Throne Guards (bandit L5 hp 24 armor 2), tag finalBoss, positions (10,4),(9,3),(9,6). Tutorial = 5×5 grid, Roy (lord base, iron_sword) at (0,2) vs bandit hp 10 str 2 spd 1 at (4,2), tag tutorial, authored dirt floor. Standard grid 14×10, no obstacles; party slots (2,4),(2,5),(1,4),(1,5),(0,4),(0,5) (max 6); travel enemies at x=9+(i%2), y=3+2·floor(i/2); dungeon enemies at x=12+(i%2), y=4+floor(i/2). Every seeded unit MUST have a position (dungeon soft-lock P1)."
+  },
+  {
+   "id": "R29",
+   "priority": "must",
+   "source": "ui/screens/OverworldScene.tsx executeHop (290-400); systems/encounterRoller.ts; systems/overworldPath.ts",
+   "text": "Travel encounter roll per hop: consume 1 food (starvation damage to each living unit if none); region-edge hops never roll; rollChance = (edge.rollChance ?? 0.3) × cooldown where cooldown = 1 on first pass or ≥3 days since last crossing, else max(0.25, daysSince/3); no roll when the destination is town/dungeon/exit; a hop that already rolled never rolls twice. rollEncounter: filter entries whose conditions all pass and that are not in oneShotsFired, weighted pick by rng.next()×Σweight, last-entry fallback; oneShot entries are marked fired. Outcomes: dialogue (suspends path), battle (stash captureTargets, boot combat), checkEvent (modal). Overworld path = BFS over undirected edges; food cost = hop count."
+  },
+  {
+   "id": "R30",
+   "priority": "must",
+   "source": "systems/captureTargets.ts; domain/encounter.ts CaptureTarget",
+   "text": "Named-enemy resolution after a battle: for each encounter captureTarget (by UNIT ID, never display name): captured → setFlag capturedFlag + startDialogue capturedDialogueId; not captured and not still standing → setFlag killedFlag + startDialogue killedDialogueId; still alive → nothing. All flags are kept but only the FIRST startDialogue survives (single pendingDialogue slot)."
+  },
+  {
+   "id": "R31",
+   "priority": "must",
+   "source": "systems/predicates.ts; domain/predicate.ts; CONTEXT.md §6",
+   "text": "Predicate AST (13 kinds): always, never, flag{key, equals?} (existence when equals omitted), notFlag, questStage, questComplete (currentStage === '__complete__'), partyHas{classId}, goldAtLeast, visited{MapNodeRef → key `${mapKind}:${mapId}:${nodeId}`}, cleared{encounterId}, allOf, anyOf, not. One evaluator over PredicateState {flags Map, questStates, party.units, inventory.items, gold, visitedNodes Set, clearedEncounters Set}; must round-trip through save as data."
+  },
+  {
+   "id": "R32",
+   "priority": "must",
+   "source": "systems/questRunner.ts; domain/quest.ts; CONTEXT.md §1 item 9 (questEngine settle bound 8)",
+   "text": "Quest engine: listeners on the CURRENT stage only, for BattleVictory | LocationArrived | FlagSet (other DomainEvents map to null), gated by a predicate, emit QuestEffect[]. transitionStages: first transition whose `when` passes wins per quest; emits current stage onExit then next stage onEnter; caller settles to a fixed point bounded at 8 passes. QuestEffect kinds: setFlag, recruitUnit (no-op stub), spawnNode/unlockNode (no-op stubs), startDialogue, completeQuest, addGold (unclamped, can go negative), addItem, addFood (negative amounts are a no-op — bug), damageParty, healParty(percent), statCheck, advanceQuestStage, startCombat."
+  },
+  {
+   "id": "R33",
+   "priority": "must",
+   "source": "systems/dialogueRunner.ts; systems/checkResolver.ts; domain/dialogue.ts; domain/check.ts",
+   "text": "Dialogue: choices filtered by visibleIf, gated by enabledIf; step() throws on unknown node/choice or hidden/disabled choice; a choice with `check` routes to onPass/onFail (next absent), else `next` (default 'end'). Checks: stat → a LIVING attempting unit with stats[stat] ≥ threshold (auto-pick the highest-stat living unit when none given; no party state → fail); class → any living party member of classId; gold/food → party totals ≥ amount. getCheckCandidates returns living units sorted by stat desc with meetsThreshold."
+  },
+  {
+   "id": "R34",
+   "priority": "must",
+   "source": "systems/shopStock.ts; ship plan §5-6, §11; tests shopStock.test.ts, tests/unit/data/gearCatalog.test.ts",
+   "text": "Shop stock: borderlands → common+uncommon; thornwood/ashfall → uncommon+rare; epic/legendary never stocked; region-'none' food/potions everywhere; explicit town shopStockIds override rarity gate; only same-region gear otherwise. Economy: sellPrice = 50% of buyPrice; epic/legendary buyPrice 0 (sell-only 350-800g). Inn heal cost per unit is town data (spec §11 says 8g)."
+  },
+  {
+   "id": "R35",
+   "priority": "must",
+   "source": "systems/buildUnit.ts; systems/recruitmentCost.ts; systems/starterParty.ts; docs/research/recruitment-cost.md",
+   "text": "Unit construction: stats = class baseStats with +1 per level above 1 on every positive stat (growthRates in classes.json are NOT used); hpMax = startingHp + 3×(level−1); ap 3, armor 0. Recruitment cost = round(base × (1 + 0.5×(level−1))) with base lord 220 / knight 140 / mage 180 / bandit 80 / default 120. Starter party: Roy (lord, iron_sword), Marcus (knight, iron_lance + iron_buckler), Lilina (mage, fire_tome), gear pre-equipped."
+  },
+  {
+   "id": "R36",
+   "priority": "must",
+   "source": "procgen/dungeonGenerator.ts; docs/research/sts-procgen.md; tests/unit/procgen/dungeonGenerator.test.ts",
+   "text": "Dungeon graph: NUM_ROWS 6 data rows × COLS 4, NUM_PATHS 4 traced top-down with column step ∈ {−1,0,+1} clamped; paths 0 and 1 must start in distinct columns; nodes are the union of visited cells (ids `r{row}c{col}`), edges only advance one row; row 0 forced combat, last data row forced rest, mid rows weighted combat 45 / event 20 / treasure 15 / shop 10 / rest 5 / elite 5 with elite/rest re-typed to combat on rows ≤ 1; single boss node `r6c0` connected from every last-row node; genSeed = rng seed; fogOfWar default 'full'. NOT implemented from the StS research: no-crossing paths, treasure row, no-consecutive-specials validator, distinct-type forks."
+  },
+  {
+   "id": "R37",
+   "priority": "should",
+   "source": "systems/autotile.ts; systems/boardFloor.ts; tests autotile.test.ts, boardFloor.test.ts",
+   "text": "Cosmetic floor (only if pixel terrain art survives): 47-piece blob autotile keyed by missing orthogonal sides + concave diagonal notches (8 authored pieces edge_n/s/e/w + outer_ne/nw/se/sw, rest generated `b<missing>_<notch>`); generateDirtRegion = 1-6 seeds (area/24) each with 2-4 arms, two CA passes (dirt stays with ≥2 neighbours, grass turns with ≥4), cap 35% of board, orphan cull. Deterministic per rng; gameplay never reads it."
+  },
+  {
+   "id": "R38",
+   "priority": "should",
+   "source": "domain/boardGeometry.ts",
+   "text": "Board geometry constants (framework-free, shared by canvas + HUD): stage 1280 wide, TILE 48 base pitch, TILE_MIN 40 / TILE_MAX 96, play band y 120..560 (HAND_TOP_Y 560), 40px side margin, 8px vertical pad; tileSize = largest even size fitting the band; grid centred horizontally and within the band. Keep the numbers, move the module out of domain/."
+  },
+  {
+   "id": "R39",
+   "priority": "must",
+   "source": "combatReducer.ts (effects emitted); domain/combatState.ts CombatEffect",
+   "text": "Render-intent effects emitted by the reducer today: FloatDamage{tile, amount, damageKind physical|magic|heal}, HitFlash{80ms}, PlayTween{250ms toward first target; 200ms on move}, ShakeCamera{0.005, 200ms when total damage ≥ 10}, WaitForAnimations, ApplyCardEffect (log only). Rebuild should emit SEMANTIC events (DamageDealt, Healed, StatusApplied, UnitMoved, UnitDied) with no millisecond values; timing belongs to the view."
+  },
+  {
+   "id": "R40",
+   "priority": "must",
+   "source": "docs/research/balance-rebaseline-2026-08-28.md; docs/research/balance-baseline-2026-07-06.md",
+   "text": "Balance targets (unchanged since 2026-07-06): stub battle with starter loadout 55-75% win; boss with epic+ gear 40-60%; 0% stalemates; 4-10 turns average. Current engine measures 100% win everywhere in 2.0-3.9 turns with greedy AI both sides — threat must be tuned UP (enemy HP / pack size / burst), and mage_circle's 13×2 burst is the one real one-shot risk for L1 parties."
+  },
+  {
+   "id": "R41",
+   "priority": "must",
+   "source": "scripts/lint-content.ts; tests/unit/data/*.test.ts",
+   "text": "Content invariants enforced statically: every class innate card exists in cards.json; every class has at least one Damage innate (warning); every dialogue next/onPass/onFail/startNodeId resolves; every gearCardIds entry resolves; card-bearing gear contributes 3-4 cards (6 for 2H); quivers contribute none; no duplicate card/item ids; every enemy group member classId has a class AND an AI_BY_CLASS entry; every encounter battle/startCombat references a known group; each group appears in exactly one region table."
+  },
+  {
+   "id": "R42",
+   "priority": "must",
+   "source": "ship plan 2026-03-29 §1 Design Rules",
+   "text": "All combat is deterministic: no hit chance, no miss, no crit, no doubling, no weapon triangle — honoured by the implementation (none of these exist anywhere). Capture is the ONLY random combat outcome."
+  },
+  {
+   "id": "R43",
+   "priority": "should",
+   "source": "domain/card.ts; cards.json (161 cards)",
+   "text": "Card schema actually consumed: id, name, apCost 0-3, range{min,max} in {0-0,1-1,0-1,1-2,2-3,3-4,2-4}, targetKind self|enemy|ally|tile (all_enemies/all_allies have no runtime), aoeRadius 0-2, weaponType (null for innate), damageStat str|mag|skl, effects[] of {kind, params}. Params in use: Damage{base, damageType}, Heal{amount}, ApplyStatus{effectId, value, turns, splash}, RemoveStatus{kind, amount, all}, GrantArmor{amount, magic, scalesWithShield}, GainAp{amount, target}, DrawCards{count, gainAp}, Move{distance}. Rebuild: make params a typed discriminated union so silently-ignored params become type errors."
+  },
+  {
+   "id": "R44",
+   "priority": "must",
+   "source": "docs/superpowers/specs/2026-05-08-phaser-foundations-v2-design.md §22; tests/unit/persistence/replay.test.ts; CONTEXT.md §1 item 9",
+   "text": "Replay/save contract: combat state persists rngState so reload mid-battle continues the same stream; run action log stores rngStateBeforeAction per dispatch; reproduce(state, action) must equal direct reduce. Predicates, statuses and decks are plain data (Set/Map must serialize)."
+  }
+ ],
+ "keep": [
+  "phaser/src/systems/rng.ts — Mulberry32 + counter fast-forward + FNV-label deriveRng; port verbatim with tests/unit/systems/rng.test.ts (esp. 'resume from saved counter' and 'derive per (parent,label)').",
+  "phaser/src/systems/damage.ts — applyDamage split + computeForecast breakdown; port verbatim together with tests/unit/systems/damage.test.ts and tests/unit/systems/forecastVsApplied.test.ts (the anti-drift acceptance test).",
+  "phaser/src/systems/turnOrder.ts + tests/unit/systems/turnOrder.test.ts — SPD desc / party-first tie / id tiebreak.",
+  "phaser/src/systems/statusEffects.ts mergeStatus + statusSpdDelta + empower helpers (stacking semantics) and tests/unit/systems/statusEffects.test.ts.",
+  "phaser/src/systems/targeting.ts — manhattan, tilesInRange, tilesInAoe, tilesReachable (BFS), findMovePath; tests/unit/systems/targeting.test.ts.",
+  "phaser/src/systems/enemyAI.ts — role targeting (taunt override, lowest-HP×100+distance), stepToward BFS distance field with banned-revisit set, situation-gated weighted action pick; plus data/content/enemyAI/*.json (11 class tables) and tests/unit/systems/enemyAI.test.ts + combatReducer.p1fixes.test.ts 'melee AI sidesteps a body-blocked approach'.",
+  "phaser/src/systems/deckBuilder.ts + tests/unit/systems/deckBuilder.test.ts — innate+gear composition, source tags, quiver cardMods, detached arrays.",
+  "phaser/src/systems/equipment.ts (planEquip/planUnequip/placeInBag, BAG 8×4) + tests/unit/systems/equipment.test.ts.",
+  "phaser/src/systems/loot.ts (LOOT_DROP_CHANCE 0.4, rarity tables, fallback ladder) + tests/unit/systems/loot.test.ts.",
+  "phaser/src/systems/difficulty.ts (regionTierOf, enemyLevelFor, scaleEnemyForLevel) + tests/unit/systems/difficulty.test.ts.",
+  "phaser/src/systems/shopStock.ts + tests/unit/systems/shopStock.test.ts; phaser/src/systems/recruitmentCost.ts + test; phaser/src/systems/buildUnit.ts + test (if the +1/level lift stays).",
+  "phaser/src/systems/encounterRoller.ts + tests/unit/systems/encounterRoller.test.ts; the hop roll/cooldown logic in ui/screens/OverworldScene.tsx executeHop (lines 290-400) should move INTO a pure system in the rebuild.",
+  "phaser/src/systems/predicates.ts + domain/predicate.ts + tests/unit/systems/predicates.test.ts (13-kind AST, single evaluator).",
+  "phaser/src/systems/questRunner.ts, dialogueRunner.ts, checkResolver.ts, captureTargets.ts, capture.ts (formula), battleResolver.ts and their tests under tests/unit/systems/ — small, pure, correct; port nearly verbatim.",
+  "phaser/src/procgen/dungeonGenerator.ts core algorithm + tests/unit/procgen/dungeonGenerator.test.ts (add the StS validators from docs/research/sts-procgen.md).",
+  "phaser/src/systems/overworldPath.ts (BFS + 1 food/hop) + test; systems/overworldLayout.ts samplePolyline/pointAtArcLength only if bowed-road rendering survives.",
+  "phaser/src/systems/autotile.ts + boardFloor.ts + tests (only if the px terrain art survives; pure and deterministic).",
+  "phaser/src/domain/boardGeometry.ts constants (TILE 48, 40..96, band 120..560, stage 1280) — keep the numbers, relocate out of domain/.",
+  "Content JSON: data/content/cards.json (161), items.json (49: 46 gear + 3 consumables), classes.json (13 classes with base stats), enemyGroups/*.json (9), encounters/*.json (3 region tables), regions.json (tiers), dungeons/*.json (5), enemyAI/*.json (11) — plus docs/research/gear-content-deviations.md as the list of cards that need engine mechanics to reach spec.",
+  "Golden headless harness: scripts/cli/combat.ts (applyCommand/autoBattle/battleOutcome) + `npm run sim` + tests/unit/scenarios/combat.scenario.test.ts ('deterministic — same seed yields same outcome + turn count', 'rejects an out-of-range play', 'autoBattle terminates'). This is the balance instrument; rebuild it first.",
+  "Regression tests that encode hard-won P1 fixes: tests/unit/systems/combatReducer.p1fixes.test.ts (corpse cannot shield living unit; fresh self-buffs survive enemy phase; opponent-inflicted poison still ticks; DrawCards honours gainAp; moveUnit validates board; dungeon party placed), combatReducer.gear.test.ts (status tick/expiry, poison ignores armor/burn magic split, DOT death flips phase, immobilize, slow initiative, AP+hand restoration each round, reshuffle without card loss), combatReducer.aoe.test.ts (AOE hits foes only, beneficial riders route to source, armor shred, cleanse), combatReducer.test.ts (turn wrap, victory/defeat at endTurn, armor absorb/overflow), captureState.test.ts, captureTargets.test.ts, battleResolver.test.ts, effectPipeline.test.ts stage-ordering idea only if a pipeline is reintroduced.",
+  "Data-invariant tests: tests/unit/data/gearCatalog.test.ts (46 gear, rarity/kind totals, 3-4/6 cards per item, sell=50%), roster.test.ts (group→class→AI coverage, one region per group), and scripts/lint-content.ts.",
+  "tests/unit/persistence/replay.test.ts + tests/unit/state/edgeTraversals.test.ts ('gives a different encounter roll on the second crossing') — determinism acceptance."
+ ],
+ "drop": [
+  "phaser/src/systems/effectPipeline.ts — 6-stage middleware from foundations v2 §11; zero production callers (grep runEffects → only its own test). The reducer resolves effects inline.",
+  "CombatEvent 'tickStatus' — nothing dispatches it; the real tick lives in endTurn.",
+  "domain/statusEffect.ts hook surface (onApply, onTurnStart, onDamageTaken, onDamageDealt, onTick, interactsWith) — only onTurnEnd is ever called; slow/immobilize/taunt/riposte/empower are hard-coded string checks in reducer/AI/turnOrder. Either make the registry real or delete the interface.",
+  "domain/card.ts concrete CardEffect union (with targetId/unitId) and Card.source — the reducer works off untyped {kind, params: Record<string, unknown>} templates; sources live in DeckState.sources. CardTargetKind all_enemies/all_allies have no runtime path.",
+  "The playCard legacy stub path ('no card def → WaitForAnimations') — every production caller passes the card; the payload should carry a card id and the reducer should look the card up itself.",
+  "systems/team.ts classId-fragment fallback and the duplicate stale list in scripts/cli/render.ts — make Unit.team required.",
+  "Four near-duplicate seeders (game/scenes/seedGroupBattle.ts, seedDungeonBattle.ts, seedBossBattle.ts, seedTutorialBattle.ts) each with their own ENEMY_GROUPS map and DAMAGE_CARD_IDS set — one seedBattle(spec) + one enemy-group registry.",
+  "Capture formula duplicated three times (systems/capture.ts, inlined in combatReducer capture case, re-derived in CaptureBtn.tsx) — one function.",
+  "Branded-id pattern in domain/ids.ts as implemented — it forces `as unknown as string` casts at hundreds of sites (Record keys, comparisons) and never caught a real bug; use plain strings validated by Zod at the boundary, or a brand that works as a key.",
+  "Optional-everything on Unit (team?, hasMovedThisTurn?, handLeft?/handRight? with undefined≡null, captured?) kept for 'old saves/fixtures' — pre-alpha save policy nukes saves anyway; make fields required.",
+  "Millisecond/tween/camera constants inside the reducer (PlayTween 250/200ms, HitFlash 80ms, ShakeCamera 0.005/200ms, ≥10 damage threshold) — view concerns leaked into a pure system.",
+  "systems/pixel/ (renderSprite, shapes) — sprite-baking tooling, not rules; the ComfyUI pipeline superseded hand/procedural character art.",
+  "systems/overworldLayout.ts respreadNodes — built for the three-region strip that the 2026-08 open-sheet decision superseded.",
+  "Bag gridSize on items (1x1..2x3) — declared but every placement is single-cell (equipment.ts comment: 'gridSize is cosmetic'); either implement real Tetris bag or drop the field.",
+  "classes.json growthRates — never read (buildUnit uses +1/level); drop or implement.",
+  "CONTEXT.md drift-check machinery for systems/ — check-context-doc.ts does not even scan src/systems and there is no CI; replace with type-level exhaustiveness and tests.",
+  "Domain types with no runtime: domain/map.ts TerrainTile/BattleMap.terrain (no battle terrain exists), EnemyGroupRef, DungeonRoom.encounterRef (always null), Region.color in a rules type."
+ ],
+ "risks": [
+  "Reducer discards the RNG it is handed: reduce(state, event, rng) never writes rng.state() back; the capture roll (combatReducer.ts:744) and every enemyAI.pickAction roll use a throwaway createRng(state.rng) whose counter only moves when a deck shuffles/draws. Consequence: clicking Capture twice from the same state rolls the identical number (a failed capture is deterministic-fail until a draw happens), and all enemies planned from the same counter share the same first roll. Rebuild: the reducer owns rng in state and returns the advanced state; never accept an external RNG.",
+  "Corpse shadowing (fixed 2026-08-28): dead units keep `position`, so any tile→unit lookup without an alive filter makes a living unit standing on a corpse immune. Keep corpses off the board (or a separate list) rather than relying on filters at every call site.",
+  "AP-never-reset (playtest P0): turn-start restoration lives only in endTurn; the first unit of the battle relies on seeders setting ap:3. Any new turn-entry path (startTurn event, replay) must restore AP/move/hand — test 3+ full rounds, not one-turn resolutions (memory: lesson_multiturn_blindspot).",
+  "Seeders spawning the party off-board (dungeon P1 — 100% stalemate at the 51-turn cap for every seed) — assert every unit has a position in startBattle.",
+  "Melee AI stall: axis-only stepping froze on a single blocked approach tile for 12+ rounds; keep the BFS distance-field stepToward with a banned-revisit set, and keep a stalemate cap in the sim.",
+  "1-turn self-buffs expired unused until the `fresh` flag hack; design status expiry explicitly (start-of-owner-turn vs end-of-turn) instead of patching with flags.",
+  "Schema-valid but unhandled effect params ship silently: RemoveStatus was a runtime no-op for months; today GainAp.target, GrantArmor.magic/scalesWithShield, RemoveStatus.all (frost_axe_shatter removes 0 armor), Move.distance (lord_charge/bandit_charge never move) are ignored. Rebuild: typed effect union + exhaustive switch + a content lint that fails on any param the engine does not consume.",
+  "Beneficial-rider routing by inference (GrantArmor on an enemy-target card → source) is a heuristic; give every effect an explicit target selector (self | target | ally | area) in data.",
+  "Tile-target AOE cards apply statuses to allies caught in the radius (ApplyStatus primary = targetUnits when targetKind !== 'enemy'); Damage is friendly-fire-safe but statuses are not.",
+  "Armor never decays and stacks without cap (knight_fortify 5/turn forever, steel_tower_shield_fortress 11) — combined with no enemy deck play this is a tank-stall engine; decide armor lifetime (StS block resets each turn) up front.",
+  "Enemies do not use their decks: seeders build enemy decks that the AI never plays; every enemy spends 1 of 3 AP per turn on a synthesized card, so all enemy poison/burn/gear content in classes.json/enemyAI is inert (docs/research/gear-content-deviations.md 'Phase 45'). Either make the AI deck-driven or stop building enemy decks.",
+  "Balance was inverted: stalemates/losses in the 2026-07-06 baseline were engine bugs; with them fixed the game is 100% win in 2-4 turns (3 units × 3 AP × ~11 dmg ≈ 99 dmg/turn into a 54-HP L1 pack). Do not port the current numbers as 'balanced'; tune threat up and validate with the headless sim AND manual play.",
+  "Reducer is not the authority for legality: range, targetKind and move range are validated only in BoardScene/HUD; scripted/AI/replayed events can play out-of-range cards. Validate everything in the reducer (moveUnit already validates bounds/obstacles/occupancy).",
+  "Turn-number quirk: if the ending unit dies of its own DOT it is absent from the rebuilt queue, currentIdx = −1 → nextIdx 0 and turn.number does not increment.",
+  "`encounter:` rng label omits the pass number (only the `hop:` roll-or-not label has it), so a re-crossed road that rolls again picks the same table entry unless oneShots/predicates changed; DungeonScene.tsx:108 derives dungeon layout with the literal label 'dungeon:smugglers_cave' for every dungeon.",
+  "Enemy level salt includes daysElapsed, so the level of a given node silently changes day to day (fine if intended; surprising if not).",
+  "Deck-size drift: innate 4 + 3 per 1H = 10 cards vs spec 11-13; with HAND_SIZE 5 and whole-hand discard the deck cycles every 2 turns, making draw cards nearly meaningless.",
+  "Spec drift is undocumented in code: the ship plan (2026-03-29) is 'authoritative' yet the engine skips terrain DR, region-based (not distance-based) scaling, unscaled dungeon enemies, free capture instead of a Bounty Hunter card, and ~27 approximated gear cards (docs/research/gear-content-deviations.md). Decide per item whether the spec or the implementation wins BEFORE porting.",
+  "Three separate hand-written registries (ENEMY_GROUPS ×2, AI_BY_CLASS, DUNGEONS, ENCOUNTER_TABLES) drift independently; roster.test.ts exists only to catch that. One content registry with cross-reference validation at load.",
+  "addFood with negative amount is a no-op and addGold is unclamped (gold can go negative) — quest-effect interpreter needs signed, clamped resource deltas."
+ ],
+ "numbers": [
+  "HAND_SIZE = 5; AP_PER_TURN = 3; one free move per turn (combatReducer.ts:51-54)",
+  "Standard grid 14×10, tutorial 5×5; party slots [2,4],[2,5],[1,4],[1,5],[0,4],[0,5]; travel enemies x=9+(i%2), y=3+2*floor(i/2); dungeon enemies x=12+(i%2), y=4+floor(i/2)",
+  "Damage: afterDr = max(0, base + stat + empower − floor(DEF/2 | RES/2)); physical → armor first; magic → floor(amount/2) to armor, ceil(amount/2) to HP",
+  "Poison: armorPiercing, stacks dmg/turn, non-stacking (max); Burn: magic split, stacking (add); Slow: −stacks SPD; Immobilize: MOV 0; content durations 1-3 turns, values 1-5",
+  "Riposte values 2-4 (buckler_parry 2, steel 3, bark 2, volcanic 3/4, aegis 4, serpent 4, iron_sword_riposte 3); Empower values 4-8 (gs 4, steel_gs 6, longbow 5, composite 7, wraithbow 7, doombow 8)",
+  "Camera shake when total non-heal damage ≥ 10 (intensity 0.005, 200ms); PlayTween 250ms (card) / 200ms (move); HitFlash 80ms",
+  "Capture chance = clamp01((1 − hp/max)×0.6 + 0.25×adjacentAttackers + 0.15 bountyHunter); UI gate: adjacent AND hp < 50%; attackerIds always 1",
+  "Gold per defeated (non-captured) enemy = 10 + 5×level; captured enemies pay 0; XP = 0 everywhere",
+  "LOOT_DROP_CHANCE = 0.4; rarity by max defeated level: ≤2 → common 80/uncommon 20; 3-4 → 50/40/10 rare; ≥5 → uncommon 30/rare 50/epic 20; fallback legendary→epic→rare→uncommon→common",
+  "Region tiers: borderlands 1, thornwood 2, ashfall 3 → enemy level = (2t−1) + hash(salt)%2, salt = `${mapId}:${nodeId}:${daysElapsed}`; member level = max(authored, node)",
+  "scaleEnemyForLevel(L): hp = base + 2(L−1); str/def (and mag if >0) += floor((L−1)/2); skl/spd/res += floor((L−1)/3); lck flat",
+  "buildUnit(L): every positive stat +1 per level above 1; hpMax = startingHp + 3(L−1)",
+  "recruitmentCost = round(base × (1 + 0.5(L−1))); base lord 220, knight 140, mage 180, bandit 80, default 120",
+  "Class base stats (str/mag/skl/spd/def/res/lck | hp | mov): lord 5/0/4/5/3/1/4 |26|5; knight 7/0/4/3/8/1/2 |32|4; mage 1/7/5/5/2/7/3 |22|5; bandit 5/0/3/4/2/1/2 |18|4; warlord 9/2/6/6/7/4/2 |46|4; wolf 5/0/4/7/1/1/3 |14|6; alpha_wolf 7/0/5/6/4/2/3 |38|5; shield_knight 6/0/3/2/9/2/1 |30|3; bandit_archer 3/0/6/5/2/1/3 |16|4; raider_mage 1/7/4/4/1/5/2 |15|4; raider_cleric 1/5/4/4/2/6/3 |17|4; thief 4/0/6/8/1/2/4 |16|6; ember_mage 1/8/5/4/2/6/2 |16|4",
+  "Boss (Iron Throne): Warlord L7 hp 55 armor 6 spd 3 at (10,4); Throne Guards bandit L5 hp 24 armor 2 at (9,3),(9,6); Tutorial bandit hp 10 str 2 spd 1 at (4,2), Roy lord base + iron_sword at (0,2)",
+  "Enemy AI action tables: bandit (rusher, mov 4): swing 4 str w70 always / wild_lunge 6 w25 self_low_hp / kick 3 w30 target_low_hp; bandit_archer (archer, mov 4, pref 2-3): shoot 5 skl w70 / snipe 8 w30 target_low_hp / panic_shot 2 r1 w100 self_low_hp; bandit_priest (healer, mov 3, pref 1-2): heal_ally 8 w100 ally_wounded / curse 4 mag w50; warlord (tank, mov 4): crush 9 w60 / warcry_sweep 6 aoe1 w35 / executioner 13 w80 target_low_hp; situation thresholds self/target low HP < 0.4; AI apCost always 1",
+  "Enemy groups (class L×count): bandits_small = bandit L1×2 + bandit_archer(id) bandit L1×1 [victoryEvent interrogate_survivor]; wolves = bandit L1×3 (ids wolf); brigands = bandit L2×2 + brigand_chief L2; darens_gang = bandit L2×2 + archer L2 + daren L2 (capture, bounty 50); shield_wall = shield_knight L2×2 + bandit_archer L2; mage_circle = raider_mage L3×2 + raider_cleric L3; wolf_alpha_pack = wolf L2×4 + alpha_wolf L2; thornwood_ambush = thief L3×2 + bandit_archer L4; ashfall_raiders = bandit L5×2 + ember_mage L5",
+  "Cards: 161 total; apCost 0:8, 1:88, 2:53, 3:12; targetKind enemy 94 / self 38 / ally 15 / tile 14; Damage base 1-22; 24 AOE cards (radius 1-2); damageStat str 88 / mag 17 / none 56",
+  "Items: 49 (27 weapons, 7 shields, 4 tomes, 3 staves, 5 quivers, 1 food, 2 potions); rarity common 14 / uncommon 25 / rare 3 / epic 4 / legendary 3; buy 50-450g, sell = 50%; epic sell 350-450, legendary 600-800, buy 0; 1H gear 3 cards (iron_sword 4), 2H 6 cards",
+  "Quivers: standard (none), poison {2, 2t}, ice/slow {2, 1t}, thunder {3}, explosive {3}",
+  "Bag: 8×4 = 32 cells; food_rations 1 charge per hop; starvation damage when no food",
+  "Hop roll: rollChance default 0.3 (content 0.35, pine_borderlands 0.35/0.4/0.45) × cooldown; COOLDOWN_DAYS = 3, cooldown = 1 on first pass or ≥3 days, else max(0.25, daysSince/3); no roll into town/dungeon/exit",
+  "Encounter weights: borderlands_road entries w3-10 (quest one-shots w60-100 gated by conditions); thornwood_path w3-10; ashfall_track w3-10",
+  "Dungeon gen: NUM_ROWS 6, COLS 4, NUM_PATHS 4, mid weights combat 45 / event 20 / treasure 15 / shop 10 / rest 5 / elite 5, boss row index 6; all 5 dungeons floors 3",
+  "Board floor: seeds = clamp(round(area/24), 1, 6), 2-4 arms each, CA rules dirt≥2 / grass≥4, cap 35%, 2 passes; autotile = 47 keys",
+  "Board geometry: stage 1280, TILE 48, TILE_MIN 40, TILE_MAX 96, band 120..560, margin 40, pad 8",
+  "Balance rebaseline 2026-08-28 (greedy AI both sides, 20 seeds): stub 100% win 2.0 turns; no-gear 100% 4.3; dungeon combat/elite 100% 2.6; dungeon boss 100% 3.0; Iron Throne 100% 3.9; targets 55-75% stub, 40-60% boss, 0% stalemate, 4-10 turns; ~99 party damage/turn vs 54-HP L1 pack"
+ ]
+}

@@ -1,0 +1,495 @@
+{
+ "summary": "FE_MB's design authority is a chain of append-only specs under E:/Work/GameDev/Godot/fe-mb/docs/superpowers/specs/. The game-design root is 2026-03-29-ship-plan-design.md (gear-IS-your-deck card combat on a 14x10 FE grid, deterministic damage, 3 regions with signature status effects, 5-tier rarity, towns/dungeon/quests, tutorial→boss completability); 2026-05-08-phaser-foundations-v2-design.md is the architecture contract (three stores, seeded hierarchical RNG, predicate AST, quest/dialogue as pure systems). Later specs layer rules on top: 2026-05-10-godot-parity (per-hop food + starvation, multi-region overworld, town/dungeon content — its \"remove equipment\" section was REVERSED by the 2026-07-06 beta, gear-as-deck is live), 2026-05-10-stat-check-system (deterministic NV-style per-unit stat checks), 2026-05-10-combat-hud-initiative-forecast (SPD initiative strip, armor-as-breakable-shield with magic half-piercing, forecast numbers == applied numbers), 2026-05-22-overworld-redesign (five node archetypes, Wounds/Supplies/Gold trade-offs, region tuning knob, scout, no fog — approved direction, almost none landed), 2026-06-12-overworld-splitview (Oregon-Trail band+map, shipped), 2026-08-28-ui-retheme-field-ledger (daylight linen/leather skin, no glow). Three owner decisions from 2026-08 override the shipped content: ONE open-sheet 25-40-node omnidirectional map replaces the three chained region strips, Field Ledger replaces every candle-lit look, and the story bible (docs/worldbuilding/story-bible.md: free mercenary company, Corwin Vale murdered by sworn brother Mercer Kaine over a secret dragon egg, player-named foundling MC, BG3-style authored companions, Bagrat \"Oak\" first) replaces the FE6 placeholder cast and tavern shop-row recruitment. Balance truth (docs/research/balance-rebaseline-2026-08-28.md) is that the shipped game is far too easy (100% win in 2-6 turns even gearless) because three engine bugs faked every earlier stalemate — the rebuild tunes enemy threat UP against targets of 55-75% starter win / 40-60% boss win / 4-10 turns / 0% stalemates. Party progression is gear, not levels (no XP shipped; class growthRates authored but unused). The biggest unresolved design tension is the bible's omnidirectional sandbox versus the food-per-hop directed-travel economy; it must be settled in the open-sheet map spec before content is authored.",
+ "requirements": [
+  {
+   "id": "LOOP-1",
+   "text": "Core loop: Title (New Game / Load Game 3 slots / Quit) → first-run scripted tutorial battle → prologue dialogue → overworld node map → per-hop encounter rolls (dialogue / battle / check-event) → towns (Inn/Shop/Tavern) → quest-gated dungeons → final boss → win screen or game-over screen with run stats and New Run. A run must be completable end-to-end.",
+   "source": "2026-03-29-ship-plan-design.md §12; 2026-05-09-ralph-ship-plan-design.md §1; phaser/README.md 'What's playable'",
+   "priority": "must"
+  },
+  {
+   "id": "LOOP-2",
+   "text": "Permadeath: a unit at 0 HP is removed from the party permanently (deathLog kept); run continues while ≥1 unit lives; game over when all party members are dead. Combat is single-attempt — no retreat from forced encounters.",
+   "source": "2026-03-29-ship-plan-design.md §12 Game Over; 2026-05-09-ralph-ship-plan §3 Phase 6; memory design_decisions_core.md",
+   "priority": "must"
+  },
+  {
+   "id": "LOOP-3",
+   "text": "Everything is seed-deterministic: one runSeed, hierarchical deriveRng(parent,label) per domain ('hop:N', 'dungeon:ID', 'battle:ID', 'loot:ID', 'floor'); Math.random forbidden; saves carry rngState so reload mid-battle replays identically; the per-hop encounter RNG label must embed the road's traversal count so re-crossing a road rolls a different encounter.",
+   "source": "2026-05-08-phaser-foundations-v2-design.md §9; phaser/CONTEXT.md §1.6, §3 recordEdgeTraversal",
+   "priority": "must"
+  },
+  {
+   "id": "CMB-1",
+   "text": "Combat grid is 14×10 tiles (tutorial 5×5). Terrain tiles carry kind (plain/forest/mountain/water/road/fortress), defBonus, resBonus, movementCost, impassable, blocksLOS; battle maps are hand-authored templates with party/enemy spawn zones + obstacles, loaded from a validated registry, never hardcoded.",
+   "source": "2026-05-08-phaser-foundations-v2-design.md §8 BattleMap; 2026-03-29-ship-plan §12 Tutorial",
+   "priority": "must"
+  },
+  {
+   "id": "CMB-2",
+   "text": "Turn model: SPD-ordered interleaved initiative queue (rebuilt at battle start and after each endTurn from living units; slow modifies SPD). Each unit's turn = one free move (class startingMov tiles, BFS over terrain, refused if already moved) + AP_PER_TURN = 3 AP of cards + optional capture; End Turn discards the whole hand; next unit draws to HAND_SIZE = 5, reshuffling discard when draw is dry (StS cycling). AP resets every turn (the P0 multi-turn bug).",
+   "source": "phaser/CONTEXT.md §1.4; phaser/src/systems/combatReducer.ts HAND_SIZE/AP_PER_TURN; 2026-05-10-combat-hud-initiative-forecast §1; memory lesson_multiturn_blindspot",
+   "priority": "must"
+  },
+  {
+   "id": "CMB-3",
+   "text": "All combat is deterministic: no hit/miss/crit/avoid, no weapon triangle. Capture is the ONLY random roll in combat.",
+   "source": "2026-03-29-ship-plan-design.md §1 Design Rules; 2026-03-22-mechanics-redesign §10",
+   "priority": "must"
+  },
+  {
+   "id": "CMB-4",
+   "text": "Damage: Physical DMG = card.damage + unit.STR − floor(target.DEF/2) − terrainDefBonus; Magic DMG = card.damage + unit.MAG − floor(target.RES/2) − terrainResBonus; min 0. Damage is baked into each gear card (no weapon might stat). Heals use MAG only. Terrain DR is specified but the shipped reducer never applied it — implement it.",
+   "source": "2026-03-29-ship-plan-design.md §2 Damage Formula; phaser/src/systems/combatReducer.ts:455-459 (no terrain term)",
+   "priority": "must"
+  },
+  {
+   "id": "CMB-5",
+   "text": "Armor is a breakable shield: physical damage is absorbed by armor first, overflow to HP; magic damage splits floor(amount/2) into armor (overflow leaks to HP) and the rest pierces straight to HP. Armor is granted by cards (Block/Fortify/etc.), resets each battle, Mages/Clerics start at 0. The same pure applyDamage/computeForecast function must feed both the reducer and the forecast UI so numbers shown == numbers applied.",
+   "source": "2026-05-10-combat-hud-initiative-forecast-design.md §2 Precondition; phaser/src/systems/damage.ts",
+   "priority": "must"
+  },
+  {
+   "id": "CMB-6",
+   "text": "Card targeting kinds: enemy, ally, self, tile (AOE with radius preview), all_enemies, all_allies; cards define range {min,max} and optional aoeRadius. AOE cards must actually resolve on every tile in the radius (shipped BoardScene dispatched only the clicked tile). all_enemies needs a real runtime path.",
+   "source": "phaser/src/domain/card.ts; docs/research/gear-content-deviations.md Engine notes; memory design_decisions_core.md",
+   "priority": "must"
+  },
+  {
+   "id": "CMB-7",
+   "text": "Card effect primitives the engine must support: Damage (physical/magic, armorPiercing flag), Heal, ApplyStatus (with optional adjacent splash), RemoveStatus (must actually work — shipped as a no-op), Move, GrantArmor (with target:'source' option so 'deal X + gain N armor' cards buff the attacker, not the enemy), DrawCards, GainAp. Cards in the catalog also need: lifesteal-on-hit, true armor-ignore, cover/redirect-to-ally, self-centered enemy AOE from a self card, heal-over-time, conditional damage (vs burning / below 25% HP), teleport, untargetable, straight-line pierce, damage-amplifying mark, ranged-only empower. Either build these or author cards only from supported primitives — never ship silent approximations.",
+   "source": "docs/research/gear-content-deviations.md (full deviation table)",
+   "priority": "should"
+  },
+  {
+   "id": "CMB-8",
+   "text": "Victory when all enemies are dead or captured; defeat when the whole party is down. Defeat condition 'Lord dies' was in the 05-05 sandbox spec but is NOT in the shipped reducer — decide explicitly (bible's player-named MC suggests MC death = defeat).",
+   "source": "phaser/src/systems/combatReducer.ts checkEnd; 2026-05-05-phaser-migration-design.md §4",
+   "priority": "should"
+  },
+  {
+   "id": "CMB-9",
+   "text": "Enemies do NOT play cards: each enemy class has an authored AI (role rusher/archer/healer/tank, weighted actions with range/amount/damageStat/situation/aoeRadius, movement, preferredRange). Enemy actions must be able to apply statuses and buffs (shipped schema could not, so Thornwood poison and Ashfall burn never fired from enemies and the Alpha Wolf howl was faked).",
+   "source": "phaser/src/data/schemas/enemyAI.ts; docs/research/gear-content-deviations.md Phase 45; memory design_decisions_core.md",
+   "priority": "must"
+  },
+  {
+   "id": "CMB-10",
+   "text": "Enemy pathing must route around blockers (BFS field from destination), target resolution must filter dead units (no corpse shadowing), and every battle seeder must place the party on the board — the three engine bugs that faked 100% stalemates.",
+   "source": "docs/research/balance-rebaseline-2026-08-28.md; memory lesson_balance_inverted.md",
+   "priority": "must"
+  },
+  {
+   "id": "CMB-11",
+   "text": "Combat HUD: initiative strip showing next actors (8 visible, '+N' badge), active actor highlighted, team rings, HP under portraits, hover tooltip; hover preview = floating damage number with ☠ on lethal; click-to-pin forecast panel (card name, AP cost, source→target portraits, HP/armor bars with predicted loss, collapsible math row 'base + stat − DR = total (− armor, − HP)', status chips, LETHAL badge); confirm to play, right-click/Esc cancels.",
+   "source": "2026-05-10-combat-hud-initiative-forecast-design.md §1-2",
+   "priority": "should"
+  },
+  {
+   "id": "CMB-12",
+   "text": "Combat feedback: sprite tween toward target, hit-flash, floating damage numbers, camera shake on big hits, death fade, AOE preview ring, target reticle, danger-zone overlay (Tab), card drag-to-target, FE-style move phase with unit drag. Board overlay grammar: blue move / red target / purple danger / arcane AoE / brass active ring.",
+   "source": "2026-05-09-ralph-ship-plan §3 Phase 1; 2026-08-28-ui-retheme-field-ledger §2; phaser/README.md",
+   "priority": "should"
+  },
+  {
+   "id": "DECK-1",
+   "text": "Gear IS the deck: Deck = innate class cards (4-5) + hand_left item cards + hand_right item cards; size varies ~11-14 by loadout. Every card knows its source ('innate' | 'hand_left' | 'hand_right'). No mid-combat weapon swaps — loadout locks for the battle.",
+   "source": "2026-03-29-ship-plan-design.md §2",
+   "priority": "must"
+  },
+  {
+   "id": "DECK-2",
+   "text": "Hand slots: each unit has hand_left + hand_right. 1H weapon = 3-4 attack cards; shield = 3-4 defense cards; tome = 3-4 spells; staff = 3-4 heal/support; 2H weapon (greatsword, longbow) = 6-8 cards and locks the other slot; quiver = no cards, modifies bow cards in the other slot. Any 1H item fits either slot; tome+staff dual-wield allowed. Equip/unequip is atomic with the bag (swap returns old item to bag; refused if bag full).",
+   "source": "2026-03-29-ship-plan-design.md §3; phaser/src/systems/equipment.ts planEquip/planUnequip",
+   "priority": "must"
+  },
+  {
+   "id": "DECK-3",
+   "text": "Quiver modifiers apply at deck-build time to damage-dealing bow cards only: Poison (2 poison/2 turns), Slow (−2 SPD 1 turn), Thunder (+3 magic dmg ignoring armor), Explosive (3 dmg to enemies adjacent to target). No bow → quiver does nothing; 2H bows cannot pair with a quiver.",
+   "source": "2026-03-29-ship-plan-design.md §8, §7 Quivers",
+   "priority": "must"
+  },
+  {
+   "id": "DECK-4",
+   "text": "Innate class cards (never change) per §4 table: LORD Rally/Inspiring Strike/Nobility/Lord's Command; KNIGHT Fortify(5 armor)/Bulwark(taunt)/Hold the Line/Shield Expertise; CAVALIER Gallop/Charge/Trample(3)/Swift Strike; FIGHTER Battle Cry/Reckless Blow/Axe Mastery(+4)/Berserker Rage; ARCHER Take Aim(+5)/Pin Down/Evasion/Quick Reflexes; MAGE Focus/Arcane Burst(r2 AOE)/Barrier(4)/Elemental Mastery; CLERIC Prayer/Mass Heal(5)/Divine Shield(5)/Sanctuary; THIEF Smoke Bomb/Dodge/Steal(10g)/Flurry; BOUNTY_HUNTER Track Prey(+3, 2t)/Net Throw/Capture(2 AP)/Bounty Knowledge. 9 player classes total; shipped only LORD/KNIGHT/MAGE as playable.",
+   "source": "2026-03-29-ship-plan-design.md §4; phaser/src/data/content/classes.json",
+   "priority": "must"
+  },
+  {
+   "id": "DECK-5",
+   "text": "Gear catalog = the §7 detail tables (46 named items: 12 common / 24 uncommon / 3 rare / 4 epic / 3 legendary — the §7 summary table's '39' is wrong) with the exact AP/damage/range/status values listed there; shipped content is 49 items / 161 cards in phaser/src/data/content/{items,cards}.json.",
+   "source": "2026-03-29-ship-plan-design.md §7; docs/research/gear-content-deviations.md",
+   "priority": "must"
+  },
+  {
+   "id": "RAR-1",
+   "text": "Five rarities (Common white/grey, Uncommon green, Rare blue, Epic purple, Legendary orange/gold). Same item type contributes the same NUMBER of cards regardless of rarity; higher rarity = better numbers, then bonus effects, then unique synergy sets. Sources: shops sell Common/Uncommon (Borderlands) or Uncommon/Rare (Thornwood, Ashfall); battle loot Common/Uncommon weighted by enemy level; dungeon chests Rare/Epic; dungeon boss Epic/Legendary; quest rewards Rare/Epic/Legendary. Epic and Legendary are never sold.",
+   "source": "2026-03-29-ship-plan-design.md §5, §11",
+   "priority": "must"
+  },
+  {
+   "id": "RAR-2",
+   "text": "Regional gear identity: Borderlands = Iron/Steel/Leather, no signature effect; Thornwood Wilds = Darkwood/Bone/Venom, signature POISON; Ashfall Peaks = Obsidian/Magma/Ember, signature BURN. Cross-region mixing is intended (regions are build chapters). With the open-sheet map, regions become areas of one sheet, not chained strips.",
+   "source": "2026-03-29-ship-plan-design.md §6; memory project_direction_decisions_2026_08.md",
+   "priority": "must"
+  },
+  {
+   "id": "STAT-1",
+   "text": "Status effects, all deterministic with fixed numbers/durations: Poison (X dmg at end of target's turn, N turns, no stacking — reapply refreshes and takes higher X), Burn (same tick, STACKS additively, duration = longer), Slow (−X SPD for N turns, affects initiative, refresh), Immobilize (MOV=0, refresh). Shipped also: taunt, riposte, empower; 1-turn self-buffs applied on the caster's own turn must survive the following enemy phase (the 'fresh' rule).",
+   "source": "2026-03-29-ship-plan-design.md §9; phaser/src/systems/statusEffects.ts; phaser/src/domain/unit.ts ActiveStatus.fresh",
+   "priority": "must"
+  },
+  {
+   "id": "CAP-1",
+   "text": "Capture (subdue) an adjacent enemy for 2 AP: chance = (1 − hp/maxHp) × 0.6 + 0.25 × adjacentAllies + 0.15 if a Bounty Hunter, clamped to [0,1], shown as a percentage before committing. Success removes the unit from the grid flagged captured (no kill gold); captured units are reported as capturedIds for quests and can be turned in at a tavern bounty board (bounty 20g L1-2 / 40g L3-4 / 60g L5+ / custom for named targets, e.g. Daren 50g). Capture-then-recruit, if added, rolls a fresh class-baseline unit at the captured level.",
+   "source": "phaser/src/systems/capture.ts; memory design_decisions_core.md; 2026-03-22-mechanics-redesign §7 Bounty Values; docs/research/stat-growth-math.md Capture-Then-Recruit",
+   "priority": "must"
+  },
+  {
+   "id": "PARTY-1",
+   "text": "Party: start with 3 units, cap 6 (spec; not enforced in shipped code — enforce it). Starter loadouts: Lord — Iron Sword; Knight — Iron Lance + Iron Buckler; Mage — Fire Tome; gear starts equipped, not in the bag. Names/classes are to be replaced by the story-bible cast (player-named foundling MC, Bagrat 'Oak' shield tank first companion) — FE6 names Roy/Marcus/Lilina are placeholders.",
+   "source": "2026-03-29-ship-plan-design.md §13 Recruitment, §17 Phase 2; phaser/src/systems/starterParty.ts; docs/worldbuilding/story-bible.md",
+   "priority": "must"
+  },
+  {
+   "id": "PARTY-2",
+   "text": "Recruitment: story bible LOCKS BG3-style authored companions gained through main/faction quests with their own recruitment scenes (~7 roster: Oak tank, scholar/mage, defector/archer, knife/thief, mender/healer, runaway/heavy, Bex Callan duelist) — NOT tavern shop-row hires. The ship plan's 'pay gold for 2-3 random classes at a tavern' and the shipped TavernPanel hire flow are superseded. If a gold-priced hire survives anywhere, cost = round(BASE_CLASS_COST × (1 + (level−1) × 0.5)) with bases bandit 80 / knight 140 / mage 180 / lord 220 / default 120.",
+   "source": "docs/worldbuilding/story-bible.md Pillars + Companions; 2026-03-29-ship-plan §13; docs/research/recruitment-cost.md",
+   "priority": "must"
+  },
+  {
+   "id": "PARTY-3",
+   "text": "Progression is GEAR, not levels: no XP or level-ups shipped (battleResolver xpAwards are all 0; difficulty.ts states 'There is NO party leveling'). Class growthRates exist in data but are unused. If leveling is ever added use research #4: +30 XP per kill, 100 XP per level, per-stat Bernoulli growth with a forced +1 if nothing rolled, maxAP +1 at levels 5/10/15 (cap 5).",
+   "source": "phaser/src/systems/difficulty.ts; phaser/src/systems/battleResolver.ts; docs/research/stat-growth-math.md",
+   "priority": "could"
+  },
+  {
+   "id": "INV-1",
+   "text": "Shared party bag: 8×4 grid (32 cells), Diablo/RE4 spatial placement with drag-drop, 'Organize' auto-pack (largest first), 'Bag Full' overlay on loot with no room. Item sizes: sword 1×3 (shipped 1×2), lance 1×4, axe 2×2, bow 1×3, tome 1×2, staff 1×3, greatsword 2×3, consumables 1×1, Food Rations 1×2. Food is a computed property = ration charges in the bag.",
+   "source": "2026-03-22-mechanics-redesign.md §2, §11 Food; phaser/src/systems/equipment.ts BAG_WIDTH/HEIGHT",
+   "priority": "must"
+  },
+  {
+   "id": "INV-2",
+   "text": "Consumables: Food Rations (50g/25g sell; spec = 3 hop-charges per ration, shipped = 1 charge per item — decide, the spec value is authoritative), Healing Potion (shipped 30g), Vulnerary (spec 80g, 10 HP × 3 uses), Elixir (spec 500g full heal × 3), Power Elixir (shipped 80g). No whetstone.",
+   "source": "2026-03-22-mechanics-redesign.md §7, §11; phaser/src/data/content/items.json",
+   "priority": "should"
+  },
+  {
+   "id": "ECO-1",
+   "text": "Economy: starting gold 80 (+ starting food: spec 2 rations = 6 hops + 1 Vulnerary; shipped 5 rations). Battle reward 10 + enemyLevel × 5 gold per enemy defeated (captured enemies give no kill gold). Sell price = 50% of buy. Rarity price bands: Common 50-120g, Uncommon 120-250g, Rare 300-500g, Epic sell-only 300-500g, Legendary sell-only 500-800g. A meaningful purchase should be affordable after 2-3 battles. Gold must clamp at 0.",
+   "source": "2026-03-29-ship-plan-design.md §11; 2026-03-22-mechanics-redesign.md §7; phaser/src/App.tsx new-game bootstrap; docs/research/gear-content-deviations.md (negative gold)",
+   "priority": "must"
+  },
+  {
+   "id": "ECO-2",
+   "text": "Battle loot: on victory, LOOT_DROP_CHANCE 0.4 of exactly one gear item; rarity weighted by the strongest defeated enemy's level: L1-2 80% Common / 20% Uncommon; L3-4 50/40/10 Rare; L5+ 30% Uncommon / 50% Rare / 20% Epic (research adds L7-9: 40% Rare / 45% Epic / 15% Legendary); fall through to the next lower rarity if the pool is empty.",
+   "source": "2026-03-29-ship-plan-design.md §11 Loot drops; phaser/src/systems/loot.ts; docs/research/enemy-scaling-curves.md §2",
+   "priority": "must"
+  },
+  {
+   "id": "DIFF-1",
+   "text": "Difficulty scales by map position, not player level: near-start enemies level 1-2, mid-map 3-4, near the finale 5-6, final boss 7+. Region tier → level band (tier1 [1,2], tier2 [3,4], tier3 [5,6]) with a deterministic per-node salt; enemy stat curve per level: +2 HP/level, +1 STR & DEF every 2 levels, +1 SKL/SPD/RES every 3. Research alternative: hp = base + perLevel×level with region hpMul 1.0/1.10/1.20/1.35 and enemy might 4 + floor(level/2). On an open sheet, tier must become a per-area property (distance from start / hub), not a strip index.",
+   "source": "2026-03-29-ship-plan-design.md §12 Difficulty Scaling; phaser/src/systems/difficulty.ts; docs/research/enemy-scaling-curves.md",
+   "priority": "must"
+  },
+  {
+   "id": "DIFF-2",
+   "text": "Balance targets: starter party vs stub encounter 55-75% win; boss with epic+ gear 40-60% win; 0% stalemates; battles last 4-10 turns. Shipped state is 100% win in 2-6 turns even gearless (3 units × 3 AP × ~11 dmg ≈ 99 dmg/turn into a 54-HP bandit pool) — tune enemy HP, pack size and burst UP, watch mage_circle's 13×2 one-shot on L1 parties, and validate against manual play, not only the greedy sim.",
+   "source": "docs/research/balance-rebaseline-2026-08-28.md; memory lesson_balance_inverted.md",
+   "priority": "must"
+  },
+  {
+   "id": "ENEMY-1",
+   "text": "Enemy roster ≥ 8-10 groups: Bandit Ambush (2 bandits + archer, L1), Wolf Pack (3 fast fragile wolves), Brigand Raiders (2 + chief, L2), Daren's Gang (capture target Daren, bounty 50), Shield Wall (2 tower-shield knights + archer — demands armor-breaking), Mage Circle (2 mages + cleric glass cannons), Wolf Alpha Pack (4 wolves + alpha 38 HP with pack buff — demands AOE), Thornwood Ambush (2 bone-dagger thieves + darkwood archer, poison), Ashfall Raiders (2 obsidian-axe fighters + ember mage, burn). Named members get stable unit ids ('daren', 'wolf') driving sprites and quest flags.",
+   "source": "2026-03-29-ship-plan-design.md §13 Enemy Groups; phaser/src/data/content/enemyGroups/*.json; phaser/CONTEXT.md §8 encounter schema",
+   "priority": "must"
+  },
+  {
+   "id": "BOSS-1",
+   "text": "Final boss at the exit node (currently 'The Iron Throne' Warlord: authored 55 HP, 6 armor, SPD 3, level 7, executioner + aoeRadius sweep AI, plus 2 Throne Guards 24 HP / 2 armor / level 5). Story bible re-casts the final boss as Mercer Kaine (sworn brother), with Cassius Merrow as a turnable sub-boss and regional lieutenants; boss escalation ladder Act I old-company roster → Act II patron lord → Act III anti-dragon order. Victory → run-complete screen; boss drops Epic/Legendary.",
+   "source": "2026-03-29-ship-plan-design.md §12 Boss; phaser/src/game/scenes/seedBossBattle.ts; docs/worldbuilding/story-bible.md antagonist",
+   "priority": "must"
+  },
+  {
+   "id": "TUT-1",
+   "text": "Tutorial: first game only, before the overworld — 5×5 grid, MC vs 1 under-statted bandit, scripted highlights (move tile → card → target), teaches movement/card play/AP/damage in ~60 s, then transitions to the prologue/overworld. tutorialSeen persists in meta.",
+   "source": "2026-03-29-ship-plan-design.md §12 Tutorial Battle; phaser/src/game/scenes/seedTutorialBattle.ts",
+   "priority": "must"
+  },
+  {
+   "id": "END-1",
+   "text": "Win screen and Game Over screen show run stats: hops traveled, battles won, enemies defeated, enemies captured, units lost, gold earned, gear found, days elapsed/time played; 'New Run' resets the run store atomically.",
+   "source": "2026-03-29-ship-plan-design.md §12 Win/Game Over; phaser/CONTEXT.md §3 runStats",
+   "priority": "must"
+  },
+  {
+   "id": "OW-1",
+   "text": "Map model (owner decision 2026-08-23, supersedes the three chained region strips): ONE contiguous open-sheet 2-D world map of 25-40 nodes with hub towns, travel any direction (bible: M&B omnidirectional sandbox, NOT a one-way west march). Hand-authored (procgen overworld rejected), connections are explicit edge data. The engine graph walker is already undirected; what forced one-way was data topology, region-tier→level and the ungated exit.",
+   "source": "memory project_direction_decisions_2026_08.md; docs/worldbuilding/story-bible.md Pillars; 2026-05-22-overworld-redesign §Non-goals; phaser/CONTEXT.md §12 OQ-2",
+   "priority": "must"
+  },
+  {
+   "id": "OW-2",
+   "text": "Node types: TOWN, CAMP (rest), DUNGEON (quest/flag-gated), EXIT/BOSS — no BATTLE/EVENT nodes; combat and events happen as encounters while traveling. Overworld-redesign refines this to five archetypes (Trail pass-through, Town hub, Rest Camp, Discovery one-time event slot, Dungeon) + one Boss anchor per region, each with asymmetric services so no archetype dominates.",
+   "source": "memory design_decisions_core.md; 2026-03-29-ship-plan §12; 2026-05-22-overworld-redesign-design.md Pillars 3-4",
+   "priority": "must"
+  },
+  {
+   "id": "OW-3",
+   "text": "Travel: click a node → BFS path → party auto-walks hop by hop (FTL click-to-go, no plan-then-confirm bar); each hop costs 1 food (1 day) and rolls an encounter on the edge's table (shipped rollChance 0.35, 0.4 on some edges; Godot 35%); at 0 food every living unit takes 3 HP starvation damage per hop; a battle mid-path stores pendingTravelPath and resumes after victory; hover shows hop + food cost. Smart multi-hop: the walk pauses at any decision node (town/camp/dungeon/boss/discovery, fresh encounter roll, unvisited, destination) and chains silently through cleared trail nodes.",
+   "source": "2026-05-10-godot-parity-design.md §Goals 3; memory project_overworld_grounding.md; 2026-05-22-overworld-redesign Pillar 1; phaser/src/state/runStore.ts consumeFoodPerHop",
+   "priority": "must"
+  },
+  {
+   "id": "OW-4",
+   "text": "Three currencies that trade against each other — Wounds (per-unit HP carry-over, permadeath at 0), Supplies/food (drained per hop at a region-tunable rate), Gold; every node payoff spends two and gains one (ambush: Wounds+Supplies→Gold; camp: Supplies→Wounds; town: Gold→Wounds+Supplies). No morale, no auto-heals — healing is always a player choice.",
+   "source": "2026-05-22-overworld-redesign-design.md Pillar 2; memory design_decisions_core.md Resources",
+   "priority": "should"
+  },
+  {
+   "id": "OW-5",
+   "text": "Region tuning is one knob per region: encounterChancePerHop 0.25 / 0.40 / 0.55 and supplyDrainPerHop 1 / 1 / 2 for Borderlands / Thornwood / Ashfall plus favoredEnemyTags; placeholders to tune by playtest. No per-region rule systems in v1.0.",
+   "source": "2026-05-22-overworld-redesign-design.md Pillar 5 + REGION_TUNING",
+   "priority": "should"
+  },
+  {
+   "id": "OW-6",
+   "text": "No fog on the overworld: encounters are telegraphed on hover (category, unit count) and a Rest-Camp-only Scout action (costs supplies) reveals composition ahead; scouted encounters are pre-rolled so what you see is what you get. Per-run variety comes from content rotation (encounter draws, Discovery deck of 30-40 hand-authored events drawn without replacement, rotating shop stock/recruits, 2-3 boss compositions), never from graph changes. Boot-time unique-destination audit: no two branches from a node reconverge within 2 hops.",
+   "source": "2026-05-22-overworld-redesign-design.md Pillars 6-8; 2026-03-22-mechanics-redesign §8 Scout",
+   "priority": "should"
+  },
+  {
+   "id": "OW-7",
+   "text": "The map inscribes the run: caravan token loses a portrait tile per dead unit; nodes show unvisited/current/cleared/failed/quest-active; hidden conviction counters (honor/ruthlessness/mercy) fed by Discovery/dialogue choices pick the region boss variant with no HUD meter.",
+   "source": "2026-05-22-overworld-redesign-design.md Pillar 9",
+   "priority": "could"
+  },
+  {
+   "id": "OW-8",
+   "text": "Overworld presentation = Oregon-Trail split view: decorative side-view travel band on top (parallax vista, caravan that only walks while traveling, direction flips for westward travel, CSS-keyframe animation only) over an interactive parchment paper map below (hand-inked dashed roads, sigil nodes, ink labels never white-on-parchment). Band+map composition survives the open-sheet decision; the X-only strip camera and three baked region vistas do not.",
+   "source": "2026-06-12-overworld-splitview-design.md; memory project_overworld_grounding.md; 2026-08-28-ui-retheme-field-ledger §4",
+   "priority": "should"
+  },
+  {
+   "id": "CAMP-1",
+   "text": "Camp: pick ONE action per visit — Rest (heal all 20% max HP, costs 1 food; disabled with 'No food'), Scout (reveal next 3 hops, free/supplies), Leave. No Sharpen. Camp Scout was shipped as a stub — implement it.",
+   "source": "2026-03-22-mechanics-redesign.md §8 (minus Sharpen per 03-29 §10); phaser/src/ui/screens/CampScene.tsx HEAL_PERCENT",
+   "priority": "must"
+  },
+  {
+   "id": "TOWN-1",
+   "text": "Town services: Inn (heal all units, per-unit gold cost — 8g baseline; shipped towns 6/8/10/12/20 by tier), Shop (buy/sell gear + consumables, stock filtered by region and rarity, 1-2 rotating items), Tavern (rumors, quest accept via dialogue with visibleIf predicates, bounty board for captured enemies). Town scene is a Mount-and-Blade-style sidebar + content panel. No Blacksmith, no Guild, no Arena.",
+   "source": "2026-03-29-ship-plan-design.md §11 Town Services; 2026-05-10-godot-parity §Towns; phaser/src/data/content/towns/*.json",
+   "priority": "must"
+  },
+  {
+   "id": "DNG-1",
+   "text": "Dungeons are Slay-the-Spire branching maps, procgen deterministically from (runSeed, dungeonId), fully revealed on entry (Event contents hidden until entered), entered from a DUNGEON node, quest/flag-gated (Smuggler's Cave unlocks on Blood Ties completion). Rooms: Combat, Elite (harder + epic loot), Event (check-event), Rest (heal — 30% shipped; spec dungeon rest is free), Treasure (gold/item), Shop (parity spec added it; StS research says drop it), Boss (Epic/Legendary drop, exits dungeon). Each dungeon JSON carries region, theme, combat/elite/boss enemy pools and roomEvents.",
+   "source": "2026-03-29-ship-plan-design.md §13 Dungeon; 2026-05-09-ralph-ship-plan §3 Phase 5; docs/research/sts-procgen.md; 2026-05-10-godot-parity §Dungeons",
+   "priority": "must"
+  },
+  {
+   "id": "DNG-2",
+   "text": "Procgen algorithm (research #1): 7-wide grid, 15 rows + boss, 6 path traversals (first two start at distinct columns), edges advance exactly one row and never cross, prune unvisited; forced row1=Combat, row9=Treasure, row15=Rest, no Rest on row14, no Elite/Rest before row 6; weights Combat 60 / Event 25 / Rest 10 / Elite 5 (Merchant dropped); validator: no consecutive special nodes, all destinations from a fork distinct types; row count is a parameter. Shipped compressed variant: 6 rows + boss, 4 paths, weights combat 45 / event 20 / treasure 15 / shop 10 / rest 5 / elite 5.",
+   "source": "docs/research/sts-procgen.md; phaser/src/procgen/dungeonGenerator.ts",
+   "priority": "should"
+  },
+  {
+   "id": "QST-1",
+   "text": "Quest engine: data-driven QuestDef with stages as a DAG (onEnter/listeners/transitions/onExit), typed scoped flags (run/quest/battle/permanent), declarative Predicate AST (always/never/flag/notFlag/questStage/questComplete/partyHas/hasItem/goldAtLeast/visited/cleared/allOf/anyOf/not) shared by quest transitions, node visibility, dialogue gating and shop gating; quest effects setFlag/grantItem/recruitUnit/spawnNode/unlockNode/startCombat/startDialogue/completeQuest/addGold/addFood/damageParty/healParty/statCheck must ALL be implemented (recruitUnit/spawnNode/unlockNode shipped as no-ops). The domain event bus (BattleVictory, UnitDied, EnemyCaptured, LocationArrived, ItemAcquired, FlagSet, QuestStageAdvanced) must have real emit sites from day one.",
+   "source": "2026-05-08-phaser-foundations-v2-design.md §13-16; phaser/CONTEXT.md §3 stubs; memory project_direction_decisions_2026_08.md engine gaps",
+   "priority": "must"
+  },
+  {
+   "id": "QST-2",
+   "text": "Shipped quest content to carry: Blood Ties (tavern accept at Pine Crossing → spawn Daren's camp node → capture OR kill Daren → return for reward; capture recruits Kael L5, kill grants 80g), The Missing Caravan (fetch supplies in a dungeon → Rare gear reward), The Deserter (travel dialogue chain: help or turn in, branching later shop stock), 8 Godot dialogues (prologue, road_merchant, bandit_threat, wounded_traveler, blood ties ×3, crossroads) + 4-5 travel events (wandering blacksmith, ambush toll, injured knight, ancient shrine, thieves' crossroads). All narrative text is to be rewritten to the story bible.",
+   "source": "2026-03-29-ship-plan-design.md §13; 2026-05-10-godot-parity §Content; phaser/src/data/content/{quests,dialogue}/",
+   "priority": "should"
+  },
+  {
+   "id": "DLG-1",
+   "text": "Dialogue is a pure system over a JSON tree (nodes with speaker/text/choices; choice = visibleIf/enabledIf predicates + effects + next, or check + onPass/onFail), rendered as a JRPG overlay with character portraits; choices dispatch quest effects; encounters may resolve to dialogue, battle (with captureTargets keyed on unit id), or checkEvent.",
+   "source": "2026-05-08-phaser-foundations-v2-design.md §17; 2026-05-10-stat-check-system §Authoring; phaser/CONTEXT.md §8 encounter schema",
+   "priority": "must"
+  },
+  {
+   "id": "CHK-1",
+   "text": "Stat checks are deterministic (pass iff value ≥ threshold, no rolls), per-unit: the player picks which living unit attempts (picker sorted by stat, failing candidates selectable); kinds stat (str/mag/skl/spd/def/res/lck), class (any living member), gold, food. Unmet checks stay visible greyed with the threshold and best-in-party value shown ('[STR 7] (Marcus 5)'). Three surfaces: travel encounters, dungeon event rooms, post-victory reward gate (enemy group victoryEvent). Thresholds 7-9 challenge mid-run parties; bandit_threat intimidate = STR 7.",
+   "source": "2026-05-10-stat-check-system-design.md",
+   "priority": "must"
+  },
+  {
+   "id": "STORY-1",
+   "text": "Narrative frame (locked): grounded medieval fantasy, Mount & Blade energy, earthy + gallows humor over a warm found-family core; dragons are the ONE fantastical element and are extinct ~300 years. The party is a free mercenary company that exists while it moves; towns hire it. Captain Corwin Vale (founder of the Ashford Company) is deliberately murdered by sworn brother/2iC Mercer Kaine over a secret dragon egg; the dying Vale gives the egg to the foundling MC; the company splits; Kaine keeps the Ashford name and hunts the MC to DESTROY the egg (he is not wrong that a dragon is catastrophe). The egg stays secret; surface world = petty realms at low-grade border war; client = a petty king who knows what the egg is. MC is player-named at a guild-registration beat; the player later names the new company.",
+   "source": "docs/worldbuilding/story-bible.md (locked sections); memory project_story_bible_direction.md",
+   "priority": "must"
+  },
+  {
+   "id": "STORY-2",
+   "text": "Signature abilities: every named character carries 1-2 personal cards (personality is played). Locked: Oak's 'Genatsvale' — each turn the first blow aimed at an adjacent ally lands on him instead (per ally per turn); MC's 'Not Today' (protective, referenced but not yet specified). Title is provisional ('Embermarch' is a placeholder, bible says TBD).",
+   "source": "docs/worldbuilding/story-bible.md Companions; 2026-07-18-cast-the-long-carry-design.md Decisions 1; memory project_story_bible_direction.md",
+   "priority": "should"
+  },
+  {
+   "id": "UI-1",
+   "text": "Render boundary: Phaser draws the tactical board only (tiles, units, in-world animation, spatial tile/unit picks); ALL UI (cards, hand, HUD, menus, shop, inventory, dialogue, tooltips, modals, overworld, town, dungeon) is React DOM. Fixed 1280×720 stage uniformly CSS-scaled and letterboxed; overlays portal into the stage; no reflow to arbitrary sizes.",
+   "source": "2026-05-09-ui-input-overhaul-design.md Architectural decision; phaser/CONTEXT.md §1.1-1b",
+   "priority": "must"
+  },
+  {
+   "id": "UI-2",
+   "text": "Visual identity = Field Ledger (owner pick 2026-08-28): the quartermaster's ledger and camp table in daylight. Page ground for information screens: linen canvas #e7dec9, walnut ink #2a2119, brass pins/fills #d9a93f/#b8862b, oxblood danger #9a2c22; Field ground for combat: warm earth under the board, saddle-leather #6a4b2f chrome with brass edges #b08a3e. Canvas = read, leather = act (one primary per view). Nothing glows: no radial pools, flicker, ember-fire, vignettes, emissive rims. Type: Cinzel display, EB Garamond body, tabular numerals. Do NOT re-candle (Forged & Lit / candle-lit grimdark is rejected).",
+   "source": "2026-08-28-ui-retheme-field-ledger-design.md §1-3; memory feedback_ui_direction_candlelit_out.md",
+   "priority": "must"
+  },
+  {
+   "id": "UI-3",
+   "text": "Legibility contracts: AA 4.5:1 for small text on both grounds; colour never the sole channel (sigils, gem shapes, disc/star); numerals largest on combat elements; reduced-motion kills every loop; every interactive surface has idle/hover/pressed/disabled-with-reason states; Tab+Enter/Space navigate every menu; no click lost mid-tween; invisible containers must not eat clicks (input layer isolation).",
+   "source": "2026-08-28-ui-retheme-field-ledger §3; 2026-05-09-ui-input-overhaul-design.md Goals; memory lesson_ui_input_layering.md",
+   "priority": "must"
+  },
+  {
+   "id": "UI-4",
+   "text": "Keys/screens: I = loadout (per-unit hand slots over the 8×4 bag), Q = quest log overlay, Tab = danger zones in combat, Esc = pause/cancel, pause menu Save; 3 localStorage save slots with slot metadata; autosave on location arrival and battle victory.",
+   "source": "phaser/README.md; phaser/CONTEXT.md §8 saveSlots; memory godot_legacy_reference.md Wave 6",
+   "priority": "should"
+  },
+  {
+   "id": "SAVE-1",
+   "text": "Save = {saveVersion, meta, run|null, combat|null, actionLog (last 200 with rngStateBeforeAction), contentAliases version}; atomic hydration (parse → alias-resolve → Zod validate → swap) failing to the main menu, never half-loaded; content alias table so id renames don't break saves; pre-alpha policy = schema bump nukes saves with a loud warning; every persisted run field must be declared in the load schema (Zod strips undeclared keys silently). Units serialize whole so hand slots round-trip.",
+   "source": "2026-05-08-phaser-foundations-v2-design.md §21-22; phaser/CONTEXT.md §3 hydrateFromSave warning",
+   "priority": "must"
+  },
+  {
+   "id": "ART-1",
+   "text": "Character art comes from the local ComfyUI pipeline (832×1216 portraits, ÷8 box-filtered board bakes with LINEAR filtering); sprites map by unit id with class fallback, never by display name. Terrain uses the 47-case blob autotiler over px_<terrain> tiles; board maps are planned as an ASCII critical-path sketch then tiled by tool, never hand-placed tile by tile.",
+   "source": "phaser/CONTEXT.md §8 unitSprites/autotile; .claude/skills/drawing-maps/SKILL.md; memory reference_comfyui_sprite_pipeline.md",
+   "priority": "should"
+  },
+  {
+   "id": "AUD-1",
+   "text": "Audio: 3 music/ambient contexts (overworld, combat, town) + 12-15 SFX (card play, physical hit, magic hit, heal, death, gold, button, footstep, encounter start, victory, defeat, card draw, armor break); shipped as a WebAudio synth engine with no asset files; master mute in meta.",
+   "source": "2026-03-29-ship-plan-design.md §14; phaser/README.md Audio",
+   "priority": "could"
+  },
+  {
+   "id": "DEV-1",
+   "text": "Keep a headless CLI that drives the real stores/systems with no browser (interactive combat REPL, scripted deterministic runs, dialogue walker, both-AI balance sim reporting win/loss/stalemate/avg turns) — it is how balance is measured; treat a 100%-stalemate sim as an engine smoke alarm and reproduce one battle by hand before tuning.",
+   "source": "phaser/.claude/CLAUDE.md Headless CLI; docs/research/balance-rebaseline-2026-08-28.md",
+   "priority": "should"
+  },
+  {
+   "id": "OOS-1",
+   "text": "Explicitly out of scope per specs: real-time campaign map; procgen overworld layout; a map-traversal currency on top of Supplies; showing all regions as one image with fog; decorative cartographer artifacts as navigation; per-region full-system differentiation (v1.x); faction simulation / multi-generational arcs; roll-based checks, skills layer, rerolls, perks; hit/crit/avoid rows; predicted enemy telegraphs; mid-combat weapon swaps; sharpness/blacksmith/whetstone/quick slots/weapon triangle/morale; save migration ladder (pre-alpha); Steam packaging, mobile/Steam Deck, mod support, localization, achievements, tutorial polish, Tauri.",
+   "source": "2026-05-22-overworld-redesign §Non-goals; 2026-05-10-stat-check §Non-goals; 2026-05-10-combat-hud §Non-goals; 2026-03-29-ship-plan §10; 2026-05-08-foundations-v2 §3; 2026-05-09-ralph-ship-plan §1; 2026-05-05-migration §3",
+   "priority": "must"
+  }
+ ],
+ "keep": [
+  "docs/superpowers/specs/2026-03-29-ship-plan-design.md §4 (innate class cards), §7 (46-item gear catalog with every AP/damage/range value), §8 (quiver rules), §9 (status table), §11 (prices, battle gold, loot weights) — port these tables as content data verbatim",
+  "phaser/src/data/content/cards.json + items.json (161 cards / 49 items, already authored to the §7 tables; read docs/research/gear-content-deviations.md alongside to restore the approximated cards)",
+  "phaser/src/data/content/classes.json (13 class defs with baseStats/growthRates/startingMov/startingHp), enemyGroups/*.json (9 groups), enemyAI/*.json (role-based action tables), towns/*.json (5 towns), dungeons/*.json (5), quests/*.json (2), dialogue/*.json (14 trees), encounters/*.json (3 tables incl. inline checkEvents), checkEvents/interrogate_survivor.json — content is reusable as data even though names/text must be rewritten to the story bible",
+  "phaser/src/systems/damage.ts — applyDamage (armor split) + computeForecast: the single source of truth for combat math",
+  "phaser/src/systems/capture.ts — captureChance formula",
+  "phaser/src/systems/loot.ts — LOOT_DROP_CHANCE + rarity tables with fallback",
+  "phaser/src/systems/difficulty.ts — enemyLevelFor / scaleEnemyForLevel curve (re-key tier from strip index to open-sheet area)",
+  "phaser/src/systems/equipment.ts — BAG 8×4 placement + planEquip/planUnequip (2H locks off-hand, swap-to-bag, bag-full refusal)",
+  "phaser/src/systems/deckBuilder.ts — innate + gear cards with source tags and quiver cardMods",
+  "phaser/src/systems/statusEffects.ts — lifecycle-hook registry (poison/burn/slow/immobilize/taunt/riposte/empower) incl. the stack/refresh rules and the 'fresh' 1-turn-buff rule",
+  "phaser/src/systems/rng.ts — Mulberry32 + deriveRng(parent,label) hierarchical RNG",
+  "phaser/src/systems/predicates.ts + domain/predicate.ts + data/schemas/predicate.ts — the declarative Predicate AST and single evaluator",
+  "phaser/src/systems/checkResolver.ts + domain/check.ts — deterministic per-unit stat check resolver",
+  "phaser/src/systems/recruitmentCost.ts + docs/research/recruitment-cost.md — cost formula (if any gold hire survives)",
+  "phaser/src/procgen/dungeonGenerator.ts + docs/research/sts-procgen.md — deterministic StS map generator and the canonical 15-row algorithm to grow into",
+  "phaser/src/systems/autotile.ts + systems/boardFloor.ts + domain/boardGeometry.ts + scripts/cli/map-tool.ts + .claude/skills/drawing-maps/ — 47-case autotiler, tile-pitch math (TILE 48, 40-96 range, BAND_TOP 120), map lint pipeline",
+  "phaser/src/data/schemas/*.ts — Zod schemas mirroring every domain type (card, unit, item, class, map, quest, dialogue, region, encounter, enemyAI, town, dungeonDef, check, checkEvent)",
+  "phaser/src/index.css Field Ledger tokens + phaser/src/game/boardPalette.ts canvas mirror + docs/superpowers/specs/2026-08-28-ui-retheme-field-ledger-design.md — the approved skin",
+  "phaser/src/data/unitSprites.ts + public/sprites/units/** (ComfyUI portraits + board bakes) + public/art/terrain/px/** — art assets and the id→sprite mapping",
+  "phaser/scripts/cli/ (play.ts combat REPL, sim, dialogue walker, sprite-lab, comfy-gen) — headless logic/balance harness",
+  "docs/worldbuilding/story-bible.md — the only narrative source of truth",
+  "docs/research/enemy-scaling-curves.md (per-class hp/str tables, region hpMul, loot-by-level incl. L7-9), stat-growth-math.md (if leveling returns), balance-rebaseline-2026-08-28.md (targets + honest numbers)",
+  "docs/superpowers/specs/2026-05-22-overworld-redesign-design.md Pillars 1-9 — the approved overworld systems design, to be re-authored onto the open sheet",
+  "phaser/src/ui/screens/overworld/TravelBand.tsx + bandArt.ts + overworld-band.css + palette.ts — the Oregon-Trail band (composition survives; region strip assumptions do not)",
+  "phaser/src/persistence/{saveFormat,contentAliases,saveSlots}.ts — save shape, alias table, 3-slot manager",
+  "phaser/src/systems/team.ts isEnemyUnit — explicit Unit.team (drop the classId fallback)"
+ ],
+ "drop": [
+  "The three chained region overworld JSONs (borderlands/thornwood/ashfall.json, 46 nodes), MapEdge region transitions, enterMap, and the X-only pan camera — superseded by the ONE open-sheet 25-40-node map decision (2026-08-23)",
+  "The Godot codebase at repo root and root CLAUDE.md's Godot sections — legacy reference only, stale (BATTLE/EVENT nodes, hit/avoid/crit, weapon triangle are all gone)",
+  "2026-05-10-godot-parity-design.md's 'Equipment removal' section and SAVE_VERSION 0.6.0-cards-only — reversed by the 2026-07-06 equipment-cards plan; gear-as-deck is live and authoritative",
+  "Sharpness tiers, Honed flag, Whetstone, Blacksmith panel, per-unit quick slots, mid-combat weapon switching, weapon might stat, per-unit inventories, morale, weapon triangle, camp Sharpen — all cut by ship plan §10; never reintroduce (memory says an earlier memory wrongly listed them as live)",
+  "FE6 placeholder names (Roy/Marcus/Lilina), 'Embermarch' title, 'steel remembers'/'forge a new one' copy, Iron Throne/Warlord naming — replaced by the story bible cast and a TBD title",
+  "Tavern shop-row recruitment (TavernPanel hire flow, town recruits arrays) — bible locks BG3-style authored companions",
+  "2026-07-18-cast-the-long-carry-design.md (Embermarch cast) — PARKED, not direction; only its three decisions (signature cards, authored ensemble, desperate-company tone) survive",
+  "Candle-lit / Forged & Lit skin remnants: docs/research/visual-style-brief.md tone sections, .claude/skills/crafting-game-ui/project-hooks.md + materials.md §1.4/§5, phaser/art/world-bible.md, old dark layouts in Town/Inn/Shop/Tavern/DialogueModal/QuestLog/Loadout/Save/Pause/Camp/Dungeon/BattleEnd — never re-candle",
+  "2026-06-06-overworld-grounding-design.md painterly backdrop / value-mask / ComfyUI depth-map pipeline and scripts/cli/overworld-depth.ts, overworld-backdrop-control.ts — retired by the split-view spec one week later",
+  "Superseded/abandoned process artifacts: 2026-05-08-phaser-foundations-design.md (v1), 2026-05-05-phaser-sandbox plan, RALPH_PROGRESS.md and every *-loop-prompt.md, the six-phase Ralph ship plan, 'promise tag' conventions",
+  "Dead or stub code: procgen/overworldGenerator.ts stub, QuestEffect recruitUnit/spawnNode/unlockNode no-ops, RemoveStatus no-op handler, addFood negative-amount no-op, 'all_enemies' targetKind with no runtime, aoeRadius single-tile dispatch, CampScene Scout stub, metaStore fields that are written but never read back, duplicate stale team list in scripts/cli/render.ts",
+  "The 300-line CONTEXT.md + check-context-doc CI drift ritual + 'update doc in the same commit' protocol (no CI pipeline ever existed; the script skips src/systems anyway) — replace with a short README; keep specs append-only only if the owner still wants that",
+  "Godot food model where each Food Rations item = 1 charge (shipped) — spec says 3 hop-charges per ration; and the App.tsx dev-only party bootstrap hack",
+  "Overworld 'multi-stop plan-then-confirm' route planner (already removed — do not bring back; user reported 'points aren't clickable')",
+  "Region-tier-as-strip-index difficulty (regions.json tier 1/2/3 by chained order) and the ungated exit node — replaced by per-area tiering on the open sheet",
+  "enemyAI action schema limited to attack|heal — cannot express the regional signature statuses; rebuild with status/buff actions or deck-driven enemies"
+ ],
+ "risks": [
+  "Multi-turn blind spot: a P0 (AP never reset after turn 1) shipped because every test resolved battles in one turn — test 3+ full turn cycles per unit and manual playtest before calling combat done",
+  "Balance inversion: three engine bugs (corpse shadowing — target picked first unit on a tile without an alive filter; melee AI stall — stepToward tried only the distance-reducing axis; dungeon party seeded with position:null) faked every stalemate for two months; a stalemate sim metric is an engine smoke alarm, not a tuning signal — reproduce one battle by hand first",
+  "Designed-declared-never-called: eventBus.emit had zero call sites for months, so questRunner never ran and every listeners/transitions block in quest JSON was dead data; hop RNG never advanced so a road re-rolled the same encounter all run; encounter captureTargets were read by nothing — every bus/registry needs at least one real emit site and an end-to-end test on day one",
+  "Zod strips undeclared keys silently: the real save→load path dropped daysElapsed/runStats/oneShotsFired because they were serialized but not in the load schema — a round-trip test on the actual load path is mandatory for every persisted field",
+  "Never share array references across systems (Godot card_hand_ui shared dm.hand then .clear() destroyed the deck) — copy at every boundary",
+  "Authoring cards beyond engine primitives leads to silent approximations (26 cards shipped 'closest supported'); lock the effect primitive list before authoring the catalog, and lint content for unsupported kinds",
+  "GrantArmor on enemy-target cards applied armor to the ENEMY being hit (brace family) — effect targeting needs an explicit source/target selector",
+  "The ship plan is internally inconsistent (39 vs 46 items) and partially superseded in a chain: read every spec's Supersedes line; the parity spec's equipment removal is dead, the overworld-redesign systems were approved but never landed, the grounding spec was retired within a week",
+  "Omnidirectional sandbox (bible) vs food-per-hop directed economy (shipped) is UNRESOLVED — the open-sheet map spec (Atlas story 689) must settle it before any map/economy content is authored; do not deepen the west-march framing",
+  "Owner decisions are settled: do NOT re-litigate the map model (open sheet), re-propose Banner & Rope / Campaign Map, or re-candle the UI; creative direction is built turn-by-turn with the owner and the bible records only agreed decisions — never invent canon",
+  "Enemy AI schema could not carry statuses, so Thornwood poison / Ashfall burn never fired from enemies and the alpha wolf howl was faked — regional identity through enemy effects silently failed",
+  "Gold can go negative (unclamped addGold −N on failed checks); negative addFood is a no-op — resource deltas need clamping and symmetric handling",
+  "UI input traps: hand-rolled canvas hit testing broke clicks (hit area not tracking hover lift, tautology bug dimming cards, no depth resort); invisible containers eat clicks; react-aria overlays must portal into the scaled 1280×720 stage or they render unscaled at document.body",
+  "Port collision: :5173 belongs to another app on the dev machine; Playwright reuses whatever is on :5183 so you can silently test the wrong app; on Windows TaskStop leaves node/tsx orphans — kill the process tree",
+  "Story 475 'balance tuning' is the only open beta item and its direction is UP on threat; mage_circle's 13×2 burst can one-shot L1 units — tune pack burst, not just totals, and validate against manual play above the greedy sim floor",
+  "Spec value drift already exists between design and shipped code (food charges 3 vs 1, starting bag 2 rations+vulnerary vs 5 rations, iron sword 1×3 vs 1×2, dungeon rest free vs 30%, camp Scout stubbed, terrain DR unapplied, party cap 6 unenforced) — the rebuild must pick one value per item and encode it as data, not leave both alive"
+ ],
+ "numbers": [
+  "Combat grid 14×10 tiles; tutorial grid 5×5; tile pitch base TILE=48px, range TILE_MIN 40 – TILE_MAX 96, BAND_TOP 120; stage 1280×720 fixed (phaser/src/domain/boardGeometry.ts; CONTEXT.md §1b)",
+  "HAND_SIZE = 5; AP_PER_TURN = 3; one free move per turn (class startingMov: lord 5, knight 4, mage 5, bandit 4, thief 6, wolf 6, shield_knight 3) (combatReducer.ts:51-54; classes.json)",
+  "Deck = innate (4-5) + left hand (3-4) + right hand (3-4); 2H weapon 6-8 cards; deck size ~11-13 (Shield+Shield ~13-14) (ship plan §2-3)",
+  "Physical: DMG = card.damage + STR − floor(DEF/2) − terrain; Magic: card.damage + MAG − floor(RES/2) − terrain; min 0 (ship plan §2)",
+  "Armor: physical → armorLost = min(armor, dmg), hpLost = dmg − armorLost; magic → halfArmored = floor(dmg/2) absorbed by armor (leak to HP), remainder pierces HP (combat-hud spec §2; systems/damage.ts)",
+  "Capture: chance = (1 − hp/maxHp) × 0.6 + 0.25 × adjacentAttackers + 0.15 if Bounty Hunter, clamp [0,1]; costs 2 AP (systems/capture.ts; ship plan §4 BOUNTY_HUNTER)",
+  "Status durations: poison X dmg/turn for typically 2 turns (no stack, higher X + refresh); burn stacks additively; slow −X SPD typically 1 turn; immobilize MOV=0 typically 1 turn (ship plan §9)",
+  "Quivers: Poison 2 poison/2 turns; Ice/Slow −2 SPD 1 turn; Thunder +3 magic dmg ignoring armor; Explosive 3 dmg to enemies adjacent to target (ship plan §7)",
+  "Example card values: Iron Sword Slash 1 AP 4 dmg / Thrust 2 AP 8 / Guard Break 1 AP 3 + remove 2 armor; Steel Sword 6/11/5+3; Iron Buckler Block 1 AP +4 armor, Parry +3 armor & 2 dmg riposte, Deflect 0 AP +2; Iron Greatsword 6 cards (Heavy Slash 7, Cleave 2 AP 5 all-adjacent, Overhead 12, Whirlwind 3 AP 7, Power Stance +4, Guard +3 armor); Longbow range 3-4 Snipe 2 AP 12; Shadowfang Assassinate 3 AP 22; Excalibur Radiance 6 magic to ALL + heal allies 4 (ship plan §7)",
+  "Ranges: sword/axe 1; lance 1-2; bow 2-3; longbow/composite 3-4; crossbow 1-2; tome 1-2; staff 1-2; Doombow 2-4 (ship plan §7; mechanics-redesign §5)",
+  "Gear count: §7 detail tables 46 items = 12 common / 24 uncommon / 3 rare / 4 epic / 3 legendary (summary table wrongly says 39 = 12/17/3/4/3); shipped 49 items / 161 cards (gear-content-deviations.md; memory project_beta_status)",
+  "Rarity prices: Common 50-120g (sell 25-60), Uncommon 120-250g (60-125), Rare 300-500g (150-250), Epic not sold / sells 300-500g, Legendary not sold / sells 500-800g; sell = 50% (ship plan §11)",
+  "Shipped item prices: iron_sword 80/40, steel_sword 160/80, iron_greatsword 150/75, food_rations 50/25, healing_potion 30/15, power_elixir 80/40 (items.json); spec: Vulnerary 80g (10 HP × 3 uses), Elixir 500g, Whetstone 40g, Iron Sword 120g, Steel Sword 280g (mechanics-redesign §7)",
+  "Battle gold = 10 + enemyLevel × 5 per enemy defeated; bounty turn-in 20g (L1-2) / 40g (L3-4) / 60g (L5+) / Daren 50g (ship plan §11; mechanics-redesign §7; darens_gang.json)",
+  "Loot: LOOT_DROP_CHANCE 0.4 for exactly 1 item; L1-2 80/20 common/uncommon; L3-4 50/40/10 (rare); L5+ 30 uncommon / 50 rare / 20 epic; research L7-9 40 rare / 45 epic / 15 legendary (systems/loot.ts; enemy-scaling-curves.md)",
+  "Starting resources: 80 gold; spec bag 2× Food Rations (3 hops each = 6 hops) + 1 Vulnerary; shipped 80g + 5 food_rations (1 charge each) (mechanics-redesign §7; App.tsx:96-97, 253-254)",
+  "Bag 8×4 = 32 cells; sizes sword 1×3 (shipped 1×2), lance 1×4, axe 2×2, bow 1×3, tome 1×2, staff 1×3, greatsword 2×3, rations 1×2, potions 1×1 (mechanics-redesign §2; items.json)",
+  "Food: 1 ration charge per hop (spec: 3 charges per ration item); starvation 3 HP per living unit per hop at 0 food; +1 day per hop (godot-parity §Goals; runStore.ts starvationDamagePerHop=3)",
+  "Encounter roll per hop: shipped edge rollChance 0.35 (some 0.4); Godot 35%; overworld-redesign proposal 0.25 / 0.40 / 0.55 with supplyDrainPerHop 1 / 1 / 2 (overworld JSONs; memory godot_legacy_reference; 2026-05-22 spec)",
+  "Camp Rest = heal 20% max HP for 1 food (HEAL_PERCENT 0.2); dungeon Rest = heal 30% (spec: free); Inn = 8g per unit baseline, shipped towns 6 / 8 / 10 / 12 / 20 by tier (CampScene.tsx; README; towns/*.json)",
+  "Party: start 3, cap 6 (ship plan §13; unenforced in code)",
+  "Recruitment cost = round(BASE × (1 + (level − 1) × 0.5)); BASE bandit 80, knight 140, mage 180, lord 220, default 120; L3 knight 210, L5 knight 420 (recruitment-cost.md)",
+  "Difficulty: enemy level by position — start 1-2, mid 3-4, near exit 5-6, boss 7+; tier band base = tier×2−1 + hash%2; scaling +2 HP/level, +1 STR/DEF per 2 levels, +1 SKL/SPD/RES per 3 (ship plan §12; difficulty.ts)",
+  "Research enemy curve: hp = base + perLevel×level (FIGHTER 18+2L, KNIGHT 24+3L, ARCHER 16+2L, THIEF 15+2L, MAGE 14+2L, CLERIC 16+2L, LORD-boss 30+4L, BEAST 22+3L); str = base + level; might = 4 + floor(level/2) (Godot 5 + floor(level/2)); def = floor(base/4) + floor(level/2); res = base + floor(level/3); region hpMul 1.00 / 1.10 / 1.20 / 1.35 (ironThrone); boss LORD L9 ×1.5 ≈ 89 HP (enemy-scaling-curves.md)",
+  "Boss (shipped): Warlord 55 HP, 6 armor, SPD 3, level 7, warlord base str 9 / def 7 / startingHp 46; 2 Throne Guards 24 HP / 2 armor / level 5 (seedBossBattle.ts)",
+  "Shipped class bases: lord str5 skl4 spd5 def3 res1 lck4 HP26; knight str7 skl4 spd3 def8 res1 lck2 HP32; mage mag7 skl5 spd5 def2 res7 lck3 HP22; bandit str5 HP18; wolf spd7 HP14; alpha_wolf HP38; shield_knight def9 HP30; thief spd8 HP16 (classes.json). Godot starters: Roy 22HP str6 def5, Marcus 28HP str8 def10, Lilina 18HP mag8 res7; growths Roy 80/50/5/50/45/60/30/25, Marcus 70/45/0/40/25/20/50/15, Lilina 55/5/65/40/40/45/15/50 (stat-growth-math.md)",
+  "Leveling (research only, not shipped): 30 XP per kill, 100 XP per level, +1 per stat on Bernoulli growth roll, maxAP +1 at levels 5/10/15 cap 5; lck growth Lord 30% / Cleric 40% / Bounty Hunter 50%, others 10-20% (stat-growth-math.md; stat-check spec)",
+  "Stat checks: thresholds 7-9 for mid-run; bandit_threat intimidate STR 7 (was party-sum 12); stuck_caravan STR 6 / SKL 7; blocked_passage STR 8 (stat-check spec)",
+  "Enemy groups: bandits 2×L1 + archer; brigands 2×L2 + chief; darens_gang 2 thugs + archer + Daren (L2, capture target, bounty 50); shield_wall 2 shield_knights + archer L2; mage_circle 2 raider_mages + cleric L3; wolves 3×L1; wolf_alpha_pack 4 wolves + alpha L2; thornwood_ambush 2 thieves L3 + darkwood archer L4; ashfall_raiders 2 fighters + ember_mage L5 (enemyGroups/*.json)",
+  "Balance targets: stub w/ starters 55-75% win, boss w/ epic+ 40-60%, 0% stalemates, 4-10 turns; shipped honest numbers: 100% win everywhere, avg turns stub 2.0 (default) / 4.3 (no gear), dungeon 2.6, boss 3.0, Iron Throne 3.9; sim turn cap 51; ~99 dmg/turn vs 54-HP bandit pool (balance-rebaseline-2026-08-28.md)",
+  "Dungeon procgen (research): 7-wide, 15 rows + boss (16), 6 paths, first two distinct starts, 12-25 nodes; forced row1 Combat / row9 Treasure / row15 Rest / no Rest row14 / no Elite-Rest before row 6; weights Combat 60 / Event 25 / Rest 10 / Elite 5 (StS 53/22/12/8/5); validator cap 100 attempts. Shipped: NUM_ROWS 6 + boss, NUM_PATHS 4, weights combat 45 / event 20 / treasure 15 / shop 10 / rest 5 / elite 5; dungeon JSON floors: 3 (sts-procgen.md; dungeonGenerator.ts; dungeons/*.json)",
+  "Ship plan dungeon: 1 hand-crafted 4-room dungeon (combat → event → rest free → boss) (ship plan §13)",
+  "Overworld shipped: 46 nodes / 3 regions / 5 towns / 5 dungeons / 1 exit; Borderlands 11 camps + 3 towns + 1 dungeon; Thornwood 12 camps + 1 town + 2 dungeons; Ashfall 12 camps + 1 town + 2 dungeons + exit. Decided replacement: ONE open sheet of 25-40 nodes with hub towns, est. 18-25 days (overworld JSONs; memory project_direction_decisions_2026_08)",
+  "Overworld-redesign content target per region: 1 town, 2-3 rest camps at ~1/3 and 2/3, 1 dungeon, 1 boss, 3-4 discovery slots, 6-8 trail nodes; Discovery deck 30-40 cards; caravan 1-4 portrait tiles (2026-05-22 spec)",
+  "Split view layout: travel band y 0-264, seam 264-276, paper map y 276-720 (height 444), map sheet 2120 wide, node y ∈ [70,380], camera clamp [1280−2120, 0]; band scroll far ≈8 px/s, mid ≈30, ground ≈80; caravan at x≈400, baseline y≈240 (2026-06-12 spec)",
+  "Field Ledger tokens: canvas #e7dec9, ink #2a2119, brass #d9a93f / #b8862b, oxblood #9a2c22, leather #6a4b2f, brass edge #b08a3e, ally #3f628a, enemy #a6432f, hp-ok #5d7a33; AA 4.5:1 small text; known 4.16:1 muted-text edge in the bottom 15% of page gradients (2026-08-28 spec)",
+  "Forecast/initiative UI: 8 portraits, active 56px ×1.2 ring 2px, upcoming 44px ring 1.5px, gap 8px, tooltip delay 350ms, panel fixed top-right 360px wide, hover preview instant (combat-hud spec)",
+  "Save: 3 localStorage slots (NUM_SLOTS 3, keys fe-mb:save:slot:N), action log last 200 entries (~50KB), SAVE_VERSION '0.7.0-gear', diag ring 500 entries (CONTEXT.md §8, §3; foundations-v2 §21-22, §28)",
+  "Bundle/perf budgets: ≤ baseline + 75 KB gzipped, 60 fps with 5 cards animating, scene mount-to-interactive < 50 ms, hover-to-style p95 < 8 ms, edit-to-see < 5 s (ui-input-overhaul; godot-parity; migration spec)",
+  "Timeline estimates: ship plan 8-12 weeks total (P1 2-3w, P2 1-2w, P3 1-2w, P4 2-3w, P5 1-2w, P6 <1w); foundation v2 5-6 weeks; Godot 35% encounter rate, 14×10 grid at 64px, viewport 1280×720; beta-0.1 tagged 2026-07-06 with 554 unit tests / 90 files, 23 e2e / 8 files; 14 dialogue trees; 13 classes (3 playable); dragons extinct ~300 years; Ashford Company ~30 years of reputation; companion roster ~7 (specs; memory; story bible)"
+ ]
+}
