@@ -14,6 +14,8 @@ For research-bearing tasks (procgen rules, RNG strategies, growth math, scaling 
 
 **UI work (any player-facing screen/HUD/menu/modal/card): use the `crafting-game-ui` skill (`../.claude/skills/crafting-game-ui/`) BEFORE writing UI code and again before calling it done.** Its Iron Rule applies: no player-facing change is done until you've screenshotted it rendered and swept the amateur-signals checklist.
 
+**Map work (a battle board's grid/obstacles/spawns/floor, the open-sheet overworld in `tools/map-builder.html`, a dungeon layout): use the `drawing-maps` skill (`../.claude/skills/drawing-maps/`) BEFORE placing a tile and again before calling it done.** The model plans (ASCII route sketch), `npm run map-tool` tiles and lints, and the same Iron Rule applies — render it and look.
+
 ## Active Specs
 
 - **Foundation working spec:** `../docs/superpowers/specs/2026-05-08-phaser-foundations-v2-design.md`

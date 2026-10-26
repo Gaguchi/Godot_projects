@@ -8,8 +8,9 @@ const MAX_VISIBLE = 8
  * Banner-Saga-style horizontal portrait queue. Renders the current actor and
  * up to 7 upcoming. +N badge if queue exceeds 8.
  *
- * Positioned by CombatHud's top-center flex column (TopBar > strip >
- * ModeLabel) — no absolute offset of its own.
+ * Positioned by CombatHud in the top-LEFT corner (mirror of the pause button)
+ * — no absolute offset of its own. It used to stack under the herald plaque,
+ * where it ran 80px over the board's first two rows.
  *
  * Independent of player selection — only depends on combatStore.state.units
  * and state.turn.unitId. Always present, always reflecting the same data.

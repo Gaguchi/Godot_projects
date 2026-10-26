@@ -37,7 +37,6 @@ spec.
 | `iron_tower_shield_shield_wall` / `steel_tower_shield_shield_wall` | Gain 4/6 armor + adjacent allies gain 2/3 armor | Grant 4/6 armor to self or ONE adjacent ally (`targetKind: ally`, range 0-1) | Multi-target ally splash (armor to self AND all adjacent allies in one play) |
 | `iron_tower_shield_cover` / `steel_tower_shield_cover` | Redirect next attack on adjacent ally to you (+3 armor steel) | Self: taunt 1 turn + 2/3 armor | Attack redirect / cover-ally targeting |
 | `bark_shield_thorn_block` | Gain 4 armor + attackers take 2 dmg | Gain 4 armor + riposte 2 (next melee attacker takes 2), 1 turn | Persistent thorns aura (all attackers, full duration) vs one-shot riposte |
-| `bark_shield_root_guard` | Gain 3 armor + immobilize adjacent enemy 1 turn | Enemy-target card: immobilize 1 turn + `GrantArmor 3` rider | "Grant armor to SOURCE" flag — see brace-family note below |
 | `volcanic_tower_shield_magma_fortress` | Gain 9 armor + 3 burn/2 turns to ALL adjacent enemies | Gain 9 armor + riposte 3, 1 turn | Self-centered enemy AOE from a self-target card (burn adjacent) |
 | `volcanic_tower_shield_heat_shield` | Gain 4 armor, next melee attacker takes 4 burn/2 turns | Gain 4 armor + riposte 4 (direct damage, not burn) | Riposte variant that applies a status (burn) to the attacker |
 | `thorn_staff_regrowth` | Heal 8 HP + heal 4 HP next turn | Flat Heal 12 | Heal-over-time (regen status) |
@@ -49,7 +48,6 @@ spec.
 | `paladins_aegis_radiant_shield` | Gain 8 armor + 4 magic dmg to all adjacent enemies | Gain 8 armor + riposte 4 | Self-centered enemy AOE (magic) from a self-target card |
 | `paladins_aegis_martyr` | 0 AP: take next attack aimed at ANY ally | 0 AP: taunt 1 turn + 3 armor | Attack interception / bodyguard redirect |
 | `wraithbow_soul_arrow` | 8 dmg + heal self 3 | Flat Damage 9 | Lifesteal-on-hit (heal source on damage) |
-| `wraithbow_ghost_shot` | 14 dmg, IGNORES armor | Damage 14 as `damageType: magic` (half the amount bypasses armor; DR uses RES) | True armor-ignore flag on Damage effect |
 | `wraithbow_phantom_volley` | 6 dmg to 3x3 + heal self 2 PER ENEMY HIT | Tile AOE Damage 6, heal dropped | Per-target-hit source lifesteal |
 | `wraithbow_death_sight` | Next ranged attack +7 + draw 1 | `empower` 7 (any next damage card) + DrawCards 1 | Ranged-restricted empower |
 | `shadowfang_shadow_step` | 0 AP: teleport to any tile adjacent to an enemy | 0 AP melee strike, Damage 6 | Teleport / reposition effect |
@@ -60,7 +58,23 @@ spec.
 | `excalibur_holy_slash` | 9 dmg + heal self 4 | Flat Damage 10 | Lifesteal-on-hit |
 | `excalibur_judgment` | 15 dmg, deals DOUBLE to enemies below 25% HP | Flat Damage 17 | Conditional execute damage (HP-threshold) |
 | `excalibur_radiance` | 6 magic dmg to ALL enemies + heal ALL allies 4 | Tile-target AOE radius 2, Damage 6 magic (`damageStat: mag`); ally heal dropped | `all_enemies` runtime targeting + dual-team effect resolution (damage foes, heal allies) |
-| `frost_axe_frozen_ground` | 3x3 area: all enemies lose 2 SPD for 2 turns (no range given) | Tile-target aoeRadius 1, slow 2/2 turns, range 1-2 (range chosen, not specced) | — (range choice only) |
+
+## Struck rows (no longer deviations)
+
+Three rows left this table when the rebuild's engine grew what they were
+waiting for; they are recorded here so the history is not lost:
+
+- `wraithbow_ghost_shot` — `Damage` now carries `armorPiercing: true`, so the
+  card is 14 physical damage that ignores armor. To spec.
+- `bark_shield_root_guard` — `GrantArmor` now carries an explicit `target`, so
+  the card grants its 3 armor to `self`. To spec.
+- `frost_axe_frozen_ground` — a tile-target card with `aoeRadius: 1` and
+  `slow 2 / 2 turns`. To spec (only the unspecced range was chosen).
+
+Every remaining row's card carries a `todoMechanic` string naming the mechanic
+it still waits on; `npm run lint:content` prints the list and
+`tests/unit/content/content.test.ts` pins its size, so the list cannot silently
+drain back to zero.
 
 ## Engine notes (pre-existing conventions followed, flagged for a future fix)
 

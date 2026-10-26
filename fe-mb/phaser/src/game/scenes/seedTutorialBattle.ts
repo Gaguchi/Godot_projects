@@ -61,7 +61,16 @@ export function seedTutorialBattle(rngSeed: RngState): Extract<CombatEvent, { ty
     })
   }
 
-  const grid: CombatGrid = { width: 5, height: 5, obstacles: new Set() }
+  // Authored floor: a worn dirt lane from Roy's tile to the bandit's. The
+  // map-design rule is "draw the critical path first" — here the path IS the
+  // tutorial's one instruction (advance toward the bandit), so the ground
+  // says it before the overlay does. Shoulders keep it from reading as a rule.
+  const grid: CombatGrid = {
+    width: 5,
+    height: 5,
+    obstacles: new Set(),
+    floor: ['0,2', '1,2', '2,2', '3,2', '4,2', '1,3', '2,1', '3,1'],
+  }
   return {
     type: 'startBattle',
     payload: { units: [roy, dummy], grid, rngSeed, decks, battleTag: 'tutorial' },

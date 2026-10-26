@@ -19,6 +19,8 @@
     "cli": "tsx scripts/cli/play.ts",
     "sim": "tsx scripts/cli/play.ts combat --autobattle",
     "bake-sprites": "tsx scripts/cli/bake-sprites.ts",
+    "bake-board-sprites": "tsx scripts/cli/bake-board-sprites.ts",
+    "map-tool": "tsx scripts/cli/map-tool.ts",
     "gen-mage": "tsx scripts/cli/gen-mage.ts",
     "gen-variants": "tsx scripts/cli/gen-variants.ts",
     "sprite-lab": "tsx scripts/cli/sprite-lab.ts",

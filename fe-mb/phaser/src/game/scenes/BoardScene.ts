@@ -4,7 +4,7 @@ import { useCombatStore } from '../../state/combatStore'
 import { useCombatUiStore } from '../../state/combatUiStore'
 import { useRunStore } from '../../state/runStore'
 import { CombatRuntime } from '../runtime/CombatRuntime'
-import { createRng } from '../../systems/rng'
+import { createRng, deriveRng } from '../../systems/rng'
 import { seedStubBattle } from './seedStubBattle'
 import { sfx } from '../../audio/engine'
 import { tilesInRange, tilesInAoe, tilesReachable, findMovePath } from '../../systems/targeting'
@@ -39,12 +39,18 @@ function movementRangeForClass(classId: string): number {
 }
 
 // Geometry lives in domain/boardGeometry (shared with the HUD's card drag).
-import { TILE as GEO_TILE, gridOriginX, gridOriginY, tileAtStagePoint } from '../../domain/boardGeometry'
-const TILE: typeof GEO_TILE = GEO_TILE
+import { TILE as GEO_TILE, tileSize, gridOriginX, gridOriginY, tileAtStagePoint } from '../../domain/boardGeometry'
+import { allTileKeys, autotileKey, cellKey } from '../../systems/autotile'
+import { generateDirtRegion } from '../../systems/boardFloor'
+// Tile pitch for the CURRENT battle — set per grid in drawGrid (a 5×5
+// tutorial board gets ~92px tiles, the 14×10 field 46px). UNIT_K scales the
+// unit chrome (rings, HP bar, name offset), which is tuned at GEO_TILE.
+let TILE: number = GEO_TILE
+let UNIT_K = 1
 // Current board origin — recomputed per battle in drawGrid from the actual
 // grid dimensions so every board centers on the stage (boardGeometry math).
-let GRID_OFFSET_X = gridOriginX(14)
-let GRID_OFFSET_Y = gridOriginY(10)
+let GRID_OFFSET_X = gridOriginX(14, 10)
+let GRID_OFFSET_Y = gridOriginY(14, 10)
 const GRID_W = 14
 const GRID_H = 10
 
@@ -61,7 +67,7 @@ interface UnitView {
 
 // Sprite selection is id-keyed via the shared unitSprites module — display
 // names are presentation-only and never matched. See data/unitSprites.ts.
-import { spriteIdForUnit, spritePathFor, ALL_SPRITE_IDS } from '../../data/unitSprites'
+import { spriteIdForUnit, boardSpritePathFor, ALL_SPRITE_IDS } from '../../data/unitSprites'
 
 type CardData = typeof cardsJson[number]
 const cardsMap = new Map<string, CardData>(cardsJson.map((c) => [c.id, c]))
@@ -148,15 +154,25 @@ export class BoardScene extends Phaser.Scene {
   preload(): void {
     // Character sprites for the cast. BootScene was removed (it was a stub),
     // so 'combat' is the first scene to run — texture loading lives here.
-    for (const u of ALL_SPRITE_IDS) this.load.image(`unit_${u}`, spritePathFor(u))
-    // Board floor: baked painted terrain variants (story 282 — tiles read as
-    // ground, not flat rects). Darkened via tint to keep the moody board.
-    for (let i = 1; i <= 8; i++) this.load.image(`board_grass_${i}`, `/art/terrain/grass_${i}.png`)
-    for (let i = 1; i <= 4; i++) this.load.image(`board_dirt_${i}`, `/art/terrain/dirt_${i}.png`)
+    // Board-size bakes (÷8, box-filtered) — NOT the 1216px portrait renders.
+    // Scaling those straight to a tile under pixelArt's nearest filter kept
+    // one source pixel in 25; that was the "characters look pixelated" bug.
+    for (const u of ALL_SPRITE_IDS) this.load.image(`unit_${u}`, boardSpritePathFor(u))
+    // Board floor: a pixel grass ground + the 47-piece dirt blob set,
+    // autotiled per battle (systems/autotile + systems/boardFloor). Same PNGs
+    // the map builder paints with, so authored and generated floors match.
+    this.load.image('px_grass', '/art/terrain/px/px_grass.png')
+    for (const k of allTileKeys('dirt')) this.load.image(k, `/art/terrain/px/${k}.png`)
   }
 
   create(): void {
     this.runtime = new CombatRuntime()
+    // The bakes are still minified 1.7–3.3× on the board; LINEAR sampling
+    // (per texture — the pixel floor stays NEAREST and crisp) smooths that.
+    for (const u of ALL_SPRITE_IDS) {
+      const key = `unit_${u}`
+      if (this.textures.exists(key)) this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR)
+    }
 
     const cs = useCombatStore.getState()
     if (cs.state.phase === 'BOOT') {
@@ -229,6 +245,9 @@ export class BoardScene extends Phaser.Scene {
         gridH: s.state.grid.height,
       }),
       () => {
+        const phase = useCombatStore.getState().state.phase
+        if (phase === 'COMBAT' && this.lastPhase !== 'COMBAT') this.battleSerial++
+        this.lastPhase = phase
         this.ensureGridMatchesState()
         this.renderUnits()
         this.renderTargeting()
@@ -249,11 +268,21 @@ export class BoardScene extends Phaser.Scene {
   /** Redraw the tile layer when a new battle changes grid dimensions
    *  (tutorial 5×5 → standard 14×10). Scene persists across battles. */
   private lastGridDims = ''
+  /** Bumped each time phase re-enters COMBAT — a new battle, even at the same
+   *  grid size, gets its own floor + freshly sized unit chrome. */
+  private battleSerial = 0
+  private lastPhase = ''
   private boardDecor: Phaser.GameObjects.GameObject[] = []
   private ensureGridMatchesState(): void {
-    const g = useCombatStore.getState().state.grid
-    const dims = `${g.width}x${g.height}`
+    const st = useCombatStore.getState().state
+    const g = st.grid
+    // Key on dims + battle identity: a new battle (phase re-entering COMBAT)
+    // redraws even at the same size, so each field gets its own floor and
+    // unit chrome is rebuilt at the new UNIT_K.
+    const dims = `${g.width}x${g.height}|${st.battleTag ?? ''}|${this.battleSerial}`
     if (dims === this.lastGridDims) return
+    for (const v of this.unitViews.values()) v.container.destroy()
+    this.unitViews.clear()
     for (const rect of this.tileRects.values()) rect.destroy()
     this.tileRects.clear()
     for (const img of this.tileSprites) img.destroy()
@@ -277,9 +306,17 @@ export class BoardScene extends Phaser.Scene {
     const g = useCombatStore.getState().state.grid
     const gridW = Math.min(g.width || GRID_W, GRID_W)
     const gridH = Math.min(g.height || GRID_H, GRID_H)
-    // Center the board for THIS battle (shared math with the HUD's picking).
-    GRID_OFFSET_X = gridOriginX(gridW)
-    GRID_OFFSET_Y = gridOriginY(gridH)
+    // Size + center the board for THIS battle (shared math with the HUD's picking).
+    TILE = tileSize(gridW, gridH)
+    UNIT_K = TILE / GEO_TILE
+    GRID_OFFSET_X = gridOriginX(gridW, gridH)
+    GRID_OFFSET_Y = gridOriginY(gridW, gridH)
+    // Authored floor (seeder `grid.floor`) wins; otherwise cosmetic dirt
+    // patches, deterministic per battle (derived from the battle rng — no
+    // Math.random on the board).
+    const dirt = g.floor
+      ? new Set(g.floor)
+      : generateDirtRegion(gridW, gridH, deriveRng(createRng(useCombatStore.getState().state.rng), 'floor'))
     // The field sits ON something: a soft ground-shadow slab under the grid
     // and a forged-iron frame just outside it (created first = drawn below).
     const bw = gridW * TILE
@@ -293,16 +330,24 @@ export class BoardScene extends Phaser.Scene {
     )
     for (let y = 0; y < gridH; y++) {
       for (let x = 0; x < gridW; x++) {
-        // Painted ground variant under the interactive rect (deterministic pick).
+        // Ground under the interactive rect: one grass tile, flipped by a
+        // per-cell hash so the repeat doesn't read as a grid. Dirt cells get
+        // the autotiled blob piece on top, full-pitch so edges run continuous.
+        const cx0 = GRID_OFFSET_X + x * TILE + TILE / 2
+        const cy0 = GRID_OFFSET_Y + y * TILE + TILE / 2
         const th = ((x * 2654435761) ^ (y * 40503)) >>> 0
-        const texKey = th % 5 === 0 ? `board_dirt_${(th % 4) + 1}` : `board_grass_${(th % 8) + 1}`
-        if (this.textures.exists(texKey)) {
-          const img = this.add.image(
-            GRID_OFFSET_X + x * TILE + TILE / 2,
-            GRID_OFFSET_Y + y * TILE + TILE / 2,
-            texKey,
-          ).setDisplaySize(TILE - 2, TILE - 2).setTint(TILE_SPRITE_TINT)
+        if (this.textures.exists('px_grass')) {
+          const img = this.add.image(cx0, cy0, 'px_grass')
+            .setDisplaySize(TILE, TILE).setTint(TILE_SPRITE_TINT)
+            .setFlip((th & 1) === 1, (th & 2) === 2)
           this.tileSprites.push(img)
+        }
+        if (dirt.has(cellKey(x, y))) {
+          const key = autotileKey(dirt, x, y, 'dirt')
+          if (this.textures.exists(key)) {
+            const img = this.add.image(cx0, cy0, key).setDisplaySize(TILE, TILE).setTint(TILE_SPRITE_TINT)
+            this.tileSprites.push(img)
+          }
         }
         const rect = this.add.rectangle(
           GRID_OFFSET_X + x * TILE + TILE / 2,
@@ -868,11 +913,11 @@ export class BoardScene extends Phaser.Scene {
         const rim = isEnemy ? UNIT_ENEMY_RIM : UNIT_ALLY_RIM
         const container = this.add.container(0, 0)
         const body: Phaser.GameObjects.Shape = isEnemy
-          ? this.add.star(0, 0, 4, 9, 17, fill).setStrokeStyle(2.5, rim)
-          : this.add.circle(0, 0, 16, fill).setStrokeStyle(2.5, rim)
+          ? this.add.star(0, 0, 4, 9 * UNIT_K, 17 * UNIT_K, fill).setStrokeStyle(2.5, rim)
+          : this.add.circle(0, 0, 16 * UNIT_K, fill).setStrokeStyle(2.5, rim)
         // a soft top highlight so the token reads as a lit forged piece
-        const sheen = this.add.circle(-5, -5, isEnemy ? 4 : 5, FLASH_WHITE, 0.18)
-        const nameText = this.add.text(0, -24, unit.name, {
+        const sheen = this.add.circle(-5 * UNIT_K, -5 * UNIT_K, (isEnemy ? 4 : 5) * UNIT_K, FLASH_WHITE, 0.18)
+        const nameText = this.add.text(0, -24 * UNIT_K, unit.name, {
           fontFamily: 'Cinzel, Georgia, serif',
           fontSize: '11px',
           color: TEXT_NAME,
@@ -881,11 +926,11 @@ export class BoardScene extends Phaser.Scene {
         }).setOrigin(0.5)
         // name (~-24) + HP bar (~+20) kept inside one tile pitch so a lower
         // unit's name no longer collides with the HP bar of the unit above.
-        const hpBarBg = this.add.rectangle(0, 20, 36, 6, HP_BAR_BG).setStrokeStyle(1, BLACK, 0.6)
-        const hpBar = this.add.rectangle(-16, 20, 32, 4, HP_TIER_FILL.ok).setOrigin(0, 0.5)
+        const hpBarBg = this.add.rectangle(0, 20 * UNIT_K, 36 * UNIT_K, 6, HP_BAR_BG).setStrokeStyle(1, BLACK, 0.6)
+        const hpBar = this.add.rectangle(-16 * UNIT_K, 20 * UNIT_K, 32 * UNIT_K, 4, HP_TIER_FILL.ok).setOrigin(0, 0.5)
         // Transparent >=44px hit target — the visible token (~32px) is below the
         // accessible minimum, so interactivity lives on a roomier invisible circle.
-        const hit = this.add.circle(0, 0, 22, BLACK, 0.001)
+        const hit = this.add.circle(0, 0, 22 * UNIT_K, BLACK, 0.001)
         container.add([body, sheen, nameText, hpBarBg, hpBar, hit])
         // Character sprite replaces the shape token when its texture is loaded;
         // a team-coloured base ellipse keeps the ally/enemy read colour-blind-safe.
@@ -893,10 +938,10 @@ export class BoardScene extends Phaser.Scene {
         const spriteKey = spriteId ? `unit_${spriteId}` : null
         let sprite: Phaser.GameObjects.Sprite | undefined
         if (spriteKey && this.textures.exists(spriteKey)) {
-          body.setVisible(false); sheen.setVisible(false); nameText.setY(-40)
-          const baseRing = this.add.ellipse(0, 14, 28, 10, fill, 0.45).setStrokeStyle(1.5, rim, 0.85)
-          sprite = this.add.sprite(0, 2, spriteKey).setOrigin(0.5, 0.82)
-          sprite.setScale(48 / (this.textures.get(spriteKey).getSourceImage().height || 1216))
+          body.setVisible(false); sheen.setVisible(false); nameText.setY(-40 * UNIT_K)
+          const baseRing = this.add.ellipse(0, 14 * UNIT_K, 28 * UNIT_K, 10 * UNIT_K, fill, 0.45).setStrokeStyle(1.5, rim, 0.85)
+          sprite = this.add.sprite(0, 2 * UNIT_K, spriteKey).setOrigin(0.5, 0.82)
+          sprite.setScale(TILE / (this.textures.get(spriteKey).getSourceImage().height || 152))
           container.add([baseRing, sprite])
           container.sendToBack(sprite)
           container.sendToBack(baseRing)
@@ -922,7 +967,7 @@ export class BoardScene extends Phaser.Scene {
       view.nameText.setVisible(activeId === idStr)
 
       const hpFraction = unit.hp.current / Math.max(1, unit.hp.max)
-      view.hpBar.width = Math.max(0, 32 * hpFraction)
+      view.hpBar.width = Math.max(0, 32 * UNIT_K * hpFraction)
       // Shared HP tiers (boardPalette = single source; hpTier.ts mirrors it
       // for the DOM readouts, so bar and text can never disagree).
       view.hpBar.fillColor = HP_TIER_FILL[hpTierFor(unit.hp.current, unit.hp.max)]
@@ -932,7 +977,7 @@ export class BoardScene extends Phaser.Scene {
       if (view.glow) { view.glow.destroy(); view.glow = null }
       if (activeId === idStr) {
         // hearth-amber ring marks the active unit
-        const glow = this.add.circle(0, 0, 23, ACTIVE_RING, 0.22).setStrokeStyle(2.5, ACTIVE_RING, 0.95)
+        const glow = this.add.circle(0, 0, 23 * UNIT_K, ACTIVE_RING, 0.22).setStrokeStyle(2.5, ACTIVE_RING, 0.95)
         view.container.add(glow)
         view.container.sendToBack(glow)
         view.glow = glow
@@ -945,7 +990,7 @@ export class BoardScene extends Phaser.Scene {
       ) {
         // ember-red ring marks the pinned card target — "who I am hitting"
         // mirrors the active-unit ring so the commitment pair reads at a glance.
-        const ring = this.add.circle(0, 0, 23, TARGET_RING, 0.18).setStrokeStyle(2.5, TARGET_RING, 0.95)
+        const ring = this.add.circle(0, 0, 23 * UNIT_K, TARGET_RING, 0.18).setStrokeStyle(2.5, TARGET_RING, 0.95)
         view.container.add(ring)
         view.container.sendToBack(ring)
         view.glow = ring

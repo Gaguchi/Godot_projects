@@ -21,6 +21,10 @@ export interface CombatGrid {
   width: number
   height: number
   obstacles: Set<TileId>
+  /** Authored cosmetic floor: tile ids ("x,y") that wear dirt over the grass.
+   *  Absent = BoardScene generates patches from the battle rng
+   *  (systems/boardFloor). Never read by gameplay. */
+  floor?: readonly string[]
 }
 
 export interface CombatTurn {

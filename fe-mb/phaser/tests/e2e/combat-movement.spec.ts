@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { fireMouse, bootCombat } from './helpers'
-import { TILE, gridOriginX, gridOriginY } from '../../src/domain/boardGeometry'
+import { tileSize, gridOriginX, gridOriginY } from '../../src/domain/boardGeometry'
 
 test('B-01: clicking a party unit enters move mode and clicking a valid tile moves the unit', async ({ page }) => {
   await bootCombat(page)
@@ -21,8 +21,9 @@ test('B-01: clicking a party unit enters move mode and clicking a valid tile mov
 
   // Canvas coords via the SAME shared geometry the game uses (boards center
   // per-battle since the wave-1 composition pass — never hardcode origins).
-  const originX = gridOriginX(before.gridW)
-  const originY = gridOriginY(before.gridH)
+  const TILE = tileSize(before.gridW, before.gridH)
+  const originX = gridOriginX(before.gridW, before.gridH)
+  const originY = gridOriginY(before.gridW, before.gridH)
   const [bx, by] = before.pos.split(',').map(Number)
   const ux = originX + bx! * TILE + TILE / 2
   const uy = originY + by! * TILE + TILE / 2

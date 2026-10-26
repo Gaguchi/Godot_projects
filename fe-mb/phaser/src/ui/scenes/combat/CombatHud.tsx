@@ -135,13 +135,17 @@ export function CombatHud(): React.JSX.Element {
       id="combat-hud"
       className="pointer-events-none absolute inset-0 z-[100]"
     >
-      {/* ONE composed top-center column: herald plaque > turn queue > mode
-          strip. Children flow in the column — the old top-[6.25rem] /
-          top-[13rem] magic-offset chain is gone. */}
+      {/* Top-center column: herald plaque > mode strip. Children flow in
+          the column — the old top-[6.25rem] / top-[13rem] magic-offset chain
+          is gone. The turn queue lives in the top-LEFT corner (mirroring the
+          pause button top-right): stacked under the plaque it ran 80px down
+          over the board's first two rows. boardGeometry BAND_TOP clears it. */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[90] flex flex-col items-center gap-2">
         <div className="pointer-events-auto"><TopBar /></div>
-        <InitiativeStrip />
         <ModeLabel />
+      </div>
+      <div className="absolute top-3 left-3 z-[90]">
+        <InitiativeStrip />
       </div>
       <PhaseBanner />
       <ForecastPanel />

@@ -70,3 +70,10 @@ export function spriteIdForUnit(
 export function spritePathFor(spriteId: string): string {
   return `/sprites/units/${spriteId}.png`
 }
+
+/** Board-size bake of the same art (÷8, box-filtered — see
+ *  scripts/cli/bake-board-sprites.ts). BoardScene loads these; portraits use
+ *  `spritePathFor`. */
+export function boardSpritePathFor(spriteId: string): string {
+  return `/sprites/units/board/${spriteId}.png`
+}
