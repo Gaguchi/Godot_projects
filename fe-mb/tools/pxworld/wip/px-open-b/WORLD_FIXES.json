@@ -1,0 +1,126 @@
+[
+ {
+  "severity": "P1",
+  "where": "Broken Bridge, stage (1018-1070, 636-668)",
+  "problem": "The two stumps are not on one axis: the west parapet slopes about -0.22 and the east about -0.37, and the east stump sits about 2 px high. The gap between them is only about 4 px, so it reads as a whole bridge with a crack, not a bridge whose middle span is gone. The owner has already called this bridge wonky.",
+  "fix": "Draw both stumps from one centreline, the road axis through (1018,655) to (1070,640). Give them the same slope and parapet height, cut a clear gap of about 14-18 px over mid-river (roughly x 1036-1052) with the rubble in it, and end each stump on a square abutment face."
+ },
+ {
+  "severity": "P1",
+  "where": "South Junction, stage (691-706, 636-657), and the pair at (795-835, 630-650)",
+  "problem": "The east road from South Junction (y about 638-646) runs through the gable house at 691-706 and through both houses at 795-835. Road is visible on either side of each house and between the pair.",
+  "fix": "Move those three houses off the road so they front it: set their base line at about y 634, with the door facing the road, or lower them to about y 650-668 below it. Or route the road's via polyline to pass 4 px or more clear of every house footprint. Afterwards, check every hamlet for a road under its houses."
+ },
+ {
+  "severity": "P1",
+  "where": "Ash country: bottom band (400-1280, 580-720) and west band (0-130, 190-520)",
+  "problem": "Ashfall ground is flat polygon fills (tan, brown, two greys) that meet at straight facet seams, with a few pebbles and no drawn texture. This breaks 'texture is drawn' and reads as vector shapes next to the hand-textured green country.",
+  "fix": "Give the ash ramp drawn marks: cracks, cinder strokes and scorch rings, burnt grass tufts at the green edge, and a few standing charred stumps on contact shadows. Break the straight facet seams into hand-stepped, irregular boundaries like the hill and field edges."
+ },
+ {
+  "severity": "P1",
+  "where": "Mountain Pass road at the west edge, stage (33-43, 305-322)",
+  "problem": "A dead tree stands in the middle of the road that leaves the left edge.",
+  "fix": "Move that dead tree to at least 6 px off the road, for example to (40, 330) below it, or remove it."
+ },
+ {
+  "severity": "P2",
+  "where": "Bottom screen row y=719, x 0-1280",
+  "problem": "A 1 px seam: row 719 is one ramp step darker than row 718 across about 1080 columns, for example (107,103,94) above (77,74,67). It is the ash polygons' outline drawn along the screen edge.",
+  "fix": "Don't outline terrain polygons where they meet the canvas edge. Clip the outline pass to 1 px inside the frame, or extend the polygons 2 px past the edge before outlining."
+ },
+ {
+  "severity": "P2",
+  "where": "Ashfall Trail road, stage (1005-1015, 660-720)",
+  "problem": "The road from Broken Bridge down to the bottom edge is barely visible on the tan and grey ash. The sign at (915-1000,670-697) seems to stand beside nothing.",
+  "fix": "Draw roads over ash with the road ramp's darker rut line and edge so they hold their contrast. Move the sign's post to stand on the road's west verge at about x 1000."
+ },
+ {
+  "severity": "P2",
+  "where": "Dead-tree clusters at (432-478, 614-642), (1190-1273, 647-693) and (60-80, 370-400)",
+  "problem": "The dead trees pile up as tangled stacks of fallen logs with overlapping root fans, so you can't make out single trunks.",
+  "fix": "Space the dead trees 8 px or more apart, mostly standing, each on its own 1-step contact shadow, with at most one fallen log per cluster."
+ },
+ {
+  "severity": "P2",
+  "where": "Hamlet at stage (563-598, 120-168), and the market at (785-810, 368-388)",
+  "problem": "A tree's canopy rests on a house roof, so it reads as a tree growing out of the roof. Houses overlap other houses at their corners in this hamlet and at the north side of Riverside Market.",
+  "fix": "Move the tree 6 px north-west, clear of the roof. Separate the overlapping house sprites by 2 px or more, or set them as one connected row along the street."
+ },
+ {
+  "severity": "P2",
+  "where": "Overview, stage (305-465, 28-135)",
+  "problem": "The region names are large for a 156 px overview and cover most of the roads and terrain. 'Borderlands' sits on the river, and 'Iron Throne' covers the southern Ashfall. The ash is a uniform stamp of identical '/' ticks.",
+  "fix": "Set the region names one size smaller and place them in each region's open area, away from the river and the track. Vary the ash marks (cinders, cracks) and thin them out."
+ },
+ {
+  "severity": "P2",
+  "where": "Card leader at stage (557-628, 570)",
+  "problem": "The brass leader crosses the South Junction road, and its arrowhead stops about 3 px short of the stitches.",
+  "fix": "Bend the leader to run along y about 585 in open grass, below the road, and end its arrowhead touching the stitch nearest (560,585)."
+ },
+ {
+  "severity": "P1",
+  "where": "The off-road march: stitches from (585,525) to (518,640), plus the card's last line (648,567)",
+  "problem": "The variant's defining feature is barely visible. The stitches are thinner and lighter than the beads, and they stop about 20 px short of the edge tag. Nothing on the map shows the long way round that the march is cutting off, so the map never shows a shortcut. It shows a short road that peters out into the ash.",
+  "fix": "Make each stitch the same weight and brightness as a bead: 3 px thick with the brass ramp's light step on top. Run the stitches all the way to the bottom edge at the point where the planner's route leaves the view. Then draw the road-alone route as a dim ghost: bone/o3 dots at 14 px spacing along South Road Ambush, South Junction, Broken Bridge and the Ashfall Trail sign, with one dim caption near Broken Bridge reading 'by road 7 days'. The cut across country then shows on the map itself. Keep the ghost dim and unlit, so the brass march stays the only primary."
+ },
+ {
+  "severity": "P1",
+  "where": "The brass leader from the card's left edge (628,575) to (557,575)",
+  "problem": "The leader's arrow ends at the left edge of the wreck's dirt clearing at South Road Ambush. On the way it crosses the South Road Ambush to South Junction road. The wreck's own tag sits about 70 px away at (412,482), on the far side of the stitches. A first-time viewer pairs the card's 'Scorched Village' with the wreck, the nearest pictured place the brass points at.",
+  "fix": "Either remove the leader, since the card's left edge already sits 30 px from the beads, or run it from the card's bottom-left corner (632,582) down and left to the new edge sign at the bottom. It must not touch the wreck clearing (x 565-625, y 530-565) or cross the South Junction road."
+ },
+ {
+  "severity": "P1",
+  "where": "The card's encounter line, 'an encounter on 4 days in 10, 7 in Ashfall' (648,549)",
+  "problem": "It sits right under '4 days · 4 food', so '4 days in 10' reads as a duration, and '7 in Ashfall' has no unit. It takes a second read to see that it means a 4 in 10 chance each night in the Borderlands and 7 in 10 in Ashfall.",
+  "fix": "Reword it so 'days' is not reused: 'each night, an encounter 4 in 10 here, 7 in 10 in Ashfall', with the two figures in rust. Or give the expected count: 'about 2 fights on the way, 4 by road'. Change the region window to match: 'Marching here: an encounter 4 nights in 10'."
+ },
+ {
+  "severity": "P1",
+  "where": "The east edge sign, 'Southern Trail · 5 days' with 'Thornwood' at (1188,428)-(1268,450)",
+  "problem": "The place name contradicts where it is drawn. Southern Trail's road leaves the right edge at y≈440, level with the camp (y≈400), so a 'Southern' trail leaves due east. Meanwhile the south of the board holds Ashfall Trail. C inherits this from B's world_b.",
+  "fix": "Do not rename. In B's world_b.py, move the Roderick's Camp → Southern Trail exit so it leaves low on the right edge (y ≥ 620) or off the bottom edge east of the river (around x 1180-1260). Bend the road south from Roderick's Camp, past the east side of Smuggler's Cave, so it reads as heading south-east. Move Southern Trail's Thornwood ground to the south-east in the overview to match. C picks the change up through make_c.py with no C edit, apart from re-running the route assert."
+ },
+ {
+  "severity": "P2",
+  "where": "The card's last line, 'by road alone 7 days, round by Broken Bridge' (648,567)",
+  "problem": "The text sits about 2 px from the card's inner filigree border, which is tighter than the 12 px top padding.",
+  "fix": "Make the card 8 px taller (CARD h 148 to 156) or move the last line up 4 px."
+ },
+ {
+  "severity": "P2",
+  "where": "Ash ground in view, bottom-left (400-560, 600-720), and region_at() in march.py",
+  "problem": "The view draws ash and dead trees there, but the encounter rule calls everything inside the view the Borderlands (0.40). The ground's look and the rule disagree about which country the march's first stitches cross.",
+  "fix": "Key region_at() on the ground kind B draws: ash inside the view counts as Ashfall. Or say on the card that the first nights count as the Borderlands. Then re-check the card's roll split."
+ },
+ {
+  "severity": "P2",
+  "where": "Ashfall Trail caption, stage about (870-1000, 695-715)",
+  "problem": "The caption 'Ashfall Trail · 4 days' is set over a snag and a fallen log on the ash, so the line sits on clutter.",
+  "fix": "In the ashland scatter, keep snags and logs out of the box under each edge sign's caption, as already done for the footnote band.",
+  "source": "B verify"
+ },
+ {
+  "severity": "P2",
+  "where": "Region overview, stage (305-465, 28-132)",
+  "problem": "The four serif labels cover about half the overview, and 'Borderlands' hides most of the green heartland it names.",
+  "fix": "Set the overview labels one size smaller, or place 'Borderlands' on the heartland's lower edge so more of the green and its place dots show.",
+  "source": "B verify"
+ },
+ {
+  "severity": "P2",
+  "where": "Ash fields, foot of the map (x 420-640, y 650-720) and left edge",
+  "problem": "Large areas of flat Stone fill carry very few drawn marks. They read as empty grey rather than drawn ash.",
+  "fix": "Add a few more clustered crust-crack and drift strokes near the ridges, keeping open gaps between the clusters.",
+  "source": "B verify"
+ },
+ {
+  "severity": "P2",
+  "where": "Brass route and forecast card, east of camp",
+  "problem": "The single brass route, the card and two thirds of the places all lie east of the camp, which leaves a mild eastward weight. The fixer declined this with a reasonable reason: the brief fixes the moment.",
+  "fix": "Optional: point the moment at a west or north destination in a later pass, if the owner wants the balance tested.",
+  "source": "B verify"
+ }
+]

@@ -1,0 +1,10 @@
+# everything rebuild.py writes; the folders themselves are kept so a generator can run on its own
+out/**
+!out/**/
+!out/**/.gitkeep
+src/**/t/*
+!src/**/t/.gitkeep
+src/**/z/*
+!src/**/z/.gitkeep
+src/**/cache/
+__pycache__/
