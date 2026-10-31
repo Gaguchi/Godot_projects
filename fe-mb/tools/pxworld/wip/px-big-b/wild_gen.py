@@ -21,6 +21,15 @@ import land as L  # noqa: E402
 
 SEED = 7
 TARGET = 18
+# 2026-10-26: forcing the throne road through Thornwood by cutting Ashfall roads gave 28-31 hops, because Thornwood
+# lies north and east and the throne south-west. Off until the throne's approach moves next to Thornwood.
+THORNWOOD_GATE = True
+ASH_LEG = 7                # hops from the last Thornwood place to the throne
+# owner 2026-10-26: the throne road climbs the Borderlands, then Thornwood, then Ashfall. The throne's approach moves
+# to the south-east corner, past Thornwood's southern end, and is entered from Morgana's Grove and Thornwood Depths
+# (today's game already enters Ashfall by Morgana's Grove).
+MOVE = {'final_approach': (3000, 1880), 'warlords_camp': (2620, 2200), 'ashen_gate': (3260, 2120), 'the_iron_throne': (3440, 2320)}
+GATE_ROADS = [('morganas_grove', 'final_approach')]
 OUTER = (-1290, -860, 3540, 2380)
 HEARTBOX = (-110, -110, 2670, 1550)
 WILD_TARGET = 130          # wild places in all, B's 32 included
@@ -70,7 +79,8 @@ def main():
         n_new[0] += 1
         return f'w{n_new[0]:03d}'
     # 1-2: B's wild roads, split
-    b_wild = [r for r in L.B_ROADS if r[0] in P and r[1] in P]
+    P.update(MOVE)
+    b_wild = [r for r in L.B_ROADS if r[0] in P and r[1] in P and ((r[0] in MOVE) == (r[1] in MOVE))] + GATE_ROADS
     for a, b in b_wild:
         A, B = P[a], P[b]
         d = math.dist(A, B)
@@ -221,7 +231,7 @@ def main():
             return False
         if REG.get(a, 'borderlands') != 'ashfall' and REG.get(b, 'borderlands') != 'ashfall':
             return False
-        if 'the_iron_throne' in r or 'ashen_gate' in r:
+        if 'the_iron_throne' in r:
             return False
         return len(adj[a]) > 1 and len(adj[b]) > 1
 
@@ -232,6 +242,70 @@ def main():
         n = d['the_iron_throne']
         return (d.get(a, 99) + 1 + dt.get(b, 99) == n) or (d.get(b, 99) + 1 + dt.get(a, 99) == n)
 
+    # 5b: owner 2026-10-26, the throne road climbs the Borderlands, then Thornwood, then Ashfall: cut Ashfall roads
+    # until no way from the camp to the throne avoids Thornwood (every place still reachable)
+    def path_without_thornwood(rs):
+        adj = graph([r for r in rs if 'thornwood' not in (REG.get(r[0], 'borderlands'), REG.get(r[1], 'borderlands'))])
+        par, q = {'frontier_camp': None}, deque(['frontier_camp'])
+        while q:
+            u = q.popleft()
+            for v in adj[u]:
+                if v not in par:
+                    par[v] = u
+                    q.append(v)
+        if 'the_iron_throne' not in par:
+            return None
+        p, k = [], 'the_iron_throne'
+        while par[k] is not None:
+            p.append((par[k], k)); k = par[k]
+        return p                                         # edges from the throne end outwards
+    def shortest(rs):
+        adj = graph(rs)
+        par, q = {'frontier_camp': None}, deque(['frontier_camp'])
+        while q:
+            u = q.popleft()
+            for v in sorted(adj[u]):
+                if v not in par:
+                    par[v] = u
+                    q.append(v)
+        p, k = [], 'the_iron_throne'
+        while par.get(k) is not None:
+            p.append(k); k = par[k]
+        return ['frontier_camp'] + p[::-1]
+
+    def bad_way(rs):
+        """Edges to try cutting, throne end first, or None when every way in runs Borderlands, Thornwood, Ashfall."""
+        p = path_without_thornwood(rs)
+        if p is not None:
+            return p
+        way = shortest(rs)
+        reg = [REG.get(k, 'borderlands') for k in way]
+        first_t = reg.index('thornwood')
+        if 'ashfall' not in reg[:first_t]:
+            return None
+        pre = list(zip(way[:first_t], way[1:first_t + 1]))   # the shortest way, camp to its first Thornwood place
+        return [e for e in reversed(pre) if 'ashfall' in (REG.get(e[0], 'borderlands'), REG.get(e[1], 'borderlands'))]
+
+    def gate():
+      for it in range(80 if THORNWOOD_GATE else 0):
+        p = bad_way(allroads)
+        if p is None:
+            break
+        n_all = len(bfs(graph(allroads)))
+        cut = None
+        for a, b in p:
+            r = (a, b) if (a, b) in allroads else (b, a)
+            if r not in allroads or not removable(graph(allroads), r):
+                continue
+            if len(bfs(graph([x for x in allroads if x != r]))) == n_all:
+                cut = r
+                break
+        if cut is None:
+            print('cannot close the Thornwood-free way at', p[:3])
+            break
+        allroads.remove(cut)
+        (roads if cut in roads else exit_roads).remove(cut)
+    gate()
     for it in range(60):
         adj = graph(allroads)
         d = bfs(adj)
@@ -267,7 +341,29 @@ def main():
             allroads.remove(r)
             (roads if r in roads else exit_roads).remove(r)
         print('pruned', best[1], '->', bfs(graph(allroads))['the_iron_throne'])
+    gate()
+    # 5c: the gated approach is short (Thornwood straight to Ashen Gate), so lengthen its Ashfall leg to ASH_LEG hops
+    # by splitting its longest roads with new Ashfall places, the deep end of the climb
+    for it in range(12 if THORNWOOD_GATE else 0):
+        way = shortest(allroads)
+        regs = [REG.get(k, 'borderlands') for k in way]
+        i = max(j for j, r in enumerate(regs) if r == 'thornwood')
+        leg = list(zip(way[i:], way[i + 1:]))
+        if len(leg) >= ASH_LEG:
+            break
+        u, v = max((e for e in leg if 'the_iron_throne' not in e), key=lambda e: math.dist(P[e[0]], P[e[1]]))
+        r = (u, v) if (u, v) in allroads else (v, u)
+        q = new_id('ashfall')
+        A, B = P[u], P[v]
+        d = math.dist(A, B)
+        j = rng.choice((-1, 1)) * min(60, .15 * d)
+        P[q] = ((A[0] + B[0]) / 2 - (B[1] - A[1]) / d * j, (A[1] + B[1]) / 2 + (B[0] - A[0]) / d * j)
+        REG[q] = 'ashfall'
+        lst = roads if r in roads else exit_roads
+        lst.remove(r); allroads.remove(r)
+        roads.extend([(u, q), (q, v)]); allroads.extend([(u, q), (q, v)])
     d = bfs(graph(allroads))
+    print('throne road Borderlands, Thornwood, Ashfall:', bad_way(allroads) is None)
     print('wild places', len(P), 'new', len(P) - len(WILD0), 'roads wild', len(roads), 'exits', len(exit_roads),
           'throne', d.get('the_iron_throne'), 'unreached', sorted(every - set(d)))
     names = name_places(P, REG, rng)
@@ -282,6 +378,7 @@ def main():
             fh.write(f"    {k!r}: ({nm!r}, {typ!r}, {sig!r}, ({int(round(P[k][0]))}, {int(round(P[k][1]))}), "
                      f"{REG[k]!r}, {job!r}),\n")
         fh.write('}\n')
+        fh.write('MOVED = %r\n' % (MOVE,))
         fh.write('WILD_ROADS = [\n')
         for a, b in roads:
             fh.write(f'    ({a!r}, {b!r}),\n')
@@ -348,6 +445,11 @@ POOL = {
         ('Sulfur Caves', 'DUNGEON', 'dungeon', 'cave'), ('Old Smelting Works', 'DUNGEON', 'dungeon', 'cave'),
         ('Collapsed Mine', 'DUNGEON', 'dungeon', 'cave'),
         ("Smelters' Row", 'TOWN', None, 'town'), ('Cinder Market', 'TOWN', None, 'town'),
+        # 2026-10-26: more names for the south-east pocket
+        ('Soot Camp', 'CAMP', None, 'camp'), ('Clinker Camp', 'CAMP', None, 'camp'), ('Charred Rise', 'CAMP', None, 'camp'),
+        ('Ember Flats', 'CAMP', None, 'camp'), ('Scald Camp', 'CAMP', None, 'camp'), ('Lava Steps', 'TRAIL', 'waypoint', 'trail'),
+        ('Cinder Rise', 'TRAIL', 'waypoint', 'trail'), ('Ember Ford', 'TRAIL', 'waypoint', 'water'),
+        ('Burnt Gibbet', 'DISCOVERY', 'battle', 'landmark'), ('Gate Market', 'TOWN', None, 'town'),
     ],
 }
 
@@ -368,7 +470,7 @@ def name_places(P, REG, rng):
             out[k] = wpool.pop() if wpool else dpool.pop()
         for k in dry:
             if not dpool:
-                raise SystemExit(f'{region}: the name pool ran out')
+                raise SystemExit(f'{region}: the name pool ran out ({len(dry)} dry and {len(wet)} wet places, {len(pool)} names)')
             out[k] = dpool.pop()
         print(region, len(ks), 'named;', len(dpool) + len(wpool), 'names left')
     return out

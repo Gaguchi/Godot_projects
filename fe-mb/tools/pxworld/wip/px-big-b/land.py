@@ -198,6 +198,11 @@ try:
     from wild_data import WILD, WILD_ROADS, EXIT_ROADS      # noqa: E402  (wild_gen.py writes it)
 except ImportError:                                          # while wild_gen.py runs for the first time
     WILD, WILD_ROADS, EXIT_ROADS = {}, [], []
+try:
+    from wild_data import MOVED          # noqa: E402  game places wild_gen.py moved (the throne's approach)
+except ImportError:
+    MOVED = {}
+P.update(MOVED)
 
 NODE = {k: dict(v) for k, v in GAME.items()}
 JOB = {}

@@ -344,6 +344,9 @@ def map_board():
         if anchor == 'c':
             ov_html += (f'<div class="abs s13 bone ol1d nowrap" style="left:{OX + int(lx) - 50}px;top:{OY + int(ly) - 9}px;'
                         f'width:100px;text-align:center">{name}</div>')
+        elif lx > OVW - 80:                                  # near the right edge: the name sits left of the mark
+            ov_html += (f'<div class="abs s13 bone ol1d nowrap" style="left:{OX + int(lx) - 107}px;top:{OY + int(ly) - 14}px;'
+                        f'width:100px;text-align:right">{name}</div>')
         else:
             ov_html += (f'<div class="abs s13 bone ol1d nowrap" style="left:{OX + int(lx) + 7}px;top:{OY + int(ly) - 14}px">'
                         f'{name}</div>')
