@@ -151,10 +151,33 @@ def place_labels(keys, frame, ui, tier_of, label_size, prefer=None, fixed=None, 
 
 
 # ================================================================ the map screen
-def map_board():
-    ox, oy = VX, VY
+def company_box(fx, fy):
+    """The company's minis and standard round their standing point (world px): labels and beads keep off it."""
+    return (fx - 22, fy - 46, fx + 22, fy + 6)
+
+
+def screen(here='frontier_camp', hover=HOVER, day=1, food=8, contracts='none yet', hint=None, avoid=(),
+           stand=None, toward=None, world=None, place=None):
+    """The map screen's parts (view px), for any state of the run:
+    here    the place the company stands at, or None when it is out on a road (then toward = the stop it marches to)
+    hover   the place one road out that the pointer rests on (its forecast card, brackets and brass beads), or None
+    stand   the company's standing point (world px), drawn into world (a WB.render canvas); None = the camp yard of cv
+    avoid   boxes (view px) a pop-up covers: no label, caption or footnote lands across them
+    hint    the footnote; None = 'N roads out of <here>', False = none
+    place   where the company shows on the screen (view px), kept clear of the pop-up; None = where the camp board has it
+    Returns (parts, ox, oy)."""
+    world = cv if world is None else world
+    if stand is None:
+        stand = info['company']
+    if here == 'frontier_camp' and stand == info['company']:
+        ox, oy = VX, VY                                     # the board's own framing
+    else:                                                   # the company at `place`, the view inside the country
+        px_, py_ = place or (info['company'][0] - VX, info['company'][1] - VY)
+        ox = min(max(0, stand[0] - px_), WB.W - VW)
+        oy = min(max(0, stand[1] - py_), WB.H - VH)
+    hp = LD.hops(start=here or toward)
     parts = [f'<img class="abs" alt="" style="left:0;top:0;width:{VW}px;height:{VH}px;image-rendering:pixelated" '
-             f'width="{VW}" height="{VH}" src="{view.data_uri()}">']
+             f'width="{VW}" height="{VH}" src="{WB.window(world, ox, oy, VW, VH).data_uri()}">']
 
     def V(p):
         return (p[0] - ox, p[1] - oy)
@@ -166,21 +189,23 @@ def map_board():
     beads = Raster(VW, VH)
     arrow_at = None
     n_out = 0
+    cbox = company_box(*V(stand))
     for key, fine in road_px.items():
-        if 'frontier_camp' not in key:
+        if here is None or here not in key:
             continue
         n_out += 1
-        pts = fine if key[0] == 'frontier_camp' else fine[::-1]
+        pts = fine if key[0] == here else fine[::-1]
         pts = [V(p) for p in geo.resample(pts, 1.0)]
         L = len(pts) - 1
-        hov = HOVER in key
+        hov = hover is not None and hover in key
         gap = 14 if hov else 15
         acc = 0.0
         for i in range(1, len(pts)):
             acc += 1
             if acc >= gap and 52 < i < L - (58 if hov else 34):
                 acc = 0
-                if 0 <= pts[i][0] < VW and 0 <= pts[i][1] < VH:
+                if 0 <= pts[i][0] < VW and 0 <= pts[i][1] < VH and not overlap(cbox, (pts[i][0] - 4, pts[i][1] - 4,
+                                                                                       pts[i][0] + 5, pts[i][1] + 5)):
                     beads.stamp(BEAD, int(pts[i][0]) - 4, int(pts[i][1]) - 4, keymap=BEAD_O if hov else BEAD_B)
         if hov:
             ax_, ay_ = pts[max(0, L - 50)]
@@ -190,22 +215,28 @@ def map_board():
     if arrow_at:
         parts.append(I.arrow_e().svg(arrow_at[0], arrow_at[1], style=f'transform:rotate({arrow_at[2]:.0f}deg);'
                                      'transform-origin:6px 7px'))
-    # the bracket cursor on the pointed-at place
-    hx, hy = V(P[HOVER])
-    f = foot(HOVER)
-    bx0, by0, bx1, by1 = int(f[0] - ox - 8), int(f[1] - oy - 8), int(f[2] - ox + 8), int(f[3] - oy + 8)
-    parts.append(I.brackets(bx0, by0, bx1, by1).svg(bx0, by0))
-    # windows and the forecast card (view px)
     RW, RH = 472, 176
-    CARD = (bx1 + 34, (by0 + by1) // 2 - 62, 330, 150)
-    UI = [(14, 14, 14 + RW + 2, 14 + RH + 2), (982, 14, 1268, 138), (14, 496, 408, 712),
-          (CARD[0], CARD[1], CARD[0] + CARD[2] + 2, CARD[1] + CARD[3] + 2), (bx0, by0, bx1, by1)]
+    UI = [(14, 14, 14 + RW + 2, 14 + RH + 2), (982, 14, 1268, 138), (14, 496, 408, 712)] + list(avoid)
+    if here is None:
+        UI.append(cbox)
+    if hover:
+        # the bracket cursor on the pointed-at place
+        f = foot(hover)
+        bx0, by0, bx1, by1 = int(f[0] - ox - 8), int(f[1] - oy - 8), int(f[2] - ox + 8), int(f[3] - oy + 8)
+        parts.append(I.brackets(bx0, by0, bx1, by1).svg(bx0, by0))
+        # the forecast card (view px)
+        CARD = (bx1 + 34, (by0 + by1) // 2 - 62, 330, 150)
+        UI += [(CARD[0], CARD[1], CARD[0] + CARD[2] + 2, CARD[1] + CARD[3] + 2), (bx0, by0, bx1, by1)]
     UIW = [(a + ox, b + oy, c + ox, d + oy) for (a, b, c, d) in UI]
+    subs = {k: v for k, v in SUB.items() if k != 'frontier_camp'}
+    if here:
+        subs[here] = ('the company is here', 'rill')
+
     # the place labels
     def tier_of(k):
-        if k == 'frontier_camp':
+        if k == here:
             return 'here'
-        return 'out' if HOPS.get(k) == 1 else 'q'
+        return 'out' if here and hp.get(k) == 1 else 'q'
 
     def label_size(k):
         t = tier_of(k)
@@ -216,7 +247,7 @@ def map_board():
             w, h = text_w(name, 9.6), 22
         else:
             w, h = text_w(name, 7.6), 18
-        sub = SUB.get(k) or (('a landmark', 'dim') if k in LANDMARK else None)
+        sub = subs.get(k) or (('a landmark', 'dim') if k in LANDMARK else None)
         if sub:
             w = max(w, text_w(sub[0], 7.0))
             h += 18
@@ -224,7 +255,10 @@ def map_board():
     frame = (ox, oy, ox + VW, oy + VH)
     LBL, rep = place_labels(in_view, frame, UIW, tier_of, label_size,
                             prefer={'frontier_camp': ['bl', 'b', 'l'], 'riverside_market': ['a', 'al', 'ar']},
-                            fixed={HOVER: 'al'})
+                            fixed={hover: 'al'} if hover else None)
+    # a name a pop-up would cut in two is left off, as the game's own map does under a window
+    AVW = [(a + ox, b + oy, c + ox, d + oy) for (a, b, c, d) in avoid]
+    LBL = {k: b for k, b in LBL.items() if not any(overlap((b[0] - 4, b[1] - 2, b[2] + 4, b[3] + 2), a) for a in AVW)}
     for k, box in LBL.items():
         x0, y0, x1, y1 = box[0] - ox, box[1] - oy, box[2] - ox, box[3] - oy
         w = x1 - x0
@@ -232,7 +266,7 @@ def map_board():
         name = NAMES[k]
         pos = f'left:{int(x0)}px;width:{int(w)}px;text-align:center'
         if t == 'out':
-            hov = k == HOVER
+            hov = k == hover
             tw = text_w(name, 8.9) + 22
             tx = int(x0 + (w - tw) / 2)
             parts.append(window(tx, int(y0), tw, 26, f'<div class="abs s16 {"straw" if hov else "bone"} nowrap sh1" '
@@ -245,7 +279,7 @@ def map_board():
         else:
             parts.append(f'<div class="abs nowrap s14 bone ol1d" style="{pos};top:{int(y0)}px">{name}</div>')
             sub_top = y0 + 18
-        sub = SUB.get(k) or (('a landmark', 'dim') if k in LANDMARK else None)
+        sub = subs.get(k) or (('a landmark', 'dim') if k in LANDMARK else None)
         if sub:
             parts.append(f'<div class="abs nowrap s13 {sub[1]} ol1d" style="{pos};top:{int(sub_top)}px">{sub[0]}</div>')
     for r in rep:
@@ -278,7 +312,9 @@ def map_board():
         if far in seen:
             continue
         seen.add(far)
-        cap = f'{NAMES[far]} · {HOPS[far]} days' if HOPS.get(far) != 1 else f'{NAMES[far]} · 1 day'
+        if far not in hp:
+            continue
+        cap = f'{NAMES[far]} · {hp[far]} days' if hp[far] != 1 else f'{NAMES[far]} · 1 day'
         cw = text_w(cap, 7.1)
         side = 'n' if y < 4 else ('s' if y > VH - 5 else ('w' if x < 4 else 'e'))
         if side == 'n':
@@ -328,14 +364,14 @@ def map_board():
                     R.set(xx, yy, 'k0' if edge else (lit if (yy == 1 or xx == x0 + 1) else (dk if yy == 9 else (mid if yy < 5 else mid2))))
         return R
     OVW, OVH = 156, 104
-    ov, marks = OV.overview(OVW, OVH, view=(VX, VY, VW, VH))
+    ov, marks = OV.overview(OVW, OVH, view=(ox, oy, VW, VH))
     ov.save(os.path.join(HERE, 't', 'overview_board.png'), zoom=4)
     OX, OY = 292, 16
     ov_html = PX.frame(OVW + 8, OVH + 8, 'plate', shadow=1).svg(OX - 4, OY - 4)
     ov_html += (f'<img class="abs" alt="" style="left:{OX}px;top:{OY}px;width:{OVW}px;height:{OVH}px;'
                 f'image-rendering:pixelated" width="{OVW}" height="{OVH}" src="{ov.data_uri()}">')
     PIN = ["..kkk..", ".k565k.", "k56654k", "k56543k", ".k443k.", "..k3k..", "..k2k..", "..k2k..", "..k1k..", "...k..."]
-    pcx, pcy = marks['camp']
+    pcx, pcy = marks['camp'] if stand == info['company'] else marks['T'](stand)
     ov_html += PX.from_rows(PIN, PX.BR).svg(OX + int(pcx) - 3, OY + int(pcy) - 9)
     for name, (lx, ly), anchor in (('Thornwood', marks['labels']['Thornwood'], 'c'),
                                    ('Ashfall', marks['labels']['Ashfall'], 'c'),
@@ -350,16 +386,17 @@ def map_board():
         else:
             ov_html += (f'<div class="abs s13 bone ol1d nowrap" style="left:{OX + int(lx) + 7}px;top:{OY + int(ly) - 14}px">'
                         f'{name}</div>')
-    rations = pips(4, 4).inline('margin:0 0 0 0') + '<span style="display:inline-block;width:6px"></span>' + pips(4, 4).inline()
+    rations = (pips(min(food, 4), 4).inline('margin:0 0 0 0') + '<span style="display:inline-block;width:6px"></span>'
+               + pips(max(0, food - 4), 4).inline())
     parts.append(window(14, 14, RW, RH, f"""
   <div class="abs bl48 straw nowrap" style="left:20px;top:12px;font-size:43px;line-height:43px">The Borderlands</div>
-  <div class="abs s20 bone nowrap" style="left:20px;top:64px">{icon(sun, 'margin-top:-5px')}Day 1</div>
+  <div class="abs s20 bone nowrap" style="left:20px;top:64px">{icon(sun, 'margin-top:-5px')}Day {day}</div>
   <div class="abs s15 dim nowrap" style="left:20px;top:94px">Roads here:</div>
   <div class="abs s15 dim nowrap" style="left:20px;top:113px">an encounter on <span class="rust">4 hops in 10</span></div>
   {ov_html}
   {rule(20, 136, RW - 40)}
   <div class="abs s15 bone nowrap" style="left:20px;top:144px">{icon(coin)}<span class="straw">80</span> gold</div>
-  <div class="abs s15 bone nowrap" style="left:116px;top:144px">{icon(sack)}<span class="straw">8</span> food</div>
+  <div class="abs s15 bone nowrap" style="left:116px;top:144px">{icon(sack)}<span class="straw">{food}</span> food</div>
   <div class="abs nowrap" style="left:206px;top:144px;height:16px">{rations}</div>
   <div class="abs s15 bone nowrap" style="right:20px;top:144px">{icon(potion)}Healing Potion ×1</div>
 """))
@@ -368,7 +405,7 @@ def map_board():
   <div class="abs s13 dim nowrap" style="left:162px;top:19px">roster and gear</div>
   {groove(20, 43, 244)}
   <div class="abs s18 bone nowrap" style="left:20px;top:50px">Contracts</div>
-  <div class="abs s13 dim nowrap" style="left:162px;top:53px">none yet</div>
+  <div class="abs s13 dim nowrap" style="left:162px;top:53px">{contracts}</div>
   {groove(20, 77, 244)}
   <div class="abs s18 bone nowrap" style="left:20px;top:84px">Menu</div>
   <div class="abs nowrap" style="left:160px;top:86px"><span class="key">Esc</span></div>
@@ -415,24 +452,31 @@ def map_board():
   {rows}
 """))
     # the forecast, pinned under the farm, with a brass leader up to the bracket
-    fx, fy, fw, fh = CARD
-    parts.append(window(fx, fy, fw, fh, f"""
-  <div class="abs bl48 straw nowrap" style="left:20px;top:12px;font-size:43px;line-height:43px">{NAMES[HOVER]}</div>
+    if hover:
+      fx, fy, fw, fh = CARD
+      parts.append(window(fx, fy, fw, fh, f"""
+  <div class="abs bl48 straw nowrap" style="left:20px;top:12px;font-size:43px;line-height:43px">{NAMES[hover]}</div>
   <div class="abs s13 dim nowrap" style="left:20px;top:56px">{CARD_SUB}</div>
   <div class="abs s18 bone nowrap" style="left:20px;top:76px">{icon(sun)}1 day<span style="display:inline-block;width:22px"></span>{icon(sack)}1 food</div>
   <div class="abs s14 straw nowrap" style="right:20px;top:80px">click to march</div>
   <div class="abs s15 bone nowrap" style="left:20px;top:104px">an encounter on the road: <span class="rust">4 in 10</span></div>
   <div class="abs s13 dim nowrap" style="left:20px;top:124px">every Borderlands road rolls at 4 in 10</div>
 """, kind='lit'))
-    ly = (by0 + by1) // 2
-    lx0, lx1 = bx1 + 2, fx - 2
-    lead = Raster(max(5, lx1 - lx0 + 1), 5)
-    lead.stamp(['..k.', '.k5.', 'k54.', '.k3.', '..k.'], 0, 0, keymap=PX.BR)
-    for i in range(3, lead.w):
-        lead.set(i, 0, 'k0'); lead.set(i, 1, 'o5'); lead.set(i, 2, 'o3'); lead.set(i, 3, 'k0')
-    parts.append(lead.svg(lx0, ly - 2))
+      ly = (by0 + by1) // 2
+      lx0, lx1 = bx1 + 2, fx - 2
+      lead = Raster(max(5, lx1 - lx0 + 1), 5)
+      lead.stamp(['..k.', '.k5.', 'k54.', '.k3.', '..k.'], 0, 0, keymap=PX.BR)
+      for i in range(3, lead.w):
+          lead.set(i, 0, 'k0'); lead.set(i, 1, 'o5'); lead.set(i, 2, 'o3'); lead.set(i, 3, 'k0')
+      parts.append(lead.svg(lx0, ly - 2))
     words = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight']
-    note = f'{words[n_out - 1]} roads out of camp. Point at one, click to march.'
+    note = hint
+    if hint is None:
+        note = (f'{words[n_out - 1]} roads out of {"camp" if here == "frontier_camp" else NAMES[here]}. '
+                'Point at one, click to march.') if here and n_out else False
+    if not note:
+        return parts, ox, oy
+    taken += [(a, b, c, d) for (a, b, c, d) in avoid]
     nw = text_w(note, 7.0)
     best = None
     vs = np.array([(p[0] - ox, p[1] - oy) for p in road_samples])
@@ -444,9 +488,15 @@ def map_board():
             if best is None or sc_ < best[0]:
                 best = (sc_, nx_, ny_)
     parts.append(f'<div class="abs s14 bone ol1d nowrap" style="left:{best[1]}px;top:{best[2]}px">{note}</div>')
+    print('screen', here or ('road to ' + toward), 'roads out', n_out, 'in view', len(in_view), 'at', (ox, oy))
+    return parts, ox, oy
+
+
+def map_board():
+    parts, _, _ = screen()
     title = f'Map · the big country, day 1 at Frontier Camp, pointing at {NAMES[HOVER]}'
     html = wrap(title, '\n'.join(parts), css_base(), VW, VH)
-    print(write('PxBigMap', html), len(html), 'roads out of camp', n_out, 'in view', len(in_view))
+    print(write('PxBigMap', html), len(html))
 
 
 # ================================================================ the whole heartland
@@ -520,5 +570,6 @@ def country_board():
     print(write('PxBigCountry', html), len(html), 'labels', len(LBL), 'signs', len(signs))
 
 
-map_board()
-country_board()
+if __name__ == '__main__':
+    map_board()
+    country_board()

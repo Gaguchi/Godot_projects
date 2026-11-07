@@ -23,7 +23,7 @@ What it writes:
 
 | Folder | What |
 |---|---|
-| `out/boards/` | the 22 canvas boards (`<Board>.dc.html`) and the canvas layout (`canvas.json`) |
+| `out/boards/` | the 24 canvas boards (`<Board>.dc.html`) and the canvas layout (`canvas.json`) |
 | `out/world/` | the world each screen is drawn on, at 1×, with no UI: `map`, `map_no_company`, `combat_field`, `town_inn`, `town_shop`, `town_tavern`, `camp`, `title`, `prologue`, `dungeon`, `win`, `lost` |
 | `out/preview/` | PNG screenshots of the boards, with the art swapped in from `assets/` |
 
@@ -41,7 +41,8 @@ The build is deterministic: the same code writes the same bytes on every run. To
 | `src/kit64/` | the Filigree UI kit: windows, controls, type, icons, the pixel map and the combat field it puts under pop-ups. `KIT.md` documents it. |
 | `src/px-town/`, `src/px-camp/` | the town and camp scenes, at the scale of the 104×152 board sprites |
 | `src/px-combat/` | the combat field |
-| `src/px-popups/` | pause, the company, contracts, dialogue, the check, naming and the style key, over the dimmed map |
+| `src/px-big-b/` | the big country, the map the owner chose (variant B at four times the area): `gen_boards.py` writes the map screen and the whole country at 1×, `gen_screens.py` the map screen under each pop-up in its run state. `NOTES.md` has the numbers |
+| `src/px-popups/` | pause, the company, contracts, dialogue, the check, naming and the style key, over the dimmed big country |
 | `src/px-scenes1/` | the title and the prologue |
 | `src/px-scenes2/` | the dungeon, win and loss |
 | `src/f64-interrupts/`, `src/f64-pages/`, `src/hyb-64/` | the enemy turn, the field report and the older modules they still import. Only the files the build uses were brought over. |

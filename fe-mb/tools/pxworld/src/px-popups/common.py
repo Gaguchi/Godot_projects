@@ -26,6 +26,13 @@ PX = not os.environ.get('F64_PAINTED')
 if PX:
     import kit_px_map as KPM  # noqa: E402  (the pixel world: the company stamp, standing points, road lines)
 
+def big_screen(board):
+    """The big country under this board's pop-up: the map screen in the board's run state, as
+    src/px-big-b/gen_screens.py renders it (owner 2026-10-25: variant B at four times the area). map_screen() is the old map."""
+    with open(f'{ROOT}/src/px-big-b/t/screens/{board}.html', encoding='utf-8') as fh:
+        return fh.read()
+
+
 NAMES = WM.NAMES
 PT = WM.P
 

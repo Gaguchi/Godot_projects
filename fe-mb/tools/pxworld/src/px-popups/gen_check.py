@@ -12,7 +12,7 @@ replaces this one in CheckOverlay.tsx; it is a different state, so it is not dra
 from f64i import *  # noqa: F401,F403
 
 at = road_point('frontier_camp', 'traders_rest', 0.55)
-body = map_screen(at=at, day=2, food_used=(1, 0), gold=80, hide=('watchtower_ridge',))
+body = big_screen('F64Check')
 body += scrim()
 
 # ------------------------------------------------------------------ the card, choosing

@@ -4,7 +4,7 @@ These are copies of work-in-progress generator folders from the design session o
 
 What they are:
 - `px-open-a`, `px-open-b`, `px-open-c`: the three open-map variants. The owner chose B.
-- `px-big-b`: B at four times the area, which is the chosen map, as a first build.
+- `px-big-b` (B at four times the area, the chosen map) has moved to `../src/px-big-b`, and `rebuild.py` builds it.
 - `ux-*`: the one-job-per-screen boards.
 - `choice`: the map-choice explainer canvas.
 - `px-open-cost`: the cost studies and the plan for carrying the new map onto the other boards.

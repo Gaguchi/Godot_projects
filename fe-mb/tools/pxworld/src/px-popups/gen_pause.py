@@ -21,6 +21,6 @@ body += button('Save &amp; quit', 'secondary', x=PAD, y=MODAL_Y + 166)
 body += rtext(MW - PAD, MODAL_Y + 173, f'{key("Esc")}<span style="margin-left:6px">resumes</span>', 's13 dim')
 body += T(PAD, MODAL_Y + 212, 'Nothing is lost: the run saves as you go.', 's13 dim')
 
-world = map_screen(hint='Three roads out of camp. Point at one, click to march.')
+world = big_screen('F64Pause')
 page = world + modal(MX, MY, MW, MH, body)
 print(write('F64Pause', board_html('Pause · Esc on the map, pointing at The Company, day 1', page)))

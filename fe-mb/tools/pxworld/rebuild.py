@@ -19,6 +19,9 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 # (generator, args, boards it writes). The first generator that needs the map fills its cache (about 50 s);
 # every later one reads it.
 STEPS = [
+    # the big country (owner 2026-10-25: B at four times the area), then the map screen under each pop-up in its run state
+    ('src/px-big-b/gen_boards.py', [], ['PxBigMap', 'PxBigCountry']),
+    ('src/px-big-b/gen_screens.py', [], ['F64Pause', 'F64Company', 'F64Contracts', 'F64Dialogue', 'F64Check', 'F64Name']),
     ('src/px-popups/gen_pause.py', [], ['F64Pause']),
     ('src/px-popups/gen_company.py', [], ['F64Company']),
     ('src/px-popups/gen_contracts.py', [], ['F64Contracts']),

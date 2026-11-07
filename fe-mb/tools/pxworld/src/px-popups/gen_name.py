@@ -13,8 +13,7 @@ from f64i import *  # noqa: F401,F403
 
 NAME_TAKEN = 'someone on these roads already answers to that'
 
-body = map_screen(here='riverside_market', day=2, food_used=(1, 0), gold=80, contracts='The Missing Caravan',
-                  hide=('north_ridge_path', 'old_mill_crossing', 'bandit_hideout', 'riverside_market'))
+body = big_screen('F64Name')
 
 MW, MH = 572, 232
 mx, my = (1280 - MW) // 2, (720 - MH) // 2

@@ -13,7 +13,7 @@ from f64i import *  # noqa: F401,F403
 # px-popups: 0.55, not 0.3. On the pixel map Frontier Camp's stake ring is wider than the painted camp, and 0.3 of the road
 # still lies inside it; 0.55 is the same hop on open road, the point F64Check uses.
 at = road_point('frontier_camp', 'traders_rest', 0.55)
-body = map_screen(at=at, day=2, food_used=(1, 0), gold=80, hide=('bandit_hideout', 'smugglers_cave'))
+body = big_screen('F64Dialogue')
 body += scrim()
 
 DW, DH = 760, 244

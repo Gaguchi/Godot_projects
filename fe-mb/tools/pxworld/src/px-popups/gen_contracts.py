@@ -46,9 +46,7 @@ body += r2
 body += T(PAD, MH - PAD - 26, f'{key("Esc")}<span style="margin-left:6px">closes</span>', 's13 dim')
 body += button('Close', 'primary', 'hover', w=120, x=MW - PAD - 120, y=MH - PAD - 36)
 
-world = map_screen('pine_crossing', 4, 80, (3, 0), 'two open',
-                   subs={'south_road_ambush': ('a landmark', 'bone'), 'bandit_hideout': ('a landmark', 'dim')},
-                   hint='Four roads out of Pine Crossing. Point at one, click to march.')
+world = big_screen('F64Contracts')
 page = world + modal(MX, MY, MW, MH, body)
 print(write('F64Contracts', board_html('Contracts · two open, back at Pine Crossing, day 4', page)))
 print('modal', MX, MY, MW, MH, 'content bottom', y)

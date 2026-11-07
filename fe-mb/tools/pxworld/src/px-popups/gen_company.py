@@ -97,6 +97,6 @@ for u, cx in zip(COMPANY, COLS):
 body += vgroove(SX - 18, MODAL_Y, MH - MODAL_Y - 30)
 body += satchel()
 
-world = map_screen(hint='Three roads out of camp. Point at one, click to march.')
+world = big_screen('F64Company')
 page = world + modal(MX, MY, MW, MH, body)
 print(write('F64Company', board_html('The Company · the loadout, the Iron Buckler picked up, day 1', page)))

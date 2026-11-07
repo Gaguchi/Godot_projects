@@ -41,6 +41,23 @@ SUPERSEDED = ['Hyb64Map', 'F64TownInn', 'F64TownShop', 'F64TownTavern', 'F64Camp
 for label, keys in PX_ROWS:
     items = [(f'{k}.dc.html', html_title(f'{k}.dc.html')) for k in keys if os.path.exists(f'{CAN}/{k}.dc.html')]
     if items: F64_ROWS.append((label, items))
+# owner 2026-10-24 on PxMap1x: "you can travel in every direction" not "you have to travel to the right";
+# three ways to open the map, above the house style (today's map stays in its row below, for comparison)
+OPEN_ROWS = []
+_open = [(f'{k}.dc.html', html_title(f'{k}.dc.html')) for k in ('PxOpenA', 'PxOpenB', 'PxOpenC') if os.path.exists(f'{CAN}/{k}.dc.html')]
+if _open:
+    _have = {f[:-8] for f, _ in _open}
+    _says = [('PxOpenA', 'A keeps every road and moves only the places'),
+             ('PxOpenB', 'B rings the camp with the wilds, new roads but no engine change'),
+             ('PxOpenC', 'C marches anywhere on B’s country, an engine change')]
+    _note = ' · '.join(s if k in _have else f'{s} (still being built)' for k, s in _says)
+    if os.environ.get('OPEN_DRAFT'):   # published before the critics and fixers are through
+        _note = 'First drafts, under review · ' + _note
+    OPEN_ROWS.append((_note, _open))
+# owner 2026-10-25: B, at "4x the area, 4x the places" (wip/briefs/BIGMAP.md); a first build, not yet reviewed
+_big = [(f'{k}.dc.html', html_title(f'{k}.dc.html')) for k in ('PxBigMap', 'PxBigCountry') if os.path.exists(f'{CAN}/{k}.dc.html')]
+if _big:
+    OPEN_ROWS.insert(0, ('The pick: B at four times the area · the map screen, then the whole Borderlands at 1× with the view marked · first build, not yet reviewed', _big))
 TIERS = [('HybPixel', '8-bit', 'Cartridge over the Painted Country', 'the one the owner picked, 3px per art pixel'),
          ('Hyb16', '16-bit', 'the SNES tier', '2px per art pixel'), ('Hyb64', '64-bit', 'the last sprite generation', '1px per art pixel')]
 ROUND4 = [trio(*t) for t in TIERS if have(t[0]) and not (t[0] == 'Hyb64' and any(r[1][0][0] == 'Hyb64Key.dc.html' for r in F64_ROWS))] if have('Hyb16') or have('Hyb64') else []
@@ -50,14 +67,25 @@ DIRS = [('DirPixel', 'A', 'Pixel Cartridge'), ('DirTactical', 'B', 'Field Comman
         ('DirPainted', 'D', 'Gouache Saga'), ('DirHeraldry', 'E', 'Console Heraldry')]
 ROUND2 = [trio(*d) for d in DIRS if have(d[0])]
 ROUND5 = [trio('HybMix', '64 + 16', '64-bit UI, 16-bit art', 'Filigree’s frames, layout and type, drawn at SNES grain')] if have('HybMix') else []
+# owner 2026-10-25: "the UI should not show everything all at once ... all separate screens" -- one job per screen,
+# learned from real games (wip/briefs/UXFLOW.md). Held back until the boards are through review: UX=1 shows the section.
+UX_ROWS = []
+if os.environ.get('UX'):
+    for label, keys in [
+        ('Town · arrive, then choose: the square, the inn, the market', ['UxTown', 'UxInn', 'UxMarket']),
+        ('The tavern and a conversation · the people in the room, then Kael’s questline as visual-novel screens',
+         ['UxTavern', 'UxTalk', 'UxTalkChoice', 'UxTalkTwo', 'UxTalkLog']),
+        ('The company · a screen per person, and the satchel on its own', ['UxPerson', 'UxPersonDeck', 'UxEquip', 'UxSatchel']),
+        ('How the screens connect', ['UxFlow']),
+    ]:
+        items = [(f'{k}.dc.html', html_title(f'{k}.dc.html')) for k in keys if os.path.exists(f'{CAN}/{k}.dc.html')]
+        if items: UX_ROWS.append((label, items))
+# owner trimmed the old rounds 2026-10-24 (they stay in the artifact's history); the two open questions sit on top
 SECTIONS = [(r, h) for r, h in [
+    (OPEN_ROWS, 'The open map · the owner asked for “you can travel in every direction” · three ways to lay it out, pick one'),
+    (UX_ROWS, 'One job per screen · the owner asked for the UX of real games: town, tavern, trade, people and talk each on a screen of its own'),
     (F64_ROWS, 'Filigree over the pixel world · the house style, chosen by the owner 2026-10-24 · every screen'),
-    (ROUND5, 'Round 5 · the owner asked for the 64-bit UI with 16-bit art'),
-    (ROUND4, 'Round 4 · the pixel UI won · the same UI at three fidelities, 8-bit, 16-bit and 64-bit · pick the tier'),
-    (ROUND3, 'Round 3 · C’s world under D’s UI' + (' (the pixel pairing won and moved up to round 4)' if ROUND4 else ' and under A’s UI · pick the UI')),
-    (ROUND2, 'Round 2 · five directions, none of them paper'),
 ] if r]
-SECTIONS = SECTIONS[:1]  # owner trimmed the old rounds 2026-10-24
 ROWS, STARTS = [], []
 for r, h in SECTIONS:
     STARTS.append(len(ROWS)); ROWS += r
