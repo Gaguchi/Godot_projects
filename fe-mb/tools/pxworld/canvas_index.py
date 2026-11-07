@@ -68,9 +68,9 @@ DIRS = [('DirPixel', 'A', 'Pixel Cartridge'), ('DirTactical', 'B', 'Field Comman
 ROUND2 = [trio(*d) for d in DIRS if have(d[0])]
 ROUND5 = [trio('HybMix', '64 + 16', '64-bit UI, 16-bit art', 'Filigree’s frames, layout and type, drawn at SNES grain')] if have('HybMix') else []
 # owner 2026-10-25: "the UI should not show everything all at once ... all separate screens" -- one job per screen,
-# learned from real games (wip/briefs/UXFLOW.md). Held back until the boards are through review: UX=1 shows the section.
+# learned from real games (wip/briefs/UXFLOW.md). Reviewed and shown since canvas v29; UX=0 holds the section back.
 UX_ROWS = []
-if os.environ.get('UX'):
+if os.environ.get('UX', '1') != '0':
     for label, keys in [
         ('Town · arrive, then choose: the square, the inn, the market', ['UxTown', 'UxInn', 'UxMarket']),
         ('The tavern and a conversation · the people in the room, then Kael’s questline as visual-novel screens',

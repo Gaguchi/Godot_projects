@@ -42,6 +42,15 @@ STEPS = [
     ('src/px-town/gen_px_town.py', [], ['PxTownInn', 'PxTownShop', 'PxTownTavern']),
     ('src/px-camp/gen_pxcamp.py', [], ['PxCamp']),
     ('src/pxworld/gen_map.py', ['grain=1'], ['PxMap1x']),
+    # one job per screen (owner 2026-10-25): town, tavern and talk, the company, then the flow board, which screenshots
+    # the twelve boards above it and PxMap1x, so `rebuild.py UxFlow` alone needs them built already
+    ('src/ux-town/gen_ux_town.py', [], ['UxTown', 'UxInn']),
+    ('src/ux-market/gen_ux_market.py', [], ['UxMarket']),
+    ('src/ux-tavern/gen_ux_tavern.py', [], ['UxTavern']),
+    ('src/ux-talk/gen_talk.py', [], ['UxTalk', 'UxTalkChoice', 'UxTalkTwo', 'UxTalkLog']),
+    ('src/ux-company/gen_ux_company.py', [], ['UxPerson', 'UxPersonDeck', 'UxEquip']),
+    ('src/ux-satchel/gen_ux_satchel.py', [], ['UxSatchel']),
+    ('src/ux-flow/gen_ux_flow.py', [], ['UxFlow']),
 ]
 
 # the world each generator draws before the UI goes on, at 1x: out/world/<name>.png
