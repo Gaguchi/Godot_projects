@@ -87,3 +87,13 @@ Calls made while building stage 1, not yet confirmed by the owner:
 - **The 25 new landmark places have no event yet.** The engine treats each as a plain stop. The content test counts them as a standing debt.
 - **Two palettes for now.** `styles/index.css` is the Field Ledger's; `styles/filigree-kit.css` is Filigree's, generated from the kit in `tools/pxworld`. Screens move over one at a time.
 
+Calls made while building stage 2 (the town), not yet confirmed by the owner:
+
+- **The town opens on its square.** `ui.townTab` gained `square`, and the map's "Enter town" sets it. The inn, the market and the tavern are each their own screen and lead back to the square; only the square leads back to the road.
+- **Esc means back in town.** On a building's screen it returns to the square, and on the square it returns to the road. It no longer opens Pause there; Pause is reached from the map's Menu.
+- **The satchel is on the market's screen only**, where things change hands, and in The Company. The inn and the tavern do not carry it.
+- **The tavern's people are its choices.** Whoever has work, the barkeep (the rumours are what he says) and the bounty desk are each a figure and a numbered row. Someone with work and no sprite (Guildmistress Anya) is in the list without a figure.
+- **A tavern talk is a visual-novel screen.** Talks opened anywhere else (the prologue, the road) keep the old overlay until their own pass. The engine still seats speakers by team, so Kael stands on the left; the boards have him on the right, facing the lead. That waits on the new left-facing art and an engine change to put the lead on stage.
+- **The market shows who can carry a thing, not yet what it does to their deck.** The board's "9 → 12 cards" needs a deck projection the engine does not offer for goods still on the counter.
+- **History, Auto and Skip are not on the talk screen.** The engine has none of the three, and a control that does nothing is worse than none.
+

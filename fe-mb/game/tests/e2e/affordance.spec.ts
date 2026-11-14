@@ -35,6 +35,8 @@ test('a disabled control speaks its reason on the glass, by hover and by keyboar
   await page.getByTestId('tab-shop').click()
   await expect(page.getByTestId('shop')).toBeVisible()
 
+  // the market has ONE Buy, for the good pointed at: point at one the purse cannot reach
+  await page.getByTestId('stock-steel_sword').click()
   const steel = page.getByTestId('buy-steel_sword')
   await expect(steel).toHaveAttribute('aria-disabled', 'true')
   // the browser's own tooltip is gone from the control entirely
@@ -46,6 +48,8 @@ test('a disabled control speaks its reason on the glass, by hover and by keyboar
   await expect(tip).toBeVisible()
   await expect(tip).toHaveText(/costs 160 gold/i)
   await expect(tip).toHaveText(/purse holds 80/i)
+  // and it speaks in the house style of the screen it is on
+  expect(await tip.evaluate((el) => el.closest('.f64') !== null)).toBe(true)
   const box = (await tip.boundingBox())!
   expect(box.x).toBeGreaterThanOrEqual(0)
   expect(box.x + box.width).toBeLessThanOrEqual(1280)
@@ -58,40 +62,37 @@ test('a disabled control speaks its reason on the glass, by hover and by keyboar
   await expect(steel).toHaveAttribute('aria-describedby', /.+/)
 
   // one bubble at a time: hovering another refused control takes the surface
+  await page.getByTestId('stock-iron_greatsword').click()
   await page.getByTestId('buy-iron_greatsword').hover()
   await expect(page.locator('.tip')).toHaveCount(1)
 })
 
-test('the shop shows whole cards and says how much stock it has', async ({ page }) => {
+test('the market shows whole rows and says how much stock it has', async ({ page }) => {
   await page.goto('/?screen=town&seed=21&motion=0')
   await page.getByTestId('tab-shop').click()
-  const shelf = page.getByTestId('shop-shelf')
-  await expect(shelf).toBeVisible()
+  const counter = page.getByTestId('shop')
+  await expect(counter).toBeVisible()
 
-  // nothing is hidden below a fold: the shelf never scrolls
-  const fit = await shelf.evaluate((el) => ({ ch: el.clientHeight, sh: el.scrollHeight }))
-  expect(fit.sh).toBeLessThanOrEqual(fit.ch + 1)
-
-  // and every card on it is drawn whole, inside the shelf's box — no row sliced through the middle
-  const overhang = await shelf.evaluate((el) => {
+  // nothing is hidden below a fold and no row is sliced: every row of the shelf is whole inside the counter's window,
+  // clear of its frame and of the pager under it
+  const overhang = await counter.evaluate((el) => {
     const box = el.getBoundingClientRect()
-    return [...el.querySelectorAll('.shop__card')].filter((c) => c.getBoundingClientRect().bottom > box.bottom + 1).length
+    const pager = el.querySelector('[data-testid="shop-pager"]')?.getBoundingClientRect().top ?? box.bottom
+    return [...el.querySelectorAll('[data-testid^="stock-"]')].filter((c) => c.getBoundingClientRect().bottom > Math.min(box.bottom - 6, pager) + 1).length
   })
   expect(overhang).toBe(0)
 
   // the counter says what it is holding, and the rest is reachable
   const pager = page.getByTestId('shop-pager')
-  await expect(pager).toContainText(/shelf\s*1\s*of\s*4/i)
-  await expect(pager).toContainText(/26/)
+  await expect(pager).toContainText(/shelf\s*1\s*of\s*2/i)
+  await expect(counter).toContainText(/26 goods/)
   await expect(page.getByTestId('shelf-prev')).toHaveAttribute('aria-disabled', 'true')
   const first = await page.locator('[data-testid^="stock-"]').first().getAttribute('data-testid')
   await page.getByTestId('shelf-next').click()
-  await expect(page.getByTestId('shop-pager')).toContainText(/shelf\s*2\s*of\s*4/i)
+  await expect(page.getByTestId('shop-pager')).toContainText(/shelf\s*2\s*of\s*2/i)
   expect(await page.locator('[data-testid^="stock-"]').first().getAttribute('data-testid')).not.toBe(first)
 
-  // walking to the back of the counter reaches the stock the old fold hid
-  await page.getByTestId('shelf-next').click()
-  await page.getByTestId('shelf-next').click()
+  // the back of the counter is the last shelf, and it has the stock the old fold hid
   await expect(page.getByTestId('shelf-next')).toHaveAttribute('aria-disabled', 'true')
   expect(await page.locator('[data-testid^="stock-"]').count()).toBeGreaterThan(0)
 })

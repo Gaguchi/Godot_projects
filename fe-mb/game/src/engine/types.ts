@@ -812,7 +812,9 @@ export type Overlay =
   | { readonly kind: 'quickMenu'; readonly nodeId: NodeId }
   | { readonly kind: 'tutorial'; readonly step: TutorialStep }
 
-export type TownTab = 'inn' | 'shop' | 'tavern'
+/** Where in town the company is. `square` is the town itself: its buildings are the choices, and each of the
+ *  other three is one building's own screen (owner 2026-10-25: one job per screen). */
+export type TownTab = 'square' | 'inn' | 'shop' | 'tavern'
 
 /** Save/Load modals are gone (§2.14 rule 1). */
 export type Modal =

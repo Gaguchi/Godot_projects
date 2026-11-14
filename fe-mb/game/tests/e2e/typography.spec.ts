@@ -40,11 +40,20 @@ test('no screen shows the player an id', async ({ page }) => {
   // classes.json ships display names; the roster used to print `shield_knight` humanised to "shield knight",
   // and the Title screen printed the raw node id as the place.
   await page.goto('/?screen=town&seed=21&motion=0')
+  // the inn names a class beside whoever needs a bed, so someone is hurt first
+  await page.evaluate(() => {
+    const g = window.__game!
+    const s = g.getState()
+    const party = Object.fromEntries(Object.entries(s.run!.party).map(([id, u]) => [id, { ...u, hp: { ...u.hp, current: Math.max(1, u.hp.max - 9) } }]))
+    g.dispatch({ type: 'dev/seedState', state: { ...s, run: { ...s.run!, party } } })
+  })
+  await page.getByTestId('tab-inn').click()
   await expect(page.getByTestId('inn')).toBeVisible()
   const inn = (await page.getByTestId('inn').textContent()) ?? ''
   expect(inn).not.toMatch(/_/)
   expect(inn).toMatch(/Lord|Knight|Mage|Cleric|Thief/)
 
+  await page.getByTestId('inn-back').click()
   await page.getByTestId('town-company').click()
   const loadout = (await page.getByTestId('loadout').textContent()) ?? ''
   expect(loadout).not.toMatch(/[a-z]_[a-z]/)

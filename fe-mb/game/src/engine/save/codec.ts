@@ -26,7 +26,7 @@ export type InvariantCheck = (state: GameState, env: EngineEnv) => readonly stri
 /** The ephemeral slice every hydrated state starts with (`ui` is never persisted; `flow/lifecycle.ts` may reuse it). */
 export const DEFAULT_UI: UiState = Object.freeze({
   modal: null,
-  townTab: 'inn',
+  townTab: 'square',
   showDanger: false,
   devHud: false,
   mapPan: null,

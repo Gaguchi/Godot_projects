@@ -12,6 +12,7 @@
 import React, { useMemo, useState } from 'react'
 import '../../styles/filigree-kit.css'
 import '../../styles/filigree.css'
+import { useTip } from '../components/Tooltip'
 
 export interface KitState {
   readonly cls: string
@@ -84,23 +85,32 @@ interface FBtnProps {
 export function FBtn({ children, onPress, variant = 'secondary', disabledReason = null, testId, autoFocus, style }: FBtnProps): React.JSX.Element {
   const disabled = disabledReason !== null
   const k = useKitState(disabled)
+  // the reason is spoken by the game's ONE reason surface (`components/Tooltip`): hover and focus, one bubble at a time
+  const { tipRef, tipProps, tip } = useTip(disabled ? disabledReason : null)
   const kind = variant === 'primary' ? ' pri' : variant === 'danger' ? ' dgr' : ''
   return (
     <span className="fbtn" style={style}>
       <button
         type="button"
         className={`btn${kind}${k.cls === '' ? '' : ` ${k.cls}`}`}
+        ref={tipRef}
         aria-disabled={disabled || undefined}
-        data-reason={disabled ? disabledReason : undefined}
+        aria-describedby={tipProps['aria-describedby']}
+        data-reason={tipProps['data-reason']}
         data-testid={testId}
         autoFocus={autoFocus}
         onClick={() => { if (!disabled) onPress?.() }}
         style={disabled ? { cursor: 'default' } : undefined}
-        {...k.handlers}
+        onPointerEnter={() => { k.handlers.onPointerEnter(); tipProps.onPointerEnter() }}
+        onPointerLeave={() => { k.handlers.onPointerLeave(); tipProps.onPointerLeave() }}
+        onPointerDown={k.handlers.onPointerDown}
+        onPointerUp={k.handlers.onPointerUp}
+        onFocus={(e) => { k.handlers.onFocus(e); tipProps.onFocus() }}
+        onBlur={() => { k.handlers.onBlur(); tipProps.onBlur() }}
       >
         {children}
       </button>
-      {disabled && k.hovered && <span className="tip refuse" role="tooltip">{disabledReason}</span>}
+      {tip}
     </span>
   )
 }
@@ -143,4 +153,134 @@ export function FIcon({ name, w = 24, h = 24, style }: { readonly name: string; 
 export function Niche({ x, y, size = 52, src, dx, dy, imgW }: { readonly x: number; readonly y: number; readonly size?: number; readonly src: string | null; readonly dx: number; readonly dy: number; readonly imgW: number }): React.JSX.Element {
   const artStyle: React.CSSProperties = src === null ? {} : { backgroundImage: `url('${src}')`, backgroundSize: `${imgW}px auto`, backgroundPosition: `${-dx + 4}px ${-dy + 4}px`, backgroundRepeat: 'no-repeat', imageRendering: 'pixelated' }
   return <div className="fniche" style={{ left: x, top: y, width: size, height: size, ...artStyle }} />
+}
+
+/** A plate laid on the world under a place, centred on `cx` (the kit's `.plate`; `lit` = the one pointed at). */
+export function Plate({ cx, y, lit = false, children }: { readonly cx: number; readonly y: number; readonly lit?: boolean; readonly children: React.ReactNode }): React.JSX.Element {
+  return (
+    <div className="fplate" style={{ left: cx - 160, top: y }}>
+      <span className={`plate${lit ? ' lit' : ''}`}>{children}</span>
+    </div>
+  )
+}
+
+/** The bracket cursor round what the pointer rests on. */
+export function Brackets({ x, y, w, h }: { readonly x: number; readonly y: number; readonly w: number; readonly h: number }): React.JSX.Element {
+  return <div className="fbrackets" style={{ left: x, top: y, width: w, height: h }} aria-hidden />
+}
+
+/** The brass leader from a window's foot down to the brackets. `x` is its centre. */
+export function Leader({ x, y0, y1 }: { readonly x: number; readonly y0: number; readonly y1: number }): React.JSX.Element | null {
+  return y1 - y0 < 6 ? null : <div className="fleader" style={{ left: x - 2, top: y0, height: y1 - y0 }} aria-hidden />
+}
+
+interface FChoiceProps {
+  readonly x: number
+  readonly y: number
+  readonly w: number
+  readonly h?: number
+  /** The number key that takes it; none for a row the list does not number (a way back with its own key). */
+  readonly n?: number | string
+  readonly label: string
+  /** A second, quieter line under the label. */
+  readonly sub?: string
+  /** Set by the screen when the same choice is pointed at somewhere else (its building in the square). */
+  readonly lit?: boolean
+  readonly disabledReason?: string | null
+  readonly onPress: () => void
+  readonly onHover?: (on: boolean) => void
+  readonly testId?: string
+  readonly keyHint?: string
+  /** What the choice asks of the company (a check), after the line: `ok` says whether someone meets it. */
+  readonly tag?: string
+  readonly tagOk?: boolean | null
+}
+
+/** One numbered choice in a list: its key, the line, the brass pointer when it is the one pointed at. */
+export function FChoice({ x, y, w, h = 32, n, label, sub, lit = false, disabledReason = null, onPress, onHover, testId, keyHint, tag, tagOk = null }: FChoiceProps): React.JSX.Element {
+  const disabled = disabledReason !== null
+  const k = useKitState(disabled)
+  const on = !disabled && (lit || k.hovered)
+  return (
+    <button
+      type="button"
+      className={`row fchoice${on ? ' hov' : ''}${k.cls.includes('foc') ? ' foc-ring' : ''}`}
+      style={{ left: x, top: y, width: w, height: h, cursor: disabled ? 'default' : 'pointer' }}
+      aria-disabled={disabled || undefined}
+      data-reason={disabled ? disabledReason : undefined}
+      data-testid={testId}
+      onClick={() => { if (!disabled) onPress() }}
+      {...k.handlers}
+      onPointerEnter={() => { k.handlers.onPointerEnter(); onHover?.(true) }}
+      onPointerLeave={() => { k.handlers.onPointerLeave(); onHover?.(false) }}
+    >
+      <span className="abs nowrap" style={{ left: 8, top: sub !== undefined || disabled ? 5 : Math.round((h - 22) / 2), lineHeight: '22px' }}>
+        {n !== undefined && <span className={`key${disabled ? ' off' : ''}`}>{n}</span>}
+        <span className={`s16 ${disabled ? 'faint' : on ? 'straw' : 'bone'}`} style={{ marginLeft: n === undefined ? 0 : 10 }}>{label}</span>
+        {tag !== undefined && <span className={`s13 ${tagOk === false ? 'rust' : tagOk === true ? 'meadow' : 'dim'}`} style={{ marginLeft: 12 }}>{tag}</span>}
+      </span>
+      {(sub !== undefined || disabled) && <span className={disabled ? 'why abs' : 'abs s13 dim nowrap'} style={{ left: 41, top: 25 }}>{disabled ? disabledReason : sub}</span>}
+      {keyHint !== undefined && <span className="abs nowrap" style={{ right: 6, top: 6 }}><span className="key">{keyHint}</span></span>}
+      {on && <img className="abs" src="/art/ui/row_arrow.png" alt="" draggable={false} style={{ left: -14, top: 11 }} />}
+    </button>
+  )
+}
+
+/** A section's own heading inside a window: ochre, a note at the right, a groove under both. */
+export function SectionHead({ x, y, w, heading, note }: { readonly x: number; readonly y: number; readonly w: number; readonly heading: string; readonly note?: string }): React.JSX.Element {
+  return (
+    <>
+      <div className="s16 ochre nowrap" style={{ left: x, top: y }}>{heading}</div>
+      {note !== undefined && <div className="s13 dim nowrap" style={{ left: x, top: y + 3, width: w, textAlign: 'right' }}>{note}</div>}
+      <div className="fgroove" style={{ left: x, top: y + 23, width: w }} />
+    </>
+  )
+}
+
+const GLYPH: Readonly<Record<string, string>> = { '→': 'to', '/': 'slash', '-': 'dash', '+': 'plus' }
+
+/** The kit's cast numerals (tools/pxworld `numeral`, 22 px ochre), set glyph by glyph at 1:1: a number that matters. */
+export function Numeral({ text, label }: { readonly text: string; readonly label?: string }): React.JSX.Element {
+  return (
+    <span className="fnum" role="img" aria-label={label ?? text}>
+      {[...text].map((ch, i) => (ch === ' ' ? <i key={i} className="fnum__gap" /> : <img key={i} src={`/art/ui/num_${GLYPH[ch] ?? ch}.png`} alt="" draggable={false} />))}
+    </span>
+  )
+}
+
+/** A gauge with a heal preview: what a bed would mend is the dithered run after the fill. */
+export function Gauge({ x, y, w, h = 7, value, max, gain = 0 }: { readonly x: number; readonly y: number; readonly w: number; readonly h?: number; readonly value: number; readonly max: number; readonly gain?: number }): React.JSX.Element {
+  const inner = w - 2
+  const keep = max <= 0 ? 0 : Math.round((inner * Math.max(0, value)) / max)
+  const more = max <= 0 ? 0 : Math.round((inner * Math.min(gain, max - value)) / max)
+  return (
+    <div className={`fbar${h === 9 ? ' fbar--tall' : ''}`} style={{ left: x, top: y, width: w }} aria-hidden>
+      <i style={{ width: keep }} />
+      {more > 0 && <b style={{ left: 1 + keep, width: more }} />}
+    </div>
+  )
+}
+
+/** A board sprite standing in a room at 1:1, on its contact shadow, with the kit's ink edge. `foot` is in the sprite. */
+export function Stand({ sprite, x, y, foot }: { readonly sprite: string; readonly x: number; readonly y: number; readonly foot: readonly [number, number] }): React.JSX.Element {
+  return (
+    <>
+      <i className="fstand__shadow" style={{ left: x - 30, top: y - 5 }} aria-hidden />
+      <img className="fstand" src={`/sprites/units/board/${sprite}.png`} width={104} height={152} alt="" draggable={false} style={{ left: x - foot[0], top: y - foot[1] }} />
+    </>
+  )
+}
+
+/** Board face crops at stage scale (tools/pxworld `assets/up/face_*`): the head's seat in a 52 px niche, per sprite. */
+const FACE: Readonly<Record<string, readonly [number, number]>> = { roy: [28, 14], marcus: [26, 10], lilina: [27, 20], bandit: [22, 8], ember_mage: [22, 8], warlord: [22, 8] }
+
+/** What a `Niche` of `size` shows for a sprite: its face crop where the game has one, else its full art seated on the head. */
+export function faceArt(sprite: string | null, size = 52): { readonly src: string | null; readonly dx: number; readonly dy: number; readonly imgW: number } {
+  if (sprite === null) return { src: null, dx: 0, dy: 0, imgW: 0 }
+  // a small niche shows the same crop at half size (a whole-number step down); the others keep the art at 1:1
+  const k = size <= 34 ? 0.5 : 1
+  const pad = (52 - size) / 2
+  const seat = FACE[sprite]
+  if (seat !== undefined) return { src: `/sprites/faces/${sprite}.png`, dx: Math.round((seat[0] - 4) * k + 4 + (k === 1 ? pad : 0)), dy: Math.round((seat[1] - 4) * k + 4 + (k === 1 ? pad : 0)), imgW: 96 * k }
+  return { src: `/sprites/units/${sprite}.png`, dx: Math.round(112 * k + 4 + (k === 1 ? pad : 0)), dy: Math.round(36 * k + 4 + (k === 1 ? pad : 0)), imgW: Math.round(277 * k) }
 }

@@ -46,12 +46,13 @@ test('title → tutorial → prologue → map → town → road, no console erro
   await page.getByTestId('node-riverside_market').click()
   await expect(page.getByTestId('node-card')).toContainText(/Riverside Market/)
 
-  // town: the counter, the satchel, back to the road
+  // town: the square, a door (the market: its counter and our satchel), back to the square, back to the road
   await page.getByTestId('menu-town').click()
-  await expect(page.getByTestId('town-screen')).toBeVisible()
-  await expect(page.getByTestId('bag')).toBeVisible()
+  await expect(page.getByTestId('town-screen')).toHaveAttribute('data-tab', 'square')
   await page.getByTestId('tab-shop').click()
   await expect(page.getByTestId('shop')).toBeVisible()
+  await expect(page.getByTestId('bag')).toBeVisible()
+  await page.getByTestId('market-back').click()
   await page.getByTestId('town-leave').click()
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
   expect(errors).toEqual([])
@@ -167,21 +168,28 @@ test('the shop refuses with a reason, never with a live button that does nothing
   await expect(page.getByTestId('refusal')).toBeVisible()
 })
 
-test('the satchel is read-only away from the shop counter, and says so', async ({ page }) => {
+test('the satchel is on the glass only where things change hands', async ({ page }) => {
+  // One job per screen (owner 2026-10-25). The satchel used to ride on every tab of the town, dead everywhere but
+  // the shop and saying so in a tooltip. Now the square, the inn and the tavern do not carry it at all.
   await page.goto('/?screen=town&seed=3&motion=0')
+  await expect(page.getByTestId('town-screen')).toHaveAttribute('data-tab', 'square')
+  await expect(page.getByTestId('bag')).toHaveCount(0)
+  await page.getByTestId('tab-inn').click()
   await expect(page.getByTestId('inn')).toBeVisible()
-  const cell = page.getByTestId('bag').locator('.bag__item').first()
-  await expect(cell).toHaveAttribute('aria-disabled', 'true')
-  await expect(cell).toHaveAttribute('data-reason', /shop counter/i)
-  await cell.click({ force: true })
-  await expect(cell).not.toHaveClass(/bag__item--selected/)
+  await expect(page.getByTestId('bag')).toHaveCount(0)
+  await page.getByTestId('inn-back').click()
+  await page.getByTestId('tab-tavern').click()
+  await expect(page.getByTestId('tavern')).toBeVisible()
+  await expect(page.getByTestId('bag')).toHaveCount(0)
 
-  // at the counter the same grid is live again
+  // at the counter the grid is live: a thing of ours can be pointed at, and the trader names his price for it
+  await page.getByTestId('tavern-back').click()
   await page.getByTestId('tab-shop').click()
-  const shopCell = page.getByTestId('bag').locator('.bag__item').first()
+  const shopCell = page.getByTestId('bag').locator('.fbag__item').first()
   await expect(shopCell).not.toHaveAttribute('aria-disabled', 'true')
   await shopCell.click()
-  await expect(shopCell).toHaveClass(/bag__item--selected/)
+  await expect(shopCell).toHaveClass(/sel/)
+  await expect(page.getByTestId('sell')).toHaveText(/sell .+ · \d+ gold/i)
 })
 
 test('a dungeon says why the way out is shut, and why a room cannot be entered', async ({ page }) => {
@@ -215,9 +223,11 @@ test('the name the player chose is the name every roster shows', async ({ page }
     const s = g.getState() as { run: Record<string, unknown> }
     g.dispatch({ type: 'dev/seedState', state: { ...s, run: { ...s.run, mcName: 'Wilhelmina' } } })
   })
+  await page.getByTestId('tab-inn').click()
   await expect(page.getByTestId('inn')).toContainText('Wilhelmina')
   await expect(page.getByTestId('inn')).not.toContainText('The Foundling')
 
+  await page.getByTestId('inn-back').click()
   await page.getByTestId('town-company').click()
   const loadout = page.getByTestId('loadout')
   await expect(loadout).toBeVisible()
@@ -236,5 +246,45 @@ test('two drops of the same item render two rows without a duplicate-key error',
     g.dispatch({ type: 'dev/seedState', state: { ...s, run: { ...s.run, lastBattle: { ...s.run.lastBattle, loot } } } })
   })
   await expect(page.locator('.report__row--loot')).toHaveCount(2)
+  expect(errors).toEqual([])
+})
+
+/**
+ * One job per screen (owner 2026-10-25): "when entering town, the UI should not show everything all at once ... You
+ * go to the tavern, and then maybe you get someone to talk to, and then the dialogue choices, all separate screens."
+ */
+test('the town is a square of doors, the tavern is its people, and a talk is a screen of its own', async ({ page }) => {
+  const errors = await errorsOf(page)
+  await page.goto('/?screen=town&seed=3&motion=0')
+  const town = page.getByTestId('town-screen')
+  // the square offers the doors and the road, and does none of their jobs itself
+  await expect(town).toHaveAttribute('data-tab', 'square')
+  for (const id of ['inn', 'shop', 'tavern', 'bag', 'inn-heal']) await expect(page.getByTestId(id)).toHaveCount(0)
+  // pointing at a door says what is behind it before the click
+  await page.getByTestId('door-inn').hover()
+  await expect(page.getByTestId('door-offer')).toContainText(/the inn/i)
+
+  // a door is its own screen, and the keyboard runs the square too: 3 is the tavern
+  await page.keyboard.press('3')
+  await expect(town).toHaveAttribute('data-tab', 'tavern')
+  await expect(page.getByTestId('tavern')).toContainText(/the barkeep/i)
+  await page.mouse.move(640, 700)
+  // the barkeep IS the talk of the room: choosing him says it, and nothing is said before that
+  await page.getByTestId('room-barkeep').click()
+  await expect(page.getByTestId('rumour').first()).toBeVisible()
+
+  // whoever has work is a person in the room; talking to them opens the conversation as its own screen
+  await page.locator('[data-testid^="room-"]').first().click()
+  await page.locator('[data-testid^="talk-"]').first().click()
+  const talk = page.getByTestId('dialogue')
+  await expect(talk).toBeVisible()
+  expect(await talk.evaluate((el) => el.classList.contains('f64'))).toBe(true)
+  await expect(page.getByTestId('dialogue-text')).not.toHaveText('')
+  // the talk owns the whole stage: the tavern's list is under it and out of reach
+  expect(await talk.evaluate((el) => { const r = el.getBoundingClientRect(); const s = document.getElementById('game-stage')!.getBoundingClientRect(); return Math.round(r.width - s.width) + Math.round(r.height - s.height) })).toBe(0)
+  // Esc does not walk out of a conversation
+  await page.keyboard.press('Escape')
+  await expect(talk).toBeVisible()
+  await expect(town).toHaveAttribute('data-tab', 'tavern')
   expect(errors).toEqual([])
 })

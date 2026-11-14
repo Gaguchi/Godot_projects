@@ -98,3 +98,45 @@
 .fmap-menu__warn { margin-top: 8px; max-width: 420px; white-space: normal; }
 .fmap-toast { left: 50%; bottom: 46px; transform: translateX(-50%); z-index: 7; white-space: nowrap; }
 .fmap-recentre { position: absolute; right: 14px; bottom: 14px; z-index: 6; }
+
+/* ------------------------------------------------------------------ pieces the place screens share */
+.f64 .fplate { position: absolute; width: 320px; text-align: center; pointer-events: none; }
+.f64 .fbrackets { position: absolute; pointer-events: none; image-rendering: pixelated; border-style: solid; border-width: 14px; border-image: url('/art/ui/brackets.png') 14 stretch; }
+.f64 .fleader { position: absolute; width: 4px; background: var(--f-k0); pointer-events: none; }
+.f64 .fleader::before { content: ''; position: absolute; left: 1px; top: 0; bottom: 3px; width: 1px; background: var(--f-o5); box-shadow: 1px 0 0 0 var(--f-o3); }
+.f64 .fleader::after { content: ''; position: absolute; left: -1px; bottom: -3px; width: 6px; height: 4px; background: var(--f-o4); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.f64 .fchoice { position: absolute; }
+.f64 .fchoice.foc-ring { outline: 1px solid var(--f-o5); outline-offset: 1px; }
+.f64 .fnum { display: inline-block; white-space: nowrap; line-height: 0; vertical-align: middle; }
+.f64 .fnum > img { display: inline-block; margin-right: -1px; }
+.f64 .fnum__gap { display: inline-block; width: 6px; }
+.f64 .fbar--tall { height: 9px; clip-path: polygon(1px 0, calc(100% - 1px) 0, 100% 1px, 100% 8px, calc(100% - 1px) 100%, 1px 100%, 0 8px, 0 1px); }
+.f64 .fbar--tall > i { height: 7px; background: linear-gradient(var(--f-s5) 0 1px, var(--f-s4) 1px 4px, var(--f-s3) 4px 6px, var(--f-s2) 6px 7px); }
+.f64 .fbar > b { position: absolute; top: 1px; height: 5px; background-color: var(--f-s3); background-image: repeating-conic-gradient(var(--f-s5) 0 25%, transparent 0 50%); background-size: 2px 2px; }
+.f64 .fbar--tall > b { height: 7px; }
+.f64 .fstand { position: absolute; pointer-events: none; filter: drop-shadow(1px 0 0 var(--f-k0)) drop-shadow(-1px 0 0 var(--f-k0)) drop-shadow(0 1px 0 var(--f-k0)) drop-shadow(0 -1px 0 var(--f-k0)); }
+.f64 .fstand__shadow { position: absolute; width: 64px; height: 12px; background: rgba(17, 13, 10, 0.34); clip-path: polygon(8px 0, 56px 0, 64px 6px, 56px 12px, 8px 12px, 0 6px); pointer-events: none; }
+/* a place screen: the room or the square at 1:1 under its windows */
+.fplace { position: absolute; inset: 0; background: var(--f-w0); }
+.fplace__world { position: absolute; left: 0; top: 0; }
+.fplace__hit { position: absolute; padding: 0; }
+.fplace__hit:focus-visible { outline: 1px solid var(--f-o5); outline-offset: 2px; }
+.fplace__fig { position: absolute; pointer-events: none; }
+.fplace__foot { position: absolute; white-space: nowrap; pointer-events: none; }
+/* the satchel: recessed squares, and what is packed in them as raised walnut tiles */
+.f64 .fbag { position: absolute; }
+.f64 .fbag__cell { position: absolute; width: 44px; height: 44px; background: var(--f-w0); box-shadow: inset 1px 1px 0 0 var(--f-k0), inset -1px -1px 0 0 var(--f-w3); }
+.f64 .fbag__item { position: absolute; padding: 0; cursor: pointer; background-color: var(--f-w4); background-image: repeating-conic-gradient(var(--f-w3) 0 25%, transparent 0 50%); background-size: 2px 2px; box-shadow: inset 0 0 0 1px var(--f-k0), inset 2px 2px 0 0 var(--f-w5), inset -2px -2px 0 0 var(--f-w1); }
+.f64 .fbag__item.sel { box-shadow: inset 0 0 0 1px var(--f-k0), inset 2px 2px 0 0 var(--f-o5), inset -2px -2px 0 0 var(--f-o2); }
+.f64 .fbag__item > img { position: absolute; left: 50%; top: 50%; margin: -12px 0 0 -12px; }
+.f64 .fbag__n { position: absolute; right: 4px; bottom: 1px; text-shadow: 1px 1px 0 var(--f-k0); }
+/* the game's one reason bubble, in the house style when its control stands on a Filigree screen (components/Tooltip) */
+.f64.ftip-host { position: absolute; inset: 0; z-index: 80; overflow: visible; background: none; pointer-events: none; }
+.f64.ftip-host > .tip { border-radius: 0; max-width: 340px; }
+/* a conversation as its own screen: the room a step down, the two standing either side, the line at the foot */
+.ftalk { z-index: 20; }
+.ftalk__room { filter: brightness(0.8) saturate(0.9); }
+.f64 .ftalk__stand { position: absolute; image-rendering: auto; pointer-events: none; }
+.f64 .ftalk__stand--listening { filter: brightness(0.56); }
+.f64 .ftalk__name { position: absolute; top: 518px; z-index: 2; }
+.ftalk__stage { position: absolute; left: 0; top: 0; width: 1280px; overflow: hidden; pointer-events: none; }

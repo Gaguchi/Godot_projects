@@ -25,7 +25,7 @@ import { FieldReport } from './screens/FieldReport'
 import { LedgerScreen } from './screens/Ledger'
 import { PrologueScreen } from './screens/Prologue'
 import { TitleScreen } from './screens/Title'
-import { TownScreen } from './screens/Town'
+import { TownScreen } from './town/TownScreen'
 import { useGame } from './store'
 
 const selectScreen = (s: GameState): ScreenKind => s.screen.kind

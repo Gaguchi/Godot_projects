@@ -27,7 +27,7 @@ import { displayName, livingUnits } from '../../engine/run/party'
 import { questStatus } from '../../engine/run/quests'
 import { scoutedRoads, sightingFor, type Sighting } from '../../engine/run/scout'
 import type { EngineEnv, GameState, OverworldNode, RunState } from '../../engine/types'
-import { FBtn, FCmd, FIcon, Key, Niche, Win } from '../filigree/kit'
+import { FBtn, FCmd, FIcon, Key, Niche, Win, faceArt } from '../filigree/kit'
 import { className, companyName } from '../names'
 import { STAGE_H, STAGE_W } from '../stage'
 import { canDispatch, dispatch, shallow, useEnv, useGame, useLegal } from '../store'
@@ -83,10 +83,10 @@ function hopChance(run: RunState, from: string, to: string, env: EngineEnv): num
 }
 const odds = (chance: number): string => (Number.isInteger(Math.round(chance * 100) / 10) ? `${Math.round(chance * 10)} in 10` : `${Math.round(chance * 100)} in 100`)
 
-function Verb({ action, label, variant = 'secondary', testId, lockedSigil = false }: { readonly action: Action; readonly label: string; readonly variant?: 'primary' | 'secondary'; readonly testId?: string; readonly lockedSigil?: boolean }): React.JSX.Element {
+function Verb({ action, label, variant = 'secondary', testId, lockedSigil = false, then }: { readonly action: Action; readonly label: string; readonly variant?: 'primary' | 'secondary'; readonly testId?: string; readonly lockedSigil?: boolean; readonly then?: Action }): React.JSX.Element {
   const legal = useLegal(action)
   return (
-    <FBtn variant={variant} disabledReason={legal.ok ? null : legal.reason} onPress={() => dispatch(action)} {...(testId !== undefined ? { testId } : {})}>
+    <FBtn variant={variant} disabledReason={legal.ok ? null : legal.reason} onPress={() => { dispatch(action); if (then !== undefined) dispatch(then) }} {...(testId !== undefined ? { testId } : {})}>
       {/* a sealed door is never carried by the label or the colour alone: the padlock is the second channel (UIS-03) */}
       {lockedSigil && !legal.ok && <FIcon name="padlock" w={16} h={16} style={{ margin: '-3px 6px 0 0' }} />}{label}
     </FBtn>
@@ -111,7 +111,8 @@ function NodeCard({ node, hopsLeft, at }: { readonly node: OverworldNode; readon
       {/* the last door says who waits behind it BEFORE the verb (RE-GATE C 3.14): the sentence is the node's own */}
       {throne !== null && <p className="s14 rust fmap-menu__warn" data-testid="throne-warning">{throne}</p>}
       <div className="fmap-menu__verbs">
-        {node.type === 'TOWN' && <Verb action={{ type: 'town/enter' }} label="Enter town" variant="primary" testId="menu-town" />}
+        {/* every visit opens on the square: `town/enter` leaves `ui` alone, so the menu sets the tab (types.ts UiState) */}
+        {node.type === 'TOWN' && <Verb action={{ type: 'town/enter' }} then={{ type: 'ui/setTownTab', tab: 'square' }} label="Enter town" variant="primary" testId="menu-town" />}
         {node.type === 'CAMP' && <Verb action={{ type: 'camp/enter' }} label="Make camp" variant="primary" testId="menu-camp" />}
         {node.type === 'DUNGEON' && <Verb action={{ type: 'dungeon/enter' }} label="Enter" variant="primary" testId="menu-dungeon" lockedSigil />}
         {node.type === 'BOSS' && <Verb action={{ type: 'travel/challengeBoss' }} label="Challenge the throne" variant="primary" testId="menu-boss" />}
@@ -150,17 +151,6 @@ function seatPlate(x: number, y: number, w: number, h: number, foot: Box | undef
 }
 
 // ------------------------------------------------------------------ the three windows
-/** Board face crops at stage scale (tools/pxworld `assets/up/face_*`): the head's seat in the niche, per sprite. */
-const FACE: Readonly<Record<string, readonly [number, number]>> = { roy: [28, 14], marcus: [26, 10], lilina: [27, 20], bandit: [22, 8], ember_mage: [22, 8], warlord: [22, 8] }
-
-function faceOf(sprite: string | null): { readonly src: string | null; readonly dx: number; readonly dy: number; readonly imgW: number } {
-  if (sprite === null) return { src: null, dx: 0, dy: 0, imgW: 0 }
-  const seat = FACE[sprite]
-  if (seat !== undefined) return { src: `/sprites/faces/${sprite}.png`, dx: seat[0], dy: seat[1], imgW: 96 }
-  // no crop yet: the full art at a third, seated on the head
-  return { src: `/sprites/units/${sprite}.png`, dx: 116, dy: 40, imgW: 277 }
-}
-
 interface HudView {
   readonly day: number
   readonly gold: number
@@ -270,7 +260,7 @@ function Hud({ regionName, chance, camera, company }: { readonly regionName: str
           const ratio = f.max <= 0 ? 0 : f.hp / f.max
           return (
             <React.Fragment key={f.id}>
-              <Niche x={18} y={y} {...faceOf(f.sprite)} />
+              <Niche x={18} y={y} {...faceArt(f.sprite)} />
               <div className="s16 bone nowrap" style={{ left: 82, top: y + 4 }}>{f.name}</div>
               <div className="s13 dim nowrap" style={{ left: 82, top: y + 27 }}>{f.role}</div>
               <div className={`fbar${ratio <= 0.25 ? ' fbar--crit' : ratio <= 0.5 ? ' fbar--warn' : ''}`} style={{ left: 250, top: y + 10, width: 64 }} aria-hidden><i style={{ width: Math.round(62 * ratio) }} /></div>

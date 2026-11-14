@@ -99,10 +99,14 @@ function TipBubble({ id, text, anchor, isReason }: {
 }): React.JSX.Element | null {
   const box = useRef<HTMLDivElement | null>(null)
   const [at, setAt] = useState<{ readonly x: number; readonly y: number } | null>(null)
+  /** The bubble is portalled to the stage, outside any screen's own scope, so it asks its anchor which house
+   *  style it is speaking in: on a Filigree screen (`.f64`) it wears the kit's tip, not the Field Ledger's. */
+  const [filigree, setFiligree] = useState(false)
   useLayoutEffect(() => {
     const el = anchor.current
     const bubble = box.current
     if (el === null || bubble === null) return
+    setFiligree(el.closest('.f64') !== null)
     const r = el.getBoundingClientRect()
     const tl = clientToStage(r.left, r.top)
     const br = clientToStage(r.right, r.bottom)
@@ -118,16 +122,16 @@ function TipBubble({ id, text, anchor, isReason }: {
   }, [anchor, text])
   const host = stagePortalContainer()
   if (host === undefined) return null
-  return createPortal(
+  const bubble = (
     <div
       ref={box}
       id={id}
       role="tooltip"
-      className={`tip${isReason ? ' tip--reason' : ''}`}
+      className={`tip${isReason ? ' tip--reason' : ''}${filigree && isReason ? ' refuse' : ''}`}
       style={{ left: at?.x ?? 0, top: at?.y ?? 0, visibility: at === null ? 'hidden' : 'visible' }}
     >
       {text}
-    </div>,
-    host,
+    </div>
   )
+  return createPortal(filigree ? <div className="f64 ftip-host">{bubble}</div> : bubble, host)
 }

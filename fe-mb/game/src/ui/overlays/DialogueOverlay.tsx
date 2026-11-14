@@ -24,9 +24,12 @@ import { CheckTag } from '../components/CheckTag'
 import { Sigil } from '../components/Sigil'
 import { className } from '../names'
 import { dispatch, useEnv, useGame } from '../store'
+import { Talk } from '../town/Talk'
 
 interface View {
   readonly dialogueId: string | null
+  /** Where the talk was opened from: a tavern talk is its own screen (`ui/town/Talk`), the rest speak over the world. */
+  readonly source: string | null
   /** The prologue is a STAGED frame — the scrim seats the box there instead of putting the scene out. */
   readonly staged: boolean
   readonly speakerId: string | null
@@ -85,6 +88,7 @@ export function DialogueOverlay(): React.JSX.Element | null {
     if (node === null) return null
     return {
       dialogueId: run.pendingDialogue?.dialogueId ?? null,
+      source: run.pendingDialogue?.source ?? null,
       staged: s.screen.kind === 'prologue',
       speakerId: node.speaker ?? null,
       speaker: speakerName(node.speaker, run, env),
@@ -129,6 +133,9 @@ export function DialogueOverlay(): React.JSX.Element | null {
     const onKey = (e: KeyboardEvent): void => {
       if (e.target instanceof HTMLInputElement) return
       if (view.choices.length === 0 && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); dispatch({ type: 'dialogue/continue' }) }
+      // a talk with one plain answer goes on with Enter too: the answer is how it continues, not a choice (`ui/town/Talk`)
+      const only = view.choices.length === 1 ? view.choices[0] : undefined
+      if (view.source === 'tavern' && only !== undefined && only.enabled && only.tag === null && e.key === 'Enter') { e.preventDefault(); dispatch({ type: 'dialogue/choose', choiceId: only.id, attemptingUnitId: null }); return }
       const n = Number(e.key)
       if (n >= 1 && n <= view.choices.length) {
         const c = view.choices[n - 1]
@@ -140,6 +147,7 @@ export function DialogueOverlay(): React.JSX.Element | null {
   }, [view])
 
   if (view === null) return null
+  if (view.source === 'tavern') return <Talk view={view} />
   const [left, right] = view.busts
   // The plaque hangs on the SPEAKER's side of the box. Pinned to the top-left it sat under the silent, unlit bust
   // and named the person on the other side of the frame, so the label and the lighting said different things

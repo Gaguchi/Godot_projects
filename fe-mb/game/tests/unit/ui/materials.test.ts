@@ -230,7 +230,7 @@ describe('ARCHITECTURE §5.1 — no id, no raw code, one capitalisation rule', (
     expect(hand).not.toMatch(/`[^`]*\br\$\{/)          // `foes r${radius}`
     expect(hand).not.toMatch(/\$\{e\.turns\}t\b/)      // `3t`
     expect(hand).not.toMatch(/\$\{e\.effectId\}/)      // the status id itself
-    const town = readFileSync(join(UI, 'screens', 'Town.tsx'), 'utf8')
+    const town = readFileSync(join(UI, 'town', 'Market.tsx'), 'utf8')   // the shop shelf is the market's counter now
     expect(town).not.toMatch(/gridSize\.width\}×\$\{/) // `sword · 1×2`
   })
 
