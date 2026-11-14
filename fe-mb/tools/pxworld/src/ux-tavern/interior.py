@@ -154,7 +154,7 @@ def _wall_things(a):
 
 
 # ---------------------------------------------------------------- the room
-def render(people=True, seed=6):
+def render(people=True, seed=6, guest=True):
     """The tavern by day. Returns (Room, info); see the module docstring."""
     a, sinfo = SH.build(seed)
     hinfo = HE.build(a, banked=True)
@@ -239,7 +239,9 @@ def render(people=True, seed=6):
         info['patrons'].append(dict(foot=(sx_, seat), box=_ix_box(sp, sx_, seat)))
         st.add(sp, sx_, seat, z=sy_ + .5)
         st.add(FK.stool_legs(drop=LEG_DROP), sx_, seat - 7, z=sy_ - .5)
-    if people:
+    if people and not guest:                        # the room without its guest: the game seats whoever has work
+        st.add(bk, *BARKEEP_FOOT)
+    if people and guest:
         st.add_rgba(inked(ka), kx0, ky0, KAEL_FOOT[1])
         kal = _alpha_sprite(ka)
         st.throw_sprite(kal, KAEL_FOOT[0], KAEL_FOOT[1])

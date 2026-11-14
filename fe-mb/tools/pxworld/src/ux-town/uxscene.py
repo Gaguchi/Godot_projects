@@ -53,6 +53,7 @@ KERB = 1056
 WATER = 1102
 BRIDGE_ROWS = (Y(140), Y(152), Y(169), Y(207))
 COMPANY_AT = {'square': (668, 590), 'inn': (570, Y(272))}
+COMPANY_SPOTS = (('marcus', -24, -1), ('roy', 0, 1), ('lilina', 25, -1))     # each of the three, from the group's foot
 ROAD = [(-10, Y(246)), (60, Y(242)), (140, Y(236)), (200, Y(232))]        # px-town's west road: the road out
 POST = (122, Y(224))                                                     # the fingerpost, on its north verge
 
@@ -290,9 +291,10 @@ def render(company='square', seed=5, keeper_at_door=False):
         folk.append(('keeper', 664, Y(254), True))
     for who, x, y, flip in folk:
         L.add(FT.figure(who), x, y, shadow=('ell', 3, 0, 9, 2.5), flip=flip)
-    cx, cy = COMPANY_AT[company]                    # the company
-    for who, dx, dy in (('marcus', -24, -1), ('roy', 0, 1), ('lilina', 25, -1)):
-        L.add(FT.figure(who), cx + dx, cy + dy, shadow=('ell', 3, 0, 10, 2.5))
+    if company is not None:                         # the company (None: the game stands its own, export_game.py)
+        cx, cy = COMPANY_AT[company]
+        for who, dx, dy in COMPANY_SPOTS:
+            L.add(FT.figure(who), cx + dx, cy + dy, shadow=('ell', 3, 0, 10, 2.5))
     for (x, y, flip) in ((150, Y(250), False), (162, Y(256), True), (428, Y(258), False), (602, 700, True), (618, 706, False)):
         L.add(PT.hen(), x, y, shadow=('ell', 1, 0, 4, 1.5), flip=flip)
     L.add(PT.dog(), 1044, Y(230), shadow=('ell', 2, 0, 8, 2), flip=True)
@@ -310,7 +312,7 @@ def render(company='square', seed=5, keeper_at_door=False):
         smoke_puffs(cv, p['wx'] + cx_, (p['fy'] - p['spr'].ay) + cy_ + 3, R, n=6, lean=4, step=5)
     box = {k: v['box'] for k, v in places.items()}
     box['road'] = (0, POST[1] - 50, 214, 94)        # the road's end and the fingerpost, for the bracket
-    info = {'box': box, 'door': {k: v['door'] for k, v in places.items()}, 'company': COMPANY_AT[company]}
+    info = {'box': box, 'door': {k: v['door'] for k, v in places.items()}, 'company': COMPANY_AT[company or 'square']}
     return cv, info
 
 

@@ -33,6 +33,17 @@ Each generator runs in its own process. That matters, because the scene folders 
 
 The build is deterministic: the same code writes the same bytes on every run. To check a change, rebuild before and after and compare `out/boards/`. Seeds are fixed numbers. Never seed from `hash()` of a string, because Python salts it per process. The dungeon did that until 2026-10-24.
 
+## Exporting to the game
+
+The game (`game/`) is being rebuilt in this look one screen at a time. Two scripts write what it needs, from the same code that draws the boards:
+
+```
+python src/px-big-b/export_game.py    # the map: world.json, towns and dungeons for the new places, the heartland art, the kit stylesheet and frames
+python src/ux-town/export_game.py     # the town: the square, the inn, the tavern and the market street, with nobody the game places itself
+```
+
+Both write straight into `game/src` and `game/public/art`. Run them after changing the world or the kit, then run the game's tests.
+
 ## Layout
 
 | Path | What |

@@ -309,7 +309,7 @@ def innkeeper():
 
 
 # ------------------------------------------------------------------ the room
-def render(seed=8):
+def render(seed=8, company=True):
     rng = random.Random(seed)
     a = np.zeros((H, W), np.uint8)
     SH.plaster(a, rng)
@@ -377,9 +377,11 @@ def render(seed=8):
         spr = IN.board_sprite(sid)
         ox, oy = FEET[sid]
         x0, y0 = fx - ox, fy_ - oy
+        info['company'][sid] = IN._sprite_box(spr, x0, y0)
+        if not company:                             # the game stands its own company on these spots
+            continue
         st.add_rgba(IN.inked(spr), x0, y0, fy_)
         st.throw_sprite(IN._alpha_sprite(spr, foot=(ox, oy)), fx, fy_)
-        info['company'][sid] = IN._sprite_box(spr, x0, y0)
     kp = innkeeper()
     info['keeper'] = IN._ix_box(kp, *KEEPER_FOOT, clip_y=top_y)
     info['counter'] = (c['x0'], top_y, c['w'], c['front'] - top_y)
