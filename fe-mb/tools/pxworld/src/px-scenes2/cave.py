@@ -587,7 +587,10 @@ PROPS = {   # (kind, dx, dy) from the room centre; dy is the prop's foot on the 
 TORCHES = ['mouth', 'r0c1', 'r1c1', 'r2c2', 'r3c2', 'r4c1', 'r4c3', 'r5c2', 'r6c0']
 
 
-def render(seed=36):
+def render(seed=36, dress=True):
+    """dress=False paints the plan alone (rock, floors, faces, shadows): no rubble, outcrops, cargo or torches.
+    Those are placed by one generator across the whole cave, so they differ between any two graphs; without them a
+    chamber or a passage painted alone is the same pixels it would be in any cave (px-scenes2/export_game.py)."""
     rng = random.Random(seed)
     F, Cm, Pm, S, P = plan()
     Rs = np.ones((H, W), bool)
@@ -705,84 +708,85 @@ def render(seed=36):
         m = cpx.ell_mask(W, H, x + 2, y + 11, 11, 3.4)
         shift_where(a, m & floor, -1, ('t', 'd'))
     st_ = pxs.Stage(a, ground_ramps=('t', 'd', 'v'))
-    # ---- rubble at the foot of the walls, loose blocks on the rock
-    face_foot = face & ~nb(face, 0, 1, True)
-    fy_, fx_ = np.nonzero(face_foot)
-    order = list(range(len(fx_)))
-    rng.shuffle(order)
-    placed = []
-    for i in order[:900]:
-        x, y = int(fx_[i]), int(fy_[i]) + 2
-        if any(abs(x - px_) < 22 and abs(y - py_) < 12 for px_, py_ in placed):
-            continue
-        if not floor[min(H - 1, y), x] or S[y, x]:
-            continue
-        near_glyph = any(abs(x - pos(r)[0]) < 18 and abs(y - pos(r)[1]) < 16 for r in G.ROOMS)
-        if near_glyph or rng.random() < .6:
-            continue
-        placed.append((x, y))
-        for k in range(rng.choice((1, 2, 3))):
-            r_ = rng.choice((2.2, 2.8, 3.4, 4.2))
-            b = boulder(r_, seed=rng.randint(0, 999))
-            bx, by = x + rng.randint(-5, 5), y + rng.randint(0, 3)
-            if floor[min(H - 1, by), min(W - 1, bx)]:
+    if dress:
+        # ---- rubble at the foot of the walls, loose blocks on the rock
+        face_foot = face & ~nb(face, 0, 1, True)
+        fy_, fx_ = np.nonzero(face_foot)
+        order = list(range(len(fx_)))
+        rng.shuffle(order)
+        placed = []
+        for i in order[:900]:
+            x, y = int(fx_[i]), int(fy_[i]) + 2
+            if any(abs(x - px_) < 22 and abs(y - py_) < 12 for px_, py_ in placed):
+                continue
+            if not floor[min(H - 1, y), x] or S[y, x]:
+                continue
+            near_glyph = any(abs(x - pos(r)[0]) < 18 and abs(y - pos(r)[1]) < 16 for r in G.ROOMS)
+            if near_glyph or rng.random() < .6:
+                continue
+            placed.append((x, y))
+            for k in range(rng.choice((1, 2, 3))):
+                r_ = rng.choice((2.2, 2.8, 3.4, 4.2))
+                b = boulder(r_, seed=rng.randint(0, 999))
+                bx, by = x + rng.randint(-5, 5), y + rng.randint(0, 3)
+                if floor[min(H - 1, by), min(W - 1, bx)]:
+                    st_.add(b, bx, by)
+                    st_.throw_sprite(b, bx, by)
+        for (x, y) in cpx.poisson(rng, 0, 0, W, H, 90, 900):       # loose blocks on the rock, fallen in little heaps
+            x, y = int(x), int(y)
+            if rng.random() < .5:
+                continue
+            for k in range(rng.choice((1, 2, 3, 3))):
+                bx, by = x + rng.randint(-9, 9), y + rng.randint(-3, 4)
+                if not (0 <= by < H - 8 and 0 <= bx < W) or not Rs[by, bx] or lens[by, bx] or not Rs[by + 6, bx]:
+                    continue
+                r_ = rng.choice((2.4, 3.0, 3.6, 4.6, 5.8)) if k == 0 else rng.choice((2.0, 2.4, 3.0))
+                b = boulder(r_, seed=rng.randint(0, 999))
                 st_.add(b, bx, by)
                 st_.throw_sprite(b, bx, by)
-    for (x, y) in cpx.poisson(rng, 0, 0, W, H, 90, 900):       # loose blocks on the rock, fallen in little heaps
-        x, y = int(x), int(y)
-        if rng.random() < .5:
-            continue
-        for k in range(rng.choice((1, 2, 3, 3))):
-            bx, by = x + rng.randint(-9, 9), y + rng.randint(-3, 4)
-            if not (0 <= by < H - 8 and 0 <= bx < W) or not Rs[by, bx] or lens[by, bx] or not Rs[by + 6, bx]:
+        # ---- outcrops: bigger knuckles of the rock standing proud of the beds, away from the chambers, so the rock is not
+        #      one repeating texture; each faceted, lit north-west, with its hard shadow on the beds
+        dist_floor = ndimage.distance_transform_edt(~(floor | face))
+        placed_o = []
+        for (x, y) in cpx.poisson(rng, 0, 0, W, H, 70, 2000):
+            x, y = int(x), int(y)
+            if not (20 <= y < H - 20) or not Rs[y, x] or lens[y, x] or dist_floor[y, x] < 30:
                 continue
-            r_ = rng.choice((2.4, 3.0, 3.6, 4.6, 5.8)) if k == 0 else rng.choice((2.0, 2.4, 3.0))
-            b = boulder(r_, seed=rng.randint(0, 999))
-            st_.add(b, bx, by)
-            st_.throw_sprite(b, bx, by)
-    # ---- outcrops: bigger knuckles of the rock standing proud of the beds, away from the chambers, so the rock is not
-    #      one repeating texture; each faceted, lit north-west, with its hard shadow on the beds
-    dist_floor = ndimage.distance_transform_edt(~(floor | face))
-    placed_o = []
-    for (x, y) in cpx.poisson(rng, 0, 0, W, H, 70, 2000):
-        x, y = int(x), int(y)
-        if not (20 <= y < H - 20) or not Rs[y, x] or lens[y, x] or dist_floor[y, x] < 30:
-            continue
-        if rng.random() < .55 or any(abs(x - a_) < 80 and abs(y - b_) < 60 for a_, b_ in placed_o):
-            continue
-        placed_o.append((x, y))
-        r_ = rng.choice((8, 9, 10, 12, 14))
-        b = boulder(r_, seed=rng.randint(0, 999), squash=.62)
-        st_.add(b, x, y)
-        st_.throw_sprite(b, x, y)
-        for k in range(rng.choice((1, 2, 2, 3))):            # a few fallen pieces round its foot
-            bx, by = x + rng.choice((-1, 1)) * rng.randint(int(r_ * .8), int(r_ * 1.4)), y + rng.randint(-2, 4)
-            if 0 <= by < H and 0 <= bx < W and Rs[by, bx]:
-                b2 = boulder(rng.choice((2.2, 2.8, 3.4)), seed=rng.randint(0, 999))
-                st_.add(b2, bx, by)
-                st_.throw_sprite(b2, bx, by)
-    # ---- cargo and kit on the chamber floors
-    MK = {'crate': lambda: crate(seed=rng.randint(0, 9)), 'barrel': barrel, 'chest': chest, 'bedroll': bedroll,
-          'rag': rag_flag}
-    for rid, items in PROPS.items():
-        x, y = pos(rid)
-        for (kind, dx, dy) in items:
-            sp = MK[kind]()
-            st_.add(sp, x + dx, y + dy)
-            st_.throw_sprite(sp, x + dx, y + dy, zcap=10 if kind == 'rag' else None)
-            if kind == 'bedroll':
-                fr = fire_ring()
-                st_.add(fr, x + dx + 32, y + dy - 1)
-    # ---- torches on the north walls
-    for rid in TORCHES:
-        x, y = pos(rid)
-        xt = x + (-18 if rid in ('r2c2', 'r6c0') else 14)
-        col = np.nonzero(face[:, xt])[0]
-        col = col[(col > y - 60) & (col < y)]
-        if not len(col):
-            continue
-        y_face_mid = int(col[len(col) // 2]) + 2
-        st_.add(torch(), xt, y_face_mid, z=y_face_mid - 40)
+            if rng.random() < .55 or any(abs(x - a_) < 80 and abs(y - b_) < 60 for a_, b_ in placed_o):
+                continue
+            placed_o.append((x, y))
+            r_ = rng.choice((8, 9, 10, 12, 14))
+            b = boulder(r_, seed=rng.randint(0, 999), squash=.62)
+            st_.add(b, x, y)
+            st_.throw_sprite(b, x, y)
+            for k in range(rng.choice((1, 2, 2, 3))):            # a few fallen pieces round its foot
+                bx, by = x + rng.choice((-1, 1)) * rng.randint(int(r_ * .8), int(r_ * 1.4)), y + rng.randint(-2, 4)
+                if 0 <= by < H and 0 <= bx < W and Rs[by, bx]:
+                    b2 = boulder(rng.choice((2.2, 2.8, 3.4)), seed=rng.randint(0, 999))
+                    st_.add(b2, bx, by)
+                    st_.throw_sprite(b2, bx, by)
+        # ---- cargo and kit on the chamber floors
+        MK = {'crate': lambda: crate(seed=rng.randint(0, 9)), 'barrel': barrel, 'chest': chest, 'bedroll': bedroll,
+              'rag': rag_flag}
+        for rid, items in PROPS.items():
+            x, y = pos(rid)
+            for (kind, dx, dy) in items:
+                sp = MK[kind]()
+                st_.add(sp, x + dx, y + dy)
+                st_.throw_sprite(sp, x + dx, y + dy, zcap=10 if kind == 'rag' else None)
+                if kind == 'bedroll':
+                    fr = fire_ring()
+                    st_.add(fr, x + dx + 32, y + dy - 1)
+        # ---- torches on the north walls
+        for rid in TORCHES:
+            x, y = pos(rid)
+            xt = x + (-18 if rid in ('r2c2', 'r6c0') else 14)
+            col = np.nonzero(face[:, xt])[0]
+            col = col[(col > y - 60) & (col < y)]
+            if not len(col):
+                continue
+            y_face_mid = int(col[len(col) // 2]) + 2
+            st_.add(torch(), xt, y_face_mid, z=y_face_mid - 40)
     return st_, dict(F=F, floor=floor, face=face, rock=Rs, lens=lens)
 
 

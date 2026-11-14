@@ -35,7 +35,7 @@ The build is deterministic: the same code writes the same bytes on every run. To
 
 ## Exporting to the game
 
-The game (`game/`) is being rebuilt in this look one screen at a time. Five scripts write what it needs, from the same code that draws the boards:
+The game (`game/`) is being rebuilt in this look one screen at a time. Six scripts write what it needs, from the same code that draws the boards:
 
 ```
 python src/px-big-b/export_game.py    # the map: world.json, towns and dungeons for the new places, the heartland art, the kit stylesheet and frames
@@ -43,9 +43,10 @@ python src/ux-town/export_game.py     # the town: the square, the inn, the taver
 python src/px-camp/export_game.py     # the camp: the clearing with nobody in it, and the spots the company may stand on
 python src/px-popups/export_game.py   # the faces: a 96 px crop for every sprite, cut from its own art (the six given ones are copied), and where each figure stands in its full art
 python src/px-combat/export_game.py   # the field: a bare clearing, the dirt patch as 47 tiles, boulders, the rings units stand in (the game makes each battle's dirt itself, so it composes the field from these)
+python src/px-scenes2/export_game.py  # the cave: the bare rock, all 25 chambers and all 58 passages a descent can have, each cut out in place (about 20 minutes)
 ```
 
-All five write straight into `game/src` and `game/public`. Run them after changing the world or the kit, then run the game's tests.
+All six write straight into `game/src` and `game/public`. Run them after changing the world or the kit, then run the game's tests.
 
 ## Layout
 
