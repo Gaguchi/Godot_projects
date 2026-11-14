@@ -27,13 +27,12 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { spriteIdFor } from '../../content/index'
 import { buildDeck } from '../../engine/combat/deck'
 import { partyCombatUnit } from '../../engine/combat/seed'
-import { cardFace, cardIntentLines } from '../../engine/combat/words'
 import { isGear, itemDef } from '../../engine/run/bag'
 import { planEquip, planUnequip } from '../../engine/run/equipment'
 import { displayName, livingUnits } from '../../engine/run/party'
-import type { Card, CardSource, CombatUnit, DeckState, EngineEnv, GameState, HandSlot, Item, QuiverModifier, RunState, Unit, UnitId } from '../../engine/types'
-import { cardType, type CardType } from '../combat/CardHand'
+import type { CardSource, DeckState, EngineEnv, GameState, HandSlot, Item, RunState, Unit, UnitId } from '../../engine/types'
 import { useTip } from '../components/Tooltip'
+import { CARD_SHORT, CARD_TALL, CardInner, lineOf, type CardLine } from '../filigree/cards'
 import figuresRaw from '../filigree/figures.json'
 import { KIcon, iconOf, kindWords } from '../filigree/items'
 import { FBtn, FChoice, FIcon, Gauge, Key, Niche, Numeral, SectionHead, Win, faceArt, useKitState } from '../filigree/kit'
@@ -54,23 +53,6 @@ const STATS: readonly { readonly key: 'str' | 'mag' | 'skl' | 'spd' | 'def' | 'r
 ]
 const BACK: Readonly<Record<string, string>> = { overworld: 'Back to the map', town: 'Back to town', camp: 'Back to the fire', dungeon: 'Back to the dungeon', battleEnd: 'Back to the report' }
 const HAND_WORD: Readonly<Record<HandSlot, string>> = { left: 'left', right: 'right' }
-const CARD_TALL = 170
-const CARD_SHORT = 112
-const TYPE_ICON: Readonly<Record<CardType, string>> = { attack: 'attack', ward: 'ward', arcane: 'arcane', focus: 'focus' }
-
-interface CardLine {
-  readonly key: string
-  readonly ap: number
-  readonly name: string
-  /** The one number the card is about, what it is a number OF, and who it lands on (`combat/words.ts#cardFace`). */
-  readonly num: string
-  readonly what: string
-  readonly rest: string
-  readonly type: CardType
-  /** Everything the card does, in words: the face's own tooltip. */
-  readonly words: string
-  readonly more: string | null
-}
 interface Piece { readonly id: string; readonly name: string; readonly words: string; readonly rarity: string; readonly icon: string; readonly twoHanded: boolean }
 interface Fit extends Piece { readonly key: string; readonly cards: number }
 type HeldPlan = { readonly ok: true; readonly cards: readonly CardLine[]; readonly back: readonly string[] } | { readonly ok: false; readonly reason: string }
@@ -109,15 +91,6 @@ interface View {
   readonly bag: { readonly w: number; readonly h: number; readonly free: number; readonly items: readonly BagItem[] }
 }
 
-function lineOf(card: Card, key: string, who: CombatUnit, mod: QuiverModifier | null): CardLine {
-  const f = cardFace(card, who, mod)
-  const [what = '', ...rest] = f.foot.split(' · ')
-  const lines = cardIntentLines(card, who, mod)
-  // the face is about ONE effect (a blow first, else the first thing the card does); `more` is the next thing it does
-  const blow = card.effects.findIndex((e) => e.kind === 'Damage')
-  const faceAt = blow >= 0 ? blow : 0
-  return { key, ap: card.apCost, name: card.name, num: f.number, what, rest: rest.join(' · '), type: cardType(card), words: lines.join('; '), more: lines.find((_, i) => i !== faceAt) ?? null }
-}
 const pieceOf = (i: Item): Piece => ({ id: i.id, name: i.name, words: kindWords(i), rarity: i.rarity, icon: iconOf(i), twoHanded: i.twoHanded === true })
 
 function linesOf(deck: DeckState, source: CardSource, who: Unit, env: EngineEnv): CardLine[] {
@@ -251,7 +224,6 @@ function CardFace({ c, x, y, tall }: { readonly c: CardLine; readonly x: number;
   // a deck of three rows keeps its faces short: the number, and what it is a number of and who it lands on, on one line
   const k = useKitState()
   const { tipRef, tipProps, tip } = useTip(c.words, false)
-  const cast = /^[0-9+\-/]+$/.test(c.num)
   return (
     <>
       <div
@@ -269,21 +241,7 @@ function CardFace({ c, x, y, tall }: { readonly c: CardLine; readonly x: number;
         onFocus={(e) => { k.handlers.onFocus(e); tipProps.onFocus() }}
         onBlur={() => { k.handlers.onBlur(); tipProps.onBlur() }}
       >
-        <div className="s13 dim nowrap" style={{ right: 14, top: 11 }}>{c.ap} AP</div>
-        <div className="s15 bone nowrap fco__cardtitle" style={{ left: 12, top: 30, width: 124 }}>{c.name}</div>
-        <KIcon name={TYPE_ICON[c.type]} style={{ position: 'absolute', left: 14, top: 58 }} />
-        <div className="nowrap" style={{ left: 50, top: 55 }}>{cast ? <Numeral text={c.num} label={`${c.num} ${c.what}`} /> : <span className="s20 ochre">{c.num}</span>}</div>
-        {tall ? (
-          <>
-            <div className="s13 dim nowrap" style={{ left: 50, top: 82 }}>{c.what}</div>
-            <div className="fgroove" style={{ left: 12, top: 104, width: 124 }} />
-            {/* who it lands on; a card with no target (a draw) says the next thing it does there instead */}
-            <div className={`s13 nowrap fco__cardtitle ${c.rest === '' ? 'dim' : 'bone'}`} style={{ left: 12, top: 111, width: 124 }}>{c.rest === '' ? c.more ?? '' : c.rest}</div>
-            {c.rest !== '' && c.more !== null && <div className="s13 dim nowrap fco__cardtitle" style={{ left: 12, top: 130, width: 124 }}>{c.more}</div>}
-          </>
-        ) : (
-          <div className="s13 dim nowrap fco__cardtitle" style={{ left: 12, top: 82, width: 124 }}>{c.what}{c.rest !== '' && <span className="bone"> · {c.rest}</span>}</div>
-        )}
+        <CardInner c={c} w={148} tall={tall} />
       </div>
       {tip}
     </>

@@ -1,59 +1,37 @@
 /**
- * ui/combat/geometry.ts — board geometry shared by the CSS grid AND Playwright (clicks are computed here; nothing
- * else measures). DOM-free. A 5×5 tutorial board gets 84px tiles, the 14×10 field 42px: the largest even pitch in
- * [TILE_MIN, TILE_MAX] that fits the play band (brief §2.1).
+ * ui/combat/geometry.ts — board geometry shared by the board AND Playwright (clicks are computed here; nothing else
+ * measures). DOM-free.
+ *
+ * The field is 1x pixel art, so there is ONE pitch: 48 stage px a tile, the size the ground, the dirt tiles and the
+ * boulders are drawn at (`tools/pxworld/src/px-combat/export_game.py`). The 14×10 field fills the FIELD box exactly;
+ * the 5×5 tutorial board sits in the middle of it at the same pitch, so a unit is the same size in every battle.
+ * A board too big for the box would shrink to fit (never run under the windows), and says so once.
  */
 import type { BattleField, BattleFieldToken, CombatGrid, GameState, TileKey } from '../../engine/types'
-import { BAND_TOP, HAND_TOP, STAGE_W, TILE_MAX, TILE_MIN } from '../stage'
 
-const BAND_H = HAND_TOP - BAND_TOP
-const BAND_MARGIN_X = 40
-const BAND_PAD_Y = 8
+/** The pitch the field's art is drawn at. */
+export const PITCH = 48
+/** The clear ground between the turn list and the forecast, above the hand: where a board may sit (stage px). */
+export const FIELD = { x: 303, y: 18, w: 672, h: 480 } as const
 
-let warnedTiny = false
+let warnedBig = false
 
-/**
- * The largest EVEN pitch that fits the play band, capped at `TILE_MAX`. The fit wins: a board too tall for the band
- * shrinks rather than overflowing under the hand (a `Math.max(TILE_MIN, …)` floor here silently pushed 11+ rows over
- * `HAND_TOP`). `TILE_MIN` survives as an assertion — an authored board that small is a content bug, not a layout one.
- */
+/** 48, unless the board does not fit the field's box at 48: then the largest whole pitch that does. */
 export function tileSize(w: number, h: number): number {
-  const fitW = Math.floor((STAGE_W - BAND_MARGIN_X * 2) / Math.max(1, w))
-  const fitH = Math.floor((BAND_H - BAND_PAD_Y * 2) / Math.max(1, h))
-  const t = Math.min(TILE_MAX, fitW, fitH)
-  const even = Math.max(2, t - (t % 2))
-  if (even < TILE_MIN && !warnedTiny) {
-    warnedTiny = true
-    console.warn(`ui/combat/geometry: a ${w}x${h} board only fits ${even}px tiles (TILE_MIN is ${TILE_MIN}) — the board is too big for the play band.`)
+  const fit = Math.min(Math.floor(FIELD.w / Math.max(1, w)), Math.floor(FIELD.h / Math.max(1, h)))
+  if (fit < PITCH && !warnedBig) {
+    warnedBig = true
+    console.warn(`ui/combat/geometry: a ${w}x${h} board does not fit the field at ${PITCH}px tiles; it is drawn at ${fit}px and its art is scaled.`)
   }
-  return even
+  return Math.max(2, Math.min(PITCH, fit))
 }
 
-/* ── the initiative strip's fit beside the herald plaque (both are absolutely placed in combat.css) ── */
-/** `.strip` inset from the stage edge, its own padding, one entry and the gap between two (combat.css). */
-export const STRIP_INSET = 12
-const STRIP_PAD_X = 12
-const STRIP_ENTRY_W = 44
-const STRIP_GAP = 8
-/** `.plaque` min-width; it is centred, so this is the widest strip that still clears it. */
-export const PLAQUE_MIN_W = 440
-
-/**
- * How many initiative faces fit to the LEFT of the centred herald plaque. Hard-coding 8 ran the strip under the
- * plaque at 8+ units (party 3 + a five-strong pack), hiding the last portrait entirely.
- */
-export function initiativeVisible(plaqueWidth: number = PLAQUE_MIN_W): number {
-  const plaqueLeft = (STAGE_W - plaqueWidth) / 2
-  const room = plaqueLeft - STRIP_INSET * 2 - STRIP_PAD_X * 2 + STRIP_GAP
-  return Math.max(1, Math.floor(room / (STRIP_ENTRY_W + STRIP_GAP)))
-}
-
-/** Top-left of the grid on the stage: centred horizontally, centred in the band vertically. */
+/** Top-left of the grid on the stage: centred in the field's box on both axes. */
 export function gridOrigin(w: number, h: number): { readonly x: number; readonly y: number } {
   const t = tileSize(w, h)
   return {
-    x: Math.round((STAGE_W - w * t) / 2),
-    y: Math.max(BAND_TOP, BAND_TOP + Math.round((BAND_H - h * t) / 2)),
+    x: FIELD.x + Math.round((FIELD.w - w * t) / 2),
+    y: FIELD.y + Math.round((FIELD.h - h * t) / 2),
   }
 }
 

@@ -191,8 +191,8 @@ test('a status is on the glass for the whole battle, on both sides of the field'
   await expect(page.getByTestId(`rail-armor-${ids.ally}`)).toHaveText(/16/)
   await expect(page.getByTestId(`foe-riders-${ids.foe}`)).toHaveText(/burn/i)
 
-  // the field roll is DIMMED under the play panel, never unmounted: the column keeps its box and nothing jumps
-  const before = (await page.getByTestId('foe-roll').boundingBox())!
+  // the list that carries them keeps its box while a play is pinned: nothing jumps, and they stay on the glass
+  const before = (await page.getByTestId('initiative').boundingBox())!
   const cards = page.getByTestId('hand').locator('button')
   const targets = page.locator('.board__cell--target')
   const n = await cards.count()
@@ -211,9 +211,8 @@ test('a status is on the glass for the whole battle, on both sides of the field'
     g.dispatch({ type: 'combat/pinTarget', tile: `${i % w},${Math.floor(i / w)}` })
   })
   await expect(page.getByTestId('play-panel')).toBeVisible()
-  await expect(page.getByTestId('foe-roll')).toHaveCount(1)
-  expect(Number(await page.getByTestId('foe-roll').evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(0.3)
-  const after = (await page.getByTestId('foe-roll').boundingBox())!
-  expect(after.width).toBeCloseTo(before.width, 1)
-  expect(after.y).toBeCloseTo(before.y, 1)
+  await expect(page.getByTestId(`rail-riders-${ids.ally}`)).toBeVisible()
+  await expect(page.getByTestId(`foe-riders-${ids.foe}`)).toBeVisible()
+  const after = (await page.getByTestId('initiative').boundingBox())!
+  expect(after).toEqual(before)
 })

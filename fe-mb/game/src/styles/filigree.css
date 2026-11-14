@@ -191,3 +191,6 @@
 .f64 .fco__fit { cursor: pointer; }
 .f64 .fco__notgear { cursor: default; filter: brightness(0.6); }
 .f64 .tabs > .tab { font-family: inherit; cursor: pointer; }
+
+/* a card's face (ui/filigree/cards.tsx): a name or a line too long for the face is cut with an ellipsis, never wrapped */
+.f64 .fcard__clip { overflow: hidden; text-overflow: ellipsis; }

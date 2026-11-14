@@ -76,7 +76,7 @@ test('two battles in one session: the report reads over the field, then the HUD 
 
   await page.getByTestId('card-fire_tome_blaze').click()
   await clickTile(page, '6,3')
-  await expect(page.getByTestId('forecast')).toContainText(/SLAIN/)
+  await expect(page.getByTestId('forecast')).toContainText(/slain/i)
   await page.getByTestId('confirm-play').click()
   // the death plays on the field the report is written over — the float outlives the battle by its dwell
   await expect(page.locator('.float--hit').filter({ hasText: 'SLAIN' })).toBeVisible()

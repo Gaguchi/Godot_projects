@@ -1,280 +1,130 @@
 /**
- * ui/combat/Hud.tsx — the chrome around the field (brief §2.8): herald plaque (turn, sigil, name, HP, AP pips),
- * initiative strip (top-left, as many faces as clear the plaque), the play panel (pin-then-confirm: the damage
- * forecast when there is one, otherwise the card's intent in words — the commit affordance is never conditional on
- * the math), the tutorial hint, the command column (item tray + Move / Capture / End turn, each disabled WITH its
- * reason) and the Tab danger chip. Everything reads selectors; nothing here owns state.
+ * ui/combat/Hud.tsx — the windows round the field (boards Hyb64Combat, F64CombatEnemy; brief §2.8). Five windows,
+ * each with one job, none of them on the field:
+ *
+ *   · WHO MOVES WHEN (left): the round, and everyone on the field in the order they will act — face, name, side
+ *     (a square is ours, a lozenge is theirs: shape first, hue second), strength in figures and as a bar, ward, and
+ *     every status with its turns left. It is the turn order, the company sheet and the foe roll in one list,
+ *     because they were three readings of the same people.
+ *   · THE PLAY (right, top): what the player is about to do. With a card pinned it is the forecast — the OUTCOME
+ *     first and largest, the new state, the riders, then the reckoning in words — and the one brass Confirm. With
+ *     nothing pinned it says what the next press is for. The commit affordance is never conditional on the maths:
+ *     19 of the shipped cards produce no forecast, and they get the card in words and the same Confirm.
+ *   · BLOW BY BLOW (right, under it): the last few things that happened, in words.
+ *   · WHO IS ACTING (foot, left): their figure, AP as orbs and in figures, what the picked card spends, the bag.
+ *   · THE COMMANDS (foot, right): Move, Capture, End turn, the danger zone, the menu.
  *
  * Disabled-with-reason has ONE source for every parameterless verb: `useLegal`. The flow gate carries the screen and
- * the team, and — since CONTRACT-CHANGES 0089 — the two arming rules as well ("already moved this turn", "rooted in
- * place", "needs 2 AP", "no foe within arm's reach"), read from the predicates the reducer refuses with. Only a
- * PARAMETERISED verb still needs a local reason, because legality cannot answer one: `itemReason` per tray row.
- * A command button is never merely inert: it says why. That is also why the column KEEPS ITS FRAME on the enemy's turn: unmounting it
- * dropped the bottom 165px of the stage and made the whole surface jump every phase, and an inert verb that says
- * "the enemy is acting" is more honest than an absent one.
- *
- * The play panel leads with the OUTCOME — what changes, largest, first — and keeps the reckoning under it as a
- * secondary line in words. It used to open with `8 + mag 7 − DR 1 = 14`: a formula, in raw stat keys, above the only
- * line the player was actually reading.
+ * the team, and the arming rules as well ("already moved this turn", "needs 2 AP", "no foe within arm's reach"),
+ * read from the predicates the reducer refuses with. A refused command stays where it is and prints its reason
+ * under itself; that is also why the commands KEEP THEIR FRAME on the enemy's turn. Only a PARAMETERISED verb still
+ * needs a local reason, because legality cannot answer one: `itemReason` per bag row.
  */
 import React from 'react'
 import type { Action } from '../../engine/actions'
 import { isLiving } from '../../engine/combat/grid'
 import { initiativeStrip } from '../../engine/combat/turn'
-import type { CombatState, CombatUnit, EngineEnv, Forecast, ItemId, RunState, TutorialStep } from '../../engine/types'
 import { outcomeWords, reckoningWords, riderWords } from '../../engine/combat/words'
 import { spriteIdFor } from '../../content/index'
-import { displayName } from '../../engine/run/party'
-import { Button } from '../components/Button'
+import type { CombatState, CombatUnit, EngineEnv, Forecast, ItemId, RunState, TutorialStep } from '../../engine/types'
 import { useTip } from '../components/Tooltip'
+import { TYPE_ICON, type CardType } from '../filigree/cards'
+import { KIcon } from '../filigree/items'
+import { FBtn, Gauge, Key, Niche, Numeral, Win, faceArt, useKitState } from '../filigree/kit'
 import { dispatch, useEnv, useLegal } from '../store'
 import { STATUS_WORD } from './CardHand'
+import type { ChronicleLine } from './chronicle'
+import { fieldNames } from './names'
 /** The play's WORDS live with the card's (`engine/combat/words.ts`): the headless game prints a forecast too
  *  (CONTRACT §10, FINAL GATE C 3.8) and `scripts/**` may not import `ui/**`. Re-exported for the suite. */
 export { outcomeWords, reckoningWords } from '../../engine/combat/words'
-import type { ChronicleLine } from './chronicle'
-import { initiativeVisible } from './geometry'
-import { initialsOf } from '../names'
 
-function CommandButton({ action, label, variant = 'secondary', testId, reason = null }: { readonly action: Action; readonly label: string; readonly variant?: 'primary' | 'secondary' | 'ghost'; readonly testId: string; readonly reason?: string | null }): React.JSX.Element {
-  const legal = useLegal(action)
+const EDGE = 14
+const PAD = 16
+/** The two side columns, and where the foot row starts. */
+export const SIDE_W = 276
+export const FOOT_Y = 512
+const LIST_H = FOOT_Y - EDGE - 14
+
+
+/* ── who moves when ───────────────────────────────────────────────────────────────────────────────────────────── */
+
+/** The statuses on a unit, each with its turns left: the one reading a float cannot keep on the glass. */
+function Riders({ u, testId }: { readonly u: CombatUnit; readonly testId: string }): React.JSX.Element | null {
+  if (u.statuses.length === 0) return null
   return (
-    <Button variant={variant} disabledReason={legal.ok ? reason : legal.reason} onPress={() => dispatch(action)} testId={testId}>
-      {label}
-    </Button>
+    <span className="fturn__riders s13 nowrap" data-testid={testId}>
+      {u.statuses.map((st, i) => (
+        <span key={st.id} className={`rider rider--${st.id}`}>{i > 0 && <span className="faint">, </span>}{STATUS_WORD[st.id]}{st.stacks > 1 ? ` ${st.stacks}` : ''}<span className="dim"> · {st.turns} {st.turns === 1 ? 'turn' : 'turns'}</span></span>
+      ))}
+    </span>
   )
 }
 
-export function HeraldPlaque({ combat, run }: { readonly combat: CombatState; readonly run: RunState | null }): React.JSX.Element | null {
-  const active = combat.units[combat.turn.unitId]
-  if (active === undefined) return null
-  const name = run === null ? active.name : displayName(active, run)
-  const ap = combat.units[combat.turn.unitId]?.ap ?? 0
-  const pips = Array.from({ length: Math.max(3, ap) }, (_, i) => i < ap)
-  const ratio = active.hp.max <= 0 ? 0 : active.hp.current / active.hp.max
+export function TurnList({ combat, run }: { readonly combat: CombatState; readonly run: RunState | null }): React.JSX.Element {
+  const called = fieldNames(combat, run)
+  const order = initiativeStrip(combat, 99).ids
+  const queued = new Set(order)
+  // everyone still standing, in the order they will act; then whoever is down or taken, ours first
+  const rest = Object.values(combat.units).filter((u) => !queued.has(u.id) && !(u.team === 'enemy' && u.captured)).sort((a, b) => (a.team === b.team ? a.id.localeCompare(b.id) : a.team === 'party' ? -1 : 1))
+  const units = [...order.flatMap((id) => { const u = combat.units[id]; return u === undefined ? [] : [u] }), ...rest]
+  const top = 62
+  const foot = 30
+  const room = LIST_H - top - foot
+  const riders = units.filter((u) => u.statuses.length > 0 && isLiving(u)).length
+  // full rows while they fit; a larger field closes them up; past that the tail is counted, never clipped
+  const tight = units.length * 56 + riders * 16 > room
+  const rowH = tight ? 38 : 56
+  let shown = units
+  while (shown.length > 1 && shown.length * rowH + shown.filter((u) => u.statuses.length > 0 && isLiving(u)).length * 16 + (shown.length < units.length ? 18 : 0) > room) shown = shown.slice(0, -1)
+  const face = tight ? 28 : 44
+  const tx = PAD + face + 12
+  let y = top
   return (
-    <div className="hud-panel plaque" data-testid="plaque">
-      <div>
-        <div className="plaque__label">Turn</div>
-        <div className="numeral" style={{ fontSize: 22 }}>{combat.turn.round}</div>
-      </div>
-      <div className="hud-divider" />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span aria-hidden style={{ width: 14, height: 14, borderRadius: active.team === 'party' ? 9999 : 0, background: active.team === 'party' ? 'var(--color-ally)' : 'var(--color-enemy)', clipPath: active.team === 'enemy' ? 'polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%)' : undefined }} />
-        <div>
-          <div className="plaque__name">{name}</div>
-          <div className="plaque__label">{active.team === 'party' ? 'Your turn' : 'Enemy turn'}</div>
-        </div>
-      </div>
-      <div className="hud-divider" />
-      <div style={{ minWidth: 150 }}>
-        <div className="plaque__label">Health</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="hp-bar" style={{ width: 90 }}><i className="hp-bar__fill" style={{ width: `${Math.round(ratio * 100)}%`, background: ratio <= 0.25 ? 'var(--hp-crit)' : ratio <= 0.5 ? 'var(--hp-warn)' : 'var(--hp-ok)', display: 'block' }} /></span>
-          <span className="numeral">{active.hp.current}<span style={{ color: 'var(--color-text-muted)' }}>/{active.hp.max}</span></span>
-        </div>
-      </div>
-      <div className="hud-divider" />
-      <div>
-        <div className="plaque__label">Actions</div>
-        <div style={{ display: 'flex', gap: 4, marginTop: 4 }} aria-label={`${ap} action points`}>
-          {pips.map((full, i) => <span key={i} className={`ap-pip ${full ? 'ap-pip--full' : 'ap-pip--empty'}`} />)}
-        </div>
-      </div>
-      {active.armor > 0 && (
-        <>
-          <div className="hud-divider" />
-          <div><div className="plaque__label">Armor</div><div className="numeral" style={{ fontSize: 18 }}>{active.armor}</div></div>
-        </>
-      )}
-    </div>
-  )
-}
-
-/**
- * The company rail — the left column of the field, which was 340×440 of empty brown below the initiative strip
- * (GATE2-16). It carries the one reading nothing else on this screen has: STATUSES. A taunt, a burn, an empower or
- * a root lives only as a float on the frame it is applied and is invisible for the rest of the battle — which is a
- * large part of why GATE3-02's Cover felt like it did nothing. The rail names each one, on whom, for how long,
- * beside that unit's health and ward, for the whole party at once and for the whole battle.
- *
- * It is deliberately the PARTY only: the initiative strip above it is the turn ORDER (party and foes, truncated to
- * what clears the plaque); this is the company sheet.
- */
-export function CompanyRail({ combat, run }: { readonly combat: CombatState; readonly run: RunState | null }): React.JSX.Element {
-  const env = useEnv()
-  const party = Object.values(combat.units).filter((u) => u.team === 'party').sort((a, b) => a.id.localeCompare(b.id))
-  /** What they are fighting WITH — in a gear-as-deck game the hands are the deck, and nothing else in the battle
-   *  says whose is whose once the cards are face down. */
-  const hands = (u: CombatUnit): string => {
-    const names = [u.handLeft, u.handRight].flatMap((id) => (id === null ? [] : [env.content.items[id]?.name ?? null])).filter((n): n is string => n !== null)
-    return names.length === 0 ? 'bare-handed' : [...new Set(names)].join(' · ')
-  }
-  return (
-    <div className="company-rail" data-testid="company-rail">
-      <div className="plaque__label">The company</div>
-      {party.map((u) => {
+    <Win x={EDGE} y={EDGE} w={SIDE_W} h={LIST_H} testId="initiative" label="Turn order">
+      <div className="tt" style={{ left: PAD + 4, top: 8 }}>Round</div>
+      <div className="nowrap" style={{ left: PAD + 108, top: 18 }} data-testid="round"><Numeral text={String(combat.turn.round)} label={`round ${combat.turn.round}`} /></div>
+      <div className="s13 dim nowrap" style={{ right: PAD, top: 30 }}>who moves when</div>
+      <div className="fgroove" style={{ left: PAD, top: 56, width: SIDE_W - 2 * PAD }} />
+      {shown.map((u) => {
+        const ty = y
         const down = !isLiving(u)
-        const ratio = u.hp.max <= 0 ? 0 : Math.max(0, u.hp.current) / u.hp.max
-        const sprite = spriteIdFor(u.id, u.classId)
         const acting = u.id === combat.turn.unitId
+        const ours = u.team === 'party'
+        const hasRiders = u.statuses.length > 0 && !down
+        y += rowH + (hasRiders ? 16 : 0)
+        const sprite = spriteIdFor(u.id, u.classId)
         return (
-          <div key={u.id} className={`rail-card${acting ? ' rail-card--acting' : ''}${down ? ' rail-card--down' : ''}`} data-testid={`rail-${u.id}`} data-acting={acting ? 'true' : undefined}>
-            <span className="rail-card__face">
-              {sprite !== null ? <img src={`/sprites/units/${sprite}.png`} alt="" draggable={false} /> : <span className="voice-display">{initialsOf(u.name)}</span>}
+          <div key={u.id} className={`fturn${acting ? ' fturn--acting' : ''}${down ? ' fturn--down' : ''}`} style={{ left: 0, top: ty, width: SIDE_W, height: rowH + (hasRiders ? 16 : 0) }} data-testid={`${ours ? 'rail' : 'foe'}-${u.id}`} data-acting={acting ? 'true' : undefined}>
+            <Niche x={PAD} y={tight ? 5 : 6} size={face} {...faceArt(sprite, face)} />
+            <span className={`abs ${tight ? 's14' : 's16'} nowrap fcard__clip ${acting ? 'straw' : down ? 'faint' : 'bone'}`} style={{ left: tx, top: tight ? 1 : 4, maxWidth: SIDE_W - tx - PAD - (acting ? 76 : down || u.armor > 0 ? 56 : 0) }}>{called[u.id]?.name ?? u.name}</span>
+            <span className="abs s13 nowrap" style={{ right: PAD, top: tight ? 2 : 6 }}>
+              {acting ? <span className="straw">acting now</span>
+                : u.captured ? <span className="faint">taken</span>
+                  : down ? <span className="faint">down</span>
+                    : u.armor > 0 ? <span className="rill" data-testid={`rail-armor-${u.id}`}>{u.armor} ward</span> : null}
             </span>
-            <span className="rail-card__body">
-              <span className="rail-card__head">
-                <span className="rail-card__name">{run === null ? u.name : displayName(u, run)}</span>
-                {u.armor > 0 && <span className="rail-card__armor numeral" data-testid={`rail-armor-${u.id}`}>{u.armor} ward</span>}
-              </span>
-              <span className="rail-card__hands">{hands(u)}</span>
-              <span className="rail-card__hp">
-                <span className="hp-bar"><i className="hp-bar__fill" style={{ width: `${Math.round(ratio * 100)}%`, background: ratio <= 0.25 ? 'var(--hp-crit)' : ratio <= 0.5 ? 'var(--hp-warn)' : 'var(--hp-ok)', display: 'block' }} /></span>
-                <span className="numeral rail-card__num">{down ? 'down' : `${u.hp.current}/${u.hp.max}`}</span>
-              </span>
-              {u.statuses.length > 0 && (
-                <span className="rail-card__riders" data-testid={`rail-riders-${u.id}`}>
-                  {u.statuses.map((st) => (
-                    <span key={st.id} className={`rider rider--${st.id}`}>{STATUS_WORD[st.id]}{st.stacks > 1 ? ` ${st.stacks}` : ''} · <b className="numeral">{st.turns}</b></span>
-                  ))}
-                </span>
-              )}
+            {acting && u.armor > 0 && <span className="abs s13 rill nowrap" style={{ right: PAD + 76, top: tight ? 2 : 6 }} data-testid={`rail-armor-${u.id}`}>{u.armor} ward</span>}
+            <i className={`fturn__side fturn__side--${ours ? 'ours' : 'theirs'}`} style={{ left: tx + 1, top: tight ? 23 : 32 }} aria-hidden />
+            <span className={down ? 'fturn__bar fturn__bar--down' : ours ? 'fturn__bar' : 'fturn__bar fturn__bar--theirs'}>
+              <Gauge x={tx + 14} y={tight ? 23 : 32} w={SIDE_W - tx - 14 - PAD - 56} value={Math.max(0, u.hp.current)} max={u.hp.max} />
             </span>
+            <span className={`abs s13 nowrap ${down ? 'faint' : 'bone'}`} style={{ right: PAD, top: tight ? 18 : 27 }}>{Math.max(0, u.hp.current)}/{u.hp.max}</span>
+            {hasRiders && <span className="abs" style={{ left: tx, top: rowH - 6 }}><Riders u={u} testId={`${ours ? 'rail' : 'foe'}-riders-${u.id}`} /></span>}
           </div>
         )
       })}
-    </div>
-  )
-}
-
-/**
- * The field — the right column's resting content, and the mirror of the company rail. The play panel and the
- * tutorial hint own this seat when they are up, so the roll is DIMMED under them rather than unmounted (the
- * column never changes size, and nothing in the layout moves — the lesson of 0073).
- *
- * It answers "what am I fighting", which the board can only answer by hovering six tokens, and it is the only
- * surface anywhere that shows an ENEMY's statuses: a poison the party spent a card on was invisible the moment
- * its float faded.
- */
-export function FoeRoll({ combat, muted }: { readonly combat: CombatState; readonly muted: boolean }): React.JSX.Element {
-  const foes = Object.values(combat.units).filter((u) => u.team === 'enemy' && !u.captured).sort((a, b) => a.id.localeCompare(b.id))
-  const standing = foes.filter(isLiving).length
-  return (
-    <div className={`foe-roll${muted ? ' foe-roll--muted' : ''}`} data-testid="foe-roll" aria-hidden={muted || undefined}>
-      <div className="plaque__label">The field · <b className="numeral">{standing}</b> standing</div>
-      <div className="foe-roll__list">
-        {foes.map((u) => {
-          const down = !isLiving(u)
-          const ratio = u.hp.max <= 0 ? 0 : Math.max(0, u.hp.current) / u.hp.max
-          const sprite = spriteIdFor(u.id, u.classId)
-          const acting = u.id === combat.turn.unitId
-          return (
-            <div key={u.id} className={`foe-row${acting ? ' foe-row--acting' : ''}${down ? ' foe-row--down' : ''}`} data-testid={`foe-${u.id}`}>
-              <span className="foe-row__face">
-                {sprite !== null ? <img src={`/sprites/units/${sprite}.png`} alt="" draggable={false} /> : <span className="voice-display">{initialsOf(u.name)}</span>}
-              </span>
-              <span className="foe-row__body">
-                <span className="foe-row__name">{u.name}</span>
-                <span className="rail-card__hp">
-                  <span className="hp-bar"><i className="hp-bar__fill" style={{ width: `${Math.round(ratio * 100)}%`, background: ratio <= 0.25 ? 'var(--hp-crit)' : ratio <= 0.5 ? 'var(--hp-warn)' : 'var(--hp-ok)', display: 'block' }} /></span>
-                  <span className="numeral rail-card__num">{down ? 'down' : `${u.hp.current}/${u.hp.max}`}</span>
-                </span>
-                {u.statuses.length > 0 && (
-                  <span className="rail-card__riders" data-testid={`foe-riders-${u.id}`}>
-                    {u.statuses.map((st) => <span key={st.id} className={`rider rider--${st.id}`}>{STATUS_WORD[st.id]}{st.stacks > 1 ? ` ${st.stacks}` : ''} · <b className="numeral">{st.turns}</b></span>)}
-                  </span>
-                )}
-              </span>
-              {u.armor > 0 && <span className="rail-card__armor numeral">{u.armor}</span>}
-            </div>
-          )
-        })}
+      {shown.length < units.length && <div className="s13 dim nowrap" style={{ left: PAD, top: y + 1 }} data-testid="initiative-more">and {units.length - shown.length} more on the field</div>}
+      <div className="fgroove" style={{ left: PAD, top: LIST_H - foot - 2, width: SIDE_W - 2 * PAD }} />
+      <div className="s13 dim nowrap" style={{ left: PAD, top: LIST_H - 24 }}>
+        <i className="fturn__side fturn__side--ours fturn__side--inline" aria-hidden />square: ours
+        <i className="fturn__side fturn__side--theirs fturn__side--inline" style={{ marginLeft: 14 }} aria-hidden />lozenge: theirs
       </div>
-    </div>
+    </Win>
   )
 }
 
-/**
- * Blow by blow — the last few things that happened, in words, under the company rail.
- *
- * A float lives 700ms over a tile and is then gone; an enemy phase pumps four of them while the player is reading
- * something else. This is the only surface in the battle that answers "what just hit me", and it fills the one
- * void the composition pass left on this screen (RE-GATE B 2.9: 256×144 at the bottom-left). Lines are built by
- * `./chronicle.ts` from the reducer's own effects, so the log cannot say anything the engine did not do.
- */
-export function Chronicle({ lines }: { readonly lines: readonly ChronicleLine[] }): React.JSX.Element {
-  return (
-    <div className="chronicle" data-testid="chronicle">
-      <div className="plaque__label">Blow by blow</div>
-      <div className="chronicle__lines">
-        {lines.length === 0
-          ? <div className="chronicle__line chronicle__line--idle">Nothing has come of it yet</div>
-          : lines.map((l) => (
-            <div key={l.id} className={`chronicle__line chronicle__line--${l.tone}`}>
-              {l.parts.map((part, i) => (typeof part === 'number' ? <b key={i} className="numeral">{part}</b> : <span key={i}>{part}</span>))}
-            </div>
-          ))}
-      </div>
-    </div>
-  )
-}
-
-/**
- * One face in the turn order. The strip has room for a portrait and a number, not a name, so the name lives in the
- * tip — on the glass, in the game's own ink, not in the browser's.
- */
-function StripEntry({ name, team, active, sprite, hp, max }: {
-  readonly name: string
-  readonly team: string
-  readonly active: boolean
-  readonly sprite: string | null
-  readonly hp: number
-  readonly max: number
-}): React.JSX.Element {
-  const { tipRef, tipProps, tip } = useTip(`${name} · ${hp}/${max}`, false)
-  return (
-    <>
-      <div ref={tipRef} className={`strip__entry strip__entry--${team}${active ? ' strip__entry--active' : ''}`} {...tipProps}>
-        {/* `draggable={false}` like every other sprite in the tree: this is the one screen with real drag-and-drop
-            (a card onto a target, the active unit onto a tile), and a native image ghost competes with the game's
-            own `drag-ghost` (FINAL GATE B B.5). */}
-        <div className="strip__face">{sprite !== null ? <img src={`/sprites/units/${sprite}.png`} alt="" draggable={false} /> : initialsOf(name)}</div>
-        {hp}/{max}
-      </div>
-      {tip}
-    </>
-  )
-}
-
-export function InitiativeStrip({ combat, run }: { readonly combat: CombatState; readonly run: RunState | null }): React.JSX.Element {
-  // How many faces fit LEFT of the centred plaque; the "+N" chip takes a slot of its own, so ask for one fewer when
-  // the queue overflows. Hard-coding 8 ran the last portrait under the plaque at 8+ units.
-  const slots = initiativeVisible()
-  const first = initiativeStrip(combat, slots)
-  const strip = first.more > 0 ? initiativeStrip(combat, Math.max(1, slots - 1)) : first
-  return (
-    <div className="hud-panel strip" aria-label="Turn order" data-testid="initiative">
-      {strip.ids.map((id) => {
-        const u = combat.units[id]
-        if (u === undefined) return null
-        const sprite = spriteIdFor(u.id, u.classId)
-        return (
-          <StripEntry
-            key={id}
-            name={run === null ? u.name : displayName(u, run)}
-            team={u.team}
-            active={id === combat.turn.unitId}
-            sprite={sprite}
-            hp={u.hp.current}
-            max={u.hp.max}
-          />
-        )
-      })}
-      {strip.more > 0 && <div className="strip__entry"><div className="strip__face">+{strip.more}</div></div>}
-    </div>
-  )
-}
+/* ── the play ─────────────────────────────────────────────────────────────────────────────────────────────────── */
 
 /** One further recipient of an AoE / all_* play — the pinned centre keeps the full math row. */
 export interface VictimRow {
@@ -288,10 +138,15 @@ export interface VictimRow {
 
 export interface PlayPreview {
   readonly cardName: string
+  readonly cardType: CardType
+  readonly cardCost: number
   readonly attackerName: string
+  readonly attackerAp: number
   /** The damage/heal math — null when the pinned tile holds nobody the maths can be run against. */
   readonly forecast: Forecast | null
   readonly targetName: string | null
+  readonly targetSprite: string | null
+  readonly targetOurs: boolean
   readonly targetHp: { readonly current: number; readonly max: number } | null
   readonly targetArmor: number
   /** Every OTHER unit the play lands on (AoE, all_enemies, all_allies, ring). */
@@ -302,93 +157,194 @@ export interface PlayPreview {
   readonly emptyBlast: boolean
 }
 
-/** Which way the outcome runs — harm reads oxblood, mending reads green, a no-op stays ink. */
-function outcomeTone(f: Forecast, armorBefore: number): 'harm' | 'mend' | 'none' {
-  if (f.hpLost > 0 || f.armorLost > 0) return 'harm'
-  return f.heal > 0 || f.predictedArmor > armorBefore ? 'mend' : 'none'
+/** Which way the outcome runs — harm reads oxblood, mending reads moss, a no-op stays bone. */
+function outcomeTone(f: Forecast, armorBefore: number): 'rust' | 'meadow' | 'bone' {
+  if (f.hpLost > 0 || f.armorLost > 0) return 'rust'
+  return f.heal > 0 || f.predictedArmor > armorBefore ? 'meadow' : 'bone'
 }
 
 /**
  * The one commit affordance. It renders whenever a card is pinned (or is a self / all_* play) — NOT only when a
- * `Forecast` exists. 19 of the shipped cards produce no forecast (every tile AoE, plus the status/AP-only plays);
- * before this they offered no Confirm at all and only a second click on the same tile fired them.
- *
- * Reading order is outcome → new state → riders → reckoning. Confirm is the view's ONE brass primary while it is
- * up, which is why `Commands` drops End turn to a plain strap for as long as this panel is open.
+ * `Forecast` exists. Reading order is outcome → new state → riders → reckoning. Confirm is the view's ONE brass
+ * primary while it is up, which is why `Commands` drops End turn to a plain button for as long as this is open.
  */
-export function PlayPanel({ preview, onConfirm, onCancel, confirmLabel = 'Confirm' }: { readonly preview: PlayPreview; readonly onConfirm: () => void; readonly onCancel: () => void; readonly confirmLabel?: string }): React.JSX.Element {
+function PlayPanel({ preview, onConfirm, onCancel, confirmLabel }: { readonly preview: PlayPreview; readonly onConfirm: () => void; readonly onCancel: () => void; readonly confirmLabel: string }): React.JSX.Element {
   const f = preview.forecast
   const dmg = f === null ? 0 : f.afterDr + f.quiverTerm
   return (
-    <div className="hud-panel forecast" data-testid="play-panel">
-      <div className="plaque__label">{f === null ? 'Play' : 'Forecast'}</div>
-      <div className="voice-display" style={{ fontSize: 16, margin: '2px 0 6px' }}>
-        {preview.targetName === null ? preview.cardName : <>{preview.attackerName} → {preview.targetName}</>}
-        {f?.redirectedTo != null && <span style={{ color: 'var(--color-hearth)' }}> (covered)</span>}
+    <Win x={0} y={0} w={SIDE_W} kind="lit" className="fcol__win" testId="play-panel">
+      <div className="s13 dim nowrap">{preview.attackerName} plays</div>
+      <div className="fhud__line">
+        <KIcon name={TYPE_ICON[preview.cardType]} style={{ margin: '-2px 8px 0 0' }} />
+        <span className="s16 straw nowrap fcard__clip" style={{ flex: 1 }}>{preview.cardName}</span>
+        <span className="s13 dim nowrap"><span className="bone">{preview.cardCost}</span> of <span className="bone">{preview.attackerAp}</span> AP</span>
       </div>
-      {/* the maths would have named the card by its numbers; with no maths, name it in words */}
-      {f === null && preview.targetName !== null && <div className="forecast__math" style={{ color: 'var(--color-parchment)' }}>{preview.cardName}</div>}
-      {f !== null && preview.targetHp !== null && (
-        <div data-testid="forecast">
-          <div className={`forecast__outcome forecast__outcome--${outcomeTone(f, preview.targetArmor)}`} data-testid="forecast-outcome">
-            <span className="numeral">{outcomeWords(f, preview.targetArmor)}</span>
-            {f.lethal && <span className="forecast__lethal">SLAIN</span>}
-          </div>
-          <div className="numeral forecast__state">
-            HP {preview.targetHp.current} → <b style={{ color: f.lethal ? 'var(--color-damage-text)' : 'var(--color-parchment)' }}>{f.predictedHp}</b> / {preview.targetHp.max}
-            {(preview.targetArmor > 0 || f.predictedArmor > 0) && ` · armor ${preview.targetArmor} → ${f.predictedArmor}`}
-          </div>
-          {f.riders.length > 0 && <div className="forecast__math">{riderWords(f.riders)}</div>}
-          {dmg > 0 && <div className="forecast__reckon" data-testid="forecast-reckoning">{reckoningWords(f)}</div>}
+      <div className="frule fhud__rule" />
+      {preview.targetName !== null && (
+        <div className="nowrap fcard__clip">
+          <span className="s13 dim">{f?.heal !== undefined && f.heal > 0 ? 'on ' : 'at '}</span>
+          <span className={`s18 ${preview.targetOurs ? 'rill' : 'rust'}`}>{preview.targetName}</span>
+          {f?.redirectedTo != null && <span className="s13 straw"> (covered)</span>}
         </div>
       )}
-      {f === null && preview.intent.map((line) => <div key={line} className="forecast__math">{line}</div>)}
+      {f !== null && preview.targetHp !== null && (
+        <div data-testid="forecast">
+          <div className="fhud__out">
+            <span className="fhud__face"><Niche x={0} y={0} size={72} {...faceArt(preview.targetSprite, 72)} /></span>
+            <div>
+              <div className={`s20 nowrap ${outcomeTone(f, preview.targetArmor)}`} data-testid="forecast-outcome">{outcomeWords(f, preview.targetArmor)}</div>
+              {f.lethal && <div className="s14 rust nowrap" data-testid="forecast-lethal">slain</div>}
+              {f.riders.length > 0 && <div className="s13 bone fhud__wrap">{riderWords(f.riders)}</div>}
+            </div>
+          </div>
+          <div className="s14 bone nowrap">
+            <span className="dim">HP </span>{preview.targetHp.current} → <span className={f.lethal ? 'rust' : 'straw'}>{f.predictedHp}</span><span className="dim"> of {preview.targetHp.max}</span>
+            {(preview.targetArmor > 0 || f.predictedArmor > 0) && <span className="dim"> · armor {preview.targetArmor} → {f.predictedArmor}</span>}
+          </div>
+          <span className={`fhud__gauge${preview.targetOurs ? '' : ' fhud__gauge--theirs'}`}>
+            <Gauge x={0} y={0} w={SIDE_W - 2 * 20} h={9} value={Math.min(preview.targetHp.current, f.predictedHp)} max={preview.targetHp.max} gain={Math.abs(preview.targetHp.current - f.predictedHp)} />
+          </span>
+          {dmg > 0 && <div className="s13 dim fhud__wrap" data-testid="forecast-reckoning">{reckoningWords(f)}</div>}
+        </div>
+      )}
+      {f === null && preview.intent.map((line) => <div key={line} className="s14 bone fhud__wrap">{line}</div>)}
       {preview.victims.length > 0 && (
-        <div className="forecast__victims" data-testid="forecast-victims">
-          <div className="plaque__label" style={{ marginBottom: 2 }}>{f === null ? 'Caught in it' : 'Also caught'}</div>
+        <div className="fhud__victims" data-testid="forecast-victims">
+          <div className="s13 ochre nowrap">{f === null ? 'Caught in it' : 'Also caught'}</div>
           {preview.victims.map((v) => (
-            <div key={v.unitId} className="forecast__math" data-testid={`victim-${v.unitId}`}>
-              {v.name} · {v.hpBefore} → <b style={{ color: v.lethal ? 'var(--color-damage-text)' : 'var(--color-parchment)' }}>{v.hpAfter}</b> / {v.hpMax}
-              {v.lethal && <span className="forecast__lethal"> SLAIN</span>}
+            <div key={v.unitId} className="s13 bone nowrap fcard__clip" data-testid={`victim-${v.unitId}`}>
+              {v.name}<span className="dim"> · {v.hpBefore} → </span><span className={v.lethal ? 'rust' : 'straw'}>{v.hpAfter}</span><span className="dim"> of {v.hpMax}</span>{v.lethal && <span className="rust"> · slain</span>}
             </div>
           ))}
         </div>
       )}
-      {preview.emptyBlast && <div className="forecast__math" data-testid="empty-blast">nobody is standing in it</div>}
-      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-        <Button variant="primary" onPress={onConfirm} testId="confirm-play">{confirmLabel}</Button>
-        <Button variant="ghost" onPress={onCancel}>Cancel</Button>
+      {preview.emptyBlast && <div className="s14 dim fhud__wrap" data-testid="empty-blast">nobody is standing in it</div>}
+      <div className="fhud__verbs">
+        <FBtn variant="primary" onPress={onConfirm} testId="confirm-play">{confirmLabel}</FBtn>
+        <FBtn onPress={onCancel} testId="cancel-play">Cancel</FBtn>
       </div>
-    </div>
+    </Win>
   )
 }
 
 const HINT: Readonly<Record<TutorialStep, string>> = {
   enemyTurn: 'The bandit takes his turn. Watch where he stands.',
-  move: 'Every unit gets one free MOVE per turn. Click your foundling, then a blue tile, to close the distance.',
-  pickCard: 'Pick a card from your hand. The number is what it does; the cost is in the brass badge.',
-  target: 'Now aim it: click a red tile, read the forecast, then confirm.',
-  endTurn: 'Out of actions — end the turn and let steel remember.',
+  move: 'Every unit gets one free move a turn. Click your foundling, then a tile edged in steel, to close the distance.',
+  pickCard: 'Pick a card from your hand. The number is what it does; what it costs is at its top.',
+  target: 'Now aim it: click a tile edged in red, read the forecast, then confirm.',
+  endTurn: 'Out of actions. End the turn and let steel remember.',
   victory: 'The lesson is over. The road begins.',
 }
 
-export function TutorialHint({ step }: { readonly step: TutorialStep }): React.JSX.Element {
+/** What the right-hand seat says when no play is pinned: the next press, in one or two lines. */
+export type Guide =
+  | { readonly kind: 'tutorial'; readonly step: TutorialStep }
+  | { readonly kind: 'card'; readonly name: string; readonly type: CardType; readonly lines: readonly string[]; readonly refusal: string | null }
+  | { readonly kind: 'capture'; readonly refusal: string | null }
+  | { readonly kind: 'move' }
+  | { readonly kind: 'idle'; readonly name: string; readonly canMove: boolean }
+  | { readonly kind: 'enemy'; readonly name: string }
+
+function GuidePanel({ guide }: { readonly guide: Guide }): React.JSX.Element {
+  const skip = useLegal({ type: 'tutorial/skip' })
+  switch (guide.kind) {
+    case 'tutorial':
+      return (
+        <Win x={0} y={0} w={SIDE_W} kind="lit" className="fcol__win" testId="tutorial-hint">
+          <div className="s16 ochre nowrap">First steps</div>
+          <div className="frule fhud__rule" />
+          <div className="s15 lt bone fhud__wrap">{HINT[guide.step]}</div>
+          <div className="fhud__verbs"><FBtn disabledReason={skip.ok ? null : skip.reason} onPress={() => dispatch({ type: 'tutorial/skip' })} testId="tutorial-skip">Skip</FBtn></div>
+        </Win>
+      )
+    case 'card':
+      return (
+        <Win x={0} y={0} w={SIDE_W} className="fcol__win" testId="guide">
+          <div className="fhud__line">
+            <KIcon name={TYPE_ICON[guide.type]} style={{ margin: '-2px 8px 0 0' }} />
+            <span className="s16 straw nowrap fcard__clip" style={{ flex: 1 }}>{guide.name}</span>
+          </div>
+          <div className="frule fhud__rule" />
+          {guide.lines.map((line) => <div key={line} className="s14 bone fhud__wrap">{line}</div>)}
+          {guide.refusal !== null
+            ? <div className="why fhud__why" data-testid="hand-hint">{guide.refusal}</div>
+            : <div className="s13 dim fhud__wrap fhud__gap">Click a marked tile to aim it. <Key>Esc</Key> puts it back.</div>}
+        </Win>
+      )
+    case 'capture':
+      return (
+        <Win x={0} y={0} w={SIDE_W} className="fcol__win" testId="guide">
+          <div className="s16 straw nowrap">Capture</div>
+          <div className="frule fhud__rule" />
+          {guide.refusal !== null
+            ? <div className="why fhud__why" data-testid="capture-hint">{guide.refusal}</div>
+            : <div className="s14 bone fhud__wrap">Click a marked foe to take them alive. The chance is over their head.</div>}
+          <div className="s13 dim fhud__wrap fhud__gap"><Key>Esc</Key> stands down.</div>
+        </Win>
+      )
+    case 'move':
+      return (
+        <Win x={0} y={0} w={SIDE_W} className="fcol__win" testId="guide">
+          <div className="s16 straw nowrap">Move</div>
+          <div className="frule fhud__rule" />
+          <div className="s14 bone fhud__wrap">Click a tile edged in steel to go there.</div>
+          <div className="s13 dim fhud__wrap fhud__gap"><Key>Esc</Key> stands down.</div>
+        </Win>
+      )
+    case 'enemy':
+      return (
+        <Win x={0} y={0} w={SIDE_W} className="fcol__win" testId="guide">
+          <div className="s16 rust nowrap fcard__clip">{guide.name}</div>
+          <div className="frule fhud__rule" />
+          <div className="s14 bone fhud__wrap">The enemy is acting. Watch where they stand.</div>
+        </Win>
+      )
+    default:
+      return (
+        <Win x={0} y={0} w={SIDE_W} className="fcol__win" testId="guide">
+          <div className="s16 straw nowrap fcard__clip">{guide.name} to act</div>
+          <div className="frule fhud__rule" />
+          <div className="s14 bone fhud__wrap">Pick a card from the hand{guide.canMove ? `, or click ${guide.name} to move` : ''}.</div>
+        </Win>
+      )
+  }
+}
+
+/**
+ * Blow by blow — the last few things that happened, in words. A float lives 700ms over a tile and is then gone; an
+ * enemy phase pumps four of them while the player is reading something else. This is the only surface in the
+ * battle that answers "what just hit me". Lines are built by `./chronicle.ts` from the reducer's own effects, so
+ * the log cannot say anything the engine did not do.
+ */
+function Chronicle({ lines }: { readonly lines: readonly ChronicleLine[] }): React.JSX.Element {
   return (
-    <div className="hud-panel tutorial-hint" data-testid="tutorial-hint">
-      <div className="tutorial-hint__step">First steps</div>
-      {HINT[step]}
-      <div style={{ marginTop: 8 }}><CommandButton action={{ type: 'tutorial/skip' }} label="Skip" variant="ghost" testId="tutorial-skip" /></div>
+    <Win x={0} y={0} w={SIDE_W} className="fcol__win fcol__win--fill" testId="chronicle">
+      <div className="s16 ochre nowrap">Blow by blow</div>
+      <div className="fgroove fhud__groove" />
+      <div className="chronicle__lines">
+        {lines.length === 0
+          ? <div className="chronicle__line chronicle__line--idle s14 dim">Nothing has come of it yet</div>
+          : lines.map((l, i) => (
+            <div key={l.id} className={`chronicle__line chronicle__line--${l.tone} s14 ${i === lines.length - 1 ? 'bone' : 'dim'}`}>
+              {l.parts.map((part, j) => (typeof part === 'number' ? <span key={j} className={l.tone === 'harm' ? 'rust' : l.tone === 'mend' ? 'meadow' : 'straw'}>{part}</span> : <span key={j}>{part}</span>))}
+            </div>
+          ))}
+      </div>
+    </Win>
+  )
+}
+
+/** The right column: the play (or what the next press is for), and the account of the battle under it. */
+export function RightColumn({ preview, guide, lines, onConfirm, onCancel, confirmLabel }: { readonly preview: PlayPreview | null; readonly guide: Guide; readonly lines: readonly ChronicleLine[]; readonly onConfirm: () => void; readonly onCancel: () => void; readonly confirmLabel: string }): React.JSX.Element {
+  return (
+    <div className="fcol" style={{ left: 1280 - EDGE - SIDE_W, top: EDGE, width: SIDE_W, height: LIST_H }}>
+      {preview !== null ? <PlayPanel preview={preview} onConfirm={onConfirm} onCancel={onCancel} confirmLabel={confirmLabel} /> : <GuidePanel guide={guide} />}
+      <Chronicle lines={lines} />
     </div>
   )
 }
 
-/* ── the rule-level reasons (the flow gate is `useLegal`; these mirror the reducer's own refusals) ──────────────
-   MOVE and CAPTURE used to be answered HERE, in English, beside a reducer that refused the same two rules in
-   machine codes and a legality gate that said "ok" to both — three homes for one sentence, and the gate was the
-   one the disabled control read. The rules moved into `combat/turn.ts#canEnterMove` and
-   `combat/capture.ts#canEnterCapture`, which `useLegal` now answers with (CONTRACT-CHANGES 0089), so the two
-   helpers that lived here are gone rather than duplicated. `itemReason` stays: an item is chosen per ROW, and
-   legality cannot answer a parameterised verb. */
+/* ── who is acting ────────────────────────────────────────────────────────────────────────────────────────────── */
 
 export function itemReason(itemId: ItemId, combat: CombatState, active: CombatUnit | undefined, env: EngineEnv): string | null {
   if (active === undefined || active.team !== 'party') return 'not your unit'
@@ -399,67 +355,150 @@ export function itemReason(itemId: ItemId, combat: CombatState, active: CombatUn
   return null
 }
 
-/** The item tray: one row per distinct consumable, so a Power Elixir behind a Healing Potion is reachable. */
-function ItemTray({ combat, onItem }: { readonly combat: CombatState; readonly onItem: (itemId: ItemId) => void }): React.JSX.Element | null {
-  const env = useEnv()
-  const active = combat.units[combat.turn.unitId]
-  const counts = new Map<ItemId, number>()
-  for (const id of combat.consumables) counts.set(id, (counts.get(id) ?? 0) + 1)
-  if (counts.size === 0) return null
-  return (
-    <div className="item-tray" data-testid="item-tray">
-      <div className="plaque__label">Bag</div>
-      {[...counts].map(([itemId, count]) => {
-        const item = env.content.items[itemId]
-        const effect = item?.effect
-        // The changing number wears the numeral face, and the unit rides INSIDE the same span (ARCHITECTURE §5.1).
-        // `.item-row__what` is Cinzel + uppercase, which re-cuts a digit as an inscription (FINAL GATE B B.3).
-        const what: React.ReactNode = effect === undefined ? null
-          : effect.kind === 'Heal' ? <>restores <b className="numeral">{effect.amount} HP</b></>
-            : <b className="numeral">+{effect.amount} AP</b>
-        return (
-          <ItemRow key={itemId} itemId={itemId} name={item?.name ?? itemId} count={count} what={what} reason={itemReason(itemId, combat, active, env)} onItem={onItem} />
-        )
-      })}
-    </div>
-  )
-}
-
-function ItemRow({ itemId, name, count, what, reason, onItem }: { readonly itemId: ItemId; readonly name: string; readonly count: number; readonly what: React.ReactNode; readonly reason: string | null; readonly onItem: (itemId: ItemId) => void }): React.JSX.Element {
+/** One thing in the bag: what it is, how many, what it does. Refused, it stays and says why (the reason bubble). */
+function ItemRow({ itemId, name, count, what, reason, y, w, tight, onItem }: { readonly itemId: ItemId; readonly name: string; readonly count: number; readonly what: string; readonly reason: string | null; readonly y: number; readonly w: number; readonly tight: boolean; readonly onItem: (itemId: ItemId) => void }): React.JSX.Element {
   const legal = useLegal({ type: 'combat/useItem', itemId })
+  const why = legal.ok ? reason : legal.reason
+  const off = why !== null
+  const k = useKitState(off)
+  const { tipRef, tipProps, tip } = useTip(why)
   return (
-    <Button className="item-row" variant="secondary" disabledReason={legal.ok ? reason : legal.reason} onPress={() => onItem(itemId)} testId={`use-item-${itemId}`} style={{ padding: '0.4rem 0.7rem' }}>
-      <span className="item-row__name">{name}</span>
-      <span className="item-row__count">×{count}</span>
-      <span className="item-row__what">{what}</span>
-    </Button>
+    <>
+      <button
+        ref={tipRef}
+        type="button"
+        className={`row fchoice fitem${!off && k.hovered ? ' hov' : ''}${k.cls.includes('foc') ? ' foc-ring' : ''}`}
+        style={{ left: 0, top: y, width: w, height: tight ? 22 : 34, cursor: off ? 'default' : 'pointer' }}
+        aria-disabled={off || undefined}
+        data-testid={`use-item-${itemId}`}
+        onClick={() => { if (!off) onItem(itemId) }}
+        {...k.handlers}
+        {...tipProps}
+        onPointerEnter={() => { k.handlers.onPointerEnter(); tipProps.onPointerEnter() }}
+        onPointerLeave={() => { k.handlers.onPointerLeave(); tipProps.onPointerLeave() }}
+        onFocus={(e) => { k.handlers.onFocus(e); tipProps.onFocus() }}
+        onBlur={() => { k.handlers.onBlur(); tipProps.onBlur() }}
+      >
+        <KIcon name="potion" style={{ position: 'absolute', left: 2, top: tight ? -1 : 4, ...(off ? { filter: 'grayscale(0.6) brightness(0.7)' } : {}) }} />
+        <span className={`abs s14 nowrap fcard__clip ${off ? 'faint' : 'bone'}`} style={{ left: 30, top: tight ? 2 : 0, width: tight ? w - 34 - 50 : w - 34 }}>{name} ×{count}</span>
+        {/* closed up, the row keeps what the thing does and drops what it costs to use (every one costs the same) */}
+        {tight
+          ? <span className={`abs s13 nowrap ${off ? 'faint' : 'dim'}`} style={{ right: 4, top: 3 }}>{what.split(' for ')[0]}</span>
+          : <span className={`abs s13 nowrap fcard__clip ${off ? 'faint' : 'dim'}`} style={{ left: 30, top: 17, width: w - 34 }}>{what}</span>}
+      </button>
+      {tip}
+    </>
   )
 }
 
 /**
- * The command column. It is mounted for the WHOLE battle, party turn or not: `useLegal` already answers every
- * `combat/*` action with "the enemy is acting" on the enemy's turn, so the verbs stay where they are and say so.
- *
- * `pending` is true while the play panel is up. End turn then drops to a plain strap, because Confirm is the
- * primary of that view and two brass straps in one cluster is two leads (crafting-game-ui signal C).
- *
- * `armed` is the mode the board is in. Move and Capture do not FIRE, they ARM: pressing Move turns the board into
- * a movement chooser and the verb stays held until a tile is picked or the mode is cancelled. Both used to render
- * byte-identically armed and idle, so the only evidence was the board's reach wash deepening by ~13/255 in one
- * channel (RE-GATE B 2.3). They carry `aria-pressed` and the pushed-in strap now, and the verb that is armed is
- * the one the player pressed.
+ * Who is acting, at the foot of the stage: their figure, and what they have to act with. For one of ours that is
+ * AP (orbs, and in figures), what the picked card would spend, and the bag; for a foe, their strength.
  */
-export function Commands({ combat, pending, armed, onMove, onCapture, onItem }: { readonly combat: CombatState; readonly pending: boolean; readonly armed: 'move' | 'capture' | null; readonly onMove: () => void; readonly onCapture: () => void; readonly onItem: (itemId: ItemId) => void }): React.JSX.Element {
+export function ActingWindow({ combat, run, spend, onItem }: { readonly combat: CombatState; readonly run: RunState | null; readonly spend: { readonly name: string; readonly cost: number } | null; readonly onItem: (itemId: ItemId) => void }): React.JSX.Element | null {
+  const env = useEnv()
+  const active = combat.units[combat.turn.unitId]
+  if (active === undefined) return null
+  const ours = active.team === 'party'
+  const sprite = spriteIdFor(active.id, active.classId)
+  const called = fieldNames(combat, run)[active.id]?.name ?? active.name
+  const deck = combat.decks[active.id]
+  const counts = new Map<ItemId, number>()
+  for (const id of combat.consumables) counts.set(id, (counts.get(id) ?? 0) + 1)
+  const orbs = Math.max(env.rules.combat.apPerTurn ?? 3, active.ap)
+  const W = 300
+  const inner = W - 126 - PAD
+  return (
+    <Win x={EDGE} y={FOOT_Y} w={W} h={720 - EDGE - FOOT_Y} testId="plaque">
+      <div className="fact__well" style={{ left: 10, top: 10 }}>
+        {sprite !== null && <img className="fact__fig" src={`/sprites/units/board/${sprite}.png`} width={104} height={152} alt="" draggable={false} />}
+      </div>
+      <div className={`s18 nowrap fcard__clip ${ours ? 'straw' : 'rust'}`} style={{ left: 126, top: 10, width: inner }} data-testid="plaque-name">{called}</div>
+      {ours ? (
+        <>
+          <div className="nowrap" style={{ left: 124, top: 34 }} aria-hidden>
+            {Array.from({ length: orbs }, (_, i) => <KIcon key={i} name="ap" style={{ marginRight: 3, ...(i < active.ap ? {} : { filter: 'grayscale(1) brightness(0.45)' }) }} />)}
+          </div>
+          <div className="s14 nowrap" style={{ right: PAD, top: 38 }} aria-label={`${active.ap} action points`} data-testid="plaque-ap"><span className="bone">{active.ap}</span><span className="dim"> of {orbs} AP</span></div>
+          <div className="s13 nowrap fcard__clip" style={{ left: 126, top: 62, width: inner }}>
+            {spend !== null ? <><span className="bone">{spend.name}</span><span className="dim"> spends </span><span className="straw">{spend.cost} of {active.ap}</span></> : active.armor > 0 ? <span className="rill">{active.armor} ward</span> : <span className="dim">{active.hp.current}/{active.hp.max} hp</span>}
+          </div>
+          <div className="fgroove" style={{ left: 126, top: 84, width: inner }} />
+          <div className="s13 ochre nowrap" style={{ left: 126, top: 90 }}>Bag</div>
+          {deck !== undefined && <div className="s13 dim nowrap" style={{ right: PAD, top: 90 }}>draw {deck.draw.length} · discard {deck.discard.length}</div>}
+          {counts.size === 0
+            ? <div className="s13 faint nowrap" style={{ left: 126, top: 112 }}>nothing to drink</div>
+            : (
+              <div className="fitems" style={{ left: 126, top: 108, width: inner + 4, height: counts.size > 2 ? Math.min(3, counts.size) * 24 : counts.size * 36 }} data-testid="item-tray">
+                {/* two kinds get two lines each; a third closes the rows up to one line, so all three are listed */}
+                {[...counts].slice(0, 3).map(([itemId, count], i) => {
+                  const item = env.content.items[itemId]
+                  const effect = item?.effect
+                  const what = `${effect === undefined ? '' : effect.kind === 'Heal' ? `+${effect.amount} HP` : `+${effect.amount} AP`} for ${env.rules.combat.itemUseAp} AP`
+                  return <ItemRow key={itemId} itemId={itemId} name={item?.name ?? itemId} count={count} what={what} reason={itemReason(itemId, combat, active, env)} y={i * (counts.size > 2 ? 24 : 36)} w={inner + 4} tight={counts.size > 2} onItem={onItem} />
+                })}
+              </div>
+            )}
+        </>
+      ) : (
+        <>
+          <div className="s13 rust nowrap" style={{ left: 126, top: 36 }}><i className="fturn__side fturn__side--theirs fturn__side--inline" aria-hidden />enemy turn</div>
+          <span className="fhud__gauge--theirs"><Gauge x={126} y={62} w={inner - 66} h={9} value={active.hp.current} max={active.hp.max} /></span>
+          <div className="s14 nowrap" style={{ right: PAD, top: 56 }}><span className="bone">{active.hp.current}</span><span className="dim">/{active.hp.max}</span></div>
+          {active.armor > 0 && <div className="s13 rill nowrap" style={{ left: 126, top: 78 }}>{active.armor} ward</div>}
+          <div className="fgroove" style={{ left: 126, top: 104, width: inner }} />
+          <div className="s13 dim" style={{ left: 126, top: 112, width: inner, whiteSpace: 'normal' }}>Their turn plays out on the field. The list says who moves next.</div>
+        </>
+      )}
+    </Win>
+  )
+}
+
+/* ── the commands ─────────────────────────────────────────────────────────────────────────────────────────────── */
+
+/** A verb that ARMS (Move, Capture): pressed, the board becomes its chooser and the verb stays held until a tile is
+ *  picked or the mode is cancelled. Refused, it stays and prints its reason under itself. */
+function ArmCommand({ label, y, armed, legal, onPress, testId }: { readonly label: string; readonly y: number; readonly armed: boolean; readonly legal: { readonly ok: true } | { readonly ok: false; readonly reason: string }; readonly onPress: () => void; readonly testId: string }): React.JSX.Element {
+  const off = !legal.ok
+  const k = useKitState(off)
+  const state = off ? 'dis' : armed ? 'arm' : k.cls
+  return (
+    <>
+      <button type="button" className={`fcmd${armed && !off ? ' arm' : ''}`} style={{ left: PAD, top: y, width: 200, height: 24, cursor: off ? 'default' : 'pointer' }} aria-pressed={armed && !off} aria-disabled={off || undefined} data-reason={off ? legal.reason : undefined} data-testid={testId} onClick={() => { if (!off) onPress() }} {...k.handlers}>
+        <span className={`cmd abs${state === '' ? '' : ` ${state}`}`} style={{ left: -4, top: 1 }}>{label}</span>
+      </button>
+      {off && <div className="why fcard__clip" style={{ left: PAD, top: y + 23, width: 200 }}>{legal.reason}</div>}
+    </>
+  )
+}
+
+/**
+ * The commands. Mounted for the WHOLE battle, party turn or not: `useLegal` answers every `combat/*` action with
+ * "the enemy is acting" on the enemy's turn, so the verbs stay where they are and say so.
+ *
+ * `pending` is true while a play is pinned. End turn then drops to a plain button, because Confirm is the primary
+ * of that view and two brass buttons on one stage is two leads (crafting-game-ui signal C).
+ */
+export function Commands({ pending, armed, showDanger, onMove, onCapture }: { readonly pending: boolean; readonly armed: 'move' | 'capture' | null; readonly showDanger: boolean; readonly onMove: () => void; readonly onCapture: () => void }): React.JSX.Element {
   const moveLegal = useLegal({ type: 'combat/enterMove' })
   const captureLegal = useLegal({ type: 'combat/enterCapture' })
+  const end: Action = { type: 'combat/endTurn' }
+  const endLegal = useLegal(end)
+  const W = 232
   return (
-    <div className="commands" data-testid="commands">
-      <ItemTray combat={combat} onItem={onItem} />
-      <div className="commands__grid">
-        <Button variant="secondary" pressed={armed === 'capture'} disabledReason={captureLegal.ok ? null : captureLegal.reason} onPress={onCapture} testId="capture">Capture</Button>
-        <Button variant="secondary" pressed={armed === 'move'} disabledReason={moveLegal.ok ? null : moveLegal.reason} onPress={onMove} testId="move">Move</Button>
-        <CommandButton action={{ type: 'combat/endTurn' }} label="End turn" variant={pending ? 'secondary' : 'primary'} testId="end-turn" />
-      </div>
-    </div>
+    <Win x={1280 - EDGE - W} y={FOOT_Y} w={W} h={720 - EDGE - FOOT_Y} testId="commands">
+      <ArmCommand label="Move" y={8} armed={armed === 'move'} legal={moveLegal} onPress={onMove} testId="move" />
+      <ArmCommand label="Capture" y={50} armed={armed === 'capture'} legal={captureLegal} onPress={onCapture} testId="capture" />
+      <FBtn variant={pending ? 'secondary' : 'primary'} w={W - 2 * PAD} disabledReason={endLegal.ok ? null : endLegal.reason} onPress={() => dispatch(end)} testId="end-turn" style={{ position: 'absolute', left: PAD, top: 94 }}>End turn</FBtn>
+      <button type="button" className="fcmd fcmd--small" style={{ left: PAD, top: 138, width: W - 2 * PAD, height: 20 }} onClick={() => dispatch({ type: 'ui/toggleDanger' })} aria-pressed={showDanger} data-testid="danger-toggle">
+        <span className="abs s13 bone nowrap" style={{ left: 0, top: 2 }}>Danger zone</span>
+        <span className="abs nowrap" style={{ left: 84, top: 1 }}><Key>Tab</Key></span>
+        <span className={`abs s13 nowrap ${showDanger ? 'rust' : 'dim'}`} style={{ left: 126, top: 2 }}>{showDanger ? 'shown' : 'off'}</span>
+      </button>
+      <button type="button" className="fcmd fcmd--small" style={{ left: PAD, top: 160, width: W - 2 * PAD, height: 20 }} onClick={() => dispatch({ type: 'ui/openModal', modal: { kind: 'pause' } })} data-testid="combat-menu">
+        <span className="abs s13 bone nowrap" style={{ left: 0, top: 2 }}>Menu</span>
+        <span className="abs nowrap" style={{ left: 42, top: 1 }}><Key>Esc</Key></span>
+      </button>
+    </Win>
   )
 }

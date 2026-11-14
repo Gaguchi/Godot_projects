@@ -121,7 +121,7 @@ test('card with no foe in reach explains itself, then move → pin → forecast 
 
   // three End turns: the party's turns pass and the enemy pump runs itself
   for (let i = 0; i < 3; i++) await page.getByTestId('end-turn').click()
-  await expect(page.getByTestId('plaque')).toContainText(/turn\s*2/i)
+  await expect(page.getByTestId('round').locator('[role="img"]')).toHaveAttribute('aria-label', 'round 2')
   await page.screenshot({ path: 'test-results/combat-round2.png' })
   expect(errors).toEqual([])
 })
@@ -405,7 +405,9 @@ test('an ally card that has nothing in reach says ALLY, not foe', async ({ page 
   await page.screenshot({ path: '../.playwright-mcp/fix-UIC-11-ally-hint.png' })
 })
 
-test('the initiative strip never runs under the herald plaque', async ({ page }) => {
+test('the turn list holds a crowded field: nobody is cut, and it never runs under the acting window', async ({ page }) => {
+  // The strip once ran its last portrait under the herald plaque at 8+ units. The list is a window now; what it
+  // must still do is hold a crowded field: every unit is a whole row inside the window, or is counted, never clipped.
   await page.goto(COMBAT)
   await seed(page, (s) => {
     const src = s.combat.units.ashfall_raiders_1
@@ -419,9 +421,23 @@ test('the initiative strip never runs under the herald plaque', async ({ page })
     }
   }, null)
   expect(Object.keys((await state(page)).combat!.units)).toHaveLength(8)
-  const strip = (await page.getByTestId('initiative').boundingBox())!
-  const plaque = (await page.getByTestId('plaque').boundingBox())!
-  expect(strip.x + strip.width).toBeLessThanOrEqual(plaque.x)
+  const fit = await page.evaluate(() => {
+    const list = document.querySelector('[data-testid="initiative"]')!.getBoundingClientRect()
+    const acting = document.querySelector('[data-testid="plaque"]')!.getBoundingClientRect()
+    const rows = [...document.querySelectorAll('[data-testid="initiative"] [data-testid^="rail-"]:not([data-testid*="riders"]):not([data-testid*="armor"]), [data-testid="initiative"] [data-testid^="foe-"]:not([data-testid*="riders"])')].map((r) => r.getBoundingClientRect())
+    const more = document.querySelector('[data-testid="initiative-more"]')
+    return {
+      rows: rows.length,
+      counted: more === null ? 0 : Number(/and (\d+) more/.exec(more.textContent ?? '')?.[1] ?? 0),
+      inside: rows.every((r) => r.top >= list.top && r.bottom <= list.bottom - 20 && r.left >= list.left && r.right <= list.right),
+      apart: rows.every((a, i) => rows.every((b, j) => i === j || a.bottom <= b.top || b.bottom <= a.top)),
+      clear: list.bottom <= acting.top,
+    }
+  })
+  expect(fit.rows + fit.counted).toBe(8)
+  expect(fit.inside).toBe(true)
+  expect(fit.apart).toBe(true)
+  expect(fit.clear).toBe(true)
   await page.screenshot({ path: '../.playwright-mcp/fix-UIC-06-strip-plaque.png' })
 })
 
@@ -569,58 +585,85 @@ test('the forecast leads with the outcome and keeps the reckoning under it, in w
 })
 
 test('nothing paints over the panel the player commits on', async ({ page }) => {
-  // The foe roll and the forecast share one footprint at `right:16px`. Muting the roll to opacity 0.14 left it at
-  // `z-index: 2` — above the panel — so a foe's green HP bar ran through the "−15 HP" headline and its "76/76"
-  // printed itself twice inside the card. Every earlier test read the panel's TEXT, which was correct throughout;
-  // only the pixels were wrong. So this one compares the panel as drawn against the panel with the roll deleted:
-  // if the roll contributes a single pixel inside the card, the two differ.
+  // The foe roll and the forecast once shared one footprint: muted to 0.14 the roll still sat ABOVE the panel, so a
+  // foe's HP bar ran through the "−15 HP" headline. The play now has its seat to itself: what was there before
+  // (the guide) is gone while it is up, the account of the battle sits under it and not behind it, and every point
+  // of the panel's face answers to the panel.
   await page.goto(COMBAT)
+  await expect(page.getByTestId('guide')).toBeVisible()
   await lilinaAt(page, '5,3')
   await page.getByTestId('card-fire_tome_blaze').click()
   await clickTile(page, '6,3')
   const panel = page.getByTestId('play-panel')
   await expect(panel).toBeVisible()
-  const roll = page.getByTestId('foe-roll')
-  await expect(roll).toHaveClass(/foe-roll--muted/)
-  // it really is under the same box — otherwise this test proves nothing
-  const p = (await panel.boundingBox())!
-  const r = (await roll.boundingBox())!
-  const shared = Math.max(0, Math.min(p.x + p.width, r.x + r.width) - Math.max(p.x, r.x)) * Math.max(0, Math.min(p.y + p.height, r.y + r.height) - Math.max(p.y, r.y))
-  expect(shared).toBeGreaterThan(10_000)
+  await expect(page.getByTestId('guide')).toHaveCount(0)
 
-  // inset past the rounded corners, where the panel's own backdrop blur legitimately samples the sheet behind it
-  const face = { x: p.x + 10, y: p.y + 10, width: p.width - 20, height: p.height - 20 }
-  const drawn = await page.screenshot({ clip: face })
-  await roll.evaluate((el) => { el.remove() })
-  const alone = await page.screenshot({ clip: face })
-  expect(drawn.equals(alone), 'the foe roll paints inside the forecast card').toBe(true)
+  const p = (await panel.boundingBox())!
+  const log = (await page.getByTestId('chronicle').boundingBox())!
+  expect(log.y).toBeGreaterThanOrEqual(p.y + p.height)
+  expect(log.y + log.height).toBeLessThanOrEqual((await page.getByTestId('commands').boundingBox())!.y)
+  const owned = await panel.evaluate((el) => {
+    const b = el.getBoundingClientRect()
+    let mine = 0
+    let all = 0
+    for (let y = b.top + 8; y < b.bottom - 8; y += 12) {
+      for (let x = b.left + 8; x < b.right - 8; x += 12) {
+        all++
+        const top = document.elementFromPoint(x, y)
+        if (top !== null && el.contains(top)) mine++
+      }
+    }
+    return { mine, all }
+  })
+  expect(owned.all).toBeGreaterThan(100)
+  expect(owned.mine, 'something else is drawn over the play').toBe(owned.all)
   await page.screenshot({ path: '../.playwright-mcp/fix2-g2b-forecast.png' })
 })
 
 test('one brass primary: End turn hands it to Confirm while a play is pending', async ({ page }) => {
   await page.goto(COMBAT)
-  await expect(page.locator('.btn-forged--primary')).toHaveCount(1)
-  await expect(page.getByTestId('end-turn')).toHaveClass(/btn-forged--primary/)
+  await expect(page.locator('.btn.pri')).toHaveCount(1)
+  await expect(page.getByTestId('end-turn')).toHaveClass(/\bpri\b/)
 
   await lilinaAt(page, '5,3')
   await page.getByTestId('card-fire_tome_blaze').click()
   await clickTile(page, '6,3')
   await expect(page.getByTestId('play-panel')).toBeVisible()
-  await expect(page.locator('.btn-forged--primary')).toHaveCount(1)
-  await expect(page.getByTestId('confirm-play')).toHaveClass(/btn-forged--primary/)
-  await expect(page.getByTestId('end-turn')).not.toHaveClass(/btn-forged--primary/)
+  await expect(page.locator('.btn.pri')).toHaveCount(1)
+  await expect(page.getByTestId('confirm-play')).toHaveClass(/\bpri\b/)
+  await expect(page.getByTestId('end-turn')).not.toHaveClass(/\bpri\b/)
   await page.screenshot({ path: '../.playwright-mcp/fix2-g2-18-one-primary.png' })
 
   // cancelling gives it back — the view always has exactly one lead
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('play-panel')).toBeHidden()
-  await expect(page.locator('.btn-forged--primary')).toHaveCount(1)
-  await expect(page.getByTestId('end-turn')).toHaveClass(/btn-forged--primary/)
+  await expect(page.locator('.btn.pri')).toHaveCount(1)
+  await expect(page.getByTestId('end-turn')).toHaveClass(/\bpri\b/)
 })
 
 test('a target tile is a mark on the board, never a tint of it', async ({ page }) => {
   await page.goto(COMBAT)
   await lilinaAt(page, '5,3')
+  // the fighter stands on DIRT, deep inside a patch: the ground a mark is hardest to see on, and where it was lost
+  await seed(page, (s) => { s.combat.grid.floor = ['5,2', '6,2', '7,2', '5,3', '6,3', '7,3', '5,4', '6,4', '7,4'] }, null)
+  await expect(page.locator('.board__cell[data-tile="6,3"] .board__dirt')).toHaveCount(1)
+  // the corner of the fighter's tile, clear of his figure and his bar
+  const corner = async (): Promise<Buffer> => {
+    const r = tileRect(W, H, '6,3')
+    const stage = (await page.locator('#game-stage').boundingBox())!
+    const k = stage.width / 1280
+    return page.screenshot({ clip: { x: stage.x + (r.x + 1) * k, y: stage.y + (r.y + r.size - 8) * k, width: 5 * k, height: 5 * k } })
+  }
+  await page.evaluate(() => Promise.all(Array.from(document.images).map((i) => i.decode().catch(() => undefined))))
+  await page.getByTestId('card-fire_tome_blaze').click()
+  await expect(page.locator('.board__cell--target[data-tile="6,3"]')).toHaveCount(1)
+  const marked = await corner()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.board__cell--target')).toHaveCount(0)
+  const bare = await corner()
+  // The mark is DRAWN there, not only styled. The fighter stands on dirt, and a tile's dirt once painted over its
+  // own mark: every style below was correct while nothing reached the glass. Same tile, same art, with and without.
+  expect(marked.equals(bare), 'the mark is styled but not painted on the tile').toBe(false)
   await page.getByTestId('card-fire_tome_blaze').click()
   await expect(page.locator('.board__cell--target').first()).toBeVisible()
 
@@ -629,7 +672,7 @@ test('a target tile is a mark on the board, never a tint of it', async ({ page }
       const el = document.querySelector(sel)
       return el === null ? '' : getComputedStyle(el, '::before').backgroundColor
     }
-    const img = document.querySelector('.board__cell img')
+    const img = document.querySelector('.board__cell img, .fcombat__ground')
     const target = document.querySelector('.board__cell--target')!
     return {
       target: wash('.board__cell--target'),
@@ -638,13 +681,13 @@ test('a target tile is a mark on the board, never a tint of it', async ({ page }
       art: img === null ? '' : getComputedStyle(img).filter,
     }
   })
-  // the cosmetic ground has given its chroma up to the signals — terrain grants nothing here (DECISIONS)
-  const saturation = Number(/saturate\(([\d.]+)\)/.exec(read.art)?.[1] ?? '1')
-  expect(saturation).toBeLessThanOrEqual(0.3)
-  // and the mark carries a hue AND a crisp cell-aligned edge, so hue is never the only channel
+  // The ground is the field's own pixel art at full strength; a mark is a BOX laid on it, so it reads the same on
+  // grass and on dirt: a wash of its hue, inside an ink line and a line of that hue. Hue is never the only channel.
+  expect(read.art).not.toMatch(/saturate|grayscale/)
   expect(read.target).not.toBe(read.plain)
   expect(read.target).not.toBe('rgba(0, 0, 0, 0)')
   expect(read.edge).not.toBe('none')
+  expect(read.edge.match(/inset/g)?.length ?? 0, 'the box wants an ink line and a hue line').toBeGreaterThanOrEqual(2)
   await page.screenshot({ path: '../.playwright-mcp/fix2-g2-11-target-wash.png' })
 })
 
@@ -680,7 +723,8 @@ test('a ward offers its tiles in the mending hue, never in the danger one', asyn
 test('a card face shows what the card will do, and the panel agrees with it', async ({ page }) => {
   await page.goto(COMBAT)
   await lilinaAt(page, '5,3')
-  const face = Number(await page.locator('[data-testid="card-fire_tome_blaze"] .card__number').innerText())
+  // the number is cast in the kit's numerals (images), so it is read from the face's own record of it
+  const face = Number(await page.locator('[data-testid="card-fire_tome_blaze"] .card__number').getAttribute('data-n'))
 
   const s = await state(page)
   const env = await page.evaluate(() => window.__game!.env)
@@ -742,7 +786,7 @@ test('an armed verb says so on itself, not only in the board wash', async ({ pag
   await move.click()
   await move.evaluate((el) => (el as HTMLElement).blur())
   await expect(move).toHaveAttribute('aria-pressed', 'true')
-  await expect(move).toHaveClass(/btn-forged--armed/)
+  await expect(move).toHaveClass(/\barm\b/)
   const armed = await face(move)
   expect(armed).not.toBe(idle)
   // …and only the verb that was pressed is armed
@@ -753,13 +797,13 @@ test('an armed verb says so on itself, not only in the board wash', async ({ pag
   await page.keyboard.press('Escape')
   await move.evaluate((el) => (el as HTMLElement).blur())
   await expect(move).toHaveAttribute('aria-pressed', 'false')
-  await expect(move).not.toHaveClass(/btn-forged--armed/)
+  await expect(move).not.toHaveClass(/\barm\b/)
   expect(await face(move)).not.toBe(armed)
 
   // a verb that cannot be armed is still not pressed — the two states never blur into each other
   await expect(capture).toHaveAttribute('aria-disabled', 'true')
   await expect(capture).toHaveAttribute('aria-pressed', 'false')
-  await expect(capture).not.toHaveClass(/btn-forged--armed/)
+  await expect(capture).not.toHaveClass(/\barm\b/)
 })
 
 test('the battle keeps an account of itself, and it fills the corner that had none', async ({ page }) => {
@@ -782,17 +826,18 @@ test('the battle keeps an account of itself, and it fills the corner that had no
     expect(line).toMatch(/[a-z]{3,} [a-z]{3,}/i)
     expect(line, line).not.toMatch(/_|[a-z][A-Z]/)
   }
-  // and it sits in the void the gate measured: x 0-256, y 528-672 of the stage
+  // and it has a seat of its own: beside the field, under the play, above the commands, wholly on the stage
   const seat = await log.evaluate((el) => {
     const stage = document.getElementById('game-stage')!.getBoundingClientRect()
-    const b = el.getBoundingClientRect()
     const s = stage.width / 1280
-    return { x: (b.left - stage.left) / s, y: (b.top - stage.top) / s, w: b.width / s, h: b.height / s }
+    const rel = (b: DOMRect): { x: number; y: number; w: number; h: number } => ({ x: (b.left - stage.left) / s, y: (b.top - stage.top) / s, w: b.width / s, h: b.height / s })
+    const lines = [...el.querySelectorAll('.chronicle__line')].map((l) => rel(l.getBoundingClientRect()))
+    return { log: rel(el.getBoundingClientRect()), board: rel(document.querySelector('[data-testid="board"]')!.getBoundingClientRect()), commands: rel(document.querySelector('[data-testid="commands"]')!.getBoundingClientRect()), lines }
   })
-  expect(seat.x).toBeLessThan(60)
-  expect(seat.y).toBeGreaterThan(500)
-  expect(seat.y + seat.h).toBeLessThan(672)
-  // …without running under the hand, whose first card begins at x 260
-  expect(seat.x + seat.w).toBeLessThanOrEqual(260)
+  expect(seat.log.x).toBeGreaterThanOrEqual(seat.board.x + seat.board.w)
+  expect(seat.log.x + seat.log.w).toBeLessThanOrEqual(1280)
+  expect(seat.log.y + seat.log.h).toBeLessThanOrEqual(seat.commands.y)
+  // every line it shows is whole: none runs out of the window's foot
+  for (const l of seat.lines) expect(l.y + l.h, 'a line cut by the window').toBeLessThanOrEqual(seat.log.y + seat.log.h - 6)
   await page.screenshot({ path: '../.playwright-mcp/fix3-2.9-chronicle.png' })
 })

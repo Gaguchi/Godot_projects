@@ -1,6 +1,8 @@
 /**
- * ui/combat/CombatScreen.tsx — the battle surface: Board + tokens, hand, HUD, play panel, tutorial. Input has ONE
- * owner each: board clicks and the drag gesture here, Esc/right-click cancel here, Tab toggles the danger union here.
+ * ui/combat/CombatScreen.tsx — the battle (boards Hyb64Combat, F64CombatEnemy): the field in its clearing, and five
+ * windows round it (`Hud.tsx`): who moves when, the play, blow by blow, who is acting, the commands; the hand along
+ * the foot. Input has ONE owner each: board clicks and the drag gesture here, Esc/right-click cancel here, Tab
+ * toggles the danger union here.
  * The click model is pin-then-confirm (brief §2.8): pick a card → red targets → click one to pin → the play panel →
  * Confirm (or click the pinned tile again). The panel appears for EVERY pinned play, forecast or not. The same cards
  * can be dragged onto a target (StS) and the active unit can be dragged to a blue tile (FE chess-drag). Move: the
@@ -9,7 +11,7 @@
  * a promise so the pump scheduler waits for them.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import '../../styles/combat.css'
+import '../../styles/filigree-combat.css'
 import { captureChance, captureContext } from '../../engine/combat/capture'
 import { forecast } from '../../engine/combat/damage'
 import { manhattan, reachable, tilesInAoe } from '../../engine/combat/grid'
@@ -17,15 +19,17 @@ import { dangerUnion, legalTargets, recipients } from '../../engine/combat/targe
 import { tutorialStep } from '../../engine/combat/tutorial'
 import type { Effect } from '../../engine/effects'
 import { overlayOf } from '../../engine/flow/pump'
+import { spriteIdFor } from '../../content/index'
 import { displayName } from '../../engine/run/party'
 import type { Card, CardEffect, CombatUnit, GameState, ItemId, TileKey } from '../../engine/types'
 import { clientToStage } from '../StageView'
 import { dispatch, getState, useEffects, useEnv, useGame } from '../store'
 import { Board, type BoardOverlays, type FloatText } from './Board'
-import { CardHand, cardIntentLines } from './CardHand'
+import { CardHand, cardIntentLines, cardType } from './CardHand'
 import { boardView, tileAtStagePoint } from './geometry'
 import { extend, type ChronicleLine } from './chronicle'
-import { Chronicle, Commands, CompanyRail, FoeRoll, HeraldPlaque, InitiativeStrip, PlayPanel, TutorialHint, type PlayPreview, type VictimRow } from './Hud'
+import { fieldNames } from './names'
+import { ActingWindow, Commands, RightColumn, TurnList, type Guide, type PlayPreview, type VictimRow } from './Hud'
 import type { TokenExtras } from './UnitToken'
 
 /** How long a damage number DWELLS. Reduced motion drops the animation, never the number (the float is information,
@@ -115,11 +119,8 @@ export function CombatScreen(): React.JSX.Element | null {
     }
     // the chronicle reads the same batch: one account of the battle, built from the reducer's own effects
     const s = getState()
-    const nameOf = (unitId: string): string => {
-      const u = s.combat?.units[unitId]
-      if (u === undefined) return 'someone'
-      return s.run === null ? u.name : displayName(u, s.run)
-    }
+    const called = s.combat === null ? {} : fieldNames(s.combat, s.run)
+    const nameOf = (unitId: string): string => called[unitId]?.name ?? 'someone'
     if (s.combat !== null && s.combat.battleId !== logBattle) { logBattle = s.combat.battleId; logStore = [] }
     const grown = extend(logStore, effects, {
       unit: nameOf,
@@ -256,7 +257,8 @@ export function CombatScreen(): React.JSX.Element | null {
   const preview = useMemo((): PlayPreview | null => {
     if (combat === null || activeId === null || active === null || card === null) return null
     if (!(pinnedTile !== null || selfPlayable)) return null
-    const nameOf = (u: CombatUnit): string => (run === null ? u.name : displayName(u, run))
+    const called = fieldNames(combat, run)
+    const nameOf = (u: CombatUnit): string => called[u.id]?.name ?? u.name
     const centreId = pinnedForecast?.redirectedTo ?? pinnedUnit?.id ?? null
     const centre = centreId === null ? null : combat.units[centreId] ?? pinnedUnit
     const victims: VictimRow[] = []
@@ -269,9 +271,14 @@ export function CombatScreen(): React.JSX.Element | null {
     const spread = (card.aoeRadius ?? 0) > 0 || card.targetKind === 'all_enemies' || card.targetKind === 'all_allies'
     return {
       cardName: card.name,
+      cardType: cardType(card),
+      cardCost: card.apCost,
       attackerName: nameOf(active),
+      attackerAp: active.ap,
       forecast: pinnedForecast,
       targetName: centre === null ? null : nameOf(centre),
+      targetSprite: centre === null ? null : spriteIdFor(centre.id, centre.classId),
+      targetOurs: centre?.team === 'party',
       targetHp: centre?.hp ?? null,
       targetArmor: centre?.armor ?? 0,
       victims,
@@ -287,11 +294,14 @@ export function CombatScreen(): React.JSX.Element | null {
     const aimed = new Set<string>(struck.map((u) => u.id))
     if (pinnedUnit !== null) aimed.add(pinnedUnit.id)
     if (pinnedForecast?.redirectedTo != null) aimed.add(pinnedForecast.redirectedTo)
+    const called = fieldNames(combat, run)
     for (const u of Object.values(combat.units)) {
       const capture = selection.kind === 'capture' && activeId !== null && u.team === 'enemy' && u.position !== null && captureSets.offered.has(u.position) ? captureLabel(combat, activeId, u.id, env) : undefined
       const tooStrong = selection.kind === 'capture' && u.position !== null && captureSets.tooStrong.has(u.position)
+      const ordinal = called[u.id]?.ordinal ?? null
       out[u.id] = {
-        displayName: run === null ? u.name : displayName(u, run),
+        displayName: called[u.id]?.name ?? u.name,
+        ...(ordinal === null ? {} : { ordinal }),
         pinnedTarget: aimed.has(u.id),
         ...(capture === undefined ? {} : { badge: capture }),
         ...(tooStrong ? { mutedBadge: 'too strong' } : {}),
@@ -418,60 +428,34 @@ export function CombatScreen(): React.JSX.Element | null {
   const noTargets = selection.kind === 'card' && !selfPlayable && pinnedTile === null && overlays.targets.size === 0 && card !== null
   // Capture with nobody the gate allows: the muted token badge gets a sentence, so the verb is never just inert.
   const noCaptives = selection.kind === 'capture' && captureSets.offered.size === 0
+  const activeName = active === null || combat === null ? '' : fieldNames(combat, run)[active.id]?.name ?? active.name
+  // what the right-hand seat says while no play is pinned: the next press
+  const guide: Guide =
+    step !== null && overlay === 'tutorial' ? { kind: 'tutorial', step }
+      : !partyTurn || active === null ? { kind: 'enemy', name: activeName }
+        : selection.kind === 'card' && card !== null ? { kind: 'card', name: card.name, type: cardType(card), lines: cardIntentLines(card, active, selectedCard?.mod ?? null), refusal: noTargets ? nothingInReach(card.targetKind, card.name, active.hasMovedThisTurn) : null }
+          : selection.kind === 'capture' ? { kind: 'capture', refusal: noCaptives ? (captureSets.tooStrong.size > 0 ? 'Still too strong to take alive: wound them first' : 'No foe within arm’s reach to take alive') : null }
+            : selection.kind === 'move' ? { kind: 'move' }
+              : { kind: 'idle', name: activeName, canMove: !active.hasMovedThisTurn }
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, var(--iron-800) 0%, var(--iron-900) 70%, var(--color-ash) 100%)' }} data-testid="combat-screen">
-      <div className="iron-grain" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+    <div className={`f64 fcombat${view.source === 'report' ? ' fcombat--report' : ''}`} data-testid="combat-screen">
+      {/* the clearing the battle is laid on; under the Field Report the board is a plate, so the ground stays with it */}
+      {view.source === 'combat' && <img className="fcombat__ground" src="/art/field/ground.png" width={1280} height={720} alt="" draggable={false} />}
       <Board view={view} overlays={overlays} extras={extras} floats={floats} onTile={onTile} onHover={setHover} onCancel={() => dispatch({ type: 'combat/cancel' })} onTilePointerDown={onTilePointerDown} />
       {combat !== null && live && (
         <>
-          {/* The same chip the band and the Field Report carry, with the same keycap: on an idle board Esc opens
-              this card, and with a play pinned or a verb armed Esc cancels that first and opens it on the next
-              press. It sits where the map band keeps its menu, and FIRST in the DOM so the Shift+Tab ring into
-              the hand and the commands is unchanged. */}
-          <button
-            type="button"
-            className="btn-forged btn-forged--ghost"
-            style={{ position: 'absolute', right: 14, top: 14, padding: '0.35rem 0.8rem', fontSize: '0.7rem', zIndex: 12 }}
-            onClick={() => dispatch({ type: 'ui/openModal', modal: { kind: 'pause' } })}
-            data-testid="combat-menu"
-          >
-            <span className="keycap">Esc</span>Menu
-          </button>
-          <InitiativeStrip combat={combat} run={run} />
-          <HeraldPlaque combat={combat} run={run} />
-          {/* the two columns beside the board: the company on the left, the field on the right. Both carry the
-              statuses nothing else on this screen shows; the right one dims (never unmounts) under the play panel. */}
-          <CompanyRail combat={combat} run={run} />
-          <Chronicle lines={log} />
-          <FoeRoll combat={combat} muted={showPanel || (step !== null && overlay === 'tutorial')} />
+          {/* Every window is mounted for the whole battle: on the enemy's turn the hand keeps its wells and every verb
+              says "the enemy is acting", so nothing on the stage jumps between phases. */}
+          <TurnList combat={combat} run={run} />
+          <RightColumn preview={preview} guide={guide} lines={log} onConfirm={pinnedTile === null ? playSelfCard : confirmPlay} onCancel={() => dispatch({ type: 'combat/cancel' })} confirmLabel={pinnedTile === null ? 'Play' : 'Confirm'} />
+          <ActingWindow combat={combat} run={run} spend={partyTurn && card !== null ? { name: card.name, cost: card.apCost } : null} onItem={(itemId: ItemId) => dispatch({ type: 'combat/useItem', itemId })} />
           <CardHand combat={combat} run={run} cards={cards} selectedUid={selectedUid} onSelect={onSelectCard} onCardPointerDown={onCardPointerDown} />
-          {/* The command column is mounted for the whole battle — on the enemy's turn every verb carries "the enemy
-              is acting" instead of the column vanishing and taking 165px of stage with it. */}
-          <Commands combat={combat} pending={showPanel} armed={selection.kind === 'move' ? 'move' : selection.kind === 'capture' ? 'capture' : null} onMove={() => dispatch({ type: 'combat/enterMove' })} onCapture={() => dispatch({ type: 'combat/enterCapture' })} onItem={(itemId: ItemId) => dispatch({ type: 'combat/useItem', itemId })} />
-          {showPanel && preview !== null && (
-            <PlayPanel preview={preview} onConfirm={pinnedTile === null ? playSelfCard : confirmPlay} onCancel={() => dispatch({ type: 'combat/cancel' })} confirmLabel={pinnedTile === null ? 'Play' : 'Confirm'} />
-          )}
-          {step !== null && overlay === 'tutorial' && !showPanel && <TutorialHint step={step} />}
-          {noTargets && card !== null && (
-            <div className="hand-hint" data-testid="hand-hint">
-              {nothingInReach(card.targetKind, card.name, active?.hasMovedThisTurn === true)}
-            </div>
-          )}
-          {noCaptives && (
-            <div className="hand-hint" data-testid="capture-hint">
-              {captureSets.tooStrong.size > 0 ? 'Still too strong to take alive — wound them first' : 'No foe within arm’s reach to take alive'}
-            </div>
-          )}
-          <div className="danger-chip">
-            <button type="button" className="btn-forged btn-forged--ghost" style={{ padding: '0.35rem 0.8rem', fontSize: '0.7rem' }} onClick={() => dispatch({ type: 'ui/toggleDanger' })} aria-pressed={showDanger} data-testid="danger-toggle">
-              <span className="keycap">Tab</span>Danger zone {showDanger ? '●' : '○'}
-            </button>
-          </div>
+          <Commands pending={showPanel} armed={selection.kind === 'move' ? 'move' : selection.kind === 'capture' ? 'capture' : null} showDanger={showDanger} onMove={() => dispatch({ type: 'combat/enterMove' })} onCapture={() => dispatch({ type: 'combat/enterCapture' })} />
         </>
       )}
       {drag !== null && (
-        <div className="drag-ghost" data-testid="drag-ghost" style={{ left: drag.at.x, top: drag.at.y }} aria-hidden>{drag.label}</div>
+        <div className="drag-ghost" data-testid="drag-ghost" style={{ left: drag.at.x, top: drag.at.y }} aria-hidden><span className="plate lit">{drag.label}</span></div>
       )}
     </div>
   )
@@ -483,5 +467,5 @@ function nothingInReach(targetKind: Card['targetKind'], name: string, hasMoved: 
   const head = targetKind === 'ally' || targetKind === 'all_allies' ? `No ally within reach of ${name}`
     : targetKind === 'tile' ? `Nowhere to place ${name}`
       : `No foe within reach of ${name}`
-  return hasMoved ? `${head} — choose another card` : `${head} — move closer first, or choose another card`
+  return hasMoved ? `${head}: choose another card` : `${head}: move closer first, or choose another card`
 }

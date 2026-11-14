@@ -1,0 +1,175 @@
+/* The battle in Filigree (ui/combat). Hand-written; tokens only (the palette is filigree-kit.css's). */
+
+.f64.fcombat { position: absolute; inset: 0; background: var(--f-w0); }
+.fcombat__ground { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+/* ── the field ── */
+.fcombat .board {
+  position: absolute; display: grid; transform-origin: 0 0; user-select: none;
+  background-image: url('/art/field/ground.png'); background-repeat: no-repeat; image-rendering: pixelated;
+  /* the rim: the board reads as a board even where no window frames it */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--f-k0) 55%, transparent);
+}
+.fcombat .board__cell { position: relative; cursor: default; }
+.fcombat .board__dirt { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.fcombat .board__rock { position: absolute; pointer-events: none; }
+/* the grid: every seam is the ground a step darker */
+.fcombat .board__cell::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  box-shadow: inset -1px -1px 0 0 color-mix(in srgb, var(--f-k0) 20%, transparent);
+}
+/* a mark is a box on the tile: an ink line, a line of its own hue, a thin wash inside. It lies OVER the tile's dirt
+   (the dirt is a child of the cell and would otherwise paint over it: a dirt tile showed no mark at all) */
+.fcombat .board__cell::before { content: ''; position: absolute; inset: 1px 2px 2px 1px; pointer-events: none; z-index: 1; }
+.fcombat .board__cell--reach::before {
+  background-color: color-mix(in srgb, var(--f-s3) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--f-k0) 70%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--f-s4) 62%, transparent);
+}
+.fcombat .board__cell--reach.board__cell--mode::before {
+  background-color: color-mix(in srgb, var(--f-s3) 30%, transparent);
+  box-shadow: inset 0 0 0 1px var(--f-k0), inset 0 0 0 2px var(--f-s4);
+}
+.fcombat .board__cell--reach { cursor: pointer; }
+.fcombat .board__cell--danger::before {
+  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--f-x3) 52%, transparent) 0 2px, transparent 2px 7px);
+}
+.fcombat .board__cell--active::before {
+  background-color: color-mix(in srgb, var(--f-o4) 18%, transparent);
+  box-shadow: inset 0 0 0 1px var(--f-k0), inset 0 0 0 2px var(--f-o5);
+}
+.fcombat .board__cell--target::before {
+  background-image: none;
+  background-color: color-mix(in srgb, var(--f-x3) 30%, transparent);
+  box-shadow: inset 0 0 0 1px var(--f-k0), inset 0 0 0 2px var(--f-x4);
+}
+.fcombat .board__cell--target.board__cell--mend::before {
+  background-color: color-mix(in srgb, var(--f-m3) 30%, transparent);
+  box-shadow: inset 0 0 0 1px var(--f-k0), inset 0 0 0 2px var(--f-m4);
+}
+.fcombat .board__cell--target { cursor: pointer; }
+.fcombat .board__cell--aoe::before {
+  background-color: color-mix(in srgb, var(--f-x3) 46%, transparent);
+  box-shadow: inset 0 0 0 1px var(--f-k0), inset 0 0 0 2px var(--f-x5);
+}
+.fcombat .board__cell--aoe.board__cell--mend::before {
+  background-color: color-mix(in srgb, var(--f-m3) 46%, transparent);
+  box-shadow: inset 0 0 0 1px var(--f-k0), inset 0 0 0 2px var(--f-m5);
+}
+.fcombat .board__cell--hover.board__cell--reach::before,
+.fcombat .board__cell--hover.board__cell--target::before { box-shadow: inset 0 0 0 1px var(--f-k0), inset 0 0 0 2px var(--f-b5); }
+.fcombat .board__cell--drop::before { box-shadow: inset 0 0 0 1px var(--f-k0), inset 0 0 0 3px var(--f-o5); }
+/* the pinned tile wears the bracket cursor */
+.fcombat .board__cell--pinned::after {
+  inset: -5px; box-shadow: none; image-rendering: pixelated; z-index: 40;
+  border-style: solid; border-width: 14px; border-image: url('/art/ui/brackets.png') 14 stretch;
+}
+
+/* ── who stands on it ── */
+.fcombat .token { position: absolute; pointer-events: none; transition: left var(--t-move, 220ms) var(--ease-out, ease-out), top var(--t-move, 220ms) var(--ease-out, ease-out); }
+.fcombat .token > * { position: absolute; }
+.fcombat .token__base { left: 0; top: 0; }
+.fcombat .token__shadow { background: color-mix(in srgb, var(--f-k0) 40%, transparent); clip-path: ellipse(50% 50%); }
+.fcombat .token__sprite {
+  image-rendering: auto;
+  filter: drop-shadow(1px 0 0 var(--f-k0)) drop-shadow(-1px 0 0 var(--f-k0)) drop-shadow(0 1px 0 var(--f-k0)) drop-shadow(0 -1px 0 var(--f-k0));
+}
+.fcombat .token__hp { height: 5px; background: var(--f-k0); }
+.fcombat .token__hp > i { position: absolute; left: 1px; top: 1px; height: 3px; max-width: calc(100% - 2px); background: linear-gradient(var(--f-s5) 0 1px, var(--f-s3) 1px 3px); }
+.fcombat .token--enemy .token__hp > i { background: linear-gradient(var(--f-x5) 0 1px, var(--f-x3) 1px 3px); }
+.fcombat .token__acting { image-rendering: pixelated; }
+.fcombat .token__ring--target {
+  inset: -5px; image-rendering: pixelated;
+  border-style: solid; border-width: 14px; border-image: url('/art/ui/brackets.png') 14 stretch;
+}
+.fcombat .token__ordinal {
+  left: 50%; top: 1px; margin-left: 13px; width: 13px; height: 15px; text-align: center;
+  font-size: 12px; line-height: 14px; font-weight: 700; color: var(--f-b4); background: var(--f-x1);
+  box-shadow: inset 1px 1px 0 0 var(--f-x3), 0 0 0 1px var(--f-k0);
+}
+.fcombat .token__badge {
+  left: 50%; top: -40px; transform: translateX(-50%); padding: 1px 6px 2px; white-space: nowrap;
+  font-size: 13px; line-height: 16px; font-weight: 700; color: var(--f-o5); background: var(--f-w1);
+  box-shadow: inset 0 0 0 1px var(--f-o3), 0 0 0 1px var(--f-k0);
+}
+.fcombat .token__badge--muted { color: var(--f-b2); box-shadow: inset 0 0 0 1px var(--f-w4), 0 0 0 1px var(--f-k0); }
+.fcombat .token__hit { inset: 0; pointer-events: auto; cursor: pointer; }
+.fcombat .token--fallen .token__sprite { filter: grayscale(1) brightness(0.5); opacity: 0.6; }
+.fcombat .token--fallen .token__hit, .fcombat .token--captured .token__hit { pointer-events: none; }
+.fcombat .token__initials { left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: 700; color: var(--f-b2); opacity: 0.8; }
+.fcombat .token__initials > img { display: block; image-rendering: pixelated; }
+
+/* what just happened, over the tile it happened on */
+.fcombat .float {
+  position: absolute; transform: translate(-50%, -50%); z-index: 60; pointer-events: none; white-space: nowrap;
+  font-size: 20px; line-height: 22px; font-weight: 700; color: var(--f-b5);
+  text-shadow: 1px 0 0 var(--f-k0), -1px 0 0 var(--f-k0), 0 1px 0 var(--f-k0), 0 -1px 0 var(--f-k0), 1px 1px 0 var(--f-k0), -1px 1px 0 var(--f-k0), 1px -1px 0 var(--f-k0), -1px -1px 0 var(--f-k0), 0 2px 0 var(--f-k0);
+  animation: fcombat-float 700ms var(--ease-out, ease-out) both;
+}
+.fcombat .float--hit { color: var(--f-x5); font-size: 24px; }
+.fcombat .float--heal { color: var(--f-m5); }
+.fcombat .float--armor { color: var(--f-s5); }
+.fcombat .float--status { color: var(--f-o5); font-size: 16px; }
+.fcombat .float--miss { color: var(--f-b4); font-size: 16px; }
+/* no animation is not no information: with motion off the number is simply there (the one gate, styles/index.css) */
+[data-motion="off"] .fcombat .float { animation: none; }
+@media (prefers-reduced-motion: reduce) { .fcombat .float { animation: none; } }
+@keyframes fcombat-float { from { opacity: 0; margin-top: 8px; } 18% { opacity: 1; margin-top: 0; } to { opacity: 1; margin-top: -6px; } }
+
+/* ── the windows ── */
+.fcombat .fcol { position: absolute; display: flex; flex-direction: column; gap: 12px; }
+.f64 .fcol > .fcol__win { position: relative; left: auto; top: auto; flex: none; }
+.f64 .fcol > .fcol__win--fill { flex: 1; min-height: 0; overflow: hidden; }
+.f64 .fcol__win > .fw__body { padding: 12px 20px 16px; }
+.fcombat .fhud__line { display: flex; align-items: center; margin-top: 2px; }
+.f64 .frule.fhud__rule { position: relative; height: 7px; margin: 8px 0 8px; }
+.f64 .fgroove.fhud__groove { position: relative; margin: 6px 0 8px; }
+.fcombat .fhud__wrap { white-space: normal; }
+.fcombat .fhud__gap { margin-top: 8px; }
+.fcombat .fhud__why { white-space: normal; margin-top: 8px; }
+.fcombat .fhud__out { display: flex; gap: 12px; align-items: flex-start; margin: 8px 0 8px; }
+.fcombat .fhud__face { position: relative; flex: none; width: 72px; height: 72px; }
+.fcombat .fhud__gauge, .fcombat .fhud__gauge--theirs { position: relative; display: block; height: 9px; margin: 5px 0 6px; }
+.f64 .fhud__gauge--theirs .fbar > i, .f64 .fturn__bar--theirs .fbar > i { background: linear-gradient(var(--f-x5) 0 1px, var(--f-x4) 1px 3px, var(--f-x3) 3px 4px, var(--f-x2) 4px 100%); }
+.f64 .fhud__gauge--theirs .fbar > b { background-color: var(--f-x3); background-image: repeating-conic-gradient(var(--f-x5) 0 25%, transparent 0 50%); }
+.f64 .fturn__bar--down .fbar > i { background: var(--f-w4); }
+.fcombat .fhud__victims { margin-top: 8px; }
+.fcombat .fhud__verbs { display: flex; gap: 10px; margin-top: 12px; }
+.fcombat .chronicle__lines { display: flex; flex-direction: column; gap: 5px; }
+.fcombat .chronicle__line { white-space: normal; }
+
+/* who moves when */
+.f64 .fturn { position: absolute; }
+.f64 .fturn > * { position: absolute; }
+.f64 .fturn--acting { background: var(--f-w2); box-shadow: inset 0 1px 0 0 var(--f-w3), inset 0 -1px 0 0 var(--f-w0); }
+.f64 .fturn--down .fniche { filter: grayscale(1) brightness(0.55); }
+.f64 .fturn__side { width: 7px; height: 7px; }
+.f64 .fturn__side--ours { background: var(--f-s3); box-shadow: 0 0 0 1px var(--f-k0), inset 1px 1px 0 0 var(--f-s5); }
+.f64 .fturn__side--theirs { background: var(--f-x3); transform: rotate(45deg); box-shadow: 0 0 0 1px var(--f-k0), inset 1px 1px 0 0 var(--f-x5); }
+.f64 .fturn__side--inline { position: relative; display: inline-block; margin-right: 8px; vertical-align: 0; }
+.f64 .fturn__riders .rider { color: var(--f-o4); }
+
+/* who is acting */
+.f64 .fact__well { width: 106px; height: 170px; background: var(--f-w0); overflow: hidden; box-shadow: inset 1px 1px 0 0 var(--f-k0), inset -1px -1px 0 0 var(--f-w3); }
+.f64 .fact__fig { position: absolute; left: 1px; bottom: 6px; image-rendering: auto; }
+.f64 .fitem { padding: 0; }
+.f64 .fitems { position: absolute; }
+.f64 .fitems > * { position: absolute; }
+
+/* the commands */
+.f64 .fcmd.arm > .cmd { color: var(--f-o5); }
+.f64 .fcmd--small { position: absolute; padding: 0; cursor: pointer; }
+.f64 .fcmd--small:focus-visible, .f64 .fcmd:focus-visible { outline: 1px solid var(--f-o5); outline-offset: 3px; }
+
+/* ── the hand ── */
+.fcombat .hand { position: absolute; }
+.f64 .hand > .card { position: absolute; padding: 0; text-align: left; transition: top 120ms var(--ease-out, ease-out); }
+.f64 .hand > .card > * { position: absolute; }
+.f64 .hand > .card--short { filter: brightness(0.62) saturate(0.6); }
+.f64 .hand > .card--held { z-index: 3; }
+.f64 .hand > .card.foc-ring { outline: 1px solid var(--f-o5); outline-offset: 3px; }
+.f64 .card-well { position: absolute; background: var(--f-w0); box-shadow: inset 1px 1px 0 0 var(--f-k0), inset -1px -1px 0 0 var(--f-w2), 0 0 0 1px var(--f-k0); }
+.f64 .hand__waiting { position: absolute; left: 0; right: 0; top: 96px; text-align: center; }
+.fcombat .drag-ghost { position: absolute; transform: translate(-50%, -140%); z-index: 80; pointer-events: none; }
+
+/* under the Field Report the field is a plate: nothing round it but the table */
+.fcombat--report { background: none; }
