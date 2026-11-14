@@ -107,13 +107,18 @@ async function uploadImage(path: string): Promise<string> {
   return j.subfolder ? `${j.subfolder}/${j.name}` : j.name
 }
 
-async function generate(id: string, prompt: string, seed: number, kind?: string): Promise<boolean> {
+// view: replaces the character framing 'front view, looking at viewer' (e.g. a pose turned to one side);
+// negative: appended to the template's negative (e.g. keep a male character from reading as a woman).
+async function generate(id: string, prompt: string, seed: number, kind?: string, view?: string, negative?: string): Promise<boolean> {
   const graph = JSON.parse(readFileSync(TEMPLATE, 'utf8')) as Graph
   const pos = graph['4'], ks = graph['3'], save = graph['13']
   if (!pos || !ks) { console.error('template missing node 4 (prompt) or 3 (sampler)'); return false }
   const cutout = !!(kind && CUTOUT_KINDS.has(kind))
-  pos.inputs['text'] = preamble(kind) + prompt + (cutout ? WHITE_BG_SUFFIX : '')
+  const pre = view ? preamble(kind).replace('front view, looking at viewer', view) : preamble(kind)
+  pos.inputs['text'] = pre + prompt + (cutout ? WHITE_BG_SUFFIX : '')
   ks.inputs['seed'] = seed
+  const neg0 = graph['5']
+  if (negative && neg0) neg0.inputs['text'] = `${String(neg0.inputs['text'] ?? '')}, ${negative}`
   if (kind && SCENE_KINDS.has(kind)) {
     // terrain/road/backdrop: strip the background-removal tail (it would erase the
     // ground as "background") and save the decoded image (node 6, with bg) directly.
@@ -235,7 +240,7 @@ async function main(): Promise<void> {
     const path = isAbsolute(batch) ? batch : join(process.cwd(), batch)
     // A directory of per-character files (each {id, prompt, status?}) OR a single
     // JSON array. Approved characters are skipped so we don't re-burn GPU on them.
-    let entries: Array<{ id: string; prompt: string; seed?: number; status?: string; kind?: string }>
+    let entries: Array<{ id: string; prompt: string; seed?: number; status?: string; kind?: string; view?: string; negative?: string }>
     if (statSync(path).isDirectory()) {
       entries = readdirSync(path).filter((f) => f.endsWith('.json')).sort()
         .map((f) => JSON.parse(readFileSync(join(path, f), 'utf8')) as { id: string; prompt: string; seed?: number; status?: string; kind?: string })
@@ -246,7 +251,7 @@ async function main(): Promise<void> {
     console.log(`batch: ${entries.length} sprites via ${COMFY}`)
     await freeVram()
     let ok = 0
-    for (const e of entries) if (await generate(e.id, e.prompt, e.seed ?? seedFrom(e.id + '|' + e.prompt), e.kind)) ok++
+    for (const e of entries) if (await generate(e.id, e.prompt, e.seed ?? seedFrom(e.id + '|' + e.prompt), e.kind, e.view, e.negative)) ok++
     console.log(`\ndone: ${ok}/${entries.length} generated -> public/sprites/lab/ (refresh sprite-lab)`)
     return
   }

@@ -1,0 +1,11 @@
+[
+  {"id": "daren_c_1", "seed": 633000101,
+   "negative": "1girl, female, woman, feminine, long hair, ponytail, makeup, lipstick, topless, shirtless, bare chest, bare shoulders, abs, navel",
+   "prompt": "1boy, male focus, solo, young man in his early twenties, masculine face, defined jaw, light stubble, short messy dark hair, lean build, fully clothed, worn padded gambeson under a light leather jerkin, leather bracers, belt with pouches, short sword in hand, conflicted desperate expression, looks like a hardened bounty hunter's younger brother, dark fantasy"},
+  {"id": "daren_c_2", "seed": 633000202,
+   "negative": "1girl, female, woman, feminine, long hair, ponytail, makeup, lipstick, topless, shirtless, bare chest, bare shoulders, abs, navel",
+   "prompt": "1boy, male focus, solo, young man in his early twenties, masculine face, defined jaw, light stubble, short messy dark hair, lean build, fully clothed, worn padded gambeson under a light leather jerkin, leather bracers, belt with pouches, short sword in hand, conflicted desperate expression, looks like a hardened bounty hunter's younger brother, dark fantasy"},
+  {"id": "daren_c_3", "seed": 633000303,
+   "negative": "1girl, female, woman, feminine, long hair, ponytail, makeup, lipstick, topless, shirtless, bare chest, bare shoulders, abs, navel",
+   "prompt": "1boy, male focus, solo, young man in his early twenties, masculine face, defined jaw, light stubble, short messy dark hair, lean build, fully clothed, worn padded gambeson under a light leather jerkin, leather bracers, belt with pouches, short sword in hand, conflicted desperate expression, looks like a hardened bounty hunter's younger brother, dark fantasy"}
+]
