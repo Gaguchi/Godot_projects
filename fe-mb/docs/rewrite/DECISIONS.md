@@ -72,3 +72,18 @@ The canvas is https://claude.ai/artifact/79397vba2Fwp6Wti5a6DLj (private). A sep
 |---|---|---|
 | How does danger scale on the bigger map? | **Double the tier bands: 4 / 10 hops** (today 2 / 5). | With 191 places, today's bands would make 119 of them tier 3, nearly all of Thornwood included. With 4 / 10, the Borderlands are tier 1-2, Thornwood mostly tier 2 and deep Ashfall tier 3, which is today's shape. Food stays at 1 per hop and the encounter rates are unchanged. A town goes on the Ashfall road around hop 10-12 so the company can restock. |
 | Does the throne road pass through Thornwood? | **Yes: the Borderlands, then Thornwood, then Ashfall.** | As first drawn, the shortest route ran 5 Borderlands hops and then 13 in Ashfall, 18 in all. The numbers are in `tools/pxworld/wip/px-big-b/NOTES.md`. |
+
+## Owner-answered, 2026-11-14 (build it: a vertical slice)
+
+| question | OWNER'S ANSWER | context |
+|---|---|---|
+| Does the proposal get built? | **Yes: "i want at least a vertical slice".** The slice goes into `game/` in two stages: the map first (the big country, playable), then the town as one job per screen (the square, the inn, the market, the tavern, a talk). Combat, camp, the dungeon and the pop-ups keep the Field Ledger look until their own pass. | Until this answer `game/` was read-only for the design work; the boards were a proposal. |
+
+Calls made while building stage 1, not yet confirmed by the owner:
+
+- **The engine runs the whole big country** (195 places, 268 roads, tier bands 4 / 10), written by `tools/pxworld/src/px-big-b/export_game.py`. It replaces the 47-place sheet; every place the game had keeps its id, type, event, lock and board.
+- **Only the Borderlands are drawn.** Thornwood and Ashfall are in the data with no art yet, so the map letters them on a dark "unsurveyed" ground with dotted roads. Drawing them is its own job.
+- **The 8 new towns and 3 new dungeons are copies** of a town or dungeon of their region, with new names. They have no quests of their own yet.
+- **The 25 new landmark places have no event yet.** The engine treats each as a plain stop. The content test counts them as a standing debt.
+- **Two palettes for now.** `styles/index.css` is the Field Ledger's; `styles/filigree-kit.css` is Filigree's, generated from the kit in `tools/pxworld`. Screens move over one at a time.
+

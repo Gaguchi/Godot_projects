@@ -5,6 +5,7 @@
  * displaced item would not fit); a two-handed item takes the left and locks the right. Esc closes.
  */
 import React, { useCallback, useEffect, useState } from 'react'
+import '../../styles/overworld.css' // the roster's portrait frame (`ow-face__frame`) still lives in the old map's sheet
 import { spriteIdFor } from '../../content/index'
 import { buildDeck } from '../../engine/combat/deck'
 import { isGear, itemDef } from '../../engine/run/bag'

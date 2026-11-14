@@ -1,414 +1,359 @@
 /**
- * ui/overworld/OverworldScreen.tsx — the map (ARCHITECTURE §4, BRIEF §2.9): the ledger band across the top (day,
- * company, faces with HP, gold, food, the open quest), the one open sheet below it under a camera that follows
- * the company unless the player has dragged it (`ui.mapPan`; `travel/goTo` resets it). Hovering a node draws the
- * path in wet ink and quotes the cost — hops · food · starvation — before the click; clicking dispatches
- * `travel/goTo` (a refused click shows its reason as a toast). Clicking the node the company is ALREADY on
- * re-enters it — no hop, no food, no day (BRIEF §2.9) — which is the only way back into a town the player said
- * "Stay" at. A camera pan that begins and ends over a node is a pan, never a click. The pawn walks hop by hop as
- * `run.nodeId` lands; the quick menu is a parchment card seated over the sheet at the node the company stands on.
+ * ui/overworld/OverworldScreen.tsx — the map (ARCHITECTURE §4, BRIEF §2.9), in Filigree over the 1x pixel country
+ * (owner 2026-10-24 and 2026-10-25: the big country, camp at the hub, roads out in every direction).
  *
- * THE FRAME SAYS IT IS A FRAME. The sheet is 3060×850 behind a 1280×600 window, and the window used to end in a
- * hard vertical cut: "Cursed Clearing" printed as a bare "CUR", and nothing anywhere said the map could be moved
- * (RE-GATE C 3.20). Two things answer it, both properties of the FRAME rather than of one camera position — the
- * paper falls into shadow on every side that has more country behind it (`ow-edge`), and a name the window would
- * cut is not lettered at all, because §5.1's rule is that a name fits or it is a bug. A three-letter stump of a
- * place-name is neither a name nor a hint that there is more map; the shadow is the hint, and `ow-hint` says the
- * gesture in words for as long as the player has not yet used it.
+ * THE WORLD IS THE SCREEN. The drawn heartland fills the stage and the camera follows the company; three windows
+ * sit on it and nothing else does: the region (the day, the road's odds, the whole country in small, the purse and
+ * the food), the commands, and the company. The only actionable things on the map at rest are the roads out of the
+ * place the company stands on: bone beads along each, the names of where they lead on plates. Pointing at a place
+ * turns its road to brass, brackets it and pins its forecast beside it (days, food, the road's odds) BEFORE the
+ * click that spends them; clicking dispatches `travel/goTo`. Clicking the place the company is on re-enters it —
+ * no hop, no food, no day (BRIEF §2.9).
+ *
+ * WHAT IS DRAWN AND WHAT IS NOT. `sheetArt` says where the art sits. The heartland (the Borderlands) is pixel art;
+ * the country beyond it is in the engine and not yet drawn, so the map letters those places on the unsurveyed dark
+ * and joins them with dotted lines. It is a real part of the run, shown plainly as not surveyed.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import '../../styles/overworld.css'
 import { spriteIdFor } from '../../content/index'
 import type { Action } from '../../engine/actions'
 import { overlayOf } from '../../engine/flow/pump'
-import { foodCount } from '../../engine/run/bag'
+import { foodCount, itemDef } from '../../engine/run/bag'
 import { DESCENT_IS_ONE_WAY } from '../../engine/run/dungeon'
+import { rollChanceFor } from '../../engine/run/encounters'
 import { throneWarning } from '../../engine/run/travel'
-import { adjacency, edgeKey, findPath, isNodeLocked, previewPath, refKey, visibleNodes } from '../../engine/run/overworld'
+import { adjacency, edgeKey, edgeOf, findPath, isNodeLocked, previewPath, regionOf, typeLabel, visibleNodes } from '../../engine/run/overworld'
 import { displayName, livingUnits } from '../../engine/run/party'
-import { scoutedRoads, sightingFor, type Sighting } from '../../engine/run/scout'
 import { questStatus } from '../../engine/run/quests'
-import type { EngineEnv, GameState, OverworldNode } from '../../engine/types'
-import { Button } from '../components/Button'
-import { Icon } from '../components/Icon'
-import { companyName, initialsOf, mcName } from '../names'
-import { useTip } from '../components/Tooltip'
-import { BAND_TOP, STAGE_H, STAGE_W } from '../stage'
+import { scoutedRoads, sightingFor, type Sighting } from '../../engine/run/scout'
+import type { EngineEnv, GameState, OverworldNode, RunState } from '../../engine/types'
+import { FBtn, FCmd, FIcon, Key, Niche, Win } from '../filigree/kit'
+import { className, companyName } from '../names'
+import { STAGE_H, STAGE_W } from '../stage'
 import { canDispatch, dispatch, shallow, useEnv, useGame, useLegal } from '../store'
 import { HOP_DELAY_MS, motionEnabled } from '../timings'
-import { planLabels, planRects, type LabelMark, type Rect } from './labels'
-import { NodeMark, typeLabel, type NodeVisual } from './NodeMark'
-import { regionPalette } from './palette'
-import { Roads } from './Roads'
-import { hashEdge } from './roadInk'
-import { Sheet, regionWashes } from './Sheet'
+import { art, beadSeats, companyBox, overlaps, roadGaps, roadLine, standPoint, toOverview, type Box, type Pt } from './sheetArt'
 
 const VIEW_W = STAGE_W
-const VIEW_H = STAGE_H - BAND_TOP
-
-/**
- * The seat of the first-time pan hint (`.ow-hint`), in VIEWPORT pixels — kept here because the cartographer's
- * plan is a property of the sheet and cannot know about a line of chrome pinned to the frame. Any name the hint
- * would sit on is not lettered while it is up, by the same rule that hides a name the frame's edge would slice.
- */
-const HINT_SEAT = { x: VIEW_W - 366, y: VIEW_H - 100, w: 348, h: 44 } as const
-
-/**
- * How wide a place-name will actually be lettered, in sheet pixels. The cartographer (`./labels.ts`) is pure and
- * takes this as an argument; here it is a real text metric from the same face and size the sheet prints, so the
- * plan is made against the name the player will read, not an estimate of it. The measurement is cached, and
- * discarded once the webfont has landed (before that Cinzel's metrics are Georgia's).
- */
-const DISPLAY_FACE = '"Cinzel", "Trajan Pro", "Georgia", serif'
-const widths = new Map<string, number>()
-let pen: CanvasRenderingContext2D | null | undefined
-
-/** `size` px of the display face, plus CSS `letter-spacing` (which rides after every letter, the last one too). */
-function textWidth(text: string, size: number, trackingEm: number, perCharFallback: number): number {
-  const key = `${size}|${trackingEm}|${text}`
-  const hit = widths.get(key)
-  if (hit !== undefined) return hit
-  if (pen === undefined) pen = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')
-  let w = text.length * perCharFallback
-  if (pen !== null && pen !== undefined) {
-    pen.font = `${size}px ${DISPLAY_FACE}`
-    w = pen.measureText(text).width
-  }
-  w += text.length * size * trackingEm
-  widths.set(key, w)
-  return w
-}
-const measureLabel = (name: string): number => textWidth(name, 11, 0.05, 6.3)
-/** The sheet also letters its region names at 30px; a place-name must not be printed across one. */
-const measureRegion = (name: string): number => textWidth(name.toUpperCase(), 30, 0.3, 21)
-
-/** Discard the measurements taken before the webfont landed — until then Cinzel measures as Georgia. */
-function onFontsReady(cb: () => void): void {
-  const fonts = (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts
-  if (fonts === undefined) return
-  void fonts.ready.then(() => { widths.clear(); cb() })
-}
+const VIEW_H = STAGE_H
+const COUNT = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'] as const
+const EASE = 'cubic-bezier(0.25, 1, 0.5, 1)'
+const days = (n: number): string => `${n} ${n === 1 ? 'day' : 'days'}`
 
 interface MapView {
   readonly nodeId: string
   readonly status: 'idle' | 'walking' | 'suspended' | 'atNode'
   readonly hop: { readonly from: string; readonly to: string } | null
   readonly pathLeft: readonly string[]
-  readonly visited: Readonly<Record<string, true>>
   readonly spawned: Readonly<Record<string, true>>
   readonly unlocked: Readonly<Record<string, true>>
   readonly pan: { readonly x: number; readonly y: number } | null
   readonly menuOpen: boolean
-  readonly mcSprite: string | null
-  readonly mcName: string
 }
 
-const selectMap = (env: EngineEnv) => (s: GameState): MapView | null => {
+const selectMap = (s: GameState): MapView | null => {
   const run = s.run
   if (run === null) return null
   const t = run.pendingTravel
-  const mc = run.party['mc']
   return {
     nodeId: run.nodeId,
     status: t?.status ?? 'idle',
     hop: t?.hop === null || t?.hop === undefined ? null : { from: t.hop.from, to: t.hop.to },
     pathLeft: t?.path ?? [],
-    visited: run.visitedNodes,
     spawned: run.spawnedNodes,
     unlocked: run.unlockedNodes,
     pan: s.ui.mapPan,
     menuOpen: overlayOf(s)?.kind === 'quickMenu',
-    mcSprite: mc === undefined ? null : spriteIdFor(mc.id, mc.classId),
-    mcName: mc === undefined ? mcName(run.mcName, env) : displayName(mc, run),
   }
 }
 
-function clampCamera(x: number, y: number, sheetW: number, sheetH: number): { readonly x: number; readonly y: number } {
-  return { x: Math.max(0, Math.min(sheetW - VIEW_W, x)), y: Math.max(0, Math.min(sheetH - VIEW_H, y)) }
+function clampCamera(x: number, y: number, sheetW: number, sheetH: number): Pt {
+  return { x: Math.round(Math.max(0, Math.min(sheetW - VIEW_W, x))), y: Math.round(Math.max(0, Math.min(sheetH - VIEW_H, y))) }
 }
 
-/** Camera origin (sheet px at the viewport's top-left): follow the company, or the player's drag. */
-function cameraFor(node: OverworldNode, pan: MapView['pan'], sheetW: number, sheetH: number): { readonly x: number; readonly y: number } {
-  if (pan !== null) return clampCamera(pan.x, pan.y, sheetW, sheetH)
-  return clampCamera(node.position.x - VIEW_W / 2, node.position.y - VIEW_H * 0.48, sheetW, sheetH)
+/** The odds the road from `from` to `to` rolls an encounter today: the engine's own number, never a copy of it. */
+function hopChance(run: RunState, from: string, to: string, env: EngineEnv): number {
+  const dest = env.content.overworld.nodes.find((n) => n.id === to)
+  const noRoll: readonly string[] = env.rules.travel.noRollInto
+  if (dest === undefined || noRoll.includes(dest.type)) return 0
+  const edge = edgeOf(from, to, env)
+  if (edge === null) return 0
+  const region = env.content.regions[env.content.encounterTables[edge.encounterTableId]?.regionId ?? ''] ?? regionOf(from, env)
+  return rollChanceFor(edge, region, run.edgeTraversals[edgeKey(from, to)] ?? null, run.daysElapsed, env)
 }
+const odds = (chance: number): string => (Number.isInteger(Math.round(chance * 100) / 10) ? `${Math.round(chance * 10)} in 10` : `${Math.round(chance * 100)} in 100`)
 
-function Verb({ action, label, variant = 'secondary', testId, lockedSigil = false }: { readonly action: Action; readonly label: string; readonly variant?: 'primary' | 'secondary' | 'ghost'; readonly testId?: string; readonly lockedSigil?: boolean }): React.JSX.Element {
+function Verb({ action, label, variant = 'secondary', testId, lockedSigil = false }: { readonly action: Action; readonly label: string; readonly variant?: 'primary' | 'secondary'; readonly testId?: string; readonly lockedSigil?: boolean }): React.JSX.Element {
   const legal = useLegal(action)
   return (
-    <Button variant={variant} disabledReason={legal.ok ? null : legal.reason} onPress={() => dispatch(action)} {...(testId !== undefined ? { testId } : {})} style={{ fontSize: '0.78rem', padding: '0.45rem 1rem' }}>
-      {lockedSigil && !legal.ok && <><Icon name="lock" size={13} /> </>}{label}
-    </Button>
+    <FBtn variant={variant} disabledReason={legal.ok ? null : legal.reason} onPress={() => dispatch(action)} {...(testId !== undefined ? { testId } : {})}>
+      {/* a sealed door is never carried by the label or the colour alone: the padlock is the second channel (UIS-03) */}
+      {lockedSigil && !legal.ok && <FIcon name="padlock" w={16} h={16} style={{ margin: '-3px 6px 0 0' }} />}{label}
+    </FBtn>
   )
 }
 
-/**
- * Where the node card is SEATED: at the place it names.
- *
- * It used to open pinned to the bottom centre of the stage whatever the player had clicked — measured at 562px
- * from the mark it was about, with three quarters of the map between the place and the panel naming it (RE-GATE C
- * 3.11). Now it hangs off the mark like a cartographer's note, with a notch pointing back at it: under the mark
- * when the mark is in the upper half of the viewport, over it (clear of the company token, which stands 80px
- * above the disc) when it is in the lower half. It is clamped so the whole card stays on the stage — the notch
- * carries the offset, so the card still points at the mark when the clamp has moved it.
- */
-const CARD_HALF = 280
-const CARD_ROOM = 210
-
-export interface CardSeat {
-  readonly style: React.CSSProperties
-  readonly side: 'below' | 'above'
-}
-
-export function seatCard(node: { readonly x: number; readonly y: number }, camera: { readonly x: number; readonly y: number }, view = { w: VIEW_W, h: VIEW_H }): CardSeat {
-  const cx = node.x - camera.x
-  const cy = node.y - camera.y
-  const left = Math.max(CARD_HALF + 10, Math.min(view.w - CARD_HALF - 10, cx))
-  // the notch never leaves the card: 150 is a little inside half the 340px minimum width
-  const tail = { ['--tail-dx' as string]: `${Math.max(-150, Math.min(150, Math.round(cx - left)))}px` }
-  return cy < view.h * 0.5
-    ? { side: 'below', style: { left, top: Math.max(10, Math.min(view.h - CARD_ROOM, cy + 48)), ...tail } }
-    : { side: 'above', style: { left, bottom: Math.max(10, Math.min(view.h - CARD_ROOM, view.h - (cy - 88))), ...tail } }
-}
-
-/** The parchment card that opens when the company stands at a node with choices (overlay `quickMenu`). */
-function NodeCard({ node, hopsLeft, seat }: { readonly node: OverworldNode; readonly hopsLeft: number; readonly seat: CardSeat }): React.JSX.Element {
+/** The window that opens when the company stands at a place with choices (overlay `quickMenu`), seated at the place. */
+function NodeCard({ node, hopsLeft, at }: { readonly node: OverworldNode; readonly hopsLeft: number; readonly at: Box }): React.JSX.Element {
   const env = useEnv()
   const region = env.content.regions[node.regionId]
   const throne = useGame(useCallback((s: GameState) => (s.run === null ? null : throneWarning(s.run, env)), [env]))
+  const w = Math.max(380, Math.min(560, node.name.length * 21 + 60))
+  // seated at the place it names (RE-GATE C 3.11): under its buildings in the upper half of the stage, over them in the lower
+  const below = (at[1] + at[3]) / 2 < VIEW_H * 0.5
+  const x = Math.round(Math.max(14, Math.min(VIEW_W - w - 16, (at[0] + at[2]) / 2 - w / 2)))
+  const seat: React.CSSProperties = below ? { top: Math.round(Math.min(VIEW_H - 230, at[3] + 10)) } : { bottom: Math.round(Math.max(16, VIEW_H - (at[1] - 10))) }
   return (
-    <div className={`ow-card ow-card--${seat.side}`} style={seat.style} data-testid="node-card" role="dialog" aria-label={node.name}>
-      <div className="ow-card__eyebrow">{region?.name ?? node.regionId} · {typeLabel(node.type)}</div>
-      <div className="ow-card__title voice-display">{node.name}</div>
-      {node.type === 'DUNGEON' && <p className="ow-card__warning" data-testid="dungeon-warning">{DESCENT_IS_ONE_WAY}</p>}
-      {/* The last door gets the same treatment as the descent's mouth: who waits, and what is behind it — read
-          BEFORE the verb, not after it (RE-GATE C 3.14). The sentence is derived from the node's own content. */}
-      {throne !== null && <p className="ow-card__warning" data-testid="throne-warning">{throne}</p>}
-      <div className="ow-card__verbs">
+    <Win x={x} y={0} w={w} className="fmap-menu" style={{ top: 'auto', ...seat }} testId="node-card" role="dialog" label={node.name}>
+      <div className="s13 dim nowrap">{region?.name ?? node.regionId} · {typeLabel(node.type)}</div>
+      <div className="tt" style={node.name.length > 18 ? { fontSize: 34, lineHeight: '38px' } : undefined}>{node.name}</div>
+      {node.type === 'DUNGEON' && <p className="s14 rust fmap-menu__warn" data-testid="dungeon-warning">{DESCENT_IS_ONE_WAY}</p>}
+      {/* the last door says who waits behind it BEFORE the verb (RE-GATE C 3.14): the sentence is the node's own */}
+      {throne !== null && <p className="s14 rust fmap-menu__warn" data-testid="throne-warning">{throne}</p>}
+      <div className="fmap-menu__verbs">
         {node.type === 'TOWN' && <Verb action={{ type: 'town/enter' }} label="Enter town" variant="primary" testId="menu-town" />}
         {node.type === 'CAMP' && <Verb action={{ type: 'camp/enter' }} label="Make camp" variant="primary" testId="menu-camp" />}
-        {/* Sealed / cleared is NOT carried by the label: `isLegal` runs `canEnterDungeon` (0036), so the verb stays
-            "Enter" and the refusal's own sentence ("... is sealed", "... is cleared") is the tooltip, under a lock. */}
         {node.type === 'DUNGEON' && <Verb action={{ type: 'dungeon/enter' }} label="Enter" variant="primary" testId="menu-dungeon" lockedSigil />}
         {node.type === 'BOSS' && <Verb action={{ type: 'travel/challengeBoss' }} label="Challenge the throne" variant="primary" testId="menu-boss" />}
         {hopsLeft > 0 && <Verb action={{ type: 'travel/continue' }} label={`Press on · ${hopsLeft} ${hopsLeft === 1 ? 'hop' : 'hops'} left`} variant={node.type === 'TRAIL' || node.type === 'DISCOVERY' ? 'primary' : 'secondary'} testId="menu-continue" />}
-        <Verb action={{ type: 'travel/stay' }} label={hopsLeft > 0 ? 'Halt here' : 'Stay'} variant="ghost" testId="menu-stay" />
+        <Verb action={{ type: 'travel/stay' }} label={hopsLeft > 0 ? 'Halt here' : 'Stay'} testId="menu-stay" />
       </div>
-    </div>
+    </Win>
   )
 }
 
-interface BandView {
+/** The three windows' boxes on the stage (the company's grows with the roster): a plate never opens under one. */
+const companyH = (n: number): number => 58 + n * 52
+const hudRects = (party: number): readonly Box[] => [[14, 14, 488, 192], [982, 14, 1268, 138], [14, VIEW_H - 10 - companyH(party), 408, VIEW_H - 8]]
+
+/**
+ * Where a place's plate sits. The name boxes are laid out once for the whole heartland, so a box can fall under a
+ * window, off the frame, or on the company at this camera; then the plate moves beside its own sprite instead, on
+ * the first side that is clear. A name the frame would cut is a bug (BRIEF §5.1), and a plate is the one name that
+ * must be read. `taken` is in stage px: the windows, the company, and the plates already seated.
+ */
+function seatPlate(x: number, y: number, w: number, h: number, foot: Box | undefined, camera: Pt, taken: readonly Box[]): readonly [number, number] | null {
+  const fits = (px: number, py: number): boolean => {
+    const v: Box = [px - camera.x, py - camera.y, px - camera.x + w, py - camera.y + h]
+    return v[0] >= 4 && v[2] <= VIEW_W - 4 && v[1] >= 4 && v[3] <= VIEW_H - 4 && !taken.some((r) => overlaps(v, r))
+  }
+  if (fits(x, y)) return [x, y]
+  if (foot === undefined) return null
+  const cx = (foot[0] + foot[2]) / 2
+  const cy = (foot[1] + foot[3]) / 2
+  const seats: readonly (readonly [number, number])[] = [
+    [cx - w / 2, foot[3] + 4], [cx - w / 2, foot[1] - 4 - h], [foot[0] - 6 - w, cy - h / 2], [foot[2] + 6, cy - h / 2],
+    [foot[2] - 10, foot[3] + 2], [foot[0] + 10 - w, foot[3] + 2], [foot[2] - 10, foot[1] - 2 - h], [foot[0] + 10 - w, foot[1] - 2 - h],
+  ]
+  for (const [px, py] of seats) if (fits(px, py)) return [Math.round(px), Math.round(py)]
+  return null // no seat on the stage at this camera: the place is not lettered rather than lettered in half
+}
+
+// ------------------------------------------------------------------ the three windows
+/** Board face crops at stage scale (tools/pxworld `assets/up/face_*`): the head's seat in the niche, per sprite. */
+const FACE: Readonly<Record<string, readonly [number, number]>> = { roy: [28, 14], marcus: [26, 10], lilina: [27, 20], bandit: [22, 8], ember_mage: [22, 8], warlord: [22, 8] }
+
+function faceOf(sprite: string | null): { readonly src: string | null; readonly dx: number; readonly dy: number; readonly imgW: number } {
+  if (sprite === null) return { src: null, dx: 0, dy: 0, imgW: 0 }
+  const seat = FACE[sprite]
+  if (seat !== undefined) return { src: `/sprites/faces/${sprite}.png`, dx: seat[0], dy: seat[1], imgW: 96 }
+  // no crop yet: the full art at a third, seated on the head
+  return { src: `/sprites/units/${sprite}.png`, dx: 116, dy: 40, imgW: 277 }
+}
+
+interface HudView {
   readonly day: number
-  readonly company: string
   readonly gold: number
   readonly food: number
-  readonly faces: readonly { readonly id: string; readonly name: string; readonly sprite: string | null; readonly hp: number; readonly max: number }[]
-  readonly quest: string | null
-  /** Hops still to walk, while the company is on the road; null when it is standing somewhere. */
+  readonly potion: string | null
+  readonly quests: number
+  readonly company: string
   readonly road: number | null
+  readonly faces: readonly { readonly id: string; readonly name: string; readonly sprite: string | null; readonly hp: number; readonly max: number; readonly role: string }[]
 }
 
-/** One portrait in the band. The name is under it in full; the tip carries the HP the bar can only approximate. */
-function Face({ face }: { readonly face: BandView['faces'][number] }): React.JSX.Element {
-  const ratio = face.max <= 0 ? 0 : face.hp / face.max
-  const tier = ratio <= 0.25 ? 'var(--hp-crit)' : ratio <= 0.5 ? 'var(--hp-warn)' : 'var(--hp-ok)'
-  const { tipRef, tipProps, tip } = useTip(`${face.name} · ${face.hp}/${face.max}`, false)
+function Pips({ on }: { readonly on: number }): React.JSX.Element {
+  const total = Math.max(8, Math.ceil(on / 4) * 4)
   return (
     <>
-      <div ref={tipRef} className="ow-face" {...tipProps}>
-        <div className="ow-face__frame">{face.sprite !== null ? <img src={`/sprites/units/${face.sprite}.png`} alt="" draggable={false} /> : initialsOf(face.name)}</div>
-        <div className="ow-face__hp"><i style={{ width: `${Math.round(ratio * 100)}%`, background: tier }} /></div>
-        <div className="ow-face__name">{face.name}</div>
-      </div>
-      {tip}
+      {Array.from({ length: total }, (_, i) => <i key={i} className={`fpip${i < on ? '' : ' fpip--off'}${i % 4 === 3 && i !== total - 1 ? ' fpip--gap' : ''}`} />)}
     </>
   )
 }
 
-/** The active contract, one line. It is a title, not player prose, so it may clip — with the full name on the glass. */
-function Quest({ name }: { readonly name: string }): React.JSX.Element {
-  const { tipRef, tipProps, tip } = useTip(name, false)
-  return (
-    <>
-      <div ref={tipRef} className="ow-band__quest" {...tipProps}><Icon name="bullet" size={10} filled /> {name}</div>
-      {tip}
-    </>
-  )
-}
-
-/** Supplies. The number is the reading; the cost of the next hop is the tip. */
-function FoodStat({ food, low, note }: { readonly food: number; readonly low: boolean; readonly note: string }): React.JSX.Element {
-  const { tipRef, tipProps, tip } = useTip(note, false)
-  return (
-    <>
-      <div ref={tipRef} className="ow-band__stat" {...tipProps}>
-        <span className="ow-band__eyebrow">Food</span>
-        <span className={`numeral ow-band__num${low ? ' ow-band__num--low' : ''}`} aria-label={note} data-testid="band-food">
-          {low && <Icon name="food" size={13} />}{food}
-        </span>
-      </div>
-      {tip}
-    </>
-  )
-}
-
-function Band(): React.JSX.Element {
+function Hud({ regionName, chance, camera, company }: { readonly regionName: string; readonly chance: number; readonly camera: Pt; readonly company: Pt }): React.JSX.Element | null {
   const env = useEnv()
-  const select = useCallback((s: GameState): BandView | null => {
+  const select = useCallback((s: GameState): HudView | null => {
     const run = s.run
     if (run === null) return null
-    const quest = Object.keys(run.questStates).map((id) => ({ id, def: env.content.quests[id] })).find((q) => q.def !== undefined && questStatus(run, q.id) === 'active')
     const t = run.pendingTravel
+    const potions = new Map<string, number>()
+    for (const e of run.bag) {
+      const def = itemDef(e.itemId, env)
+      if (def.kind === 'potion') potions.set(def.name, (potions.get(def.name) ?? 0) + 1)
+    }
+    const first = [...potions.entries()][0]
     return {
       day: run.daysElapsed,
       company: companyName(run.companyName),
       gold: run.gold,
       food: foodCount(run.bag, env),
-      faces: livingUnits(run).map((u) => ({ id: u.id, name: displayName(u, run), sprite: spriteIdFor(u.id, u.classId), hp: u.hp.current, max: u.hp.max })),
-      quest: quest?.def?.name ?? null,
+      potion: first === undefined ? null : `${first[0]} ×${first[1]}`,
+      quests: Object.keys(run.questStates).filter((id) => env.content.quests[id] !== undefined && questStatus(run, id) === 'active').length,
       // `path` still holds the leg in flight (travelStep only shifts on LAND), so it IS the count of hops to go.
       road: t !== null && (t.status === 'walking' || t.status === 'suspended') ? t.path.length : null,
+      faces: livingUnits(run).map((u) => ({
+        id: u.id, name: displayName(u, run), sprite: spriteIdFor(u.id, u.classId), hp: u.hp.current, max: u.hp.max,
+        role: [className(u.classId, env), [u.handLeft, u.handRight].filter((i): i is NonNullable<typeof i> => i !== null).map((i) => itemDef(i, env).name).join(', ')].filter((p) => p !== '').join(' · '),
+      })),
     }
   }, [env])
-  const view = useGame(select, (a, b) => JSON.stringify(a) === JSON.stringify(b))
-  if (view === null) return <div className="ow-band" />
-  // Colour is never the sole channel (BRIEF §5 rule 4): low supplies also get a sigil and say the cost out loud.
-  const lowFood = view.food <= env.rules.travel.lowFoodWarnAt
-  const foodNote = view.food === 0
-    ? `no rations — the next hop costs every unit ${env.rules.travel.starvationDamage} HP`
-    : lowFood ? `${view.food} ${view.food === 1 ? 'ration' : 'rations'} left — ${env.rules.travel.foodPerHop} a hop` : `${view.food} rations`
+  const v = useGame(select, (a, b) => JSON.stringify(a) === JSON.stringify(b))
+  if (v === null) return null
+  const lowFood = v.food <= env.rules.travel.lowFoodWarnAt
+  const foodNote = v.food === 0 ? `no rations: the next hop costs every unit ${env.rules.travel.starvationDamage} HP` : `${v.food} ${v.food === 1 ? 'ration' : 'rations'} left, ${env.rules.travel.foodPerHop} a hop`
+  const o = art.overview
+  const vp0 = toOverview(camera)
+  const vp1 = toOverview({ x: camera.x + VIEW_W, y: camera.y + VIEW_H })
+  const pin = toOverview(company)
+  const ch = companyH(v.faces.length)
   return (
-    <div className="ow-band" data-testid="ledger-band">
-      <div className="ow-band__block">
-        <div className="ow-band__eyebrow">Day</div>
-        <div className="ow-band__big numeral">{view.day}</div>
-      </div>
-      <div className="ow-band__block ow-band__block--company">
-        <div className="ow-band__eyebrow">Company</div>
-        {/* the banner and the names under the portraits are AUTHORED BY THE PLAYER — they wrap rather than
-            ellipsise, because "The Found…" is the game losing a name the player chose (GATE2-12) */}
-        <div className="ow-band__company voice-display">{view.company}</div>
-        {/* Where the company IS belongs in the ledger, not parked over the sheet: the walking line used to be a
-            pill pinned to the top centre of the map, covering a node mark for the whole journey and butting into
-            that node's name (RE-GATE B 2.6 — crafting-game-ui signal E, chrome over the world). */}
-        {view.road !== null && <div className="ow-band__road" data-testid="walking">On the road · <b className="numeral">{view.road}</b> {view.road === 1 ? 'hop' : 'hops'} to go</div>}
-        {view.quest !== null && <Quest name={view.quest} />}
-      </div>
-      <div className="ow-band__faces" aria-label="Party">
-        {view.faces.map((f) => <Face key={f.id} face={f} />)}
-      </div>
-      <div className="ow-band__block ow-band__block--right">
-        <div className="ow-band__stat"><span className="ow-band__eyebrow">Gold</span><span className="numeral ow-band__num">{view.gold}</span></div>
-        <FoodStat food={view.food} low={lowFood} note={foodNote} />
-      </div>
-      <div className="ow-band__block ow-band__block--verbs">
-        <Button variant="secondary" onPress={() => dispatch({ type: 'ui/openModal', modal: { kind: 'loadout', unitId: null } })} testId="band-company" style={{ fontSize: '0.72rem', padding: '0.4rem 0.8rem' }}>Company</Button>
-        <Button variant="secondary" onPress={() => dispatch({ type: 'ui/openModal', modal: { kind: 'questLog' } })} testId="band-quests" style={{ fontSize: '0.72rem', padding: '0.4rem 0.8rem' }}>Contracts</Button>
-        <Button variant="ghost" onPress={() => dispatch({ type: 'ui/openModal', modal: { kind: 'pause' } })} testId="band-menu" style={{ fontSize: '0.72rem', padding: '0.4rem 0.8rem' }}><span className="keycap">Esc</span> Menu</Button>
-      </div>
+    <div className="fmap-hud">
+      <Win x={14} y={14} w={472} h={176} testId="ledger-band">
+        <div className="tt" style={{ left: 20, top: 12 }}>{regionName}</div>
+        <div className="s20 bone nowrap" style={{ left: 20, top: 64 }}><FIcon name="sun" style={{ margin: '-5px 6px 0 0' }} />Day {v.day}</div>
+        {/* where the company IS belongs in this window, never parked over the map (RE-GATE B 2.6) */}
+        {v.road !== null ? (
+          <>
+            <div className="s15 dim nowrap" style={{ left: 20, top: 94 }}>On the road:</div>
+            <div className="s15 bone nowrap" style={{ left: 20, top: 113 }} data-testid="walking">{v.road} {v.road === 1 ? 'hop' : 'hops'} to go</div>
+          </>
+        ) : (
+          <>
+            <div className="s15 dim nowrap" style={{ left: 20, top: 94 }}>Roads here:</div>
+            <div className="s15 dim nowrap" style={{ left: 20, top: 113 }}>an encounter on <span className="rust">{odds(chance).replace(' in ', ' hops in ')}</span></div>
+          </>
+        )}
+        {/* the whole country in small: the frame is what the screen shows, the pin is the company */}
+        <div className="fniche" style={{ left: 288, top: 12, width: o.w + 8, height: o.h + 8, background: 'none' }} aria-hidden>
+          <img src="/art/world/overview.png" width={o.w} height={o.h} alt="" draggable={false} style={{ left: 4, top: 4 }} />
+          <div className="fmap-ov__frame" style={{ left: 4 + Math.round(vp0.x), top: 4 + Math.round(vp0.y), width: Math.max(3, Math.round(vp1.x - vp0.x)), height: Math.max(3, Math.round(vp1.y - vp0.y)) }} />
+          <img src="/art/ui/pin.png" width={7} height={10} alt="" draggable={false} style={{ left: 4 + Math.round(pin.x) - 3, top: 4 + Math.round(pin.y) - 9 }} />
+          {Object.entries(o.labels).filter(([name]) => name !== 'Iron Throne').map(([name, p]) => (
+            <div key={name} className="abs s13 bone ol1d nowrap" style={{ left: Math.max(2, Math.min(o.w - 94, 4 + p[0] - 50)), top: 4 + p[1] - 9, width: 100, textAlign: 'center' }}>{name}</div>
+          ))}
+          <div className="abs s13 bone ol1d nowrap" style={o.throne[0] > o.w - 80 ? { left: 4 + o.throne[0] - 107, top: 4 + o.throne[1] - 14, width: 100, textAlign: 'right' } : { left: 4 + o.throne[0] + 7, top: 4 + o.throne[1] - 14 }}>Iron Throne</div>
+        </div>
+        <div className="frule" style={{ left: 20, top: 133, width: 432 }} />
+        <div className="s15 bone nowrap" style={{ left: 20, top: 144 }}><FIcon name="coin" style={{ margin: '-4px 6px 0 0' }} /><span className="straw">{v.gold}</span> gold</div>
+        <div className={`s15 nowrap ${lowFood ? 'rust' : 'bone'}`} style={{ left: 116, top: 144 }}><FIcon name="ration" style={{ margin: '-4px 6px 0 0' }} /><span className={lowFood ? '' : 'straw'} aria-label={foodNote} data-testid="band-food">{v.food}</span> food</div>
+        {/* colour is never the sole channel (BRIEF §5 rule 4): low supplies also take the kit's refusal mark and a word */}
+        {lowFood
+          ? <div className="why" style={{ left: 206, top: 146 }} data-testid="band-food-low">{v.food === 0 ? 'none left' : 'running low'}</div>
+          : <div className="nowrap" style={{ left: 206, top: 148, height: 11 }} aria-hidden><Pips on={v.food} /></div>}
+        {v.potion !== null && <div className="s15 bone nowrap" style={{ right: 20, top: 144 }}><FIcon name="potion" style={{ margin: '-4px 6px 0 0' }} />{v.potion}</div>}
+      </Win>
+      <Win x={982} y={14} w={284} h={122} testId="commands">
+        <FCmd x={20} y={10} w={244} h={32} label="The Company" note="roster and gear" onPress={() => dispatch({ type: 'ui/openModal', modal: { kind: 'loadout', unitId: null } })} testId="band-company" />
+        <div className="fgroove" style={{ left: 20, top: 43, width: 244 }} />
+        <FCmd x={20} y={45} w={244} h={32} label="Contracts" note={v.quests === 0 ? 'none yet' : `${v.quests} open`} onPress={() => dispatch({ type: 'ui/openModal', modal: { kind: 'questLog' } })} testId="band-quests" />
+        <div className="fgroove" style={{ left: 20, top: 77, width: 244 }} />
+        <FCmd x={20} y={79} w={244} h={32} label="Menu" note={<Key>Esc</Key>} noteX={150} onPress={() => dispatch({ type: 'ui/openModal', modal: { kind: 'pause' } })} testId="band-menu" />
+      </Win>
+      <Win x={14} y={VIEW_H - 10 - ch} w={392} h={ch} label="The company" testId="company-window">
+        {/* the banner is the player's own words: it is lettered whole, never cut (GATE2-12) */}
+        <div className="s16 ochre nowrap" style={{ left: 20, top: 13 }} data-testid="company-name">{v.company}</div>
+        <div className="s13 dim nowrap" style={{ right: 20, top: 16 }}>{v.faces.length === 1 ? 'one of us' : `${(COUNT[v.faces.length] ?? String(v.faces.length)).toLowerCase()} of us`}</div>
+        <div className="fgroove" style={{ left: 20, top: 36, width: 352 }} />
+        {v.faces.map((f, i) => {
+          const y = 42 + i * 52
+          const ratio = f.max <= 0 ? 0 : f.hp / f.max
+          return (
+            <React.Fragment key={f.id}>
+              <Niche x={18} y={y} {...faceOf(f.sprite)} />
+              <div className="s16 bone nowrap" style={{ left: 82, top: y + 4 }}>{f.name}</div>
+              <div className="s13 dim nowrap" style={{ left: 82, top: y + 27 }}>{f.role}</div>
+              <div className={`fbar${ratio <= 0.25 ? ' fbar--crit' : ratio <= 0.5 ? ' fbar--warn' : ''}`} style={{ left: 250, top: y + 10, width: 64 }} aria-hidden><i style={{ width: Math.round(62 * ratio) }} /></div>
+              <div className="s14 bone nowrap" style={{ right: 20, top: y + 4 }}>{f.hp}/{f.max}</div>
+            </React.Fragment>
+          )
+        })}
+      </Win>
     </div>
   )
 }
 
+// ------------------------------------------------------------------ the screen
 export function OverworldScreen(): React.JSX.Element | null {
   const env = useEnv()
-  const view = useGame(useMemo(() => selectMap(env), [env]), shallow)
+  const view = useGame(selectMap, shallow)
   const world = env.content.overworld
   const [hoverId, setHoverId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
-  const [drag, setDrag] = useState<{ readonly x: number; readonly y: number; readonly camX: number; readonly camY: number; readonly moved: boolean } | null>(null)
-  const [liveCam, setLiveCam] = useState<{ readonly x: number; readonly y: number } | null>(null)
-  /** Has the player moved the sheet yet? Component-local and ephemeral by design: the hint that teaches the one
-   *  gesture this map has is a FIRST-TIME teach, and `ui.mapPan` returns to null on every hop, so reading it would
-   *  put the lesson back on the glass after every leg of the journey. */
+  /** Has the player moved the map yet? Local and ephemeral by design: the one gesture is taught once (`ui.mapPan`
+   *  returns to null on every hop, so reading it would put the lesson back after every leg). */
   const [hasPanned, setHasPanned] = useState(false)
+  const [drag, setDrag] = useState<{ readonly x: number; readonly y: number; readonly camX: number; readonly camY: number; readonly moved: boolean } | null>(null)
+  const [liveCam, setLiveCam] = useState<Pt | null>(null)
   const toastTimer = useRef<number | null>(null)
   // `pointerup` clears `drag` BEFORE the synthetic click runs, so the click handler cannot read it: the verdict is
   // parked here for exactly one click (BRIEF §10: "a drag < 8px is a click; one drag never latches later clicks").
   const suppressClick = useRef(false)
+  /** The road each place was last reached by: the company stands at the end of it. */
+  const cameFrom = useRef<Record<string, string>>({})
 
   useEffect(() => () => { if (toastTimer.current !== null) window.clearTimeout(toastTimer.current) }, [])
 
   const run = useGame((s) => s.run)
+  const party = useGame((s) => (s.run === null ? 0 : livingUnits(s.run).length))
   const spawned = run?.spawnedNodes
   const nodes = useMemo(() => (run === null ? [] : visibleNodes(run, env)), [run, spawned, env])
-  const washes = useMemo(() => regionWashes(world.nodes, Object.values(env.content.regions)), [world.nodes, env.content.regions])
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n] as const)), [nodes])
-
-  // Where every place-name is lettered. Worked out once over the WHOLE sheet (marks, roads and the region titles
-  // are all obstacles, a mark's own road included), so no name is struck through or painted over at ANY camera
-  // position — the old per-camera nudge only kept names out of the viewport's gutter (GATE2-4, GATE3-10).
-  const [fontEpoch, setFontEpoch] = useState(0)
-  useEffect(() => { onFontsReady(() => setFontEpoch((e) => e + 1)) }, [])
-  const labelMarks = useMemo<readonly LabelMark[]>(() => nodes.map((n) => ({ id: n.id, name: n.name, position: n.position })), [nodes])
-  const labelPlan = useMemo(() => {
-    const pos = new Map(nodes.map((n) => [n.id, n.position] as const))
-    const roads = world.edges.flatMap((e) => {
-      const a = pos.get(e.from)
-      const b = pos.get(e.to)
-      return a === undefined || b === undefined ? [] : [{ from: a, to: b, hash: hashEdge(e.from, e.to) }]
-    })
-    const reserved: readonly Rect[] = washes.map((w) => {
-      const width = measureRegion(w.region.name)
-      return { x: w.labelX - width / 2, y: w.labelY - 26, w: width, h: 34 }
-    })
-    return planLabels({ marks: labelMarks, roads, reserved, sheet: { width: world.width, height: world.height }, measure: measureLabel })
-    // fontEpoch re-runs the plan once the display face has actually loaded and the metrics are true.
-  }, [nodes, labelMarks, washes, world, fontEpoch])
-  const labelBoxes = useMemo(() => planRects(labelMarks, labelPlan, measureLabel), [labelMarks, labelPlan, fontEpoch])
+  const at = useCallback((id: string): Pt | undefined => byId.get(id)?.position, [byId])
+  const adj = useMemo(() => (run === null ? {} : adjacency(run, env)), [run, spawned, env])
 
   const currentNode = view === null ? null : byId.get(view.nodeId) ?? null
-  const reachable = useMemo(() => new Set(run === null || view === null || view.status !== 'idle' ? [] : adjacency(run, env)[view.nodeId] ?? []), [run, view, env])
+  const idle = view !== null && view.status === 'idle'
+  const reachable = useMemo(() => new Set(view === null || !idle ? [] : adj[view.nodeId] ?? []), [view, idle, adj])
 
-  // hover: the path in wet ink + its cost
+  // pointing at a place: the way there and what it costs
   const hoverPath = useMemo(() => (run === null || hoverId === null || hoverId === run.nodeId ? null : findPath(run, hoverId, env)), [run, hoverId, env])
   const hoverPreview = useMemo(() => (run === null || hoverId === null || hoverId === run.nodeId ? null : previewPath(run, hoverId, env)), [run, hoverId, env])
-  const hoverKeys = useMemo(() => {
-    const keys = new Set<string>()
-    if (run === null || hoverPath === null) return keys
-    let prev = run.nodeId
-    for (const id of hoverPath) { keys.add(edgeKey(prev, id)); prev = id }
-    return keys
-  }, [run, hoverPath])
-  /**
-   * WHAT THE RATION BOUGHT, on the map. A camp Scout pre-rolls every road within three hops, and every one of those
-   * sightings used to be readable ONLY on the camp screen the company had already broken (RE-GATE C 3.9). The marks
-   * are annotated onto the roads themselves; the hover preview quotes the sentence for the legs of the path the
-   * player is actually considering, so the intel is in front of the click that spends it.
-   */
-  const sighted = useMemo(() => {
-    const out = new Map<string, Sighting>()
-    if (run === null) return out
-    for (const r of scoutedRoads(run, env)) out.set(edgeKey(r.from, r.to), r.sighting)
+  const legsOf = useCallback((from: string, path: readonly string[]): readonly (readonly [string, string])[] => {
+    const out: [string, string][] = []
+    let prev = from
+    for (const id of path) { out.push([prev, id]); prev = id }
     return out
-  }, [run, env])
+  }, [])
+  const hoverLegs = useMemo(() => (run === null || hoverPath === null ? [] : legsOf(run.nodeId, hoverPath)), [run, hoverPath, legsOf])
+  // the way already chosen: the leg in flight, then the legs still to walk (`path` keeps the leg in flight until it lands)
+  const plannedLegs = useMemo(() => (view === null ? [] : view.hop === null ? legsOf(view.nodeId, view.pathLeft) : [[view.hop.from, view.hop.to] as const, ...legsOf(view.hop.to, view.pathLeft.slice(1))]), [view, legsOf])
+  /** What the ration bought, ON the map (RE-GATE C 3.9): every road the scouts walked carries its mark. */
+  const sighted = useMemo(() => (run === null ? [] : scoutedRoads(run, env)), [run, env])
   const hoverSightings = useMemo(() => {
-    if (run === null || hoverPath === null) return []
     const out: { readonly to: string; readonly sighting: Sighting }[] = []
-    let prev = run.nodeId
-    for (const id of hoverPath) {
-      const sighting = sightingFor(run, prev, id)
-      if (sighting !== null) out.push({ to: byId.get(id)?.name ?? id, sighting })
-      prev = id
+    if (run === null) return out
+    for (const [a, b] of hoverLegs) {
+      const sighting = sightingFor(run, a, b)
+      if (sighting !== null) out.push({ to: byId.get(b)?.name ?? b, sighting })
     }
     return out
-  }, [run, hoverPath, byId])
+  }, [run, hoverLegs, byId])
 
-  // the committed journey (remaining legs) in accent ink; the hop in flight gets the comet
-  const plannedKeys = useMemo(() => {
-    const keys = new Set<string>()
-    if (view === null) return keys
-    let prev = view.hop?.to ?? view.nodeId
-    for (const id of view.pathLeft) { keys.add(edgeKey(prev, id)); prev = id }
-    return keys
-  }, [view])
-  const activeKey = view?.hop !== null && view?.hop !== undefined && view.status === 'walking' ? edgeKey(view.hop.from, view.hop.to) : null
+  if (view?.hop !== null && view?.hop !== undefined) cameFrom.current[view.hop.to] = view.hop.from
+  const walking = view !== null && (view.status === 'walking' || view.status === 'suspended')
+  const pawnId = view === null ? null : view.hop !== null && view.status === 'walking' ? view.hop.to : view.nodeId
+  const stand = useMemo<Pt>(() => {
+    if (pawnId === null) return { x: 0, y: 0 }
+    return standPoint(pawnId, cameFrom.current[pawnId] ?? null, adj[pawnId] ?? [], at, world.startNodeId)
+    // `view` is a dependency on purpose: the hop in flight changes which road the company stands at the end of
+  }, [pawnId, adj, at, world.startNodeId, view])
 
-  const camera = useMemo(() => {
-    if (currentNode === null || view === null) return { x: 0, y: 0 }
-    return liveCam ?? cameraFor(currentNode, view.pan, world.width, world.height)
-  }, [currentNode, view, liveCam, world.width, world.height])
+  const camera = useMemo<Pt>(() => {
+    if (liveCam !== null) return liveCam
+    if (view !== null && view.pan !== null) return clampCamera(view.pan.x, view.pan.y, world.width, world.height)
+    return clampCamera(stand.x - VIEW_W / 2, stand.y - VIEW_H / 2 - 8, world.width, world.height)
+  }, [liveCam, view, stand, world.width, world.height])
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
@@ -439,10 +384,10 @@ export function OverworldScreen(): React.JSX.Element | null {
   }, [])
 
   const onNodePress = useCallback((id: string) => {
-    // A pan that ended over a node is a pan. The flag is consumed here so the NEXT plain click still travels.
+    // A pan that ended over a place is a pan. The flag is consumed here so the NEXT plain click still travels.
     if (suppressClick.current) { suppressClick.current = false; return }
     if (drag?.moved === true) return
-    // The node underfoot is a legal destination: `startTravel` answers a zero-length path with `atNode` — the
+    // The place underfoot is a legal destination: `startTravel` answers a zero-length path with `atNode` — the
     // quick menu, no hop, no food, no day. It is the only way back into a town the player has said "Stay" at.
     const legal = canDispatch({ type: 'travel/goTo', nodeId: id })
     if (!legal.ok) { showToast(legal.reason); return }
@@ -452,108 +397,233 @@ export function OverworldScreen(): React.JSX.Element | null {
   }, [drag, run, env, showToast])
 
   if (view === null || run === null || currentNode === null) return null
-  // Which sides of the window have more country behind them. Read off the camera, so it is true while dragging and
-  // true again the moment the clamp stops at the paper's edge.
-  const more = {
-    left: camera.x > 0.5,
-    right: camera.x + VIEW_W < world.width - 0.5,
-    up: camera.y > 0.5,
-    down: camera.y + VIEW_H < world.height - 0.5,
-  }
-  const canPan = more.left || more.right || more.up || more.down
-  const hint = view.pan === null && canPan && !hasPanned
-  // A name the window would CUT — or that the hint would sit on — is not lettered. The plan is in sheet space and
-  // so is the window, so this is one comparison per name and it needs no measurement of the DOM.
-  const cutNames = new Set<string>()
-  labelMarks.forEach((m, i) => {
-    const b = labelBoxes[i]
-    if (b === undefined) return
-    const onScreen = b.x + b.w > camera.x && b.x < camera.x + VIEW_W && b.y + b.h > camera.y && b.y < camera.y + VIEW_H
-    const whole = b.x >= camera.x && b.x + b.w <= camera.x + VIEW_W && b.y >= camera.y && b.y + b.h <= camera.y + VIEW_H
-    if (onScreen && !whole) { cutNames.add(m.id); return }
-    if (!hint || !onScreen) return
-    const vx = b.x - camera.x
-    const vy = b.y - camera.y
-    if (vx + b.w > HINT_SEAT.x && vx < HINT_SEAT.x + HINT_SEAT.w && vy + b.h > HINT_SEAT.y && vy < HINT_SEAT.y + HINT_SEAT.h) cutNames.add(m.id)
-  })
-  const walking = view.status === 'walking' || view.status === 'suspended'
-  const goToReason = walking ? 'already on the road' : null
-  const palette = regionPalette(currentNode.regionId)
-  const pawnNode = view.hop !== null && view.status === 'walking' ? byId.get(view.hop.to) ?? currentNode : currentNode
-  const westward = view.hop !== null && (byId.get(view.hop.to)?.position.x ?? 0) < (byId.get(view.hop.from)?.position.x ?? 0)
+
+  const inView = (p: Pt, pad: number): boolean => p.x > camera.x - pad && p.x < camera.x + VIEW_W + pad && p.y > camera.y - pad && p.y < camera.y + VIEW_H + pad
+  const shown = nodes.filter((n) => inView(n.position, 260))
   const hoverNode = hoverId === null ? null : byId.get(hoverId) ?? null
-  const hopsLeft = view.pathLeft.length
+  const region = env.content.regions[currentNode.regionId]
+  const outs = adj[view.nodeId] ?? []
+  const here = companyBox(stand)
+  const footOf = (id: string): Box | undefined => art.feet[id]
+  const clearOf = (a: string, b: string): Box[] => [footOf(a), footOf(b), here].filter((x): x is Box => x !== undefined)
+
+  // the roads that carry beads: bone on every road out while the company stands idle, brass on the way pointed at
+  // and on the way already chosen
+  const brassKeys = new Set<string>([...hoverLegs, ...plannedLegs].map(([a, b]) => edgeKey(a, b)))
+  const beadRoads: { readonly a: string; readonly b: string; readonly brass: boolean }[] = []
+  if (idle) for (const to of outs) if (!brassKeys.has(edgeKey(view.nodeId, to))) beadRoads.push({ a: view.nodeId, b: to, brass: false })
+  for (const [a, b] of [...plannedLegs, ...hoverLegs]) beadRoads.push({ a, b, brass: true })
+
+  // the arrow at the end of the pointed-at way
+  const lastLeg = hoverLegs[hoverLegs.length - 1]
+  const lastLine = lastLeg === undefined ? [] : roadLine(lastLeg[0], lastLeg[1], at)
+  const arrowAt = lastLine.length > 16 ? lastLine[lastLine.length - 13] : undefined
+  const arrowTo = lastLine.length > 16 ? lastLine[lastLine.length - 11] : undefined
+
+  const plateOf = (n: OverworldNode): 'here' | 'hover' | 'out' | 'planned' | 'quiet' =>
+    n.id === view.nodeId ? 'here' : n.id === hoverId ? 'hover' : reachable.has(n.id) ? 'out' : (hoverPath?.includes(n.id) ?? false) || view.pathLeft.includes(n.id) ? 'planned' : 'quiet'
+  const subOf = (n: OverworldNode): { readonly text: string; readonly tone: string } | null =>
+    n.id === view.nodeId ? { text: 'the company is here', tone: 'rill' } : isNodeLocked(run, n) ? { text: 'locked for now', tone: 'rust' } : n.type === 'DISCOVERY' ? { text: 'a landmark', tone: 'dim' } : null
+
+  // the forecast, pinned beside the place pointed at
+  const hoverFoot = hoverNode === null ? undefined : footOf(hoverNode.id)
+  const hb: Box | null = hoverNode === null ? null : hoverFoot !== undefined ? [hoverFoot[0] - 8, hoverFoot[1] - 8, hoverFoot[2] + 8, hoverFoot[3] + 8] : [hoverNode.position.x - 14, hoverNode.position.y - 14, hoverNode.position.x + 14, hoverNode.position.y + 14]
+  // every plate is seated in one pass, so no two share a seat: the place the company is on first, then the plates
+  // whose own box is clear at this camera, then the ones that have to move beside their sprite
+  const toStage = (b: Box): Box => [b[0] - camera.x, b[1] - camera.y, b[2] - camera.x, b[3] - camera.y]
+  const taken: Box[] = [...hudRects(party), toStage(here)]
+  const seats = new Map<string, readonly [number, number] | null>()
+  const plated = shown.filter((n) => art.labels[n.id] !== undefined && plateOf(n) !== 'quiet' && plateOf(n) !== 'planned')
+  const rank = (n: OverworldNode): number => (plateOf(n) === 'here' ? 0 : plateOf(n) === 'hover' ? 1 : 2)
+  for (const pass of [0, 1] as const) {
+    for (const n of [...plated].sort((p, q) => rank(p) - rank(q))) {
+      if (seats.has(n.id)) continue
+      const l = art.labels[n.id]!
+      const h = plateOf(n) === 'here' ? 40 : 26 + (subOf(n) === null ? 0 : 18)
+      const own: Box = toStage([l[0], l[1], l[0] + l[2], l[1] + h])
+      const clear = own[0] >= 4 && own[2] <= VIEW_W - 4 && own[1] >= 4 && own[3] <= VIEW_H - 4 && !taken.some((r) => overlaps(own, r))
+      if (pass === 0 && !clear) continue
+      const seat = clear ? ([l[0], l[1]] as const) : seatPlate(l[0], l[1], l[2], h, footOf(n.id), camera, taken)
+      seats.set(n.id, seat)
+      if (seat !== null) taken.push(toStage([seat[0], seat[1], seat[0] + l[2], seat[1] + h]))
+    }
+  }
+  const seatOf = (n: OverworldNode): { readonly lx: number; readonly ly: number; readonly lw: number } => {
+    const label = art.labels[n.id]
+    if (label === undefined) return { lx: n.position.x - 90, ly: n.position.y + 10, lw: 180 }
+    const seat = seats.get(n.id)
+    return { lx: seat?.[0] ?? label[0], ly: seat?.[1] ?? label[1], lw: label[2] }
+  }
+  const hereName = currentNode.id === world.startNodeId ? 'camp' : currentNode.name
+  const footnote = !idle || view.menuOpen ? null : outs.length === 0 ? null : `${COUNT[outs.length] ?? outs.length} ${outs.length === 1 ? 'road' : 'roads'} out of ${hereName}. Point at one, click to march.`
+  // a quiet name that a window, a plate, the footnote or the frame would cut is not lettered at all (BRIEF §5.1)
+  const noteSeat: Box | null = footnote === null ? null : [414, 688, 424 + (footnote.length + (hasPanned || view.pan !== null ? 0 : 30)) * 7.2, 716]
+  const cut = (n: OverworldNode): boolean => {
+    const { lx, ly, lw } = seatOf(n)
+    const v = toStage([lx + lw / 2 - n.name.length * 3.9, ly + 2, lx + lw / 2 + n.name.length * 3.9, ly + 24])
+    if (v[2] <= 0 || v[0] >= VIEW_W || v[3] <= 0 || v[1] >= VIEW_H) return false
+    return v[0] < 2 || v[2] > VIEW_W - 2 || v[1] < 2 || v[3] > VIEW_H - 2 || taken.some((r) => overlaps(v, r)) || (noteSeat !== null && overlaps(v, noteSeat))
+  }
+  const CARD_W = 330
+  const cardH = 132 + (hoverPreview !== null && hoverPreview.starvationHp > 0 ? 20 : 0) + hoverSightings.length * 18
+  // the card takes the seat round the brackets that covers least: the windows, the company and every plate count,
+  // the pointed-at place's own plate most of all
+  let cardX = 0
+  let cardY = 0
+  if (hb !== null && hoverNode !== null) {
+    const hl = seatOf(hoverNode)
+    const plate: Box = toStage([hl.lx - 4, hl.ly - 4, hl.lx + hl.lw + 4, hl.ly + 30])
+    const v = toStage(hb)
+    const mid = (v[1] + v[3]) / 2 - 62
+    const cx = (v[0] + v[2]) / 2 - CARD_W / 2
+    const options: (readonly [number, number])[] = [
+      [v[2] + 34, mid], [v[0] - 34 - CARD_W, mid], [v[2] + 34, v[3] - 20], [v[0] - 34 - CARD_W, v[3] - 20],
+      [v[2] + 34, v[1] + 20 - cardH], [v[0] - 34 - CARD_W, v[1] + 20 - cardH], [cx, v[3] + 22], [cx, v[1] - 22 - cardH],
+    ]
+    const area = (a: Box, b: Box): number => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]))
+    let best = Number.POSITIVE_INFINITY
+    options.forEach(([ox, oy], rank) => {
+      const x = Math.round(Math.max(14, Math.min(VIEW_W - CARD_W - 16, ox)))
+      const y = Math.round(Math.max(14, Math.min(VIEW_H - cardH - 16, oy)))
+      const box: Box = [x, y, x + CARD_W, y + cardH]
+      const cost = taken.reduce((sum, r) => sum + area(box, r), 0) + area(box, plate) * 8 + area(box, v) * 8 + rank * 40
+      if (cost < best) { best = cost; cardX = x + camera.x; cardY = y + camera.y }
+    })
+  }
+  const cardRight = hb !== null && cardX > hb[0]
+  // the brass leader runs from the brackets to the card only when the card sits level with them
+  const leadY = hb === null ? null : Math.round((hb[1] + hb[3]) / 2) - 2
+  const lead = hb !== null && leadY !== null && leadY > cardY + 12 && leadY < cardY + cardH - 16
+  const oneHop = hoverLegs.length === 1 ? hoverLegs[0] : undefined
+  const hopOdds = oneHop === undefined ? null : hopChance(run, oneHop[0], oneHop[1], env)
 
   return (
-    <div className="ow-screen" data-testid="overworld-screen">
-      <Band />
+    <div className="f64 fmap" data-testid="overworld-screen">
       <div
-        className={`ow-viewport${drag?.moved === true ? ' ow-viewport--dragging' : ''}`}
-        style={{ top: BAND_TOP, width: VIEW_W, height: VIEW_H }}
+        className={`fmap-view${drag?.moved === true ? ' fmap-view--dragging' : ''}`}
+        style={{ width: VIEW_W, height: VIEW_H }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
         data-testid="map-viewport"
       >
-        <div className="ow-world" style={{ width: world.width, height: world.height, transform: `translate(${-Math.round(camera.x)}px, ${-Math.round(camera.y)}px)`, transition: drag !== null || !motionEnabled() ? 'none' : `transform ${HOP_DELAY_MS}ms var(--ease-out-quart)` }}>
-          <Sheet width={world.width} height={world.height} mapId={world.id} nodes={world.nodes} washes={washes} labelBoxes={labelBoxes} />
-          <Roads edges={world.edges} nodes={nodes} currentNodeId={view.nodeId} plannedKeys={plannedKeys} hoverKeys={hoverKeys} activeKey={activeKey} sighted={sighted} width={world.width} height={world.height} palette={palette} />
-          {nodes.map((n) => {
-            const visual: NodeVisual = n.id === view.nodeId ? 'current' : n.id === hoverId ? 'hover' : (hoverPath?.includes(n.id) ?? false) || view.pathLeft.includes(n.id) ? 'planned' : reachable.has(n.id) ? 'reachable' : 'distant'
+        <div className="fmap-world" style={{ width: world.width, height: world.height, transform: `translate(${-camera.x}px, ${-camera.y}px)`, transition: drag !== null || !motionEnabled() ? 'none' : `transform ${HOP_DELAY_MS}ms ${EASE}` }}>
+          {/* the country beyond the survey: its roads as dotted lines, its regions lettered large */}
+          <svg className="fmap-wild" width={world.width} height={world.height} aria-hidden>
+            {world.edges.flatMap((e) => (byId.has(e.from) && byId.has(e.to) ? roadGaps(e.from, e.to, at).map(([p, q], i) => <line key={`${e.from}|${e.to}|${i}`} x1={p.x} y1={p.y} x2={q.x} y2={q.y} />) : []))}
+          </svg>
+          {Object.entries(art.overview.labels).filter(([name]) => name !== 'Borderlands' && name !== 'Iron Throne').map(([name, p]) => (
+            <div key={name} className="fmap-region" style={{ left: Math.round((p[0] - art.overview.w / 2) * art.overview.scale + art.overview.cx), top: Math.round((p[1] - art.overview.h / 2) * art.overview.scale + art.overview.cy) }}>{name}</div>
+          ))}
+          <img className="fmap-heart" src="/art/world/heart.png" width={art.heart.w} height={art.heart.h} alt="" draggable={false} style={{ left: art.heart.x, top: art.heart.y }} />
+          {beadRoads.flatMap(({ a, b, brass }) => beadSeats(roadLine(a, b, at), clearOf(a, b), 13, brass && lastLeg !== undefined && lastLeg[0] === a && lastLeg[1] === b ? 15 : 9).map((p, i) => (
+            <i key={`${a}|${b}|${i}`} className={`fmap-bead${brass ? ' fmap-bead--brass' : ''}`} style={{ left: p.x - 4, top: p.y - 4 }} />
+          )))}
+          {arrowAt !== undefined && arrowTo !== undefined && (
+            <img className="fmap-arrow" src="/art/ui/icon_arrow_e.png" alt="" draggable={false} style={{ left: arrowAt.x - 3, top: arrowAt.y - 7, transform: `rotate(${Math.round((Math.atan2(arrowTo.y - arrowAt.y, arrowTo.x - arrowAt.x) * 180) / Math.PI)}deg)` }} />
+          )}
+          <div className="fmap-scout" data-testid="scout-marks" data-roads={world.edges.length}>
+            {sighted.map((r) => {
+              const line = roadLine(r.from, r.to, at)
+              const mid = line[Math.floor(line.length / 2)]
+              return mid === undefined ? null : <i key={`${r.from}|${r.to}`} className={`fmap-sight fmap-sight--${r.sighting.quiet ? 'quiet' : 'danger'}`} style={{ left: mid.x - 4, top: mid.y - 4 }} />
+            })}
+          </div>
+          {art.signs.map((s) => {
+            const tip = s.tip === '' ? 0 : 10
+            const path = run.nodeId === s.to ? [] : findPath(run, s.to, env)
+            const to = byId.get(s.to)
+            if (to === undefined) return null
+            const cap = path === null ? to.name : `${to.name} · ${days(path.length)}`
             return (
-              <NodeMark
-                key={n.id}
-                node={n}
-                visual={visual}
-                visited={run.visitedNodes[refKey('overworld', world.id, n.id)] === true}
-                locked={isNodeLocked(run, n)}
-                palette={regionPalette(n.regionId)}
-                disabledReason={n.id === view.nodeId ? null : goToReason}
-                label={labelPlan.get(n.id) ?? { dx: 0, dy: 32 }}
-                labelCut={cutNames.has(n.id)}
-                onPress={() => onNodePress(n.id)}
-                onHover={(h) => setHoverId(h ? n.id : (prev) => (prev === n.id ? null : prev))}
-              />
+              <React.Fragment key={`${s.x}|${s.y}`}>
+                <div className="fmap-sign s14 bone sh1" style={{ left: s.x + (s.tip === 'w' ? tip : 0), top: s.y + 2, width: s.w - tip, fontWeight: 700 }}>{s.region}</div>
+                <div className="fmap-sign s13 bone ol1d" style={{ left: s.x + s.w / 2 - 120, top: s.y + s.h + 3, width: 240 }}>{cap}</div>
+              </React.Fragment>
             )
           })}
-          <div className={`ow-pawn${westward ? ' ow-pawn--west' : ''}`} style={{ left: pawnNode.position.x, top: pawnNode.position.y, transition: motionEnabled() ? `left ${HOP_DELAY_MS}ms var(--ease-out-quart), top ${HOP_DELAY_MS}ms var(--ease-out-quart)` : 'none' }} data-testid="pawn" aria-label={`${view.mcName} at ${pawnNode.name}`}>
-            <span className="ow-pawn__shadow" />
-            {view.mcSprite !== null ? <img className="ow-pawn__sprite" src={`/sprites/units/board/${view.mcSprite}.png`} alt="" draggable={false} /> : <span className="ow-pawn__disc" />}
-          </div>
-          {hoverNode !== null && hoverPreview !== null && !walking && (
-            <div className="ow-tip" style={{ left: hoverNode.position.x, top: hoverNode.position.y - 44 }} data-testid="path-preview">
-              <span className="numeral">{hoverPreview.hops} {hoverPreview.hops === 1 ? 'hop' : 'hops'} · {hoverPreview.food} food</span>
-              {hoverPreview.starvationHp > 0 && <span className="ow-tip__warn">short of food · −{hoverPreview.starvationHp} HP each</span>}
-              {/* the scouts' own words, on the legs of THIS path — the mark on the road says a shape, this says it */}
-              {hoverSightings.map((s) => (
-                <span key={s.to} className={`ow-tip__sight${s.sighting.quiet ? ' ow-tip__sight--quiet' : ''}`} data-testid="path-sighting">{s.to} · {s.sighting.report}</span>
-              ))}
-            </div>
+          {shown.map((n) => {
+            const foot = footOf(n.id)
+            const label = art.labels[n.id]
+            const plate = plateOf(n)
+            const sub = subOf(n)
+            const hit: React.CSSProperties = foot !== undefined ? { left: foot[0] - 6, top: foot[1] - 6, width: foot[2] - foot[0] + 12, height: foot[3] - foot[1] + 12 } : { left: n.position.x - 16, top: n.position.y - 16, width: 32, height: 32 }
+            const plated = plate === 'out' || plate === 'hover'
+            const { lx, ly, lw } = seatOf(n)
+            const lettered = plated || plate === 'here' ? seats.get(n.id) !== null : !cut(n)
+            const pointer = { onClick: () => onNodePress(n.id), onMouseEnter: () => setHoverId(n.id), onMouseLeave: () => setHoverId((prev) => (prev === n.id ? null : prev)) }
+            return (
+              <React.Fragment key={n.id}>
+                <button
+                  type="button"
+                  className="fmap-node"
+                  style={{ ...hit, cursor: walking && n.id !== view.nodeId ? 'default' : 'pointer' }}
+                  data-testid={`node-${n.id}`}
+                  data-state={plate}
+                  aria-label={`${typeLabel(n.type)}: ${n.name}`}
+                  {...pointer}
+                />
+                {foot === undefined && <i className={`fmap-mark${plate === 'quiet' ? '' : ' fmap-mark--lit'}`} style={{ left: n.position.x - 4, top: n.position.y - 4 }} />}
+                {plated ? lettered && (
+                  <Win kind={plate === 'hover' ? 'taglit' : 'tag'} x={lx} y={ly} w={lw} h={26} style={{ cursor: 'pointer' }}>
+                    <div className={`s16 nowrap sh1 ${plate === 'hover' ? 'straw' : 'bone'}`} style={{ left: 0, top: 3, width: lw, textAlign: 'center' }} {...pointer}>{n.name}</div>
+                  </Win>
+                ) : lettered && (
+                  <div className={`fmap-name${plate === 'here' ? ' fmap-name--here' : ''} ${plate === 'here' ? 's18 rill' : plate === 'planned' ? 's14 straw' : label !== undefined ? 's14 bone' : 's13 bone'} ol1d`} style={{ left: lx, top: plate === 'here' ? ly : ly + 4, width: lw }}>{n.name}</div>
+                )}
+                {sub !== null && lettered && <div className={`fmap-name s13 ${sub.tone} ol1d`} style={{ left: lx, top: ly + (plated ? 30 : plate === 'here' ? 22 : 22), width: lw }}>{sub.text}</div>}
+              </React.Fragment>
+            )
+          })}
+          {hb !== null && hoverNode !== null && hoverNode.id !== view.nodeId && <div className="fmap-brackets" style={{ left: hb[0], top: hb[1], width: hb[2] - hb[0], height: hb[3] - hb[1] }} />}
+          <img
+            className="fmap-company"
+            src="/art/world/company.png"
+            width={art.company.w}
+            height={art.company.h}
+            alt=""
+            draggable={false}
+            style={{ left: stand.x - art.company.ax, top: stand.y - art.company.ay, transition: motionEnabled() ? `left ${HOP_DELAY_MS}ms ${EASE}, top ${HOP_DELAY_MS}ms ${EASE}` : 'none' }}
+            data-testid="pawn"
+            aria-label={`the company at ${byId.get(pawnId ?? '')?.name ?? ''}`}
+          />
+          {hb !== null && hoverNode !== null && hoverPreview !== null && !walking && (
+            <>
+              {lead && leadY !== null && <div className="fmap-lead" style={cardRight ? { left: hb[2] + 2, top: leadY, width: cardX - hb[2] - 2 } : { left: cardX + CARD_W, top: leadY, width: hb[0] - 2 - cardX - CARD_W }} />}
+              <Win kind="lit" x={cardX} y={cardY} w={CARD_W} h={cardH} className="fmap-card" testId="path-preview">
+                <div className="tt" style={{ left: 20, top: 10, ...(hoverNode.name.length > 15 ? { fontSize: 30, lineHeight: '43px' } : {}) }}>{hoverNode.name}</div>
+                <div className="s13 dim nowrap" style={{ left: 20, top: 54 }}>{typeLabel(hoverNode.type)} · {env.content.regions[hoverNode.regionId]?.name ?? hoverNode.regionId}</div>
+                <div className="s18 bone nowrap" style={{ left: 20, top: 74 }}>
+                  <FIcon name="sun" style={{ margin: '-4px 6px 0 0' }} />{days(hoverPreview.hops)}<span style={{ display: 'inline-block', width: 22 }} /><FIcon name="ration" style={{ margin: '-4px 6px 0 0' }} />{hoverPreview.food} food
+                </div>
+                <div className="s14 straw nowrap" style={{ right: 20, top: 78 }}>click to march</div>
+                <div className="s15 bone nowrap" style={{ left: 20, top: 102 }}>
+                  {hopOdds === null ? `${COUNT[hoverLegs.length] ?? hoverLegs.length} roads, each rolled as it is walked` : hopOdds === 0 ? `no ambush on the road into a ${typeLabel(hoverNode.type)}` : <>an encounter on the road: <span className="rust">{odds(hopOdds)}</span></>}
+                </div>
+                {hoverPreview.starvationHp > 0 && <div className="s14 rust nowrap" style={{ left: 20, top: 122 }}>short of food: −{hoverPreview.starvationHp} HP each on the way</div>}
+                {/* the scouts' own words, on the legs of THIS way */}
+                {hoverSightings.map((s, i) => (
+                  <div key={s.to} className={`s13 nowrap ${s.sighting.quiet ? 'meadow' : 'rust'}`} style={{ left: 20, top: 122 + (hoverPreview.starvationHp > 0 ? 20 : 0) + i * 18 }} data-testid="path-sighting">{s.to} · {s.sighting.report}</div>
+                ))}
+              </Win>
+            </>
           )}
-          {hoverNode !== null && hoverNode.id === view.nodeId && !walking && !view.menuOpen && (
-            <div className="ow-tip" style={{ left: hoverNode.position.x, top: hoverNode.position.y - 44 }} data-testid="here-preview">
-              <span>Look around · no hop, no food</span>
-            </div>
-          )}
-          {hoverNode !== null && hoverPreview === null && hoverNode.id !== view.nodeId && !walking && (
-            <div className="ow-tip" style={{ left: hoverNode.position.x, top: hoverNode.position.y - 44 }}><span>no road leads there</span></div>
+          {hb !== null && hoverNode !== null && hoverNode.id === view.nodeId && !walking && !view.menuOpen && (
+            <div className="tip" style={{ left: hoverNode.position.x - 100, top: hb[1] - 34, width: 200, textAlign: 'center' }} data-testid="here-preview">Look around · no hop, no food</div>
           )}
         </div>
-        {/* The paper falls into shadow on every side that has more country behind it: the frame reads as a window
-            onto a bigger sheet instead of ending in a cut, and a name approaching the edge dims before it is lost. */}
-        <div className="ow-edge" aria-hidden>
-          {more.left && <span className="ow-edge__side ow-edge__side--l" />}
-          {more.right && <span className="ow-edge__side ow-edge__side--r" />}
-          {more.up && <span className="ow-edge__side ow-edge__side--t" />}
-          {more.down && <span className="ow-edge__side ow-edge__side--b" />}
-        </div>
-        {view.menuOpen && <NodeCard node={currentNode} hopsLeft={hopsLeft} seat={seatCard(currentNode.position, camera)} />}
-        {toast !== null && <div className="ow-toast" role="status">{toast}</div>}
-        {/* One corner, one thing: the gesture in words until it has been used, the way back once it has. */}
-        {hint && <p className="ow-hint" data-testid="map-hint">Drag the sheet — the country runs on past the frame.</p>}
-        {view.pan !== null && <button type="button" className="btn-forged btn-forged--ghost ow-recentre" onClick={() => dispatch({ type: 'ui/setMapPan', pan: null })}>Find the company</button>}
       </div>
+      {/* everything below sits ON the stage, outside the map's viewport: the viewport holds the world and nothing else */}
+      <Hud regionName={region?.name ?? currentNode.regionId} chance={region?.encounterChancePerHop ?? 0} camera={camera} company={stand} />
+      {footnote !== null && (
+        <div className="fmap-foot s14 bone ol1d" style={{ left: 420, top: 694 }} data-testid="map-foot">
+          {footnote}{!hasPanned && view.pan === null && <span data-testid="map-hint"> Drag the map to look further.</span>}
+        </div>
+      )}
+      {view.menuOpen && <NodeCard node={currentNode} hopsLeft={view.pathLeft.length} at={toStage(footOf(currentNode.id) ?? [currentNode.position.x - 14, currentNode.position.y - 14, currentNode.position.x + 14, currentNode.position.y + 26])} />}
+      {toast !== null && <div className="toast fmap-toast" role="status">{toast}</div>}
+      {view.pan !== null && <FBtn onPress={() => dispatch({ type: 'ui/setMapPan', pan: null })} testId="map-recentre" style={{ position: 'absolute', right: 14, bottom: 14, zIndex: 6 }}>Find the company</FBtn>}
     </div>
   )
 }

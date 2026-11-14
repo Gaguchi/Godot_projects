@@ -1,8 +1,8 @@
 {
   "id": "world",
   "name": "Embermarch",
-  "width": 3060,
-  "height": 850,
+  "width": 4960,
+  "height": 3320,
   "startNodeId": "frontier_camp",
   "nodes": [
     {
@@ -12,8 +12,8 @@
       "regionId": "borderlands",
       "areaTier": 1,
       "position": {
-        "x": 60,
-        "y": 118
+        "x": 2640,
+        "y": 1600
       }
     },
     {
@@ -23,8 +23,8 @@
       "regionId": "borderlands",
       "areaTier": 1,
       "position": {
-        "x": 140,
-        "y": 205
+        "x": 2440,
+        "y": 1716
       },
       "sigil": "battle",
       "hidden": true,
@@ -37,8 +37,8 @@
       "regionId": "borderlands",
       "areaTier": 1,
       "position": {
-        "x": 274,
-        "y": 91
+        "x": 3050,
+        "y": 1570
       }
     },
     {
@@ -48,8 +48,8 @@
       "regionId": "borderlands",
       "areaTier": 1,
       "position": {
-        "x": 260,
-        "y": 154
+        "x": 2616,
+        "y": 1884
       },
       "sigil": "battle",
       "discoveryEventId": "south_road_ambush"
@@ -61,8 +61,8 @@
       "regionId": "borderlands",
       "areaTier": 1,
       "position": {
-        "x": 488,
-        "y": 72
+        "x": 3378,
+        "y": 1440
       },
       "sigil": "waypoint"
     },
@@ -73,8 +73,8 @@
       "regionId": "borderlands",
       "areaTier": 1,
       "position": {
-        "x": 459,
-        "y": 118
+        "x": 1940,
+        "y": 1600
       },
       "sigil": "battle",
       "discoveryEventId": "bandit_hideout"
@@ -86,8 +86,8 @@
       "regionId": "borderlands",
       "areaTier": 1,
       "position": {
-        "x": 459,
-        "y": 164
+        "x": 2740,
+        "y": 2060
       }
     },
     {
@@ -95,10 +95,10 @@
       "name": "Watchtower Ridge",
       "type": "CAMP",
       "regionId": "borderlands",
-      "areaTier": 2,
+      "areaTier": 1,
       "position": {
-        "x": 687,
-        "y": 52
+        "x": 2940,
+        "y": 1160
       },
       "sigil": "fortress"
     },
@@ -107,10 +107,10 @@
       "name": "Pine Crossing",
       "type": "TOWN",
       "regionId": "borderlands",
-      "areaTier": 2,
+      "areaTier": 1,
       "position": {
-        "x": 687,
-        "y": 105
+        "x": 3640,
+        "y": 1530
       }
     },
     {
@@ -120,8 +120,8 @@
       "regionId": "borderlands",
       "areaTier": 2,
       "position": {
-        "x": 658,
-        "y": 164
+        "x": 3720,
+        "y": 1944
       },
       "sigil": "dungeon",
       "locked": true
@@ -131,10 +131,10 @@
       "name": "Border Fortress",
       "type": "CAMP",
       "regionId": "borderlands",
-      "areaTier": 2,
+      "areaTier": 1,
       "position": {
-        "x": 886,
-        "y": 78
+        "x": 3212,
+        "y": 1028
       },
       "sigil": "fortress"
     },
@@ -143,10 +143,10 @@
       "name": "Roderick's Camp",
       "type": "CAMP",
       "regionId": "borderlands",
-      "areaTier": 2,
+      "areaTier": 1,
       "position": {
-        "x": 886,
-        "y": 131
+        "x": 3784,
+        "y": 1700
       }
     },
     {
@@ -156,8 +156,8 @@
       "regionId": "borderlands",
       "areaTier": 1,
       "position": {
-        "x": 146,
-        "y": 78
+        "x": 2280,
+        "y": 1500
       }
     },
     {
@@ -165,10 +165,10 @@
       "name": "North Ridge Path",
       "type": "TRAIL",
       "regionId": "borderlands",
-      "areaTier": 2,
+      "areaTier": 1,
       "position": {
-        "x": 587,
-        "y": 35
+        "x": 2620,
+        "y": 1330
       },
       "sigil": "waypoint"
     },
@@ -179,8 +179,8 @@
       "regionId": "borderlands",
       "areaTier": 2,
       "position": {
-        "x": 573,
-        "y": 190
+        "x": 3532,
+        "y": 2096
       },
       "sigil": "bridge"
     },
@@ -189,10 +189,10 @@
       "name": "Borderland Shrine",
       "type": "DISCOVERY",
       "regionId": "borderlands",
-      "areaTier": 2,
+      "areaTier": 1,
       "position": {
-        "x": 1000,
-        "y": 45
+        "x": 1716,
+        "y": 1440
       },
       "sigil": "shrine",
       "discoveryEventId": "borderland_shrine"
@@ -202,10 +202,10 @@
       "name": "Thornwood Gate",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 2,
+      "areaTier": 1,
       "position": {
-        "x": 1082,
-        "y": 378
+        "x": 3200,
+        "y": 360
       },
       "sigil": "fortress"
     },
@@ -216,8 +216,8 @@
       "regionId": "thornwood",
       "areaTier": 2,
       "position": {
-        "x": 1060,
-        "y": 457
+        "x": 4400,
+        "y": 1860
       },
       "sigil": "waypoint"
     },
@@ -226,10 +226,10 @@
       "name": "Thornwood Chapel",
       "type": "TOWN",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1344,
-        "y": 358
+        "x": 2920,
+        "y": 140
       }
     },
     {
@@ -237,10 +237,10 @@
       "name": "Dark Hollow",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1344,
-        "y": 411
+        "x": 3520,
+        "y": 180
       }
     },
     {
@@ -248,10 +248,10 @@
       "name": "Cursed Clearing",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1344,
-        "y": 464
+        "x": 4300,
+        "y": 980
       }
     },
     {
@@ -259,10 +259,10 @@
       "name": "Hermit's Tower",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1650,
-        "y": 365
+        "x": 2340,
+        "y": 460
       },
       "sigil": "fortress"
     },
@@ -271,10 +271,10 @@
       "name": "Wolf Den",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1650,
-        "y": 418
+        "x": 2520,
+        "y": 80
       },
       "sigil": "dungeon"
     },
@@ -283,10 +283,10 @@
       "name": "Witch's Hut",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1650,
-        "y": 470
+        "x": 4640,
+        "y": 1620
       }
     },
     {
@@ -294,10 +294,10 @@
       "name": "Ancient Ruins",
       "type": "DUNGEON",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2000,
-        "y": 391
+        "x": 1620,
+        "y": 480
       }
     },
     {
@@ -305,10 +305,10 @@
       "name": "Morgana's Grove",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2000,
-        "y": 444
+        "x": 4300,
+        "y": 2280
       }
     },
     {
@@ -316,10 +316,10 @@
       "name": "Foggy Marsh",
       "type": "TRAIL",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1213,
-        "y": 395
+        "x": 3760,
+        "y": 460
       },
       "sigil": "waypoint"
     },
@@ -328,10 +328,10 @@
       "name": "Spider's Nest",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1213,
-        "y": 484
+        "x": 4300,
+        "y": 1400
       }
     },
     {
@@ -339,10 +339,10 @@
       "name": "Druid's Circle",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 1,
       "position": {
-        "x": 1497,
-        "y": 335
+        "x": 2780,
+        "y": 480
       }
     },
     {
@@ -350,10 +350,10 @@
       "name": "Moonlit Glade",
       "type": "CAMP",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1825,
-        "y": 345
+        "x": 1980,
+        "y": 340
       }
     },
     {
@@ -361,10 +361,10 @@
       "name": "Thornwood Depths",
       "type": "DUNGEON",
       "regionId": "thornwood",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 1825,
-        "y": 490
+        "x": 4860,
+        "y": 2100
       }
     },
     {
@@ -372,10 +372,10 @@
       "name": "Mountain Pass",
       "type": "TRAIL",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2060,
-        "y": 670
+        "x": 940,
+        "y": 1360
       },
       "sigil": "waypoint"
     },
@@ -384,10 +384,10 @@
       "name": "Ashfall Trail",
       "type": "TRAIL",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2060,
-        "y": 748
+        "x": 3460,
+        "y": 2640
       },
       "sigil": "waypoint"
     },
@@ -396,10 +396,10 @@
       "name": "Ashfall Outpost",
       "type": "TOWN",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2266,
-        "y": 649
+        "x": 380,
+        "y": 1080
       }
     },
     {
@@ -407,10 +407,10 @@
       "name": "Lava Fields",
       "type": "CAMP",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2266,
-        "y": 706
+        "x": 1140,
+        "y": 2180
       }
     },
     {
@@ -418,10 +418,10 @@
       "name": "Scorched Village",
       "type": "CAMP",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2266,
-        "y": 762
+        "x": 2300,
+        "y": 2540
       }
     },
     {
@@ -429,10 +429,10 @@
       "name": "Dragon's Lookout",
       "type": "CAMP",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2472,
-        "y": 656
+        "x": 400,
+        "y": 1640
       },
       "sigil": "fortress"
     },
@@ -441,10 +441,10 @@
       "name": "Iron Mine",
       "type": "DUNGEON",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2472,
-        "y": 713
+        "x": 860,
+        "y": 2520
       },
       "sigil": "dungeon"
     },
@@ -453,10 +453,10 @@
       "name": "Sulfur Springs",
       "type": "CAMP",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2472,
-        "y": 769
+        "x": 1740,
+        "y": 2720
       }
     },
     {
@@ -464,10 +464,10 @@
       "name": "Cragmaw Fortress",
       "type": "CAMP",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2707,
-        "y": 685
+        "x": 520,
+        "y": 2240
       },
       "sigil": "fortress"
     },
@@ -476,10 +476,10 @@
       "name": "Final Approach",
       "type": "TRAIL",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2707,
-        "y": 741
+        "x": 4360,
+        "y": 2760
       },
       "sigil": "waypoint"
     },
@@ -490,8 +490,8 @@
       "regionId": "ashfall",
       "areaTier": 3,
       "position": {
-        "x": 3000,
-        "y": 713
+        "x": 4800,
+        "y": 3200
       },
       "sigil": "boss",
       "enemyGroupId": "ashford_company",
@@ -502,10 +502,10 @@
       "name": "Ember Creek",
       "type": "TRAIL",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2163,
-        "y": 688
+        "x": 780,
+        "y": 1800
       },
       "sigil": "waypoint"
     },
@@ -514,10 +514,10 @@
       "name": "Ruined Chapel",
       "type": "DISCOVERY",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2163,
-        "y": 783
+        "x": 2900,
+        "y": 2680
       },
       "sigil": "shrine",
       "discoveryEventId": "ruined_chapel"
@@ -529,8 +529,8 @@
       "regionId": "ashfall",
       "areaTier": 3,
       "position": {
-        "x": 2589,
-        "y": 635
+        "x": 100,
+        "y": 2000
       },
       "sigil": "dungeon"
     },
@@ -539,10 +539,10 @@
       "name": "Warlord's Camp",
       "type": "DISCOVERY",
       "regionId": "ashfall",
-      "areaTier": 3,
+      "areaTier": 2,
       "position": {
-        "x": 2589,
-        "y": 790
+        "x": 3980,
+        "y": 3080
       },
       "sigil": "battle",
       "discoveryEventId": "warlords_camp"
@@ -554,16 +554,1734 @@
       "regionId": "ashfall",
       "areaTier": 3,
       "position": {
-        "x": 2839,
-        "y": 713
+        "x": 4620,
+        "y": 3000
       },
       "sigil": "fortress"
+    },
+    {
+      "id": "charcoal_burners_camp",
+      "name": "Charcoal Burners' Camp",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 1530,
+        "y": 1090
+      }
+    },
+    {
+      "id": "beacon_hill",
+      "name": "Beacon Hill",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 1830,
+        "y": 1070
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "hunters_lodge",
+      "name": "Hunter's Lodge",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2140,
+        "y": 1010
+      }
+    },
+    {
+      "id": "woodcutters_camp",
+      "name": "Woodcutters' Camp",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2520,
+        "y": 1060
+      }
+    },
+    {
+      "id": "old_sawpit",
+      "name": "Old Sawpit",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2860,
+        "y": 970
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "cairn_hill",
+      "name": "Cairn Hill",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2740,
+        "y": 1130
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "heath_croft",
+      "name": "Heath Croft",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 1690,
+        "y": 1210
+      }
+    },
+    {
+      "id": "burnt_farm",
+      "name": "Burnt Farm",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 1520,
+        "y": 1340
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "standing_stones",
+      "name": "Standing Stones",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 1880,
+        "y": 1300
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "barley_hill_farm",
+      "name": "Barley Hill Farm",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2100,
+        "y": 1210
+      }
+    },
+    {
+      "id": "plank_bridge",
+      "name": "Plank Bridge",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2402,
+        "y": 1210
+      },
+      "sigil": "bridge"
+    },
+    {
+      "id": "beekeepers_croft",
+      "name": "Beekeeper's Croft",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2490,
+        "y": 1470
+      }
+    },
+    {
+      "id": "upland_farm",
+      "name": "Upland Farm",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2860,
+        "y": 1360
+      }
+    },
+    {
+      "id": "old_orchard",
+      "name": "Old Orchard",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3150,
+        "y": 1230
+      }
+    },
+    {
+      "id": "coopers_yard",
+      "name": "Cooper's Yard",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3190,
+        "y": 1440
+      }
+    },
+    {
+      "id": "stony_ford",
+      "name": "Stony Ford",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3365,
+        "y": 1170
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "foresters_hut",
+      "name": "Forester's Hut",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 3520,
+        "y": 980
+      }
+    },
+    {
+      "id": "trappers_camp",
+      "name": "Trappers' Camp",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3680,
+        "y": 1140
+      }
+    },
+    {
+      "id": "forest_shrine",
+      "name": "Forest Shrine",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 3830,
+        "y": 990
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "eastbank_farm",
+      "name": "Eastbank Farm",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3620,
+        "y": 1320
+      }
+    },
+    {
+      "id": "ruined_keep",
+      "name": "Ruined Keep",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3830,
+        "y": 1350
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "hay_meadow",
+      "name": "Hay Meadow",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3240,
+        "y": 1640
+      }
+    },
+    {
+      "id": "crossroads_well",
+      "name": "Crossroads Well",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2840,
+        "y": 1740
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "kiln_yard",
+      "name": "Kiln Yard",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3120,
+        "y": 1860
+      }
+    },
+    {
+      "id": "toll_bridge",
+      "name": "Toll Bridge",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3467,
+        "y": 1780
+      },
+      "sigil": "bridge"
+    },
+    {
+      "id": "shepherds_fold",
+      "name": "Shepherd's Fold",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2160,
+        "y": 1700
+      }
+    },
+    {
+      "id": "old_barrow",
+      "name": "Old Barrow",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 1490,
+        "y": 1600
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "boundary_stone",
+      "name": "Boundary Stone",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 1670,
+        "y": 1650
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "gallows_hill",
+      "name": "Gallows Hill",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 1530,
+        "y": 1870
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "drovers_camp",
+      "name": "Drovers' Camp",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 1790,
+        "y": 1810
+      }
+    },
+    {
+      "id": "wayside_shrine",
+      "name": "Wayside Shrine",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 1970,
+        "y": 1870
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "brook_mill",
+      "name": "Brook Mill",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2060,
+        "y": 2020
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "sheep_ford",
+      "name": "Sheep Ford",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 1780,
+        "y": 2087
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "ash_ford",
+      "name": "Ash Ford",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 1490,
+        "y": 2064
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "lowfield",
+      "name": "Lowfield",
+      "type": "TOWN",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2130,
+        "y": 2170
+      }
+    },
+    {
+      "id": "old_quarry",
+      "name": "Old Quarry",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2360,
+        "y": 2210
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "ploughmans_rest",
+      "name": "Ploughman's Rest",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2460,
+        "y": 2020
+      }
+    },
+    {
+      "id": "charred_barn",
+      "name": "Charred Barn",
+      "type": "DISCOVERY",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2590,
+        "y": 2230
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "lower_farm",
+      "name": "Lower Farm",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2920,
+        "y": 1940
+      }
+    },
+    {
+      "id": "willowbank",
+      "name": "Willowbank",
+      "type": "TOWN",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3370,
+        "y": 1970
+      }
+    },
+    {
+      "id": "goose_green",
+      "name": "Goose Green",
+      "type": "TOWN",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3020,
+        "y": 2170
+      }
+    },
+    {
+      "id": "smoke_hill",
+      "name": "Smoke Hill",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 2830,
+        "y": 2240
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "south_watch",
+      "name": "South Watch",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 1,
+      "position": {
+        "x": 3280,
+        "y": 2210
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "fishers_huts",
+      "name": "Fishers' Huts",
+      "type": "CAMP",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 3620,
+        "y": 2240
+      }
+    },
+    {
+      "id": "reed_marsh",
+      "name": "Reed Marsh",
+      "type": "TRAIL",
+      "regionId": "borderlands",
+      "areaTier": 2,
+      "position": {
+        "x": 3830,
+        "y": 2130
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "fern_hollow",
+      "name": "Fern Hollow",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 3482,
+        "y": 399
+      }
+    },
+    {
+      "id": "deep_burrow",
+      "name": "Deep Burrow",
+      "type": "DUNGEON",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4403,
+        "y": 1563
+      },
+      "sigil": "dungeon"
+    },
+    {
+      "id": "bog_path",
+      "name": "Bog Path",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4317,
+        "y": 1275
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "forest_watch",
+      "name": "Forest Watch",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4338,
+        "y": 1633
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "woodmarket",
+      "name": "Woodmarket",
+      "type": "TOWN",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 2652,
+        "y": 339
+      }
+    },
+    {
+      "id": "woodsmens_graves",
+      "name": "Woodsmen's Graves",
+      "type": "DISCOVERY",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 3729,
+        "y": 367
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "woodsmoke_camp",
+      "name": "Woodsmoke Camp",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 3878,
+        "y": 611
+      }
+    },
+    {
+      "id": "deer_path",
+      "name": "Deer Path",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4078,
+        "y": 806
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "root_bridge",
+      "name": "Root Bridge",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 3191,
+        "y": 102
+      },
+      "sigil": "bridge"
+    },
+    {
+      "id": "old_forest_road",
+      "name": "Old Forest Road",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 2855,
+        "y": 93
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "old_altar",
+      "name": "Old Altar",
+      "type": "DISCOVERY",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4450,
+        "y": 1311
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "resin_tappers_camp",
+      "name": "Resin Tappers' Camp",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1980,
+        "y": 459
+      }
+    },
+    {
+      "id": "black_pine_camp",
+      "name": "Black Pine Camp",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 2238,
+        "y": 254
+      }
+    },
+    {
+      "id": "bramble_gap",
+      "name": "Bramble Gap",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1902,
+        "y": 306
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "owl_roost",
+      "name": "Owl Roost",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4443,
+        "y": 1936
+      }
+    },
+    {
+      "id": "moss_steps",
+      "name": "Moss Steps",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4731,
+        "y": 1869
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "timber_hamlet",
+      "name": "Timber Hamlet",
+      "type": "TOWN",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4566,
+        "y": 2147
+      }
+    },
+    {
+      "id": "smelters_row",
+      "name": "Smelters' Row",
+      "type": "TOWN",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 640,
+        "y": 1260
+      }
+    },
+    {
+      "id": "crater_rim",
+      "name": "Crater Rim",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 1050,
+        "y": 1623
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "slag_bridge",
+      "name": "Slag Bridge",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 1104,
+        "y": 1899
+      },
+      "sigil": "bridge"
+    },
+    {
+      "id": "burnt_caravan",
+      "name": "Burnt Caravan",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 849,
+        "y": 1576
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "red_gully",
+      "name": "Red Gully",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 3170,
+        "y": 2619
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "ash_road",
+      "name": "Ash Road",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 2884,
+        "y": 2545
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "scald_camp",
+      "name": "Scald Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 2586,
+        "y": 2610
+      }
+    },
+    {
+      "id": "pumice_hollow",
+      "name": "Pumice Hollow",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 3179,
+        "y": 2646
+      }
+    },
+    {
+      "id": "burnt_gibbet",
+      "name": "Burnt Gibbet",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 372,
+        "y": 1361
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "hot_rocks",
+      "name": "Hot Rocks",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 1443,
+        "y": 2227
+      }
+    },
+    {
+      "id": "lava_steps",
+      "name": "Lava Steps",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 1707,
+        "y": 2403
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "fallen_bell_tower",
+      "name": "Fallen Bell Tower",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 1997,
+        "y": 2493
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "ash_bridge",
+      "name": "Ash Bridge",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 993,
+        "y": 1959
+      },
+      "sigil": "bridge"
+    },
+    {
+      "id": "scree_path",
+      "name": "Scree Path",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 2029,
+        "y": 2658
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "slag_heaps",
+      "name": "Slag Heaps",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 2608,
+        "y": 2575
+      }
+    },
+    {
+      "id": "dust_basin",
+      "name": "Dust Basin",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 477,
+        "y": 1937
+      }
+    },
+    {
+      "id": "grey_dunes",
+      "name": "Grey Dunes",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 253,
+        "y": 1823
+      }
+    },
+    {
+      "id": "dry_gully_camp",
+      "name": "Dry Gully Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 322,
+        "y": 2099
+      }
+    },
+    {
+      "id": "steam_vents",
+      "name": "Steam Vents",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 4164,
+        "y": 2912
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "pine_steps",
+      "name": "Pine Steps",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1481,
+        "y": 724
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "cinder_path",
+      "name": "Cinder Path",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 1316,
+        "y": 948
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "old_smelting_works",
+      "name": "Old Smelting Works",
+      "type": "DUNGEON",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 1146,
+        "y": 1168
+      },
+      "sigil": "dungeon"
+    },
+    {
+      "id": "stag_clearing",
+      "name": "Stag Clearing",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4002,
+        "y": 2359
+      }
+    },
+    {
+      "id": "black_tower",
+      "name": "Black Tower",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 3758,
+        "y": 2561
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "tar_pits",
+      "name": "Tar Pits",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 4321,
+        "y": 2521
+      }
+    },
+    {
+      "id": "twisted_oak",
+      "name": "Twisted Oak",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 4804,
+        "y": 403
+      }
+    },
+    {
+      "id": "shale_camp",
+      "name": "Shale Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 3196,
+        "y": 3238
+      }
+    },
+    {
+      "id": "abandoned_camp",
+      "name": "Abandoned Camp",
+      "type": "DISCOVERY",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 882,
+        "y": 399
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "cinder_rise",
+      "name": "Cinder Rise",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 355,
+        "y": 2509
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "dust_track",
+      "name": "Dust Track",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 695,
+        "y": 822
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "ashpit_camp",
+      "name": "Ashpit Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 2724,
+        "y": 2882
+      }
+    },
+    {
+      "id": "cinder_camp",
+      "name": "Cinder Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 90,
+        "y": 1377
+      }
+    },
+    {
+      "id": "black_rock_camp",
+      "name": "Black Rock Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 371,
+        "y": 238
+      }
+    },
+    {
+      "id": "ash_hollow",
+      "name": "Ash Hollow",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 71,
+        "y": 510
+      }
+    },
+    {
+      "id": "clinker_camp",
+      "name": "Clinker Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 193,
+        "y": 2853
+      }
+    },
+    {
+      "id": "gate_market",
+      "name": "Gate Market",
+      "type": "TOWN",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 2621,
+        "y": 3190
+      }
+    },
+    {
+      "id": "wolf_track",
+      "name": "Wolf Track",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4683,
+        "y": 1201
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "sunken_lane",
+      "name": "Sunken Lane",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1135,
+        "y": 755
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "bone_hollow",
+      "name": "Bone Hollow",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 3084,
+        "y": 2937
+      }
+    },
+    {
+      "id": "glass_flats",
+      "name": "Glass Flats",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 2009,
+        "y": 3088
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "hanging_tree",
+      "name": "Hanging Tree",
+      "type": "DISCOVERY",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 703,
+        "y": 66
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "bone_field",
+      "name": "Bone Field",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 703,
+        "y": 2968
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "burnt_orchard",
+      "name": "Burnt Orchard",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 89,
+        "y": 2609
+      }
+    },
+    {
+      "id": "grey_fort",
+      "name": "Grey Fort",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 2379,
+        "y": 3070
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "fox_earth",
+      "name": "Fox Earth",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4621,
+        "y": 861
+      }
+    },
+    {
+      "id": "badger_sett",
+      "name": "Badger Sett",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4127,
+        "y": 464
+      }
+    },
+    {
+      "id": "narrow_pass",
+      "name": "Narrow Pass",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 420,
+        "y": 800
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "cinder_market",
+      "name": "Cinder Market",
+      "type": "TOWN",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 4334,
+        "y": 3155
+      }
+    },
+    {
+      "id": "cracked_well",
+      "name": "Cracked Well",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 1131,
+        "y": 3106
+      }
+    },
+    {
+      "id": "flint_camp",
+      "name": "Flint Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 4851,
+        "y": 2717
+      }
+    },
+    {
+      "id": "charred_rise",
+      "name": "Charred Rise",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 381,
+        "y": 3212
+      }
+    },
+    {
+      "id": "smoke_watch",
+      "name": "Smoke Watch",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 474,
+        "y": 2794
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "hollow_stump",
+      "name": "Hollow Stump",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1364,
+        "y": 439
+      }
+    },
+    {
+      "id": "vulture_rock",
+      "name": "Vulture Rock",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 599,
+        "y": 543
+      }
+    },
+    {
+      "id": "poachers_snare",
+      "name": "Poachers' Snare",
+      "type": "DISCOVERY",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1746,
+        "y": 79
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "honey_tree",
+      "name": "Honey Tree",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1280,
+        "y": 70
+      }
+    },
+    {
+      "id": "collapsed_mine",
+      "name": "Collapsed Mine",
+      "type": "DUNGEON",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 94,
+        "y": 876
+      },
+      "sigil": "dungeon"
+    },
+    {
+      "id": "timber_fort",
+      "name": "Timber Fort",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 3593,
+        "y": 685
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "silt_ford",
+      "name": "Silt Ford",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 3643,
+        "y": 3181
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "huntsmens_camp",
+      "name": "Huntsmen's Camp",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4386,
+        "y": 666
+      }
+    },
+    {
+      "id": "melted_statue",
+      "name": "Melted Statue",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 1450,
+        "y": 3051
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "bark_peelers_camp",
+      "name": "Bark Peelers' Camp",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 2538,
+        "y": 635
+      }
+    },
+    {
+      "id": "ring_of_oaks",
+      "name": "Ring of Oaks",
+      "type": "DISCOVERY",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4546,
+        "y": 432
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "hazel_thicket",
+      "name": "Hazel Thicket",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4286,
+        "y": 91
+      }
+    },
+    {
+      "id": "mossy_bank",
+      "name": "Mossy Bank",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 1944,
+        "y": 744
+      }
+    },
+    {
+      "id": "fallen_watchpost",
+      "name": "Fallen Watchpost",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 1140,
+        "y": 2484
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "ember_ford",
+      "name": "Ember Ford",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 3679,
+        "y": 2931
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "old_lookout",
+      "name": "Old Lookout",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4626,
+        "y": 99
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "mud_ford",
+      "name": "Mud Ford",
+      "type": "TRAIL",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 3217,
+        "y": 679
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "dry_wells",
+      "name": "Dry Wells",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 3353,
+        "y": 2921
+      }
+    },
+    {
+      "id": "lantern_clearing",
+      "name": "Lantern Clearing",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4596,
+        "y": 2397
+      }
+    },
+    {
+      "id": "raven_rock",
+      "name": "Raven Rock",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4182,
+        "y": 2023
+      }
+    },
+    {
+      "id": "old_oak_camp",
+      "name": "Old Oak Camp",
+      "type": "CAMP",
+      "regionId": "thornwood",
+      "areaTier": 2,
+      "position": {
+        "x": 4074,
+        "y": 1710
+      }
+    },
+    {
+      "id": "basalt_steps",
+      "name": "Basalt Steps",
+      "type": "TRAIL",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 4025,
+        "y": 2664
+      },
+      "sigil": "waypoint"
+    },
+    {
+      "id": "crows_perch",
+      "name": "Crow's Perch",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 83,
+        "y": 2359
+      }
+    },
+    {
+      "id": "deserters_camp",
+      "name": "Deserters' Camp",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 125,
+        "y": 3104
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "raiders_cairn",
+      "name": "Raiders' Cairn",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 2188,
+        "y": 2880
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "soot_camp",
+      "name": "Soot Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 1666,
+        "y": 3201
+      }
+    },
+    {
+      "id": "lost_wagon",
+      "name": "Lost Wagon",
+      "type": "DISCOVERY",
+      "regionId": "thornwood",
+      "areaTier": 3,
+      "position": {
+        "x": 946,
+        "y": 140
+      },
+      "sigil": "battle"
+    },
+    {
+      "id": "smelters_camp",
+      "name": "Smelters' Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 339,
+        "y": 489
+      }
+    },
+    {
+      "id": "brimstone_camp",
+      "name": "Brimstone Camp",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 122,
+        "y": 174
+      }
+    },
+    {
+      "id": "basalt_keep",
+      "name": "Basalt Keep",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 2,
+      "position": {
+        "x": 895,
+        "y": 1051
+      },
+      "sigil": "fortress"
+    },
+    {
+      "id": "ash_shrine",
+      "name": "Ash Shrine",
+      "type": "DISCOVERY",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 4771,
+        "y": 2520
+      },
+      "sigil": "shrine"
+    },
+    {
+      "id": "salt_pans",
+      "name": "Salt Pans",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 4693,
+        "y": 2824
+      }
+    },
+    {
+      "id": "hawk_ridge",
+      "name": "Hawk Ridge",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 4702,
+        "y": 2432
+      }
+    },
+    {
+      "id": "ember_flats",
+      "name": "Ember Flats",
+      "type": "CAMP",
+      "regionId": "ashfall",
+      "areaTier": 3,
+      "position": {
+        "x": 4841,
+        "y": 2606
+      }
     }
   ],
   "edges": [
     {
       "from": "frontier_camp",
+      "to": "north_ridge_path",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "frontier_camp",
+      "to": "upland_farm",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "frontier_camp",
       "to": "riverside_market",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "frontier_camp",
+      "to": "crossroads_well",
       "encounterTableId": "borderlands_road"
     },
     {
@@ -577,13 +2295,233 @@
       "encounterTableId": "borderlands_road"
     },
     {
+      "from": "frontier_camp",
+      "to": "darens_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "darens_camp",
+      "to": "south_road_ambush",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "north_ridge_path",
+      "to": "cairn_hill",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "north_ridge_path",
+      "to": "plank_bridge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "north_ridge_path",
+      "to": "watchtower_ridge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "north_ridge_path",
+      "to": "beekeepers_croft",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "beekeepers_croft",
+      "to": "traders_rest",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "cairn_hill",
+      "to": "woodcutters_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "cairn_hill",
+      "to": "old_sawpit",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "woodcutters_camp",
+      "to": "plank_bridge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "plank_bridge",
+      "to": "barley_hill_farm",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "barley_hill_farm",
+      "to": "hunters_lodge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "barley_hill_farm",
+      "to": "standing_stones",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "hunters_lodge",
+      "to": "beacon_hill",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "beacon_hill",
+      "to": "charcoal_burners_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "charcoal_burners_camp",
+      "to": "heath_croft",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "heath_croft",
+      "to": "standing_stones",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "heath_croft",
+      "to": "burnt_farm",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "standing_stones",
+      "to": "borderland_shrine",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "burnt_farm",
+      "to": "borderland_shrine",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "watchtower_ridge",
+      "to": "border_fortress",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "watchtower_ridge",
+      "to": "upland_farm",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "watchtower_ridge",
+      "to": "old_orchard",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "border_fortress",
+      "to": "stony_ford",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "stony_ford",
+      "to": "foresters_hut",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "stony_ford",
+      "to": "trappers_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_orchard",
+      "to": "coopers_yard",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "upland_farm",
+      "to": "riverside_market",
+      "encounterTableId": "borderlands_road"
+    },
+    {
       "from": "riverside_market",
       "to": "old_mill_crossing",
       "encounterTableId": "borderlands_road"
     },
     {
       "from": "riverside_market",
-      "to": "bandit_hideout",
+      "to": "coopers_yard",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "coopers_yard",
+      "to": "old_mill_crossing",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "riverside_market",
+      "to": "hay_meadow",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "riverside_market",
+      "to": "kiln_yard",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_mill_crossing",
+      "to": "pine_crossing",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_mill_crossing",
+      "to": "eastbank_farm",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "eastbank_farm",
+      "to": "trappers_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "eastbank_farm",
+      "to": "ruined_keep",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "trappers_camp",
+      "to": "forest_shrine",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "pine_crossing",
+      "to": "rodericks_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "pine_crossing",
+      "to": "ruined_keep",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "rodericks_camp",
+      "to": "smugglers_cave",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "hay_meadow",
+      "to": "toll_bridge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "toll_bridge",
+      "to": "rodericks_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "kiln_yard",
+      "to": "crossroads_well",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "kiln_yard",
+      "to": "willowbank",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "crossroads_well",
+      "to": "lower_farm",
       "encounterTableId": "borderlands_road"
     },
     {
@@ -592,73 +2530,163 @@
       "encounterTableId": "borderlands_road"
     },
     {
-      "from": "old_mill_crossing",
-      "to": "watchtower_ridge",
-      "encounterTableId": "borderlands_road"
-    },
-    {
-      "from": "old_mill_crossing",
-      "to": "pine_crossing",
-      "encounterTableId": "borderlands_road"
-    },
-    {
-      "from": "old_mill_crossing",
-      "to": "north_ridge_path",
-      "encounterTableId": "borderlands_road"
-    },
-    {
-      "from": "bandit_hideout",
-      "to": "south_junction",
-      "encounterTableId": "borderlands_road"
-    },
-    {
-      "from": "bandit_hideout",
-      "to": "pine_crossing",
+      "from": "south_road_ambush",
+      "to": "ploughmans_rest",
       "encounterTableId": "borderlands_road"
     },
     {
       "from": "south_junction",
+      "to": "lower_farm",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "south_junction",
+      "to": "goose_green",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "south_junction",
+      "to": "charred_barn",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "goose_green",
+      "to": "smoke_hill",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "goose_green",
+      "to": "south_watch",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "willowbank",
+      "to": "south_watch",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "willowbank",
+      "to": "toll_bridge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "south_watch",
+      "to": "broken_bridge",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "broken_bridge",
       "to": "smugglers_cave",
       "encounterTableId": "borderlands_road"
     },
     {
-      "from": "south_junction",
-      "to": "broken_bridge",
+      "from": "broken_bridge",
+      "to": "fishers_huts",
       "encounterTableId": "borderlands_road"
     },
     {
-      "from": "watchtower_ridge",
-      "to": "border_fortress",
-      "encounterTableId": "borderlands_road"
-    },
-    {
-      "from": "watchtower_ridge",
-      "to": "north_ridge_path",
-      "encounterTableId": "borderlands_road"
-    },
-    {
-      "from": "pine_crossing",
-      "to": "border_fortress",
-      "encounterTableId": "borderlands_road"
-    },
-    {
-      "from": "pine_crossing",
-      "to": "rodericks_camp",
+      "from": "fishers_huts",
+      "to": "reed_marsh",
       "encounterTableId": "borderlands_road"
     },
     {
       "from": "smugglers_cave",
-      "to": "rodericks_camp",
+      "to": "reed_marsh",
       "encounterTableId": "borderlands_road"
     },
     {
-      "from": "smugglers_cave",
-      "to": "broken_bridge",
+      "from": "traders_rest",
+      "to": "bandit_hideout",
       "encounterTableId": "borderlands_road"
     },
     {
-      "from": "border_fortress",
+      "from": "traders_rest",
+      "to": "shepherds_fold",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "bandit_hideout",
       "to": "borderland_shrine",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "bandit_hideout",
+      "to": "boundary_stone",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "bandit_hideout",
+      "to": "drovers_camp",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_barrow",
+      "to": "burnt_farm",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_barrow",
+      "to": "boundary_stone",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_barrow",
+      "to": "gallows_hill",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "shepherds_fold",
+      "to": "wayside_shrine",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "shepherds_fold",
+      "to": "brook_mill",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "drovers_camp",
+      "to": "gallows_hill",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "drovers_camp",
+      "to": "wayside_shrine",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "drovers_camp",
+      "to": "sheep_ford",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "sheep_ford",
+      "to": "lowfield",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "brook_mill",
+      "to": "lowfield",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "lowfield",
+      "to": "old_quarry",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "old_quarry",
+      "to": "charred_barn",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "ploughmans_rest",
+      "to": "old_quarry",
+      "encounterTableId": "borderlands_road"
+    },
+    {
+      "from": "gallows_hill",
+      "to": "ash_ford",
       "encounterTableId": "borderlands_road"
     },
     {
@@ -673,21 +2701,46 @@
     },
     {
       "from": "thornwood_gate",
+      "to": "fern_hollow",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "fern_hollow",
       "to": "foggy_marsh",
       "encounterTableId": "thornwood_road"
     },
     {
       "from": "southern_trail",
+      "to": "deep_burrow",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "deep_burrow",
+      "to": "bog_path",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "bog_path",
       "to": "cursed_clearing",
       "encounterTableId": "thornwood_road"
     },
     {
       "from": "southern_trail",
+      "to": "forest_watch",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "forest_watch",
       "to": "spiders_nest",
       "encounterTableId": "thornwood_road"
     },
     {
       "from": "thornwood_chapel",
+      "to": "woodmarket",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "woodmarket",
       "to": "hermits_tower",
       "encounterTableId": "thornwood_road"
     },
@@ -698,11 +2751,36 @@
     },
     {
       "from": "dark_hollow",
+      "to": "woodsmens_graves",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "woodsmens_graves",
+      "to": "woodsmoke_camp",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "woodsmoke_camp",
+      "to": "deer_path",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "deer_path",
       "to": "cursed_clearing",
       "encounterTableId": "thornwood_road"
     },
     {
       "from": "dark_hollow",
+      "to": "root_bridge",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "root_bridge",
+      "to": "old_forest_road",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "old_forest_road",
       "to": "wolf_den",
       "encounterTableId": "thornwood_road"
     },
@@ -713,6 +2791,11 @@
     },
     {
       "from": "cursed_clearing",
+      "to": "old_altar",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "old_altar",
       "to": "witchs_hut",
       "encounterTableId": "thornwood_road"
     },
@@ -723,6 +2806,11 @@
     },
     {
       "from": "hermits_tower",
+      "to": "resin_tappers_camp",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "resin_tappers_camp",
       "to": "ancient_ruins",
       "encounterTableId": "thornwood_road"
     },
@@ -733,21 +2821,36 @@
     },
     {
       "from": "wolf_den",
+      "to": "black_pine_camp",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "black_pine_camp",
+      "to": "bramble_gap",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "bramble_gap",
       "to": "ancient_ruins",
       "encounterTableId": "thornwood_road"
     },
     {
-      "from": "wolf_den",
+      "from": "witchs_hut",
+      "to": "owl_roost",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "owl_roost",
       "to": "morganas_grove",
       "encounterTableId": "thornwood_road"
     },
     {
       "from": "witchs_hut",
-      "to": "morganas_grove",
+      "to": "moss_steps",
       "encounterTableId": "thornwood_road"
     },
     {
-      "from": "witchs_hut",
+      "from": "moss_steps",
       "to": "thornwood_depths",
       "encounterTableId": "thornwood_road"
     },
@@ -758,41 +2861,106 @@
     },
     {
       "from": "morganas_grove",
+      "to": "timber_hamlet",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "timber_hamlet",
       "to": "thornwood_depths",
       "encounterTableId": "thornwood_road"
     },
     {
       "from": "mountain_pass",
+      "to": "smelters_row",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "smelters_row",
       "to": "ashfall_outpost",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "mountain_pass",
+      "to": "crater_rim",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "crater_rim",
+      "to": "slag_bridge",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "slag_bridge",
       "to": "lava_fields",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "mountain_pass",
+      "to": "burnt_caravan",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "burnt_caravan",
       "to": "ember_creek",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "ashfall_trail",
+      "to": "red_gully",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "red_gully",
+      "to": "ash_road",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ash_road",
+      "to": "scald_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "scald_camp",
       "to": "scorched_village",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "ashfall_trail",
+      "to": "pumice_hollow",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "pumice_hollow",
       "to": "ruined_chapel",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "ashfall_outpost",
+      "to": "burnt_gibbet",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "burnt_gibbet",
       "to": "dragons_lookout",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "lava_fields",
+      "to": "hot_rocks",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "hot_rocks",
+      "to": "lava_steps",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lava_steps",
+      "to": "fallen_bell_tower",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "fallen_bell_tower",
       "to": "scorched_village",
       "encounterTableId": "ashfall_road"
     },
@@ -803,26 +2971,51 @@
     },
     {
       "from": "lava_fields",
+      "to": "ash_bridge",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ash_bridge",
       "to": "ember_creek",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "scorched_village",
+      "to": "scree_path",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "scree_path",
       "to": "sulfur_springs",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "scorched_village",
+      "to": "slag_heaps",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "slag_heaps",
       "to": "ruined_chapel",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "dragons_lookout",
+      "to": "dust_basin",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "dust_basin",
       "to": "cragmaw_fortress",
       "encounterTableId": "ashfall_road"
     },
     {
       "from": "dragons_lookout",
+      "to": "grey_dunes",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "grey_dunes",
       "to": "obsidian_cavern",
       "encounterTableId": "ashfall_road"
     },
@@ -832,38 +3025,23 @@
       "encounterTableId": "ashfall_road"
     },
     {
-      "from": "iron_mine",
-      "to": "final_approach",
-      "encounterTableId": "ashfall_road"
-    },
-    {
-      "from": "sulfur_springs",
-      "to": "final_approach",
-      "encounterTableId": "ashfall_road"
-    },
-    {
-      "from": "sulfur_springs",
-      "to": "warlords_camp",
-      "encounterTableId": "ashfall_road"
-    },
-    {
       "from": "cragmaw_fortress",
+      "to": "dry_gully_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "dry_gully_camp",
       "to": "obsidian_cavern",
       "encounterTableId": "ashfall_road"
     },
     {
-      "from": "cragmaw_fortress",
-      "to": "ashen_gate",
+      "from": "final_approach",
+      "to": "steam_vents",
       "encounterTableId": "ashfall_road"
     },
     {
-      "from": "final_approach",
+      "from": "steam_vents",
       "to": "warlords_camp",
-      "encounterTableId": "ashfall_road"
-    },
-    {
-      "from": "final_approach",
-      "to": "ashen_gate",
       "encounterTableId": "ashfall_road"
     },
     {
@@ -872,8 +3050,518 @@
       "encounterTableId": "ashfall_road"
     },
     {
+      "from": "ancient_ruins",
+      "to": "pine_steps",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "pine_steps",
+      "to": "cinder_path",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "cinder_path",
+      "to": "old_smelting_works",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "old_smelting_works",
+      "to": "mountain_pass",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "morganas_grove",
+      "to": "stag_clearing",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "stag_clearing",
+      "to": "black_tower",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "black_tower",
+      "to": "ashfall_trail",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "morganas_grove",
+      "to": "tar_pits",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "tar_pits",
+      "to": "final_approach",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "burnt_orchard",
+      "to": "crows_perch",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lantern_clearing",
+      "to": "timber_hamlet",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "silt_ford",
+      "to": "ember_ford",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "black_rock_camp",
+      "to": "smelters_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "hanging_tree",
+      "to": "lost_wagon",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "black_rock_camp",
+      "to": "brimstone_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "wolf_track",
+      "to": "old_altar",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "twisted_oak",
+      "to": "ring_of_oaks",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "clinker_camp",
+      "to": "deserters_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "melted_statue",
+      "to": "soot_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "bark_peelers_camp",
+      "to": "hermits_tower",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "vulture_rock",
+      "to": "smelters_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "clinker_camp",
+      "to": "burnt_orchard",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "abandoned_camp",
+      "to": "lost_wagon",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "ashpit_camp",
+      "to": "ruined_chapel",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ash_hollow",
+      "to": "smelters_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "bone_hollow",
+      "to": "dry_wells",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "grey_fort",
+      "to": "raiders_cairn",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "gate_market",
+      "to": "grey_fort",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "raven_rock",
+      "to": "southern_trail",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "raiders_cairn",
+      "to": "scree_path",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "glass_flats",
+      "to": "raiders_cairn",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "poachers_snare",
+      "to": "bramble_gap",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "raven_rock",
+      "to": "owl_roost",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "dust_track",
+      "to": "narrow_pass",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "old_oak_camp",
+      "to": "forest_watch",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "basalt_keep",
+      "to": "old_smelting_works",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "charred_rise",
+      "to": "deserters_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "timber_fort",
+      "to": "foggy_marsh",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "fallen_watchpost",
+      "to": "iron_mine",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "huntsmens_camp",
+      "to": "ring_of_oaks",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "cinder_camp",
+      "to": "burnt_gibbet",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "narrow_pass",
+      "to": "ashfall_outpost",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "cinder_rise",
+      "to": "burnt_orchard",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "basalt_steps",
+      "to": "steam_vents",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "basalt_steps",
+      "to": "black_tower",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "mossy_bank",
+      "to": "resin_tappers_camp",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "smoke_watch",
+      "to": "clinker_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "bone_field",
+      "to": "smoke_watch",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "bark_peelers_camp",
+      "to": "druids_circle",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "badger_sett",
+      "to": "woodsmoke_camp",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "timber_fort",
+      "to": "woodsmoke_camp",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "dust_track",
+      "to": "vulture_rock",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "cinder_market",
+      "to": "steam_vents",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "dry_wells",
+      "to": "ashfall_trail",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lantern_clearing",
+      "to": "tar_pits",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "basalt_keep",
+      "to": "dust_track",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "fox_earth",
+      "to": "huntsmens_camp",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "hollow_stump",
+      "to": "pine_steps",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "cinder_rise",
+      "to": "smoke_watch",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "crows_perch",
+      "to": "cinder_rise",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "bone_hollow",
+      "to": "ruined_chapel",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "abandoned_camp",
+      "to": "vulture_rock",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "mud_ford",
+      "to": "thornwood_gate",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "shale_camp",
+      "to": "bone_hollow",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "cracked_well",
+      "to": "melted_statue",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ashpit_camp",
+      "to": "gate_market",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ember_ford",
+      "to": "dry_wells",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "badger_sett",
+      "to": "huntsmens_camp",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "old_oak_camp",
+      "to": "raven_rock",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "collapsed_mine",
+      "to": "narrow_pass",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "hazel_thicket",
+      "to": "old_lookout",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "ash_hollow",
+      "to": "brimstone_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "honey_tree",
+      "to": "lost_wagon",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "old_lookout",
+      "to": "ring_of_oaks",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "wolf_track",
+      "to": "fox_earth",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "sunken_lane",
+      "to": "pine_steps",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "collapsed_mine",
+      "to": "ashfall_outpost",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "silt_ford",
+      "to": "warlords_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "twisted_oak",
+      "to": "old_lookout",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "shale_camp",
+      "to": "dry_wells",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "glass_flats",
+      "to": "soot_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "hanging_tree",
+      "to": "black_rock_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "mud_ford",
+      "to": "timber_fort",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "hollow_stump",
+      "to": "honey_tree",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "sunken_lane",
+      "to": "basalt_keep",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "bone_field",
+      "to": "charred_rise",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "hazel_thicket",
+      "to": "badger_sett",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "cinder_camp",
+      "to": "dragons_lookout",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "cracked_well",
+      "to": "bone_field",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "poachers_snare",
+      "to": "honey_tree",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "flint_camp",
+      "to": "salt_pans",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "salt_pans",
+      "to": "ashen_gate",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "lantern_clearing",
+      "to": "hawk_ridge",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "hawk_ridge",
+      "to": "ash_shrine",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ash_shrine",
+      "to": "ember_flats",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ember_flats",
+      "to": "flint_camp",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "charcoal_burners_camp",
+      "to": "cinder_path",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "hunters_lodge",
+      "to": "mossy_bank",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "old_sawpit",
+      "to": "druids_circle",
+      "encounterTableId": "thornwood_road"
+    },
+    {
       "from": "border_fortress",
       "to": "thornwood_gate",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "foresters_hut",
+      "to": "timber_fort",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "forest_shrine",
+      "to": "deer_path",
+      "encounterTableId": "thornwood_road"
+    },
+    {
+      "from": "ruined_keep",
+      "to": "spiders_nest",
       "encounterTableId": "thornwood_road"
     },
     {
@@ -882,24 +3570,39 @@
       "encounterTableId": "thornwood_road"
     },
     {
-      "from": "ancient_ruins",
-      "to": "mountain_pass",
-      "encounterTableId": "ashfall_road"
+      "from": "reed_marsh",
+      "to": "stag_clearing",
+      "encounterTableId": "thornwood_road"
     },
     {
-      "from": "morganas_grove",
+      "from": "broken_bridge",
       "to": "ashfall_trail",
       "encounterTableId": "ashfall_road"
     },
     {
-      "from": "frontier_camp",
-      "to": "darens_camp",
-      "encounterTableId": "borderlands_road"
+      "from": "smoke_hill",
+      "to": "ash_road",
+      "encounterTableId": "ashfall_road"
     },
     {
-      "from": "darens_camp",
-      "to": "south_road_ambush",
-      "encounterTableId": "borderlands_road"
+      "from": "lowfield",
+      "to": "fallen_bell_tower",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "ash_ford",
+      "to": "hot_rocks",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "old_barrow",
+      "to": "crater_rim",
+      "encounterTableId": "ashfall_road"
+    },
+    {
+      "from": "burnt_farm",
+      "to": "mountain_pass",
+      "encounterTableId": "ashfall_road"
     }
   ]
 }

@@ -496,8 +496,8 @@ export const rules: Rules = {
     noRollInto: ['TOWN', 'BOSS'],
     decisionNodeTypes: ['TOWN', 'CAMP', 'DUNGEON', 'BOSS', 'DISCOVERY'],
     tierByDistance: [
-      { maxHops: 2, tier: 1 },
-      { maxHops: 5, tier: 2 },
+      { maxHops: 4, tier: 1 },
+      { maxHops: 10, tier: 2 },
       { maxHops: Number.POSITIVE_INFINITY, tier: 3 },
     ],
     bossNodeMinHops: 7,

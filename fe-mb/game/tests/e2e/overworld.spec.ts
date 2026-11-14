@@ -5,11 +5,12 @@ import { clippedText, errorsOf, offStage } from './probes'
  * The map's own rules (BRIEF §2.9, §5, §10), which nothing covered before:
  *   · clicking the node the company stands on re-enters it — no hop, no food, no day
  *   · a camera pan that begins and ends over a node is a pan, never a click, and never latches the next one
- *   · the walking pill counts the legs that are LEFT, the leg in flight included exactly once
- *   · at the shipped party cap of 6 the band still fits the stage and no name is cut without recovery
+ *   · the walking line counts the legs that are LEFT, the leg in flight included exactly once
+ *   · at the shipped party cap of 6 the windows still fit the stage and no name is cut without recovery
  *   · low supplies are never signalled by colour alone
- *   · no place-name touches a mark, another name or a road, at any camera position (GATE2-4, GATE3-10)
- *   · the company token never hides the mark it is standing on
+ *   · no plate or name is cut by the frame, covered by a window or laid on another, at any camera (GATE2-4, GATE3-10)
+ *   · the company never stands on the name of the place it is at
+ * Ported to the Filigree map over the drawn country on 2026-11-14 (owner: a vertical slice); each rule kept.
  */
 
 interface Handle {
@@ -101,7 +102,7 @@ test('the walking pill counts the hops that are left, the leg in flight included
   await page.evaluate(() => { (window as unknown as { __game: Handle }).__game.runtime.setPaused(false) })
 })
 
-test('at the party cap of 6 the band keeps every control on the stage and every name recoverable', async ({ page }) => {
+test('at the party cap of 6 the windows keep every control on the stage and every name recoverable', async ({ page }) => {
   await page.goto(MAP)
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
   await page.evaluate(() => {
@@ -118,20 +119,23 @@ test('at the party cap of 6 the band keeps every control on the stage and every 
     })
     g.dispatch({ type: 'dev/seedState', state: { ...s, run: { ...s.run, party, partyOrder, mcName: 'Wilhelmina Thornbury', companyName: 'The Ashenford Free Company' } } })
   })
-  await expect(page.getByTestId('ledger-band').locator('.ow-face')).toHaveCount(6)
+  // the company window grows a row a head; six rows still stand clear of the region window above it
+  await expect(page.getByTestId('company-window').locator('.fniche')).toHaveCount(6)
+  const gap = await page.evaluate(() => document.querySelector('[data-testid="company-window"]')!.getBoundingClientRect().top - document.querySelector('[data-testid="ledger-band"]')!.getBoundingClientRect().bottom)
+  expect(gap).toBeGreaterThan(0)
 
-  // the Esc/Menu chip is the only route to Pause and Save & quit: it may never be pushed off the stage
-  expect(await offStage(page, '.ow-band')).toEqual([])
+  // the Esc/Menu row is the only route to Pause and Save & quit: it may never be pushed off the stage
+  expect(await offStage(page, '.fmap-hud')).toEqual([])
   await expect(page.getByTestId('band-menu')).toBeVisible()
   // a cut name is allowed; a cut name with no way to read it is not
-  expect(await clippedText(page, '.ow-band')).toEqual([])
+  expect(await clippedText(page, '.fmap-hud')).toEqual([])
 })
 
 test('low supplies are not signalled by colour alone', async ({ page }) => {
   await page.goto(MAP)
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
   const food = page.getByTestId('band-food')
-  await expect(food.locator('svg')).toHaveCount(0)
+  await expect(page.getByTestId('band-food-low')).toHaveCount(0)
 
   await page.evaluate(() => {
     const g = (window as unknown as { __game: Handle }).__game
@@ -139,77 +143,57 @@ test('low supplies are not signalled by colour alone', async ({ page }) => {
     g.dispatch({ type: 'dev/seedState', state: { ...s, run: { ...s.run, bag: s.run.bag.filter((b) => b.itemId !== 'food_rations') } } })
   })
   await expect(food).toHaveText('0')
-  // a sigil AND a sentence, not just a red numeral
-  await expect(food.locator('svg')).toHaveCount(1)
+  // a mark AND words, not just a red numeral: the kit's refusal mark beside the count, and the sentence on the count
+  await expect(page.getByTestId('band-food-low')).toHaveText(/none left/)
+  expect(await page.getByTestId('band-food-low').evaluate((el) => getComputedStyle(el, '::before').backgroundImage)).toMatch(/^url\(/)
   await expect(food).toHaveAttribute('aria-label', /no rations/i)
 })
 
-test('no place-name touches a mark, another name or a road — at any camera position', async ({ page }) => {
-  await page.goto(MAP)
-  await expect(page.getByTestId('overworld-screen')).toBeVisible()
-  await page.evaluate(() => document.fonts.ready)
-
-  // The sheet is measured, not eyeballed: every rendered name box against every drawn disc, every other name box,
-  // and the REAL svg geometry of every road (sampled with getPointAtLength, so the bowed curve is what is tested).
-  // GATE2-4 counted twelve of these at the default camera; GATE3-10 saw them from the chair.
-  const sweep = async (): Promise<readonly string[]> => page.evaluate(() => {
-    const world = document.querySelector('.ow-world')!.getBoundingClientRect()
-    const local = (r: DOMRect): { x: number; y: number; w: number; h: number } => ({ x: r.x - world.x, y: r.y - world.y, w: r.width, h: r.height })
-    const marks = Array.from(document.querySelectorAll('.ow-node')).map((n) => ({
-      id: n.getAttribute('data-testid') ?? '',
-      name: (n.querySelector('.ow-node__label')?.textContent ?? '').trim(),
-      mark: local(n.querySelector('.ow-node__mark')!.getBoundingClientRect()),
-      label: local(n.querySelector('.ow-node__label')!.getBoundingClientRect()),
-    }))
-    const box = { x: 0, y: 0, w: 0, h: 0 }
-    const hits = (a: typeof box, b: typeof box): boolean =>
-      Math.min(a.x + a.w, b.x + b.w) > Math.max(a.x, b.x) && Math.min(a.y + a.h, b.y + b.h) > Math.max(a.y, b.y)
-    const out: string[] = []
-    for (let i = 0; i < marks.length; i++) {
-      const a = marks[i]!
-      for (let j = i + 1; j < marks.length; j++) {
-        if (hits(a.label, marks[j]!.label)) out.push(`name x name: ${a.name} / ${marks[j]!.name}`)
-      }
-      for (const m of marks) {
-        // the drawn disc/ring is 46 of the 52px mark box; inset so a name may sit right beside a mark
-        const disc = { x: m.mark.x + 3, y: m.mark.y + 3, w: m.mark.w - 6, h: m.mark.h - 6 }
-        if (m.id !== a.id && hits(a.label, disc)) out.push(`name x mark: ${a.name} / ${m.name}`)
-      }
-    }
-    for (const path of Array.from(document.querySelectorAll<SVGPathElement>('.ow-roads path'))) {
-      const len = path.getTotalLength()
-      for (let s = 0; s <= len; s += Math.max(2, len / 240)) {
-        const pt = path.getPointAtLength(s)
-        for (const m of marks) {
-          const b = m.label
-          if (pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h) {
-            const msg = `name x road: ${m.name}`
-            if (!out.includes(msg)) out.push(msg)
-          }
-        }
-      }
-    }
-    return out
-  })
-
-  expect(await sweep()).toEqual([])
-  // ...and the plan is sheet-space, so panning the camera can neither create a collision nor move a name
-  const firstBoxes = await page.evaluate(() => Array.from(document.querySelectorAll('.ow-node')).map((n) => {
-    const w = document.querySelector('.ow-world')!.getBoundingClientRect()
-    const r = n.querySelector('.ow-node__label')!.getBoundingClientRect()
-    return `${n.getAttribute('data-testid')}:${Math.round(r.x - w.x)},${Math.round(r.y - w.y)}`
-  }))
-  for (const pan of [{ x: 0, y: 0 }, { x: 760, y: 60 }, { x: 1500, y: 220 }, { x: 1780, y: 330 }]) {
-    await page.evaluate((p) => { (window as unknown as { __game: Handle }).__game.dispatch({ type: 'ui/setMapPan', pan: p }) }, pan)
-    expect(await sweep(), `camera ${pan.x},${pan.y}`).toEqual([])
-    const boxes = await page.evaluate(() => Array.from(document.querySelectorAll('.ow-node')).map((n) => {
-      const w = document.querySelector('.ow-world')!.getBoundingClientRect()
-      const r = n.querySelector('.ow-node__label')!.getBoundingClientRect()
-      return `${n.getAttribute('data-testid')}:${Math.round(r.x - w.x)},${Math.round(r.y - w.y)}`
-    }))
-    expect(boxes).toEqual(firstBoxes)
+/** Every plate, name, window and the company on the stage, as boxes in stage px. */
+interface Lettering {
+  readonly plates: readonly { readonly name: string; readonly x: number; readonly y: number; readonly w: number; readonly h: number }[]
+  readonly names: readonly { readonly name: string; readonly x: number; readonly y: number; readonly w: number; readonly h: number }[]
+  readonly windows: readonly { readonly x: number; readonly y: number; readonly w: number; readonly h: number }[]
+}
+const lettering = async (page: Page): Promise<Lettering> => page.evaluate(() => {
+  const stage = document.getElementById('game-stage')!.getBoundingClientRect()
+  const s = stage.width / 1280
+  const box = (el: Element): { x: number; y: number; w: number; h: number } => {
+    const r = el.getBoundingClientRect()
+    return { x: (r.left - stage.left) / s, y: (r.top - stage.top) / s, w: r.width / s, h: r.height / s }
+  }
+  const on = (b: { x: number; y: number; w: number; h: number }): boolean => b.x + b.w > 0 && b.x < 1280 && b.y + b.h > 0 && b.y < 720
+  // a name's box is its LETTERS, not the layout box it is centred in
+  const letters = (el: Element): { x: number; y: number; w: number; h: number } => {
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    return box(range as unknown as Element)
+  }
+  return {
+    plates: Array.from(document.querySelectorAll('.fmap-world .fw--tag, .fmap-world .fw--taglit')).map((el) => ({ name: (el.textContent ?? '').trim(), ...box(el) })).filter(on),
+    names: Array.from(document.querySelectorAll('.fmap-world .fmap-name')).map((el) => ({ name: (el.textContent ?? '').trim(), ...letters(el) })).filter(on),
+    windows: Array.from(document.querySelectorAll('.fmap-hud > .fw')).map((el) => box(el)),
   }
 })
+type B = { readonly x: number; readonly y: number; readonly w: number; readonly h: number }
+const hits = (a: B, b: B): boolean => Math.min(a.x + a.w, b.x + b.w) > Math.max(a.x, b.x) + 0.5 && Math.min(a.y + a.h, b.y + b.h) > Math.max(a.y, b.y) + 0.5
+const cut = (b: B): boolean => b.x < -0.5 || b.y < -0.5 || b.x + b.w > 1280.5 || b.y + b.h > 720.5
+
+/** The faults the lettering may never have, at whatever camera: a plate on a plate, under a window or cut by the frame; a name cut or under a plate or window. */
+const faults = (l: Lettering): readonly string[] => {
+  const out: string[] = []
+  l.plates.forEach((a, i) => {
+    if (cut(a)) out.push(`plate cut by the frame: ${a.name}`)
+    for (const w of l.windows) if (hits(a, w)) out.push(`plate under a window: ${a.name}`)
+    for (const b of l.plates.slice(i + 1)) if (hits(a, b)) out.push(`plate x plate: ${a.name} / ${b.name}`)
+  })
+  for (const n of l.names) {
+    if (cut(n)) out.push(`name cut by the frame: ${n.name}`)
+    for (const w of l.windows) if (hits(n, w)) out.push(`name under a window: ${n.name}`)
+    for (const p of l.plates) if (hits(n, p)) out.push(`name under a plate: ${n.name} / ${p.name}`)
+  }
+  return out
+}
 
 /** Let React commit, then let every transition it started actually finish, before the paint is read. */
 const settle = async (page: Page): Promise<void> => {
@@ -221,118 +205,86 @@ const settle = async (page: Page): Promise<void> => {
 }
 
 /**
- * RE-GATE C 3.20 — the sheet is 3060x850 behind a 1280x600 window, and the window used to end in a hard cut:
- * "Cursed Clearing" printed as a bare "CUR" at x = 1280, with nothing anywhere saying the map could be moved.
- * It did not trip the typography sweep because it is not `text-overflow: ellipsis` — it is the frame's own clip.
+ * GATE2-4, GATE3-10 and RE-GATE C 3.20, on the drawn country. The art's name boxes are laid out once by the tool that
+ * draws it (clear of every sprite, road and river: `tools/pxworld`), so what the SCREEN owns is what a camera can
+ * break: a plate under a window, two plates on one seat, a name the frame slices in half.
  */
-test('the frame is a window, not a guillotine: no name is sliced by it, and it says there is more sheet', async ({ page }) => {
+test('no plate or name is cut by the frame, covered by a window or laid on another — at any camera', async ({ page }) => {
   await page.goto(MAP)
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
   await page.evaluate(() => document.fonts.ready)
 
-  /** Every name the frame CUTS: on screen, but not wholly on it, and still lettered. */
-  const sliced = async (): Promise<readonly string[]> => page.evaluate(() => {
-    const vp = document.querySelector('[data-testid="map-viewport"]')!.getBoundingClientRect()
-    const out: string[] = []
-    for (const el of Array.from(document.querySelectorAll<HTMLElement>('.ow-node__label'))) {
-      const r = el.getBoundingClientRect()
-      const onScreen = r.right > vp.left && r.left < vp.right && r.bottom > vp.top && r.top < vp.bottom
-      const whole = r.left >= vp.left - 0.5 && r.right <= vp.right + 0.5 && r.top >= vp.top - 0.5 && r.bottom <= vp.bottom + 0.5
-      if (onScreen && !whole && Number(getComputedStyle(el).opacity) > 0.02) out.push((el.textContent ?? '').trim())
-    }
-    return out
-  })
-  /** Which sides of the frame declare there is more country behind them. */
-  const shadows = async (): Promise<readonly string[]> => page.$$eval('.ow-edge__side', (els) => els.map((e) => e.className.replace(/.*--/, '')).sort())
+  expect(faults(await lettering(page)), 'at the camp, day 1').toEqual([])
+  // the camp has six roads out: all six of their names are on the stage as plates, none dropped to dodge a window
+  expect((await lettering(page)).plates).toHaveLength(6)
 
-  // the hint is up before the player has ever moved the sheet, and it names the gesture in words
-  await expect(page.getByTestId('map-hint')).toBeVisible()
+  // the hint is up before the player has ever moved the map, and it names the gesture in words
   await expect(page.getByTestId('map-hint')).toContainText(/drag/i)
 
-  expect(await sliced(), 'a place-name amputated by the frame at the default camera').toEqual([])
-  for (const pan of [{ x: 0, y: 0 }, { x: 900, y: 120 }, { x: 1500, y: 240 }, { x: 1780, y: 250 }, { x: 2400, y: 60 }]) {
-    await page.evaluate((p) => { (window as unknown as { __game: Handle }).__game.dispatch({ type: 'ui/setMapPan', pan: p }) }, pan)
+  const here = await page.evaluate(() => {
+    const g = (window as unknown as { __game: Handle & { env: { content: { overworld: { nodes: { id: string; position: { x: number; y: number } }[] } } } } }).__game
+    return g.env.content.overworld.nodes.find((n) => n.id === g.getState().run!.nodeId)!.position
+  })
+  for (const d of [{ x: -640, y: -360 }, { x: -200, y: -500 }, { x: 180, y: -220 }, { x: -900, y: 40 }, { x: -640, y: 200 }]) {
+    await page.evaluate((p) => { (window as unknown as { __game: Handle }).__game.dispatch({ type: 'ui/setMapPan', pan: p }) }, { x: here.x + d.x, y: here.y + d.y })
     await settle(page)
-    expect(await sliced(), `camera ${pan.x},${pan.y}`).toEqual([])
-    // and the shadow is the truth about the camera, never decoration: at the paper's own edge it lifts
-    const sides = await shadows()
-    if (pan.x <= 0) expect(sides, 'shadow on a side with no sheet behind it').not.toContain('l')
-    else expect(sides, 'no shadow on a side that has more sheet behind it').toContain('l')
+    expect(faults(await lettering(page)), `camera ${d.x},${d.y} from the camp`).toEqual([])
   }
-
-  // hard against the sheet's right edge: the right side has nothing behind it and stops declaring that it does
-  await page.evaluate(() => { (window as unknown as { __game: Handle }).__game.dispatch({ type: 'ui/setMapPan', pan: { x: 99999, y: 99999 } }) })
-  await settle(page)
-  const cornered = await shadows()
-  expect(cornered).not.toContain('r')
-  expect(cornered).not.toContain('b')
-  expect(cornered).toContain('l')
-  await page.screenshot({ path: '../.playwright-mcp/fix4-3.20-frame.png' })
 })
 
-test('the company never hides the mark it is standing on', async ({ page }) => {
+test('the company never stands on the name of the place it is at', async ({ page }) => {
   await page.goto(MAP)
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
-
-  // GATE3-10: at rest the pawn covered the top third of the sigil, so a town and a camp looked the same while you
-  // were in one. The token stands clear of the disc AND is painted under it, so the sheet always outreads it.
-  const read = async (): Promise<{ gap: number; pawnZ: number; nodeZ: number }> => page.evaluate(() => {
-    const pawn = document.querySelector('[data-testid="pawn"]')!
-    const node = document.querySelector('.ow-node--current')!
-    const disc = node.querySelector('.ow-node__mark')!.getBoundingClientRect()
-    const p = pawn.getBoundingClientRect()
-    return {
-      gap: disc.y + 3 - (p.y + p.height),
-      pawnZ: Number(getComputedStyle(pawn).zIndex),
-      nodeZ: Number(getComputedStyle(node).zIndex),
-    }
+  const overlap = async (): Promise<number> => page.evaluate(() => {
+    const p = document.querySelector('[data-testid="pawn"]')!.getBoundingClientRect()
+    const range = document.createRange()
+    range.selectNodeContents(document.querySelector('.fmap-name--here')!)
+    const n = range.getBoundingClientRect()
+    return Math.max(0, Math.min(p.right, n.right) - Math.max(p.left, n.left)) * Math.max(0, Math.min(p.bottom, n.bottom) - Math.max(p.top, n.top))
   })
-  const at = await read()
-  expect(at.gap).toBeGreaterThanOrEqual(0)
-  expect(at.pawnZ).toBeLessThan(at.nodeZ)
+  // GATE3-10: at rest the token covered what told the player where they were. In the camp, and after a march.
+  expect(await overlap()).toBe(0)
+  await page.getByTestId('node-riverside_market').click()
+  await expect(page.getByTestId('node-card')).toBeVisible()
+  await page.getByTestId('menu-stay').click()
+  await settle(page)
+  expect(await overlap()).toBe(0)
 })
 
-test('the card opens AT the place it names, and points back at it', async ({ page }) => {
+test('the card opens AT the place it names', async ({ page }) => {
   // RE-GATE C 3.11: the node card was pinned to the bottom centre of the stage whatever the player clicked —
   // measured at 562px from `node-riverside_market`, with three quarters of the map between the two.
   await page.goto('/?screen=overworld&seed=41&motion=0')
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
 
-  const distance = async (testId: string): Promise<{ d: number; dx: number; cardTop: number; markBottom: number }> =>
-    page.evaluate((id) => {
-      const stage = document.getElementById('game-stage')!.getBoundingClientRect()
-      const s = stage.width / 1280
-      const mark = document.querySelector(`[data-testid="${id}"] .ow-node__mark`)!.getBoundingClientRect()
-      const card = document.querySelector('[data-testid="node-card"]')!.getBoundingClientRect()
-      const mc = { x: (mark.left + mark.width / 2 - stage.left) / s, y: (mark.top + mark.height / 2 - stage.top) / s }
-      const cc = { x: (card.left + card.width / 2 - stage.left) / s, y: (card.top + card.height / 2 - stage.top) / s }
-      return { d: Math.hypot(cc.x - mc.x, cc.y - mc.y), dx: Math.abs(cc.x - mc.x), cardTop: (card.top - stage.top) / s, markBottom: (mark.bottom - stage.top) / s }
-    }, testId)
-
   await page.getByTestId('node-riverside_market').click()
   await expect(page.getByTestId('node-card')).toBeVisible()
-  const near = await distance('node-riverside_market')
-  expect(near.d).toBeLessThan(220)
-  expect(near.dx).toBeLessThan(40)          // same column as the mark, unless the clamp had to move it
-  expect(near.cardTop).toBeGreaterThan(near.markBottom) // seated UNDER a mark in the upper half
-  // the notch is on the card, pointing back at the mark
-  const notch = await page.getByTestId('node-card').evaluate((el) => getComputedStyle(el, '::before').borderBottomWidth)
-  expect(Number.parseFloat(notch)).toBeGreaterThan(0)
-  await page.screenshot({ path: '../.playwright-mcp/fix3-3.11-node-card.png' })
-
-  // the whole card stays on the stage even for a mark near the edge
-  const box = await page.getByTestId('node-card').evaluate((el) => {
+  await settle(page)
+  const near = await page.evaluate(() => {
     const stage = document.getElementById('game-stage')!.getBoundingClientRect()
-    const b = el.getBoundingClientRect()
-    return { left: b.left - stage.left, right: stage.right - b.right, top: b.top - stage.top, bottom: stage.bottom - b.bottom }
+    const s = stage.width / 1280
+    const place = document.querySelector('[data-testid="node-riverside_market"]')!.getBoundingClientRect()
+    const card = document.querySelector('[data-testid="node-card"]')!.getBoundingClientRect()
+    const pc = { x: (place.left + place.width / 2 - stage.left) / s, y: (place.top + place.height / 2 - stage.top) / s }
+    const cc = { x: (card.left + card.width / 2 - stage.left) / s, y: (card.top + card.height / 2 - stage.top) / s }
+    return {
+      d: Math.hypot(cc.x - pc.x, cc.y - pc.y), dx: Math.abs(cc.x - pc.x),
+      // the card sits clear of the place's buildings, on one side of them or the other
+      clear: card.top >= place.bottom - 8 * s || card.bottom <= place.top + 8 * s,
+      left: card.left - stage.left, right: stage.right - card.right, top: card.top - stage.top, bottom: stage.bottom - card.bottom,
+    }
   })
-  expect(box.left).toBeGreaterThanOrEqual(-0.5)
-  expect(box.right).toBeGreaterThanOrEqual(-0.5)
-  expect(box.top).toBeGreaterThanOrEqual(-0.5)
-  expect(box.bottom).toBeGreaterThanOrEqual(-0.5)
+  expect(near.d).toBeLessThan(220)
+  expect(near.dx).toBeLessThan(40)          // same column as the place, unless the clamp had to move it
+  expect(near.clear).toBe(true)
+  // the whole card stays on the stage
+  expect(near.left).toBeGreaterThanOrEqual(-0.5)
+  expect(near.right).toBeGreaterThanOrEqual(-0.5)
+  expect(near.top).toBeGreaterThanOrEqual(-0.5)
+  expect(near.bottom).toBeGreaterThanOrEqual(-0.5)
 })
 
-test('the road line is a LEDGER reading, not chrome parked over the sheet', async ({ page }) => {
+test('the road line is a reading in the region window, not chrome parked over the map', async ({ page }) => {
   // RE-GATE B 2.6: "On the road · 1 hop to go" was pinned top-centre of the map at (533-748, 134-160), covering
   // the North Ridge Path mark for the whole journey and butting into that node's name (signal E).
   await page.goto(MAP)
@@ -342,37 +294,25 @@ test('the road line is a LEDGER reading, not chrome parked over the sheet', asyn
     g.runtime.setPaused(true)
     g.dispatch({ type: 'travel/goTo', nodeId: 'old_mill_crossing' })
   })
-  const pill = page.getByTestId('walking')
-  await expect(pill).toBeVisible()
-  // it lives inside the band, and nothing in the map viewport is chrome over the world
-  expect(await pill.evaluate((el) => el.closest('[data-testid="ledger-band"]') !== null)).toBe(true)
-  expect(await pill.evaluate((el) => el.closest('[data-testid="map-viewport"]') === null)).toBe(true)
-  const overWorld = await page.evaluate(() => {
-    const vp = document.querySelector('[data-testid="map-viewport"]')!.getBoundingClientRect()
-    return Array.from(document.querySelectorAll('[data-testid="map-viewport"] > *'))
-      .filter((el) => !el.classList.contains('ow-world'))
-      // the frame's own shadow (`.ow-edge`) letters nothing and reads nothing; it is the window, not a panel
-      .filter((el) => (el.textContent ?? '').trim() !== '')
-      .map((el) => {
-        const b = el.getBoundingClientRect()
-        return { cls: String(el.className), text: (el.textContent ?? '').trim(), midY: (b.top + b.height / 2 - vp.top) / vp.height }
-      })
-  })
-  // The frame may speak for ITSELF over the sheet — the first-time pan hint (3.20), the way back to the company —
-  // but a LEDGER READING (the day, the purse, the larder, the hops that are left) belongs in the band.
-  expect(overWorld.map((o) => o.cls).sort()).toEqual(['ow-hint'])
-  for (const o of overWorld) expect(o.text, `a run reading parked over the sheet: ${o.cls}`).not.toMatch(/day|gold|food|ration|hop/i)
+  const line = page.getByTestId('walking')
+  await expect(line).toBeVisible()
+  // it lives inside the region window, and the map's viewport holds the world and nothing else
+  expect(await line.evaluate((el) => el.closest('[data-testid="ledger-band"]') !== null)).toBe(true)
+  expect(await line.evaluate((el) => el.closest('[data-testid="map-viewport"]') === null)).toBe(true)
+  expect(await page.evaluate(() => Array.from(document.querySelectorAll('[data-testid="map-viewport"] > *')).map((el) => String(el.className)))).toEqual(['fmap-world'])
+  // while the company walks nothing is offered, so the footnote that offers the roads is down
+  await expect(page.getByTestId('map-foot')).toHaveCount(0)
   await page.evaluate(() => { (window as unknown as { __game: Handle }).__game.runtime.setPaused(false) })
-  await page.screenshot({ path: '../.playwright-mcp/fix3-2.6-walking.png' })
 })
 
-test('the ration is spent at the camp and READ on the map: every scouted road carries its mark, and the preview quotes it', async ({ page }) => {
+test('the ration is spent at the camp and READ on the map: every scouted road carries its mark, and the forecast quotes it', async ({ page }) => {
   // RE-GATE C 3.9: Scout cost a ration and a camp action to produce a thirteen-row report readable ONLY while
   // standing at that camp. The sheet, the node card, the hover preview and the CLI all ignored `run.scoutedEdges`,
   // so the intel was gone by the time the road was chosen. It is now annotated onto the roads themselves.
   await page.goto('/?screen=camp&seed=21&motion=0')
   await page.getByTestId('camp-scout').click()
-  const reported = await page.locator('.camp__report-row').count()
+  // the report's header counts the whole sweep (the card lists the nearest roads and counts the rest)
+  const reported = Number((await page.getByTestId('scout-report').innerText()).match(/(\d+) roads?/i)?.[1] ?? 0)
   expect(reported).toBeGreaterThan(0)
 
   await page.getByTestId('camp-leave').click()
@@ -381,7 +321,7 @@ test('the ration is spent at the camp and READ on the map: every scouted road ca
   await expect(page.getByTestId('node-card')).toHaveCount(0)
 
   // one mark per road the ration paid for, drawn ON the road (the same count the camp report printed)
-  await expect(page.locator('[data-testid="scout-marks"] > g')).toHaveCount(reported)
+  await expect(page.locator('[data-testid="scout-marks"] > *')).toHaveCount(reported)
 
   // …and the WORDS on the leg the pointer is asking about, before the click that spends the day
   const leg = await page.evaluate(() => {
@@ -394,19 +334,15 @@ test('the ration is spent at the camp and READ on the map: every scouted road ca
   const sighting = page.getByTestId('path-sighting').first()
   await expect(sighting).toBeVisible()
   await expect(sighting).toHaveText(/ · (The road is quiet|Armed men on the road|Someone waits by the road|Something on the road)$/)
-  await page.screenshot({ path: '../.playwright-mcp/fix3-3.9-scouted-map.png' })
 
-  // a road nobody walked down carries nothing: the mark is what was BOUGHT, not decoration on every edge
-  const totalRoads = await page.evaluate(() => document.querySelectorAll('.ow-roads > g:first-child > path').length)
+  // a road nobody walked down carries nothing: the mark is what was BOUGHT, not decoration on every road
+  const totalRoads = Number(await page.getByTestId('scout-marks').getAttribute('data-roads'))
   expect(reported).toBeLessThan(totalRoads)
 })
 
-test('the way back to the company is legible on the paper it stands on', async ({ page }) => {
-  // FINAL GATE B. `.ow-recentre` is the only strap in the game that sits on the SHEET rather than on leather, and
-  // `.btn-forged--ghost` letters itself in `--color-parchment-dim` — bone at the document root. Bone on vellum:
-  // the only way back to the party after a pan measured 1.36:1 across its own painted pixels (the band's chips
-  // measure 14.5:1), which is a control the player cannot see. The ratio is taken off what the browser actually
-  // PAINTS, because the defect was a token inherited from an ancestor, not a value written on the rule.
+test('the way back to the company is legible on the map it sits on', async ({ page }) => {
+  // FINAL GATE B: the only way back to the party after a pan once measured 1.36:1 across its own painted pixels,
+  // a control the player could not see. The ratio is taken off what the browser actually PAINTS.
   const painted = async (locator: ReturnType<Page['locator']>): Promise<number> => {
     const shot = (await locator.screenshot()).toString('base64')
     return page.evaluate(async (b64) => {
@@ -432,19 +368,18 @@ test('the way back to the company is legible on the paper it stands on', async (
 
   await page.goto('/?screen=overworld&seed=41&motion=0')
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
-  await page.evaluate(() => { (window as unknown as { __game: { dispatch: (a: unknown) => void } }).__game.dispatch({ type: 'ui/setMapPan', pan: { x: -400, y: 40 } }) })
-  const recentre = page.locator('.ow-recentre')
+  await page.evaluate(() => { (window as unknown as { __game: { dispatch: (a: unknown) => void } }).__game.dispatch({ type: 'ui/setMapPan', pan: { x: 1200, y: 900 } }) })
+  const recentre = page.getByTestId('map-recentre')
   await expect(recentre).toBeVisible()
   await page.evaluate(async () => { await document.fonts.ready })
 
-  expect(await painted(recentre), 'the control that finds the company is painted in one flat tone').toBeGreaterThan(3)
-  // it takes the PAPER ramp, the way `.page-canvas` does — not the leather bone it used to inherit
-  const ink = await recentre.evaluate((el) => getComputedStyle(el).color)
-  expect(ink).not.toBe('rgb(213, 200, 173)')
-  // …and it still recedes: a ghost on the sheet, never a second primary next to the band's chips
-  expect(await recentre.evaluate((el) => el.className)).toContain('btn-forged--ghost')
+  // a walnut button with bone lettering: its own ground, whatever country is under it
+  expect(await painted(recentre), 'the control that finds the company').toBeGreaterThan(4.5)
+  // …and it recedes: a secondary on the map, never a second brass primary
+  expect(await recentre.evaluate((el) => el.className)).not.toContain('pri')
+  await recentre.click()
+  await expect(recentre).toHaveCount(0)
 })
-
 
 /**
  * RE-GATE C 3.14 — the dungeon mouth warns before it commits the company (0113) and the LAST door had nothing at

@@ -96,11 +96,10 @@ test('the shop shows whole cards and says how much stock it has', async ({ page 
   expect(await page.locator('[data-testid^="stock-"]').count()).toBeGreaterThan(0)
 })
 
-test('the band never cuts a name the player was given or chose', async ({ page }) => {
+test('the company window never cuts a name the player was given or chose', async ({ page }) => {
   await page.goto('/?screen=overworld&seed=21&motion=0')
-  await expect(page.getByTestId('ledger-band')).toBeVisible()
-  expect(await clipped(page, '.ow-face__name')).toEqual([])
-  expect(await clipped(page, '.ow-band__company')).toEqual([])
+  await expect(page.getByTestId('company-window')).toBeVisible()
+  expect(await clipped(page, '[data-testid="company-window"] .s16')).toEqual([])
 
   // a banner the player wrote at full length still lands whole
   await page.evaluate(() => {
@@ -108,12 +107,11 @@ test('the band never cuts a name the player was given or chose', async ({ page }
     const s = g.getState() as { run: Record<string, unknown> }
     g.dispatch({ type: 'dev/seedState', state: { ...s, run: { ...s.run, companyName: 'The Ashen Wardens of Corwin' } } })
   })
-  await expect(page.locator('.ow-band__company')).toHaveText('The Ashen Wardens of Corwin')
-  expect(await clipped(page, '.ow-band__company')).toEqual([])
+  await expect(page.getByTestId('company-name')).toHaveText('The Ashen Wardens of Corwin')
+  expect(await clipped(page, '[data-testid="company-name"]')).toEqual([])
 
-  // and a portrait carries the reading the bar can only approximate, on the glass
-  await page.locator('.ow-face').first().hover()
-  await expect(page.locator('.tip')).toHaveText(/\d+\/\d+/)
+  // and each of the company carries the reading the bar can only approximate, in figures, on the glass
+  await expect(page.getByTestId('company-window')).toContainText(/\d+\/\d+/)
 })
 
 test('the scout report is never sliced through a road', async ({ page }) => {
@@ -128,9 +126,12 @@ test('the scout report is never sliced through a road', async ({ page }) => {
   // …and every row is the same height, so a cap can never cut one in half
   const heights = await list.evaluate((el) => [...new Set([...el.querySelectorAll('.camp__report-row')].map((r) => Math.round(r.getBoundingClientRect().height)))])
   expect(heights).toHaveLength(1)
-  // the header states the count, so the player knows the list is complete
+  // the header states the count of the whole sweep; the card lists the roads out of this camp and counts the rest,
+  // so the two always add up and the player knows nothing was dropped (every road is marked on the map)
   const rows = await page.locator('.camp__report-row').count()
-  await expect(page.getByTestId('scout-report')).toContainText(new RegExp(`${rows} roads`, 'i'))
+  const total = Number((await page.getByTestId('scout-report').innerText()).match(/(\d+) roads?/i)?.[1] ?? -1)
+  const beyond = await page.getByTestId('scout-beyond').count() === 0 ? 0 : Number((await page.getByTestId('scout-beyond').innerText()).match(/(\d+) more roads/)?.[1] ?? -1)
+  expect(rows + beyond).toBe(total)
   expect(await clipped(page, '.camp__report-road')).toEqual([])
 })
 

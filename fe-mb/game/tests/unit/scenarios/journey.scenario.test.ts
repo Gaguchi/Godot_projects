@@ -42,7 +42,9 @@ describe('journey — the game end to end through reduce()', () => {
 
     // one hop to a neighbour on a quiet road, then whatever the node menu offers
     const run = s.state.run!
-    const next = adjacency(run, env)[run.nodeId]![0]!
+    // a road INTO a town never rolls (rules.travel.noRollInto), so the town next door is the quiet road: the first
+    // neighbour on the sheet stopped being one when the big country rang the camp with six roads (2026-11-14)
+    const next = adjacency(run, env)[run.nodeId]!.find((id) => env.content.overworld.nodes.find((n) => n.id === id)?.type === 'TOWN')!
     const days = run.daysElapsed
     s.do({ type: 'travel/goTo', nodeId: next })
     s.settle()

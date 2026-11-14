@@ -95,7 +95,9 @@ describe('BRIEF §5 — nothing glows: light falls, never emits', () => {
  */
 describe('ARCHITECTURE §5 — tokens only: no hex outside the palette file', () => {
   const HEX = /#[0-9a-fA-F]{3,8}\b/g
-  const PALETTE = new Set(['index.css'])
+  // Two palettes while the house style moves in screen by screen: index.css is the Field Ledger's; filigree-kit.css is
+  // Filigree's (owner 2026-10-24), GENERATED from tools/pxworld's kit, tokens and all. Hand-written sheets spend them.
+  const PALETTE = new Set(['index.css', 'filigree-kit.css'])
   const EXEMPT_TS = new Set(['overworld/palette.ts'])
 
   it('no stylesheet but index.css names a colour by hex', () => {

@@ -46,8 +46,9 @@ test('the Pause card stops the world: the road holds until Resume', async ({ pag
   await page.goto('/?screen=overworld&seed=7')
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
 
-  // a multi-hop journey across the borderlands
-  await page.evaluate(() => { (window as unknown as { __game: GameHandle }).__game.dispatch({ type: 'travel/goTo', nodeId: 'border_fortress' }) })
+  // a multi-hop journey whose first leg is INTO a town: that road never rolls (rules.travel.noRollInto), so no
+  // encounter can stop the company on it and the only thing that holds the road is the Pause card
+  await page.evaluate(() => { (window as unknown as { __game: GameHandle }).__game.dispatch({ type: 'travel/goTo', nodeId: 'old_mill_crossing' }) })
   await expect(page.getByTestId('walking')).toBeVisible()
 
   await page.getByTestId('band-menu').click()

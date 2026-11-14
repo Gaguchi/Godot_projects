@@ -1,0 +1,17 @@
+{
+  "id": "woodmarket",
+  "name": "Woodmarket",
+  "description": "A clearing under the Thornwood, held by woodsmen who trade with whoever passes.",
+  "regionId": "thornwood",
+  "innHealCostPerUnit": 10,
+  "shopStockIds": [
+    "healing_potion",
+    "food_rations"
+  ],
+  "rumors": [
+    "The bridge toll keeps going up. The mayor's getting greedy.",
+    "Mountain folk say they've seen strange lights in the gorge at night.",
+    "A company of knights rode north last month. Haven't been seen since."
+  ],
+  "tavernQuests": []
+}

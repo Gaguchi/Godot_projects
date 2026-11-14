@@ -37,11 +37,12 @@ test('title → tutorial → prologue → map → town → road, no console erro
     if (await page.getByTestId('overworld-screen').isVisible().catch(() => false)) break
   }
 
-  // the sheet: hover quotes hops · food, click travels, the node card opens on arrival
+  // the map: pointing at a place quotes its days and food, click travels, the place's card opens on arrival
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
   await expect(page.getByTestId('ledger-band')).toContainText(/day/i)
   await page.getByTestId('node-riverside_market').hover()
-  await expect(page.getByTestId('path-preview')).toContainText(/1 hop · 1 food/)
+  await expect(page.getByTestId('path-preview')).toContainText(/1 day/)
+  await expect(page.getByTestId('path-preview')).toContainText(/1 food/)
   await page.getByTestId('node-riverside_market').click()
   await expect(page.getByTestId('node-card')).toContainText(/Riverside Market/)
 
@@ -120,7 +121,7 @@ test('a sealed dungeon shows its Enter verb disabled with the reason, not a dead
   // The VERB stays "Enter" — a state is never carried by the label alone; the refusal's own sentence is the
   // tooltip and a lock sigil is the second channel (UIS-03).
   await expect(enter).toHaveText(/enter/i)
-  await expect(enter.locator('svg')).toHaveCount(1)
+  await expect(enter.locator('img')).toHaveCount(1)
   await expect(enter).toHaveAttribute('aria-disabled', 'true')
   await expect(enter).toHaveAttribute('data-reason', /sealed/i)
   // Playwright itself refuses to press it — which is the point: the verb is no longer a dead brass button

@@ -34,7 +34,7 @@ interface View {
   readonly healPct: number
   readonly wounded: number
   readonly roads: number
-  readonly scouted: readonly { readonly to: string; readonly report: string; readonly quiet: boolean }[]
+  readonly scouted: readonly { readonly to: string; readonly report: string; readonly quiet: boolean; readonly near: boolean }[]
   /** The company, for the foreground: whoever is still standing gets a seat at the fire. */
   readonly figures: readonly { readonly id: string; readonly sprite: string | null }[]
 }
@@ -192,6 +192,8 @@ export function CampScreen(): React.JSX.Element | null {
       to: `${nodeOf(r.from, env).name} → ${nodeOf(r.to, env).name}`,
       report: r.sighting.report,
       quiet: r.sighting.quiet,
+      // the roads out of THIS camp are read here in full; the rest of the sweep is counted (see the report below)
+      near: r.from === run.nodeId || r.to === run.nodeId,
     }))
     return {
       name: node.name,
@@ -227,14 +229,22 @@ export function CampScreen(): React.JSX.Element | null {
           <div className="camp__report" data-testid="scout-report">
             {/* the count is part of the report: the player paid a ration for it and has to know they are seeing all of it */}
             <div className="place__label voice-display" style={{ color: 'var(--color-text-muted)' }}>What the scouts saw · {view.scouted.length} {view.scouted.length === 1 ? 'road' : 'roads'}</div>
+            {/* The sweep reaches three hops, and in the big country that is up to 44 roads: a list of them all ran off
+                the card (it holds eight). Every road the scouts walked is marked ON the map, where the choice is made,
+                so the card reads the roads out of this camp in full and counts the rest. */}
             <ul className="camp__report-list scroll-rail">
-              {view.scouted.map((r) => (
+              {view.scouted.filter((r) => r.near).map((r) => (
                 <li key={r.to} className="camp__report-row">
                   <span className="camp__report-road">{r.to}</span>
                   <span className={`camp__sight${r.quiet ? ' camp__sight--quiet' : ''}`}>{r.report}</span>
                 </li>
               ))}
             </ul>
+            {view.scouted.some((r) => !r.near) && (
+              <p className="place__lead" style={{ color: 'var(--color-parchment-dim)', margin: '6px 0 0' }} data-testid="scout-beyond">
+                Beyond them, {view.scouted.filter((r) => !r.near).length} more roads walked: {view.scouted.filter((r) => !r.near && r.quiet).length} quiet, {view.scouted.filter((r) => !r.near && !r.quiet).length} watched. Each is marked on the map.
+              </p>
+            )}
           </div>
         )}
         {!view.actionTaken && <div className="camp__choices">

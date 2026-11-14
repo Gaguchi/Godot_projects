@@ -107,7 +107,8 @@ test('no changing number is inscribed in the display face', async ({ page }) => 
  * a button whose label lives in a styled child hid the fault from every sweep that walked text nodes.
  */
 test('every control is typeset in one of the three faces, never the browser default', async ({ page }) => {
-  const FACES = ['Cinzel', 'EB Garamond', 'Bitter']
+  // the Field Ledger's three faces, and Filigree's two while the house style moves in screen by screen (2026-11-14)
+  const FACES = ['Cinzel', 'EB Garamond', 'Bitter', 'Jacquard 24', 'Source Serif 4']
   const controls = async (): Promise<readonly string[]> => page.evaluate((faces) => {
     const out = new Set<string>()
     for (const el of Array.from(document.querySelectorAll('#game-stage button, #game-stage input, #game-stage select, #game-stage textarea'))) {

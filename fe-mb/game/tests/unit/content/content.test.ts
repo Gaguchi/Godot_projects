@@ -33,13 +33,14 @@ describe('content registry', () => {
     expect(count(content.enemyAI)).toBe(10)
     expect(count(content.encounterTables)).toBe(3)
     expect(count(content.checkEvents)).toBe(26) // 14 shipped + the six discovery events + the six underground ones (0108)
-    expect(count(content.dungeons)).toBe(5)
-    expect(count(content.towns)).toBe(5)
+    // the big country (owner 2026-10-25, tools/pxworld/src/px-big-b/export_game.py): 195 places, of them 8 dungeons and 13 towns
+    expect(count(content.dungeons)).toBe(8)
+    expect(count(content.towns)).toBe(13)
     expect(count(content.quests)).toBe(2)
     expect(count(content.dialogues)).toBe(13)
     expect(count(content.regions)).toBe(3)
-    expect(content.overworld.nodes).toHaveLength(47)
-    expect(content.overworld.edges).toHaveLength(68)
+    expect(content.overworld.nodes).toHaveLength(195)
+    expect(content.overworld.edges).toHaveLength(268)
   })
 
   it('applies the §2/§3 content rulings', () => {
@@ -166,7 +167,11 @@ describe('content registry', () => {
     // has its event, every dungeon has an event deck, and only two thresholds sit outside the authoring band.
     // The authoring band is [4, 9] as of 0055 — its floor is the lowest stat a level-1 starter can still fail on
     // (LCK 4), so the shipped first-region checks no longer warn just for being passable in the first hour.
-    expect(warnings.filter((w) => !w.includes('TODO(mechanic)'))).toEqual([])
+    // One debt is standing and counted: the big country added 25 DISCOVERY places whose one-time events are not
+    // authored yet (an inert pause each, as the lint says). Nothing else may warn.
+    const rest = warnings.filter((w) => !w.includes('TODO(mechanic)'))
+    expect(rest.filter((w) => !/^node \w+: DISCOVERY node without a discoveryEventId/.test(w))).toEqual([])
+    expect(rest).toHaveLength(25)
   })
 
   it('every check the party is offered can actually be passed', () => {

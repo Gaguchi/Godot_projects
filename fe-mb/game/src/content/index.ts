@@ -83,12 +83,23 @@ import dgIronMine from './data/dungeons/iron_mine.json'
 import dgObsidianCavern from './data/dungeons/obsidian_cavern.json'
 import dgSmugglersCave from './data/dungeons/smugglers_cave.json'
 import dgThornwoodDepths from './data/dungeons/thornwood_depths.json'
+import dgDeepBurrow from './data/dungeons/deep_burrow.json'
+import dgOldSmeltingWorks from './data/dungeons/old_smelting_works.json'
+import dgCollapsedMine from './data/dungeons/collapsed_mine.json'
 
 import twAshfallOutpost from './data/towns/ashfall_outpost.json'
 import twPineCrossing from './data/towns/pine_crossing.json'
 import twRiversideMarket from './data/towns/riverside_market.json'
 import twSouthJunction from './data/towns/south_junction.json'
 import twThornwoodChapel from './data/towns/thornwood_chapel.json'
+import twLowfield from './data/towns/lowfield.json'
+import twWillowbank from './data/towns/willowbank.json'
+import twGooseGreen from './data/towns/goose_green.json'
+import twWoodmarket from './data/towns/woodmarket.json'
+import twTimberHamlet from './data/towns/timber_hamlet.json'
+import twSmeltersRow from './data/towns/smelters_row.json'
+import twGateMarket from './data/towns/gate_market.json'
+import twCinderMarket from './data/towns/cinder_market.json'
 
 import qBloodTies from './data/quests/blood_ties.json'
 import qMissingCaravan from './data/quests/missing_caravan.json'
@@ -215,10 +226,16 @@ function loadContent(): ContentRegistry {
     dungeons: keyById('dungeons', parseDir('dungeons', DungeonDefSchema, [
       ['ancient_ruins', dgAncientRuins], ['iron_mine', dgIronMine], ['obsidian_cavern', dgObsidianCavern],
       ['smugglers_cave', dgSmugglersCave], ['thornwood_depths', dgThornwoodDepths],
+      // the big country (tools/pxworld/src/px-big-b/export_game.py): each new DUNGEON place, from a dungeon of its region
+      ['deep_burrow', dgDeepBurrow], ['old_smelting_works', dgOldSmeltingWorks], ['collapsed_mine', dgCollapsedMine],
     ])),
     towns: keyById('towns', parseDir('towns', TownDefSchema, [
       ['ashfall_outpost', twAshfallOutpost], ['pine_crossing', twPineCrossing], ['riverside_market', twRiversideMarket],
       ['south_junction', twSouthJunction], ['thornwood_chapel', twThornwoodChapel],
+      // the big country: each new TOWN place, from a town of its region
+      ['lowfield', twLowfield], ['willowbank', twWillowbank], ['goose_green', twGooseGreen],
+      ['woodmarket', twWoodmarket], ['timber_hamlet', twTimberHamlet], ['smelters_row', twSmeltersRow],
+      ['gate_market', twGateMarket], ['cinder_market', twCinderMarket],
     ])),
     overworld: parseFile('overworld/world.json', OverworldSheetSchema, worldJson),
     quests: keyById('quests', parseDir('quests', QuestSchema, [['blood_ties', qBloodTies], ['missing_caravan', qMissingCaravan]])),

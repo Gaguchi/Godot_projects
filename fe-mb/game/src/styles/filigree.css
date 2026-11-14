@@ -1,0 +1,100 @@
+/*
+ * styles/filigree.css — the game's own pieces in Filigree, the house style (owner 2026-10-24): walnut and brass
+ * windows over the 1x pixel world. The kit itself (type, colours, buttons, commands, keys, tips) is filigree-kit.css,
+ * GENERATED from tools/pxworld; this sheet spends its tokens (--f-*) and never names a colour by hex.
+ *
+ * One art pixel is one stage pixel: every piece sits on whole pixels and no frame, icon or sprite is scaled.
+ */
+.f64 button { font: inherit; color: inherit; text-shadow: inherit; text-align: inherit; border: 0; background: none; cursor: pointer; }
+.f64 img { image-rendering: pixelated; -webkit-user-drag: none; user-select: none; }
+.f64 .fill { position: absolute; inset: 0; }
+
+/* ------------------------------------------------------------------ windows: a 9-slice frame over a dithered fill */
+.f64 .fw { position: absolute; text-shadow: 1px 1px 0 rgba(17, 13, 10, 0.85); }
+.f64 .fw::before {
+  content: ''; position: absolute; inset: 6px; background-color: var(--f-fill-win);
+  background-image: repeating-conic-gradient(var(--f-dot-win) 0 25%, transparent 0 50%); background-size: 2px 2px;
+}
+.f64 .fw::after {
+  content: ''; position: absolute; inset: 0 -2px -2px 0; pointer-events: none; image-rendering: pixelated;
+  border-style: solid; border-width: 24px 26px 26px 24px; border-image: url('/art/ui/frame_win.png') 24 26 26 24 stretch;
+}
+.f64 .fw > * { position: absolute; }
+.f64 .fw--lit::before { background-color: var(--f-fill-lit); background-image: repeating-conic-gradient(var(--f-dot-lit) 0 25%, transparent 0 50%); }
+.f64 .fw--lit::after { border-image-source: url('/art/ui/frame_lit.png'); }
+.f64 .fw--tag::before, .f64 .fw--taglit::before { inset: 3px; background-color: var(--f-fill-tag); background-image: repeating-conic-gradient(var(--f-dot-tag) 0 25%, transparent 0 50%); }
+.f64 .fw--tag::after, .f64 .fw--taglit::after { inset: 0 -1px -1px 0; border-width: 6px 7px 7px 6px; border-image: url('/art/ui/frame_tag.png') 6 7 7 6 stretch; }
+.f64 .fw--taglit::before { background-color: var(--f-fill-taglit); }
+.f64 .fw--taglit::after { border-image-source: url('/art/ui/frame_taglit.png'); }
+/* a window sized by what it holds: the body flows, the frame follows */
+.f64 .fw--flow > .fw__body { position: relative; padding: 14px 20px 20px; }
+
+/* a portrait niche: the face behind a brass lip */
+.f64 .fniche { position: absolute; overflow: hidden; background: var(--f-s1); }
+.f64 .fniche > img { position: absolute; max-width: none; }
+.f64 .fniche::after {
+  content: ''; position: absolute; inset: 0 -1px -1px 0; pointer-events: none; image-rendering: pixelated;
+  border-style: solid; border-width: 5px 6px 6px 5px; border-image: url('/art/ui/frame_plate.png') 5 6 6 5 stretch;
+}
+
+/* a carved groove and the ornament rule */
+.f64 .fgroove { position: absolute; height: 2px; background: var(--f-w0); box-shadow: 0 1px 0 0 var(--f-w3); }
+.f64 .frule { position: absolute; height: 7px; }
+.f64 .frule::before { content: ''; position: absolute; left: 0; right: 0; top: 3px; height: 1px; background: var(--f-w0); box-shadow: 0 1px 0 0 var(--f-w3); }
+.f64 .frule::after { content: ''; position: absolute; left: 50%; top: 0; width: 41px; height: 7px; margin-left: -20px; background: url('/art/ui/rule_orn.png'); image-rendering: pixelated; }
+
+/* a gauge: hard bands, never a gradient */
+.f64 .fbar { position: absolute; height: 7px; background: var(--f-k0); clip-path: polygon(1px 0, calc(100% - 1px) 0, 100% 1px, 100% 6px, calc(100% - 1px) 100%, 1px 100%, 0 6px, 0 1px); }
+.f64 .fbar > i { position: absolute; left: 1px; top: 1px; height: 5px; background: linear-gradient(var(--f-s5) 0 1px, var(--f-s4) 1px 3px, var(--f-s3) 3px 4px, var(--f-s2) 4px 5px); }
+.f64 .fbar--warn > i { background: linear-gradient(var(--f-o5) 0 1px, var(--f-o4) 1px 3px, var(--f-o3) 3px 4px, var(--f-o2) 4px 5px); }
+.f64 .fbar--crit > i { background: linear-gradient(var(--f-x5) 0 1px, var(--f-x4) 1px 3px, var(--f-x3) 3px 4px, var(--f-x2) 4px 5px); }
+.f64 .fpip { display: inline-block; width: 7px; height: 11px; margin-right: 1px; vertical-align: top; background: var(--f-o4); box-shadow: inset 0 0 0 1px var(--f-k0), inset 2px 2px 0 0 var(--f-o5), inset 0 -2px 0 0 var(--f-o1); }
+.f64 .fpip--off { background: var(--f-w2); box-shadow: inset 0 0 0 1px var(--f-k0), inset 2px 2px 0 0 var(--f-w3), inset 0 -2px 0 0 var(--f-w1); }
+.f64 .fpip--gap { margin-right: 7px; }
+
+/* controls: the kit draws states as classes; ui/filigree/kit.tsx sets them */
+.f64 .fbtn { position: relative; display: inline-block; }
+.f64 .fbtn > .tip { left: 50%; bottom: 100%; margin-bottom: 8px; transform: translateX(-50%); white-space: nowrap; z-index: 5; }
+.f64 .fcmd { position: absolute; }
+.f64 .ficon { display: inline-block; vertical-align: middle; }
+
+/* ------------------------------------------------------------------ the map screen */
+.fmap { position: absolute; inset: 0; background: var(--f-w0); }
+.fmap-view { position: absolute; left: 0; top: 0; overflow: hidden; cursor: grab; }
+.fmap-view--dragging { cursor: grabbing; }
+.fmap-world { position: absolute; left: 0; top: 0; will-change: transform; }
+.fmap-world > * { position: absolute; }
+/* the surveyed country: the drawn heartland, mounted like a map piece on the unsurveyed dark */
+.fmap-heart { box-shadow: 0 0 0 1px var(--f-k0), 0 0 0 3px var(--f-o2), 0 0 0 4px var(--f-k0); }
+.fmap-wild { overflow: visible; }
+.fmap-wild line { stroke: var(--f-b0); stroke-width: 3; stroke-dasharray: 3 9; shape-rendering: crispEdges; }
+.fmap-region { font-family: 'Jacquard 24', serif; font-size: 64px; line-height: 64px; color: var(--f-w4); white-space: nowrap; transform: translate(-50%, -50%); pointer-events: none; }
+.fmap-bead { width: 9px; height: 9px; background: url('/art/ui/bead_bone.png'); image-rendering: pixelated; pointer-events: none; }
+.fmap-bead--brass { background-image: url('/art/ui/bead_brass.png'); }
+.fmap-node { padding: 0; }
+.fmap-node:focus-visible { outline: 1px solid var(--f-o5); outline-offset: 2px; }
+.fmap-mark { width: 9px; height: 9px; background: url('/art/ui/bead_bone.png'); image-rendering: pixelated; pointer-events: none; }
+.fmap-mark--lit { background-image: url('/art/ui/bead_brass.png'); }
+.fmap-name { text-align: center; white-space: nowrap; pointer-events: none; }
+.fmap-brackets { pointer-events: none; image-rendering: pixelated; border-style: solid; border-width: 14px; border-image: url('/art/ui/brackets.png') 14 stretch; }
+.fmap-arrow { pointer-events: none; transform-origin: 6px 7px; }
+.fmap-company { pointer-events: none; z-index: 3; }
+.fmap-sign { text-align: center; white-space: nowrap; pointer-events: none; }
+/* what the scouts saw on a road: a quiet road and a watched one differ in shape as well as colour */
+.fmap-scout { width: 0; height: 0; }
+.fmap-scout > i { position: absolute; width: 9px; height: 9px; pointer-events: none; box-shadow: 0 0 0 1px var(--f-k0); }
+.fmap-sight--quiet { background: var(--f-m4); box-shadow: 0 0 0 1px var(--f-k0), inset 1px 1px 0 0 var(--f-m5); }
+.fmap-sight--danger { background: var(--f-x4); box-shadow: 0 0 0 1px var(--f-k0), inset 0 0 0 3px var(--f-x4), inset 0 0 0 9px var(--f-b5); }
+.fmap-lead { height: 4px; background: var(--f-k0); pointer-events: none; z-index: 4; }
+.fmap-lead::before { content: ''; position: absolute; left: 0; right: 0; top: 1px; height: 1px; background: var(--f-o5); box-shadow: 0 1px 0 0 var(--f-o3); }
+.fmap-card { z-index: 5; pointer-events: none; }
+.fmap-hud { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+.fmap-hud .fw { cursor: default; }
+.fmap-ov { position: absolute; }
+.fmap-ov__frame { position: absolute; box-shadow: 0 0 0 1px var(--f-k0); border: 1px solid var(--f-o5); border-right-color: var(--f-o3); border-bottom-color: var(--f-o3); }
+.fmap-foot { position: absolute; white-space: nowrap; pointer-events: none; }
+.fmap-menu { z-index: 6; cursor: default; }
+.fmap-menu__verbs { display: flex; flex-wrap: wrap; gap: 10px 12px; margin-top: 14px; }
+.fmap-menu__warn { margin-top: 8px; max-width: 420px; white-space: normal; }
+.fmap-toast { left: 50%; bottom: 46px; transform: translateX(-50%); z-index: 7; white-space: nowrap; }
+.fmap-recentre { position: absolute; right: 14px; bottom: 14px; z-index: 6; }
