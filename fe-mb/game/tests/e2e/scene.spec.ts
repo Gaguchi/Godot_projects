@@ -3,10 +3,10 @@ import { test, expect, type Page } from '@playwright/test'
 /**
  * The staged scenes — what the player is looking AT while someone is talking.
  *
- *   · a talk bust is never shown half-painted (GATE2-20: a 775KB sprite streamed in over a drawn box, so the
- *     first frame of a fresh beat was an axe-head floating above the leather)
- *   · behind a road-side talk the world stops being readable (GATE2-21: at rgba(…,0.15) the map under the busts
- *     was still fully legible and the speakers read as two cut-outs pasted on it)
+ *   · the speaker's face is never shown half-painted (GATE2-20: a 775KB sprite streamed in over a drawn box, so
+ *     the first frame of a fresh beat was an axe-head floating above the leather)
+ *   · behind a road-side talk the world stops being readable (GATE2-21: at rgba(…,0.15) the map under the talk
+ *     was still fully legible and the talk read as a cut-out pasted on it)
  *   · the game's FIRST image has a subject in frame (GATE2-22: the opening frame was 78% near-black because the
  *     crop landed on the empty middle of a 3:1 panorama and the sun sat crushed against the left edge)
  *
@@ -18,7 +18,7 @@ interface Handle {
   dispatch: (a: unknown) => void
 }
 
-/** Open the road-side beat the gate shot: two busts over the live map. */
+/** Open the road-side beat the gate shot: the bandit's toll over the live map. */
 async function openRoadsideTalk(page: Page): Promise<void> {
   await page.evaluate(() => {
     const g = (window as unknown as { __game: Handle }).__game
@@ -34,9 +34,9 @@ async function openRoadsideTalk(page: Page): Promise<void> {
 const alphasOf = (css: string): readonly number[] =>
   [...css.matchAll(/rgba?\([^)]*?,\s*([0-9.]+)\s*\)/g)].map((m) => Number(m[1]))
 
-test('a talk bust is never shown half-painted', async ({ page }) => {
-  // hold the sprites back so the load is a real event rather than an instant cache hit
-  await page.route('**/sprites/units/*.png', async (route) => {
+test("the speaker's face is never shown half-painted", async ({ page }) => {
+  // hold the faces back so the load is a real event rather than an instant cache hit
+  await page.route('**/sprites/faces/brigand_chief.png', async (route) => {
     await new Promise((r) => setTimeout(r, 700))
     await route.continue()
   })
@@ -44,21 +44,18 @@ test('a talk bust is never shown half-painted', async ({ page }) => {
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
   await openRoadsideTalk(page)
 
-  // the box is drawn at once; the face is NOT there yet, and it is not there half-drawn either
+  // the box is drawn at once, niche and all; the face is NOT in it yet, and it is not there half-drawn either
   await expect(page.getByTestId('dialogue-text')).toBeVisible()
-  const bust = page.getByTestId('bust-right')
-  await expect(bust).toHaveAttribute('data-ready', 'no')
-  expect(await bust.evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(0)
+  const face = page.getByTestId('talk-face')
+  const art = face.locator('.froad__art')
+  await expect(face).toHaveAttribute('data-ready', 'no')
+  expect(await art.evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(0)
 
   // ...and when it arrives it is whole, and it is revealed rather than popped
-  await expect(bust).toHaveAttribute('data-ready', 'yes', { timeout: 5000 })
-  await expect.poll(async () => bust.evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(1)
-  const shown = await bust.evaluate((el) => {
-    const img = el.querySelector('img')
-    return { complete: img?.complete === true, width: img?.naturalWidth ?? 0, transition: getComputedStyle(el).transitionProperty }
-  })
-  expect(shown.complete).toBe(true)
-  expect(shown.width).toBeGreaterThan(0)
+  await expect(face).toHaveAttribute('data-ready', 'yes', { timeout: 5000 })
+  await expect.poll(async () => art.evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(1)
+  const shown = await art.evaluate((el) => ({ image: getComputedStyle(el).backgroundImage, transition: getComputedStyle(el).transitionProperty }))
+  expect(shown.image).toContain('/sprites/faces/brigand_chief.png')
   expect(shown.transition).toContain('opacity')
 })
 
@@ -68,16 +65,21 @@ test('the world stops being readable behind a road-side talk', async ({ page }) 
   await openRoadsideTalk(page)
   await expect(page.getByTestId('dialogue')).toBeVisible()
 
-  const scrim = page.locator('.talk__scrim')
-  const style = await scrim.evaluate((el) => ({ bg: getComputedStyle(el).backgroundImage, backdrop: getComputedStyle(el).backdropFilter }))
-  // the lightest stop is the one the busts stand against; 0.15 was the shipped value and it hid nothing
+  // one flat ink tone over the whole stage; 0.15 was the shipped value and it hid nothing
+  const scrim = page.getByTestId('dialogue').locator('.fmodal__scrim')
+  const style = await scrim.evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, box: el.getBoundingClientRect().toJSON() as { width: number; height: number } }))
   expect(Math.min(...alphasOf(style.bg))).toBeGreaterThanOrEqual(0.45)
-  expect(style.backdrop).toMatch(/saturate/)
-  expect(await scrim.evaluate((el) => el.classList.contains('talk__scrim--staged'))).toBe(false)
+  expect(style.box.width).toBe(1280)
+  expect(style.box.height).toBe(720)
+  await expect(page.getByTestId('dialogue')).not.toHaveClass(/froad--staged/)
 
-  // the speakers stand on something: each bust carries its own contact shadow
-  await expect(page.locator('.talk-bust--left .talk-bust__cast')).toHaveCount(1)
-  await expect(page.locator('.talk-bust--right .talk-bust__cast')).toHaveCount(1)
+  // and the dim is under the box, not over it: the line is read at full strength
+  const lit = await page.getByTestId('dialogue-text').evaluate((el) => {
+    const r = el.getBoundingClientRect()
+    const top = document.elementFromPoint(r.left + 4, r.top + 4)
+    return top !== null && (top === el || el.contains(top) || top.contains(el)) && !top.classList.contains('fmodal__scrim')
+  })
+  expect(lit).toBe(true)
 })
 
 test("the game's first image has a subject in frame, and the talk does not put it out", async ({ page }) => {
@@ -129,61 +131,69 @@ test("the game's first image has a subject in frame, and the talk does not put i
 
   // over a staged frame the talk seats its box instead of blacking out the scene
   await expect(page.getByTestId('dialogue')).toBeVisible()
-  const staged = await page.locator('.talk__scrim').evaluate((el) => ({ staged: el.classList.contains('talk__scrim--staged'), bg: getComputedStyle(el).backgroundImage }))
-  expect(staged.staged).toBe(true)
-  expect(Math.min(...alphasOf(staged.bg))).toBeLessThanOrEqual(0.1)
+  await expect(page.getByTestId('dialogue')).toHaveClass(/froad--staged/)
+  const veil = await page.getByTestId('dialogue').locator('.fmodal__scrim').evaluate((el) => getComputedStyle(el).backgroundColor)
+  expect(Math.max(...alphasOf(veil))).toBeLessThanOrEqual(0.1)
 })
 
-test('the speaker plaque hangs on the SPEAKER side of the box', async ({ page }) => {
+test('the face in the box is the one who is talking', async ({ page }) => {
   // RE-GATE B 2.4: the plaque was pinned to the box's top-left whoever was talking, so it read "BANDIT LEADER"
   // while sitting directly under the silent, unlit foundling on the left. Lighting said one thing, the label
-  // said another — two channels for one fact, disagreeing.
+  // said another — two channels for one fact, disagreeing. The box now shows ONE face and it is the speaker's,
+  // with the name beside it, so the two cannot part company whichever way the engine seats the pair.
   await page.goto('/?screen=overworld&seed=3&motion=0')
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
   await openRoadsideTalk(page)
   await expect(page.getByTestId('dialogue')).toBeVisible()
 
-  const geometry = async (): Promise<{ side: string | null; plaqueMid: number; boxMid: number; litMid: number }> =>
+  const reading = async (): Promise<{ who: string | null; name: string; faceRight: number; nameLeft: number; inBox: boolean }> =>
     page.evaluate(() => {
-      const plaque = document.querySelector('[data-testid="dialogue-speaker"]')!.getBoundingClientRect()
-      const box = document.querySelector('.talk__box')!.getBoundingClientRect()
-      const lit = document.querySelector('.talk-bust--lit')!.getBoundingClientRect()
+      const face = document.querySelector('[data-testid="talk-face"]')!
+      const name = document.querySelector('[data-testid="dialogue-speaker"]')!
+      const box = document.querySelector('[data-testid="dialogue-box"]')!.getBoundingClientRect()
+      const f = face.getBoundingClientRect()
+      const n = name.getBoundingClientRect()
       return {
-        side: document.querySelector('[data-testid="dialogue-speaker"]')!.getAttribute('data-side'),
-        plaqueMid: plaque.left + plaque.width / 2,
-        boxMid: box.left + box.width / 2,
-        litMid: lit.left + lit.width / 2,
+        who: face.getAttribute('data-who'),
+        name: (name.textContent ?? '').trim(),
+        faceRight: f.right,
+        nameLeft: n.left,
+        inBox: f.left >= box.left && f.bottom <= box.bottom && n.right <= box.right && f.top >= box.top,
       }
     })
 
-  // the bandit leader is the right-hand bust: the plaque is on the right of the box, on his side of the middle
-  const right = await geometry()
-  expect(right.side).toBe('right')
-  expect(right.plaqueMid).toBeGreaterThan(right.boxMid)
-  expect(right.litMid).toBeGreaterThan(right.boxMid)
+  const first = await reading()
+  expect(first.who).toBe('bandit_leader')
+  expect(first.name).toMatch(/Bandit Leader/i)
+  expect(first.nameLeft).toBeGreaterThan(first.faceRight)   // the name is beside the face it names
+  expect(first.inBox).toBe(true)
   await page.screenshot({ path: '../.playwright-mcp/fix3-2.4-talk.png' })
 
-  // …and with the SAME speaker seated in the LEFT slot instead, both channels move together
+  // …and with the SAME speaker seated the other way round by the engine, nothing on the glass moves
   await page.evaluate(() => {
     const g = (window as unknown as { __game: Handle }).__game
     const s = g.getState() as unknown as { run: Record<string, unknown> }
     g.dispatch({ type: 'dev/seedState', state: { ...s, run: { ...s.run, pendingDialogue: { dialogueId: 'bandit_threat', nodeId: 'start', source: 'travel', busts: ['bandit_leader', 'mc'] } } } })
   })
-  await expect(page.getByTestId('dialogue-speaker')).toHaveAttribute('data-side', 'left')
-  const left = await geometry()
-  expect(left.plaqueMid).toBeLessThan(left.boxMid)
-  expect(left.litMid).toBeLessThan(left.boxMid)
+  const second = await reading()
+  expect(second.who).toBe('bandit_leader')
+  expect(second.name).toBe(first.name)
+  expect(second.nameLeft).toBe(first.nameLeft)
 })
 
 /**
  * GATE2-22 named two empty frames. The prologue vista was re-composed (0081); the camp was not, and stayed a card
  * floating in a near-featureless dusk with a faint horizon and nothing else in it (RE-GATE B 2.7).
  *
- * Run in BOTH of the camp's states, because the first version of this case only ran the first one: open the scout
- * report and the card grows from ~300px to 542px, the seats that cleared it at rest went under it, and all the
- * player could see of two of the company was a pair of legs below the bottom rule (FINAL GATE B B.2). What the
- * card's height changes is what the case has to sweep.
+ * The camp is a place now: a clearing drawn at 1:1 with the fire, the tent and the standard in it, and the company
+ * the run has standing on it. Run in BOTH of the camp's states, because the first version of this case only ran the
+ * first one: open the scout report and the night's window grows, and what it grew over was two of the company, cut
+ * off at the knees under its bottom rule (FINAL GATE B B.2). What a window's height changes is what the case sweeps.
  */
+/** Where the picture keeps its fire and its tent (tools/pxworld `px-camp/scene.py`: FIRE, TENT_AT), in stage px. */
+const CAMP_FIRE = { x: 348, y: 470, w: 128, h: 115 }
+const CAMP_TENT = { x: 548, y: 176, w: 256, h: 256 }
+
 for (const night of [
   { name: 'at rest', scout: false },
   { name: 'with the scout report open — the state a ration pays for', scout: true },
@@ -201,83 +211,91 @@ test(`the camp has a camp in it: a fire, the company round it, and the tent they
   const scene = await page.evaluate(() => {
     const stage = document.getElementById('game-stage')!.getBoundingClientRect()
     const s = stage.width / 1280
-    const card = document.querySelector('.camp__card')!.getBoundingClientRect()
-    const box = (sel: string): { x: number; y: number; w: number; h: number } | null => {
-      const el = document.querySelector(sel)
-      if (el === null) return null
-      const b = el.getBoundingClientRect()
-      return { x: (b.left - stage.left) / s, y: (b.top - stage.top) / s, w: b.width / s, h: b.height / s }
-    }
-    const figures = Array.from(document.querySelectorAll('.camp__figure')).map((el) => {
-      const b = el.getBoundingClientRect()
-      return { x: (b.left - stage.left) / s, y: (b.top - stage.top) / s, w: b.width / s, h: b.height / s, drawn: (el.querySelector('img') as HTMLImageElement | null)?.naturalWidth ?? 0 }
-    })
-    return { fire: box('.camp__flame'), tent: box('.camp__tent'), figures, card: { x: (card.left - stage.left) / s, y: (card.top - stage.top) / s, w: card.width / s, h: card.height / s }, pointer: getComputedStyle(document.querySelector('.camp__scene')!).pointerEvents }
+    const rel = (b: DOMRect): { x: number; y: number; w: number; h: number } => ({ x: (b.left - stage.left) / s, y: (b.top - stage.top) / s, w: b.width / s, h: b.height / s })
+    const world = document.querySelector('[data-testid="camp-screen"] .fplace__world') as HTMLImageElement
+    const figures = Array.from(document.querySelectorAll('[data-testid="camp-company"] img')).map((el) => ({
+      ...rel(el.getBoundingClientRect()),
+      drawn: (el as HTMLImageElement).naturalWidth,
+      pointer: getComputedStyle(el).pointerEvents,
+    }))
+    const windows = ['camp-place', 'camp-night', 'camp-roster'].map((id) => rel(document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect()))
+    return { world: { w: world.naturalWidth, h: world.naturalHeight, box: rel(world.getBoundingClientRect()) }, figures, windows }
   })
 
-  expect(scene.fire).not.toBeNull()
-  expect(scene.tent).not.toBeNull()
+  // the place is one picture, the size of the stage, and the company is IN it
+  expect(scene.world.w).toBe(1280)
+  expect(scene.world.h).toBe(720)
+  expect(scene.world.box).toEqual({ x: 0, y: 0, w: 1280, h: 720 })
   expect(scene.figures.length).toBeGreaterThanOrEqual(2)
   for (const f of scene.figures) expect(f.drawn, 'a figure with no sprite behind it').toBeGreaterThan(0)
 
-  // …all of it inside the 1280×720 frame, and none of it under the card (so the reading is unchanged)
-  const c = scene.card
-  for (const b of [scene.fire!, scene.tent!, ...scene.figures]) {
+  // …all of it inside the 1280×720 frame, and none of it under a window (so the reading is unchanged)
+  for (const b of [CAMP_FIRE, CAMP_TENT, ...scene.figures]) {
     expect(b.x).toBeGreaterThanOrEqual(-0.5)
     expect(b.x + b.w).toBeLessThanOrEqual(1280.5)
     expect(b.y + b.h).toBeLessThanOrEqual(720.5)
-    const over = Math.max(0, Math.min(b.x + b.w, c.x + c.w) - Math.max(b.x, c.x)) * Math.max(0, Math.min(b.y + b.h, c.y + c.h) - Math.max(b.y, c.y))
-    expect(over, `scenery under the card at ${Math.round(b.x)},${Math.round(b.y)}`).toBe(0)
+    for (const c of scene.windows) {
+      const over = Math.max(0, Math.min(b.x + b.w, c.x + c.w) - Math.max(b.x, c.x)) * Math.max(0, Math.min(b.y + b.h, c.y + c.h) - Math.max(b.y, c.y))
+      expect(over, `scenery under a window at ${Math.round(b.x)},${Math.round(b.y)}`).toBe(0)
+    }
   }
-  // it is scenery: it never eats a click (the lesson of the invisible-container bug)
-  expect(scene.pointer).toBe('none')
+  // they are scenery: they never eat a click (the lesson of the invisible-container bug)
+  for (const f of scene.figures) expect(f.pointer).toBe('none')
   await page.screenshot({ path: `../.playwright-mcp/fix4-B.2-camp-${night.scout ? 'scouted' : 'rest'}.png` })
 })
 }
 
 /**
- * FINAL GATE B B.8 — the slot is called a bust and was holding a whole standing figure. A 1216px sprite at 340px
- * is a 0.28 downscale, which puts the foundling's face on the glass 28px tall: a pale oval with no features in
- * it, beside a bandit whose helmet still read as a helmet. The frame has no room to fix that by growing (the box
- * owns the bottom 180px), so the window is a CROP now — the sheet is drawn at 0.55 and the window shows the chest
- * up. The measurement is the one that matters: the image must be far taller than the slot that shows it, and the
- * face must land in the slot's upper half where the light is.
+ * FINAL GATE B B.8 — a talk "bust" drew the whole 832×1216 figure in a 340px window: a 0.28 downscale, which put
+ * the foundling's face on the glass 28px tall, a pale oval with no features in it. The road talk now shows the
+ * speaker's FACE: a 96px crop cut around the head (`tools/pxworld/src/px-popups/export_game.py`), behind the niche's
+ * brass lip, at one art pixel to one stage pixel. The measurement is the one that matters: what is in the niche is a
+ * face file at its own size, and every sprite that can speak has one.
  */
-test('a talk bust is a bust: the speaker is close enough to have a face', async ({ page }) => {
+test('the speaker has a face: the niche shows the head, not the whole figure', async ({ page }) => {
   await page.goto('/?screen=overworld&seed=3&motion=0')
   await expect(page.getByTestId('overworld-screen')).toBeVisible()
   await openRoadsideTalk(page)
   await expect(page.getByTestId('dialogue')).toBeVisible()
-  await page.locator('.talk-bust--right img').evaluate((el: HTMLImageElement) => el.decode())
+  await expect(page.getByTestId('talk-face')).toHaveAttribute('data-ready', 'yes')
 
   const shot = await page.evaluate(() => {
-    const out: Record<string, unknown> = {}
-    for (const side of ['left', 'right']) {
-      const slot = document.querySelector(`.talk-bust--${side}`) as HTMLElement
-      const img = slot.querySelector('img') as HTMLImageElement
-      const s = slot.getBoundingClientRect()
-      const i = img.getBoundingClientRect()
-      const box = document.querySelector('.talk__box')!.getBoundingClientRect()
-      out[side] = {
-        overflow: getComputedStyle(slot).overflow,
-        zoom: i.height / s.height,
-        // the head sits in the top third of the source sheet, so the crop must start near the sheet's top
-        headTopInSlot: (i.top + i.height * 0.12) - s.top,
-        insideBoxColumn: s.left >= box.left && s.right <= box.right,
-        // the slot's bottom edge is covered by the box, so the crop's cut is never on the glass
-        cutCovered: s.bottom >= box.top,
-      }
+    const slot = document.querySelector('[data-testid="talk-face"]') as HTMLElement
+    const art = slot.querySelector('.froad__art') as HTMLElement
+    const box = document.querySelector('[data-testid="dialogue-box"]')!.getBoundingClientRect()
+    const s = slot.getBoundingClientRect()
+    const a = art.getBoundingClientRect()
+    const cs = getComputedStyle(art)
+    return {
+      image: cs.backgroundImage,
+      // the crop is drawn at the size it was baked: one art pixel, one stage pixel
+      size: cs.backgroundSize,
+      rendering: cs.imageRendering,
+      art: { w: a.width, h: a.height },
+      slot: { w: s.width, h: s.height },
+      insideBox: s.left >= box.left && s.right <= box.right && s.top >= box.top && s.bottom <= box.bottom,
     }
-    return out as Record<string, { overflow: string; zoom: number; headTopInSlot: number; insideBoxColumn: boolean; cutCovered: boolean }>
   })
-  for (const side of ['left', 'right'] as const) {
-    const m = shot[side]!
-    expect(m.overflow, side).toBe('hidden')
-    expect(m.zoom, side).toBeGreaterThan(1.5)          // 340/1216 was 1.0 — the whole figure, and no face
-    expect(m.headTopInSlot, side).toBeLessThan(140)    // the face is in the lit half, not down by the box
-    expect(m.insideBoxColumn, side).toBe(true)
-    expect(m.cutCovered, side).toBe(true)
-  }
+  expect(shot.image).toContain('/sprites/faces/')      // a face crop, never the 832×1216 figure squeezed into a chip
+  expect(shot.size).toMatch(/^96px/)
+  expect(shot.rendering).toBe('pixelated')
+  expect(shot.art.w).toBe(96)                           // 28px was the face the gate measured; this is the whole niche
+  expect(shot.art.h).toBe(96)
+  expect(shot.slot.w).toBeGreaterThanOrEqual(96)
+  expect(shot.insideBox).toBe(true)                     // and nothing of it is cut by the frame
+
+  // every sprite that can be given a line has its own face file: no speaker falls back to a seat on the full art
+  const missing = await page.evaluate(async () => {
+    const g = (window as unknown as { __game: { env: { content: { characters: Record<string, { spriteId?: string | null }> } } } }).__game
+    const sprites = [...new Set(Object.values(g.env.content.characters).map((c) => c.spriteId).filter((id): id is string => typeof id === 'string'))]
+    const out: string[] = []
+    for (const id of sprites) {
+      const res = await fetch(`/sprites/faces/${id}.png`)
+      if (!res.ok || !(res.headers.get('content-type') ?? '').includes('image/png')) out.push(id)
+    }
+    return out
+  })
+  expect(missing).toEqual([])
   await page.screenshot({ path: '../.playwright-mcp/fix4-B.8-bust.png' })
 })
 
@@ -297,7 +315,8 @@ test('a speaker with no likeness gets their mark, never two letters of their tit
   })
   await expect(page.getByTestId('dialogue-speaker')).toHaveText(/Guildmistress Anya/i)
 
-  const slot = page.locator('.talk-bust--right')
+  const slot = page.getByTestId('talk-face')
+  await expect(slot).toHaveAttribute('data-who', 'guildmistress_anya')
   const sigil = slot.locator('[data-testid="sigil"]')
   await expect(sigil).toHaveCount(1)
   // her own ink and her own shape, off the identity ramp — not a shared placeholder
@@ -309,10 +328,10 @@ test('a speaker with no likeness gets their mark, never two letters of their tit
     return { text: (el.textContent ?? '').trim(), w: box.width, h: box.height, ink, paths: el.querySelectorAll('path, rect, circle').length }
   })
   expect(drawn.text).toBe('')                 // "Gu" is gone, and nothing replaced it with letters
-  expect(drawn.paths).toBeGreaterThan(2)
+  expect(drawn.paths).toBeGreaterThanOrEqual(2) // the struck field and its charge: shapes, not glyphs
   expect(drawn.ink).not.toBe('')
-  expect(drawn.w).toBeGreaterThan(120)        // it fills a bust's volume, not a 40px avatar chip
-  expect(drawn.h).toBeGreaterThan(200)
+  expect(drawn.w).toBeGreaterThan(56)         // it fills the niche a face would fill, not a 40px avatar chip
+  expect(drawn.h).toBeGreaterThan(56)
   // every faceless speaker in the build is told apart by ink AND shape
   const marks = await page.evaluate(() => {
     const g = (window as unknown as { __game: { env: { content: { characters: Record<string, { spriteId?: string; portrait: { accent: string; shape: string } }> } } } }).__game
@@ -326,46 +345,46 @@ test('a speaker with no likeness gets their mark, never two letters of their tit
 /**
  * FINAL GATE B B.6 — the fire was the one object in the build not drawn in the game's hand: three nested flat
  * teardrops in fully saturated red/orange/yellow on five plain grey ellipses, in a frame of dithered pixel art
- * under a painted dusk, and it was the subject the eye landed on first. It is pixels now. The ratchet is the
- * thing that made it wrong — geometry: every cell of the fire sits on a whole-number lattice and no edge is
- * smoothed, so re-drawing it with curves reddens here.
+ * under a painted dusk, and it was the subject the eye landed on first. The fire is now part of the clearing: one
+ * picture, one palette, one pixel to one stage pixel. The ratchet is the thing that made it wrong, measured on the
+ * pixels themselves: the fire's patch of the picture holds a few dozen inks with hard edges, and re-drawing it with
+ * curves or gradients (or scaling the picture) turns that into hundreds.
  */
 test('the camp fire is drawn in the same hand as everything around it', async ({ page }) => {
   await page.goto('/?screen=camp&seed=21&motion=0')
   await expect(page.getByTestId('camp-screen')).toBeVisible()
+  const world = page.locator('[data-testid="camp-screen"] .fplace__world')
+  await world.evaluate((el: HTMLImageElement) => el.decode())
 
-  const fire = await page.evaluate(() => {
-    const svg = document.querySelector('.camp__flame') as SVGSVGElement
-    const parts = Array.from(svg.querySelectorAll('path'))
-    return {
-      crisp: getComputedStyle(svg).shapeRendering,
-      viewBox: svg.getAttribute('viewBox') ?? '',
-      inks: parts.length,
-      // resolved to RGB through a canvas: the fills are color-mix() and come back as oklab() otherwise
-      fills: parts.map((p) => {
-        const ctx = document.createElement('canvas').getContext('2d')!
-        ctx.fillStyle = getComputedStyle(p).fill
-        ctx.fillRect(0, 0, 1, 1)
-        const d = ctx.getImageData(0, 0, 1, 1).data
-        return [d[0]!, d[1]!, d[2]!] as [number, number, number]
-      }),
-      // every command is an integer move: M x y h n v1 h-n z, and nothing else
-      lattice: parts.every((p) => /^(M-?\d+ -?\d+h\d+v1h-\d+z)+$/.test(p.getAttribute('d') ?? '')),
-      curves: parts.some((p) => /[CcSsQqTtAa]/.test(p.getAttribute('d') ?? '')),
-      ellipses: svg.querySelectorAll('ellipse, circle').length,
+  const fire = await world.evaluate((el: HTMLImageElement, at) => {
+    const count = (x: number, y: number, w: number, h: number): number => {
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(el, x, y, w, h, 0, 0, w, h)
+      const d = ctx.getImageData(0, 0, w, h).data
+      const inks = new Set<number>()
+      for (let i = 0; i < d.length; i += 4) inks.add((d[i]! << 16) | (d[i + 1]! << 8) | d[i + 2]!)
+      return inks.size
     }
-  })
-  expect(fire.crisp.toLowerCase()).toBe('crispedges')
-  expect(fire.viewBox).toMatch(/^0 0 \d+ \d+$/)
-  expect(fire.lattice, 'a fire cell off the pixel lattice').toBe(true)
-  expect(fire.curves, 'a curve in the fire').toBe(false)
-  expect(fire.ellipses, 'a smooth ellipse in the fire').toBe(0)
-  expect(fire.inks, 'a flame needs its ramp: rim, ember, hearth, core, wood, stone').toBeGreaterThanOrEqual(6)
-  expect(new Set(fire.fills.map((f) => f.join(','))).size).toBeGreaterThanOrEqual(6)
-  // …and it is still LIT rather than emitting: the old flame was pure ember/orange/yellow, the loudest thing in
-  // the build. Every ink is mixed down into the dusk's own ash now, so none of them is a raw primary.
-  for (const [r, g, b] of fire.fills) {
-    expect(Math.max(r, g, b) - Math.min(r, g, b), `a fully saturated ink rgb(${r},${g},${b})`).toBeLessThan(210)
-  }
+    const box = el.getBoundingClientRect()
+    return {
+      natural: [el.naturalWidth, el.naturalHeight],
+      shown: [Math.round(box.width), Math.round(box.height)],
+      rendering: getComputedStyle(el).imageRendering,
+      fireInks: count(at.x, at.y, at.w, at.h),
+      allInks: count(0, 0, el.naturalWidth, el.naturalHeight),
+      // nothing vector is laid over the picture to stand in for a part of it
+      vectors: document.querySelectorAll('[data-testid="camp-screen"] svg').length,
+    }
+  }, CAMP_FIRE)
+  expect(fire.natural).toEqual([1280, 720])
+  expect(fire.shown).toEqual([1280, 720])           // one art pixel, one stage pixel: nothing is resampled
+  expect(fire.rendering).toBe('pixelated')
+  expect(fire.vectors, 'a vector drawn over the clearing').toBe(0)
+  expect(fire.fireInks, 'the fire needs its ramp: rim, ember, hearth, core, wood, stone').toBeGreaterThanOrEqual(8)
+  expect(fire.fireInks, 'a smoothed or gradient fire').toBeLessThanOrEqual(48)
+  expect(fire.allInks, 'the clearing is one palette').toBeLessThanOrEqual(128)
   await page.screenshot({ path: '../.playwright-mcp/fix4-B.6-fire.png' })
 })

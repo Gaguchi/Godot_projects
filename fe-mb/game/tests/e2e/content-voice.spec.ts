@@ -47,8 +47,8 @@ test('the underground deck reads as one hand: every new room event opens, offers
     await openCheck(page, id)
     const card = page.getByTestId('check-event')
     // a title, a description and at least one option the party can actually take
-    await expect(card.locator('.event__title')).not.toBeEmpty()
-    const choices = card.locator('.talk__choices button, .event__choices button')
+    await expect(card.getByTestId('modal-heading')).not.toBeEmpty()
+    const choices = card.locator('button[data-testid^="check-"]')
     expect(await choices.count()).toBeGreaterThanOrEqual(3)
     // no id ever reaches the player (ARCHITECTURE §5.1)
     await expect(card).not.toContainText(id)

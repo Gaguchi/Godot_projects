@@ -13,6 +13,7 @@ import React, { useMemo, useState } from 'react'
 import '../../styles/filigree-kit.css'
 import '../../styles/filigree.css'
 import { useTip } from '../components/Tooltip'
+import faces from './faces.json'
 
 export interface KitState {
   readonly cls: string
@@ -80,9 +81,11 @@ interface FBtnProps {
   readonly testId?: string
   readonly autoFocus?: boolean
   readonly style?: React.CSSProperties
+  /** A set width, for a button that spans its window or pairs with another. */
+  readonly w?: number
 }
 
-export function FBtn({ children, onPress, variant = 'secondary', disabledReason = null, testId, autoFocus, style }: FBtnProps): React.JSX.Element {
+export function FBtn({ children, onPress, variant = 'secondary', disabledReason = null, testId, autoFocus, style, w }: FBtnProps): React.JSX.Element {
   const disabled = disabledReason !== null
   const k = useKitState(disabled)
   // the reason is spoken by the game's ONE reason surface (`components/Tooltip`): hover and focus, one bubble at a time
@@ -100,7 +103,7 @@ export function FBtn({ children, onPress, variant = 'secondary', disabledReason 
         data-testid={testId}
         autoFocus={autoFocus}
         onClick={() => { if (!disabled) onPress?.() }}
-        style={disabled ? { cursor: 'default' } : undefined}
+        style={{ ...(disabled ? { cursor: 'default' } : {}), ...(w !== undefined ? { width: w, padding: 0, textAlign: 'center' as const } : {}) }}
         onPointerEnter={() => { k.handlers.onPointerEnter(); tipProps.onPointerEnter() }}
         onPointerLeave={() => { k.handlers.onPointerLeave(); tipProps.onPointerLeave() }}
         onPointerDown={k.handlers.onPointerDown}
@@ -150,9 +153,20 @@ export function FIcon({ name, w = 24, h = 24, style }: { readonly name: string; 
 
 /** A face behind the brass lip. `src` is art already at the stage's pixel size (`imgW` wide); `dx, dy` seat the head.
  *  The art is the niche's own ground, cropped by it: nothing of it ever reaches past the frame. */
-export function Niche({ x, y, size = 52, src, dx, dy, imgW }: { readonly x: number; readonly y: number; readonly size?: number; readonly src: string | null; readonly dx: number; readonly dy: number; readonly imgW: number }): React.JSX.Element {
+export function Niche({ x, y, size = 52, src, dx, dy, imgW, children }: { readonly x: number; readonly y: number; readonly size?: number; readonly src: string | null; readonly dx: number; readonly dy: number; readonly imgW: number; readonly children?: React.ReactNode }): React.JSX.Element {
   const artStyle: React.CSSProperties = src === null ? {} : { backgroundImage: `url('${src}')`, backgroundSize: `${imgW}px auto`, backgroundPosition: `${-dx + 4}px ${-dy + 4}px`, backgroundRepeat: 'no-repeat', imageRendering: 'pixelated' }
-  return <div className="fniche" style={{ left: x, top: y, width: size, height: size, ...artStyle }} />
+  // children sit under the brass lip (the lip is the niche's ::after), so a layer that fades in never paints over it
+  return <div className="fniche" style={{ left: x, top: y, width: size, height: size, ...artStyle }}>{children}</div>
+}
+
+/** The satchel's food as pips, in fours (a ration is four): lit for what is held, never fewer than eight seats. */
+export function Pips({ on }: { readonly on: number }): React.JSX.Element {
+  const total = Math.max(8, Math.ceil(on / 4) * 4)
+  return (
+    <>
+      {Array.from({ length: total }, (_, i) => <i key={i} className={`fpip${i < on ? '' : ' fpip--off'}${i % 4 === 3 && i !== total - 1 ? ' fpip--gap' : ''}`} />)}
+    </>
+  )
 }
 
 /** A plate laid on the world under a place, centred on `cx` (the kit's `.plate`; `lit` = the one pointed at). */
@@ -213,11 +227,18 @@ export function FChoice({ x, y, w, h = 32, n, label, sub, lit = false, disabledR
       {...k.handlers}
       onPointerEnter={() => { k.handlers.onPointerEnter(); onHover?.(true) }}
       onPointerLeave={() => { k.handlers.onPointerLeave(); onHover?.(false) }}
+      onFocus={(e) => { k.handlers.onFocus(e); onHover?.(true) }}
+      onBlur={() => { k.handlers.onBlur(); onHover?.(false) }}
     >
       <span className="abs nowrap" style={{ left: 8, top: sub !== undefined || disabled ? 5 : Math.round((h - 22) / 2), lineHeight: '22px' }}>
         {n !== undefined && <span className={`key${disabled ? ' off' : ''}`}>{n}</span>}
         <span className={`s16 ${disabled ? 'faint' : on ? 'straw' : 'bone'}`} style={{ marginLeft: n === undefined ? 0 : 10 }}>{label}</span>
-        {tag !== undefined && <span className={`s13 ${tagOk === false ? 'rust' : tagOk === true ? 'meadow' : 'dim'}`} style={{ marginLeft: 12 }}>{tag}</span>}
+        {/* what the answer asks of the company: the kit's badge, its verdict DRAWN as well as coloured (BRIEF §5 rule 4) */}
+        {tag !== undefined && (
+          <span className={`chk${tagOk === true ? ' ok' : tagOk === false ? ' no' : ''}`} data-ok={tagOk === null ? undefined : tagOk ? 'yes' : 'no'}>
+            {tag}{tagOk !== null && <img src={`/art/ui/mark_${tagOk ? 'ok' : 'no'}.png`} alt={tagOk ? ', within reach' : ', falls short'} draggable={false} />}
+          </span>
+        )}
       </span>
       {(sub !== undefined || disabled) && <span className={disabled ? 'why abs' : 'abs s13 dim nowrap'} style={{ left: 41, top: 25 }}>{disabled ? disabledReason : sub}</span>}
       {keyHint !== undefined && <span className="abs nowrap" style={{ right: 6, top: 6 }}><span className="key">{keyHint}</span></span>}
@@ -271,8 +292,9 @@ export function Stand({ sprite, x, y, foot }: { readonly sprite: string; readonl
   )
 }
 
-/** Board face crops at stage scale (tools/pxworld `assets/up/face_*`): the head's seat in a 52 px niche, per sprite. */
-const FACE: Readonly<Record<string, readonly [number, number]>> = { roy: [28, 14], marcus: [26, 10], lilina: [27, 20], bandit: [22, 8], ember_mage: [22, 8], warlord: [22, 8] }
+/** The face crops at stage scale (`public/sprites/faces/`, 96 px): the head's seat in a 52 px niche, per sprite.
+ *  GENERATED with the crops by `tools/pxworld/src/px-popups/export_game.py`; a new sprite gets its face there. */
+const FACE = faces as unknown as Readonly<Record<string, readonly [number, number] | undefined>>
 
 /** What a `Niche` of `size` shows for a sprite: its face crop where the game has one, else its full art seated on the head. */
 export function faceArt(sprite: string | null, size = 52): { readonly src: string | null; readonly dx: number; readonly dy: number; readonly imgW: number } {
@@ -281,6 +303,60 @@ export function faceArt(sprite: string | null, size = 52): { readonly src: strin
   const k = size <= 34 ? 0.5 : 1
   const pad = (52 - size) / 2
   const seat = FACE[sprite]
+  // a niche as large as the crop shows the whole crop
+  if (seat !== undefined && size >= 100) return { src: `/sprites/faces/${sprite}.png`, dx: 0, dy: 0, imgW: 96 }
   if (seat !== undefined) return { src: `/sprites/faces/${sprite}.png`, dx: Math.round((seat[0] - 4) * k + 4 + (k === 1 ? pad : 0)), dy: Math.round((seat[1] - 4) * k + 4 + (k === 1 ? pad : 0)), imgW: 96 * k }
   return { src: `/sprites/units/${sprite}.png`, dx: Math.round(112 * k + 4 + (k === 1 ? pad : 0)), dy: Math.round(36 * k + 4 + (k === 1 ? pad : 0)), imgW: Math.round(277 * k) }
+}
+
+interface ModalProps {
+  readonly w: number
+  /** Omit for a window sized by its body. */
+  readonly h?: number
+  readonly eyebrow?: string
+  readonly heading?: string
+  /** A quiet line at the head's right: where and when. */
+  readonly note?: string
+  /** On the layer (scrim and window): what the tests and the Esc handler find. */
+  readonly testId?: string
+  /** On the window itself. */
+  readonly pageTestId?: string
+  readonly onScrim?: () => void
+  readonly children?: React.ReactNode
+}
+
+/**
+ * A pop-up over whatever screen is up: one flat ink scrim (no blur, no vignette), then a window in the middle of the
+ * stage with an eyebrow and a Jacquard title. It carries its own `.f64` root, because the modal layer sits outside
+ * every screen; the world under it stays as the player left it.
+ */
+export function Modal({ w, h, eyebrow, heading, note, testId, pageTestId, onScrim, children }: ModalProps): React.JSX.Element {
+  const flow = h === undefined
+  const head = (
+    <>
+      {eyebrow !== undefined && <div className={`s13 dim nowrap${flow ? '' : ' abs'}`} style={flow ? undefined : { left: 20, top: 14 }}>{eyebrow}</div>}
+      {heading !== undefined && <div className={`tt${flow ? '' : ' abs'}`} style={flow ? { marginTop: 2 } : { left: 20, top: eyebrow !== undefined ? 32 : 12 }} data-testid="modal-heading">{heading}</div>}
+      {note !== undefined && <div className="abs s13 dim nowrap" style={{ right: 20, top: 14 }}>{note}</div>}
+    </>
+  )
+  return (
+    <div className="f64 fmodal" data-testid={testId}>
+      <div className="fmodal__scrim" onClick={onScrim} />
+      {flow
+        ? <div className="fmodal__seat"><Win x={0} y={0} w={w} className="fmodal__win" {...(pageTestId !== undefined ? { testId: pageTestId } : {})}>{head}{children}</Win></div>
+        : <Win x={Math.round((1280 - w) / 2)} y={Math.round((720 - h) / 2)} w={w} h={h} {...(pageTestId !== undefined ? { testId: pageTestId } : {})}>{head}{children}</Win>}
+    </div>
+  )
+}
+
+/** A two-state setting (Sound: on). The knob's side carries the state and the word beside it says it again. */
+export function FSwitch({ x, y, w, label, on, onToggle, testId }: { readonly x: number; readonly y: number; readonly w: number; readonly label: string; readonly on: boolean; readonly onToggle: () => void; readonly testId?: string }): React.JSX.Element {
+  const k = useKitState()
+  return (
+    <button type="button" role="switch" aria-checked={on} className={`fswitch${k.cls.includes('foc') ? ' foc-ring' : ''}`} style={{ left: x, top: y, width: w }} onClick={onToggle} data-testid={testId} {...k.handlers}>
+      <span className="abs s16 bone nowrap" style={{ left: 0, top: 0 }}>{label}</span>
+      <span className={`abs s14 nowrap ${on ? 'meadow' : 'dim'}`} style={{ right: 46, top: 1 }}>{on ? 'on' : 'off'}</span>
+      <img className="abs" src={`/art/ui/switch_${on ? 'on' : 'off'}${k.hovered ? '_hov' : ''}.png`} width={36} height={18} alt="" draggable={false} style={{ right: 0, top: 0 }} />
+    </button>
+  )
 }

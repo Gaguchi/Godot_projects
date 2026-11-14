@@ -118,22 +118,35 @@ test('the company window never cuts a name the player was given or chose', async
 test('the scout report is never sliced through a road', async ({ page }) => {
   await page.goto('/?screen=camp&seed=21&motion=0')
   await page.getByTestId('camp-scout').click()
-  const list = page.locator('.camp__report-list')
-  await expect(list).toBeVisible()
+  const report = page.getByTestId('scout-report')
+  await expect(report).toBeVisible()
 
-  // the ration bought the whole page: nothing below the fold…
-  const fit = await list.evaluate((el) => ({ ch: el.clientHeight, sh: el.scrollHeight }))
-  expect(fit.sh).toBeLessThanOrEqual(fit.ch + 1)
+  // the food bought the whole page: every row is inside the night's window, the window is inside the stage, and
+  // the company's window under it is not laid over it…
+  const fit = await page.evaluate(() => {
+    const box = (id: string): DOMRect => document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect()
+    const night = box('camp-night')
+    const roster = box('camp-roster')
+    const stage = document.getElementById('game-stage')!.getBoundingClientRect()
+    const rows = [...document.querySelectorAll('[data-testid="scout-row"], [data-testid="scout-beyond"]')].map((r) => r.getBoundingClientRect())
+    return {
+      rowsInside: rows.every((r) => r.top >= night.top && r.bottom <= night.bottom - 1),
+      nightInStage: night.bottom <= stage.bottom && roster.bottom <= stage.bottom,
+      apart: roster.top >= night.bottom,
+      leaveBelow: box('camp-leave').top >= Math.max(...rows.map((r) => r.bottom)),
+    }
+  })
+  expect(fit).toEqual({ rowsInside: true, nightInStage: true, apart: true, leaveBelow: true })
   // …and every row is the same height, so a cap can never cut one in half
-  const heights = await list.evaluate((el) => [...new Set([...el.querySelectorAll('.camp__report-row')].map((r) => Math.round(r.getBoundingClientRect().height)))])
+  const heights = await page.evaluate(() => [...new Set([...document.querySelectorAll('[data-testid="scout-row"]')].map((r) => Math.round(r.getBoundingClientRect().height)))])
   expect(heights).toHaveLength(1)
-  // the header states the count of the whole sweep; the card lists the roads out of this camp and counts the rest,
+  // the header states the count of the whole sweep; the window lists the roads out of this camp and counts the rest,
   // so the two always add up and the player knows nothing was dropped (every road is marked on the map)
-  const rows = await page.locator('.camp__report-row').count()
-  const total = Number((await page.getByTestId('scout-report').innerText()).match(/(\d+) roads?/i)?.[1] ?? -1)
-  const beyond = await page.getByTestId('scout-beyond').count() === 0 ? 0 : Number((await page.getByTestId('scout-beyond').innerText()).match(/(\d+) more roads/)?.[1] ?? -1)
+  const rows = await page.getByTestId('scout-row').count()
+  const total = Number((await report.innerText()).match(/(\d+) roads? walked/i)?.[1] ?? -1)
+  const beyond = await page.getByTestId('scout-beyond').count() === 0 ? 0 : Number((await page.getByTestId('scout-beyond').innerText()).match(/(\d+) more roads?/)?.[1] ?? -1)
   expect(rows + beyond).toBe(total)
-  expect(await clipped(page, '.camp__report-road')).toEqual([])
+  expect(await clipped(page, '[data-testid="scout-road"]')).toEqual([])
 })
 
 test('Pause has one primary and a real switch, not five identical slabs', async ({ page }) => {
@@ -143,8 +156,8 @@ test('Pause has one primary and a real switch, not five identical slabs', async 
   await expect(pause).toBeVisible()
 
   // exactly one brass primary on the card
-  await expect(pause.locator('.btn-forged--primary')).toHaveCount(1)
-  await expect(pause.locator('.btn-forged--primary')).toHaveAttribute('data-testid', 'pause-resume')
+  await expect(pause.locator('.btn.pri')).toHaveCount(1)
+  await expect(pause.locator('.btn.pri')).toHaveAttribute('data-testid', 'pause-resume')
 
   // sound is a switch that reads its own state, not a button whose label ends in a value
   const sound = page.getByTestId('pause-sound')
@@ -163,7 +176,7 @@ test('?motion=0 stops the screen transitions too, not only the pump', async ({ p
   expect(await page.evaluate(() => document.documentElement.getAttribute('data-motion'))).toBe('off')
 
   // the panel is fully painted the instant it is visible — the gate's shot of this screen came back blank at 0
-  const card = page.locator('.camp__card')
+  const card = page.getByTestId('camp-night')
   await expect(card).toBeVisible()
   expect(await card.evaluate((el) => getComputedStyle(el).opacity)).toBe('1')
   expect(await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running').length)).toBe(0)

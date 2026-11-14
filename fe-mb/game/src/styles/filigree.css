@@ -140,3 +140,54 @@
 .f64 .ftalk__stand--listening { filter: brightness(0.56); }
 .f64 .ftalk__name { position: absolute; top: 518px; z-index: 2; }
 .ftalk__stage { position: absolute; left: 0; top: 0; width: 1280px; overflow: hidden; pointer-events: none; }
+/* a pop-up: one flat ink scrim over the screen as the player left it, and a window in the middle of the stage */
+.f64.fmodal { position: absolute; inset: 0; z-index: 40; overflow: visible; background: none; }
+.fmodal__scrim { position: absolute; inset: 0; background: rgba(17, 13, 10, 0.62); }
+.fmodal__seat { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.f64 .fmodal__seat > .fmodal__win { position: relative; left: auto; top: auto; pointer-events: auto; }
+/* a road event's title is a sentence: in a window sized by its body it takes a second line instead of the frame */
+.f64 .fmodal__win .tt { white-space: normal; text-wrap: balance; line-height: 42px; padding-bottom: 2px; }
+.f64 .fswitch { position: absolute; height: 20px; cursor: pointer; }
+.f64 .fswitch.foc-ring { outline: 1px solid var(--f-o5); outline-offset: 6px; }
+/* a real text field wearing the kit's input: the caret and the selection are the browser's, the frame is the kit's */
+.f64 input.inp { border: 0; outline: 0; font-family: inherit; user-select: text; cursor: text; }
+.f64 input.inp::placeholder { color: var(--f-b0); font-style: italic; font-weight: 400; }
+.f64 .chk img { margin: -2px 0 0 5px; vertical-align: middle; }
+
+/* the road talk: one window on the stage's foot, the speaker's face behind a brass lip */
+.froad--staged > .fmodal__scrim { background: none; }
+.f64 .froad__win > .fw__body { padding-bottom: 14px; }
+.f64 .froad__face { position: absolute; left: 20px; top: 20px; width: 104px; height: 104px; }
+.f64 .froad__art { position: absolute; left: 4px; top: 4px; width: 96px; height: 96px; background-repeat: no-repeat; image-rendering: pixelated; opacity: 0; transition: opacity 180ms var(--ease-out, ease-out); }
+.f64 .froad__sigil { position: absolute; left: 19%; top: 19%; opacity: 0; transition: opacity 180ms var(--ease-out, ease-out); }
+.f64 .froad__face--shown .froad__art, .f64 .froad__face--shown .froad__sigil { opacity: 1; }
+
+/* the camp: a scouted road is its name and what was seen on it, on one line */
+.f64 .fcamp__sight { position: absolute; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; height: 20px; }
+.f64 .fcamp__role { overflow: hidden; text-overflow: ellipsis; }
+.f64 .fcamp__report > * { position: absolute; }
+
+/* the company: a person's art beside their sheet; the hands, the cards they bring, the satchel when a piece is held */
+.fco__deep { position: absolute; left: 0; top: 0; width: 400px; height: 720px; pointer-events: none; background: linear-gradient(90deg, rgba(17, 13, 10, 0.45) 0, rgba(17, 13, 10, 0.45) 330px, rgba(17, 13, 10, 0) 400px); }
+.f64 .fco__art { position: absolute; image-rendering: auto; pointer-events: none; }
+.f64 .fco__strip { display: flex; align-items: center; gap: 8px; }
+.f64 .fco__face { position: relative; padding: 0; cursor: pointer; filter: brightness(0.78); }
+.f64 .fco__face.sel { filter: none; box-shadow: 0 0 0 1px var(--f-k0), 0 0 0 2px var(--f-o5), 0 0 0 3px var(--f-k0); }
+.f64 .fco__face.no { filter: brightness(0.42); }
+.f64 .fco__face.foc-ring { outline: 1px solid var(--f-o5); outline-offset: 5px; }
+.f64 .fco__band { position: absolute; }
+.f64 .fco__band > * { position: absolute; }
+.f64 .fco__well { width: 64px; height: 108px; background: var(--f-w0); box-shadow: inset 1px 1px 0 0 var(--f-k0), inset -1px -1px 0 0 var(--f-w3), inset 0 0 0 5px var(--f-w1), inset 0 0 0 6px var(--f-w3); }
+.f64 .fco__well > img, .f64 .fco__well > i { position: absolute; left: 50%; top: 50%; margin: -12px 0 0 -12px; }
+.f64 .fco__well.take { box-shadow: inset 1px 1px 0 0 var(--f-k0), inset -1px -1px 0 0 var(--f-w3), inset 0 0 0 5px var(--f-w1), inset 0 0 0 6px var(--f-o5); }
+.f64 .fco__none { width: 24px; height: 24px; background: var(--f-w2); clip-path: polygon(8px 0, 16px 0, 24px 8px, 24px 16px, 16px 24px, 8px 24px, 0 16px, 0 8px); }
+.f64 .fco__row { position: absolute; display: flex; align-items: baseline; gap: 12px; height: 20px; }
+.f64 .fco__row > :last-child { margin-left: auto; }
+.f64 .fco__ap { width: 30px; }
+.f64 .fco__cardname { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.f64 .fco__cardtitle { overflow: hidden; text-overflow: ellipsis; }
+.f64 .fco__card { cursor: default; }
+.f64 .fco__card:focus-visible { outline: 1px solid var(--f-o5); outline-offset: 3px; }
+.f64 .fco__fit { cursor: pointer; }
+.f64 .fco__notgear { cursor: default; filter: brightness(0.6); }
+.f64 .tabs > .tab { font-family: inherit; cursor: pointer; }

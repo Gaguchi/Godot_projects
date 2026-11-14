@@ -12,8 +12,9 @@
  * The unit's own name is not here — that is `engine/run/party.ts#displayName`,
  * because the player's chosen MC name is run state, not content.
  */
+import { itemDef } from '../engine/run/bag'
 import { MC_ID } from '../engine/run/party'
-import type { EngineEnv } from '../engine/types'
+import type { EngineEnv, RunState, Unit } from '../engine/types'
 
 /**
  * A quest STAGE's line. The lookup lives in `engine/run/quests.ts` because the headless game prints Contracts too
@@ -78,4 +79,21 @@ export function mcName(chosen: string | null, env: EngineEnv): string {
 
 export function companyName(chosen: string | null): string {
   return chosen ?? UNNAMED_COMPANY
+}
+
+/** What someone is and carries, on one line: "Shield Knight · Iron Lance, Iron Buckler". */
+export function roleLine(unit: Unit, env: EngineEnv): string {
+  const held = [unit.handLeft, unit.handRight].filter((i): i is NonNullable<typeof i> => i !== null).map((i) => itemDef(i, env).name).join(', ')
+  return [className(unit.classId, env), held].filter((p) => p !== '').join(' · ')
+}
+
+/** The satchel's potions as the purse row prints them: the first kind and how many ("Healing Potion ×1"), or null. */
+export function potionLine(run: RunState, env: EngineEnv): string | null {
+  const potions = new Map<string, number>()
+  for (const e of run.bag) {
+    const def = itemDef(e.itemId, env)
+    if (def.kind === 'potion') potions.set(def.name, (potions.get(def.name) ?? 0) + 1)
+  }
+  const first = [...potions.entries()][0]
+  return first === undefined ? null : `${first[0]} ×${first[1]}`
 }

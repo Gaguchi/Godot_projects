@@ -66,7 +66,7 @@ test('the quest log has ONE name on every surface that opens it', async ({ page 
   await page.getByTestId('band-menu').click()
   await expect(page.getByTestId('pause-quests')).toHaveText(/contracts/i)
   await page.getByTestId('pause-quests').click()
-  await expect(page.getByTestId('quest-log').locator('.report__title')).toHaveText(/contracts/i)
+  await expect(page.getByTestId('quest-log').getByTestId('modal-heading')).toHaveText(/contracts/i)
 })
 
 /**

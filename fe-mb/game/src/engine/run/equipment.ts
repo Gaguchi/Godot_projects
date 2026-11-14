@@ -25,7 +25,7 @@ const BAG_FULL = 'the bag has no room for the gear this would displace'
 /**
  * The plural a refusal says out loud, one word per `WeaponClass`. Authored rather than derived because English
  * does not derive it (axe → axes, staff → staves), and because this string is READ by the player: it is the
- * whole of what the Loadout's unlit slot and the headless `equip` say for themselves.
+ * whole of what The Company's unlit hand and the headless `equip` say for themselves.
  */
 const WEAPON_WORDS: Readonly<Record<WeaponClass, string>> = {
   sword: 'swords', lance: 'lances', axe: 'axes', bow: 'bows', crossbow: 'crossbows',
@@ -37,7 +37,7 @@ const QUIVER_WORD = 'quivers'
 
 /**
  * Is this chassis trained to the item's arm? `classes.json#weaponClasses` is the data home of the rule, and this
- * is its ONE reader: `planEquip` refuses on it, `ui/modals/Loadout.tsx` shows the refusal under the slot it
+ * is its ONE reader: `planEquip` refuses on it, `ui/company/Company.tsx` shows the refusal under the slot it
  * belongs to, and `content/lint.ts` holds every shipped hand to it. DECISIONS removed the weapon TRIANGLE — the
  * +15 hit / +1 damage rock-paper-scissors — which is not the same as letting a Mage hold a tower shield and a
  * Lord a tome while the loadout screen says nothing (RE-GATE C 3.13).

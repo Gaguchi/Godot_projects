@@ -1,0 +1,78 @@
+{
+  "alpha_wolf": [
+    22,
+    14
+  ],
+  "bandit": [
+    22,
+    8
+  ],
+  "bandit_archer": [
+    22,
+    14
+  ],
+  "brigand_chief": [
+    22,
+    14
+  ],
+  "daren": [
+    22,
+    14
+  ],
+  "ember_mage": [
+    22,
+    8
+  ],
+  "garrik": [
+    22,
+    14
+  ],
+  "kael": [
+    22,
+    14
+  ],
+  "kael_left": [
+    22,
+    14
+  ],
+  "lilina": [
+    27,
+    20
+  ],
+  "lyra": [
+    22,
+    14
+  ],
+  "marcus": [
+    26,
+    10
+  ],
+  "raider_cleric": [
+    22,
+    14
+  ],
+  "raider_mage": [
+    22,
+    14
+  ],
+  "roy": [
+    28,
+    14
+  ],
+  "shield_knight": [
+    22,
+    14
+  ],
+  "thief": [
+    22,
+    14
+  ],
+  "warlord": [
+    22,
+    8
+  ],
+  "wolf": [
+    22,
+    14
+  ]
+}

@@ -29,7 +29,7 @@ async function tags(page: Page): Promise<readonly { cls: string; text: string }[
   return page.evaluate(() => {
     const card = document.querySelector('[data-testid="check-event"]')
     if (card === null) return []
-    return Array.from(card.querySelectorAll('.talk__tag')).map((el) => ({ cls: String(el.className), text: (el.textContent ?? '').trim() }))
+    return Array.from(card.querySelectorAll('.chk')).map((el) => ({ cls: String(el.className), text: (el.textContent ?? '').trim() }))
   })
 }
 
@@ -42,23 +42,23 @@ test('every check kind reads as passable or doomed before the player commits', a
   await openCheck(page, 'ancient_inscription', { gold: 3 })
   let seen = await tags(page)
   expect(seen.length).toBeGreaterThan(0)
-  for (const t of seen) expect(t.cls, t.text).toMatch(/talk__tag--(ok|risk)/)
+  for (const t of seen) expect(t.cls, t.text).toMatch(/\bchk (ok|no)\b/)
 
   // a CLASS check with nobody to answer it — the case that used to render blank
   await openCheck(page, 'thieves_crossroads', { gold: 3 })
   seen = await tags(page)
   expect(seen.some((t) => /needs a/.test(t.text))).toBe(true)
-  for (const t of seen) expect(t.cls, t.text).toMatch(/talk__tag--(ok|risk)/)
-  expect(seen.find((t) => /needs a/.test(t.text))?.cls).toContain('talk__tag--risk')
+  for (const t of seen) expect(t.cls, t.text).toMatch(/\bchk (ok|no)\b/)
+  expect(seen.find((t) => /needs a/.test(t.text))?.cls).toMatch(/\bno\b/)
   await page.screenshot({ path: 'test-results/fix-CONTENT-14-class.png' })
 
   // a FOOD check on an empty bag — likewise
   await openCheck(page, 'injured_knight', { gold: 3, bag: [] })
   seen = await tags(page)
   const food = seen.find((t) => /food/.test(t.text))
-  expect(food?.cls).toContain('talk__tag--risk')
+  expect(food?.cls).toMatch(/\bno\b/)
   expect(food?.text).toMatch(/0 held/)
-  for (const t of seen) expect(t.cls, t.text).toMatch(/talk__tag--(ok|risk)/)
+  for (const t of seen) expect(t.cls, t.text).toMatch(/\bchk (ok|no)\b/)
 
   await page.screenshot({ path: 'test-results/fix-CONTENT-14.png' })
   expect(errors).toEqual([])
@@ -80,7 +80,7 @@ test('a check card always offers the company at least one row it can tick', asyn
     await openCheck(page, id, { gold: 3 })
     const ticked = await page.evaluate(() => {
       const card = document.querySelector('[data-testid="check-event"]')!
-      return Array.from(card.querySelectorAll('.talk__tag')).filter((el) => /talk__tag--ok/.test(el.className)).length
+      return Array.from(card.querySelectorAll('.chk')).filter((el) => /\bok\b/.test(el.className)).length
     })
     expect(ticked, id).toBeGreaterThan(0)
   }
@@ -143,10 +143,11 @@ test('the verdict on a check badge is DRAWN, in the one hand the game has', asyn
   await openCheck(page, 'bandit_hideout', {})
 
   const badges = await page.evaluate(() =>
-    Array.from(document.querySelectorAll('[data-testid="check-event"] .talk__tag')).map((el) => ({
+    Array.from(document.querySelectorAll('[data-testid="check-event"] .chk')).map((el) => ({
       text: (el.textContent ?? ''),
       ok: el.getAttribute('data-ok'),
-      svgs: el.querySelectorAll('svg').length,
+      // the mark is the kit's own drawn tick or cross (a 1:1 image), never a Dingbat from a fallback face
+      svgs: el.querySelectorAll('img').length,
     })))
   expect(badges.length).toBeGreaterThan(0)
   for (const b of badges) {
@@ -171,7 +172,7 @@ test('a choice with no check is sealed as taken, never as won', async ({ page })
   const seal = page.getByTestId('check-result')
   await expect(seal).toHaveAttribute('data-verdict', 'untested')
   await expect(seal).toHaveText('Chosen')
-  await expect(seal).not.toHaveClass(/event__seal--pass/)
+  await expect(seal).not.toHaveClass(/meadow/)
 
   // a real roll the company cannot make still stamps a verdict — the ambush's SPD 8 scatter, which 0120 left
   // standing beside a live purse check rather than lowering it

@@ -17,29 +17,16 @@ import { buyPrice, entrySellPrice, shopStock } from '../../engine/run/economy'
 import { canHold } from '../../engine/run/equipment'
 import { displayName, livingUnits } from '../../engine/run/party'
 import { spriteIdFor } from '../../content/index'
-import type { BagEntry, EngineEnv, GameState, Item } from '../../engine/types'
+import type { BagEntry, EngineEnv, GameState } from '../../engine/types'
+import { KIcon, iconOf, kindWords } from '../filigree/items'
 import { FBtn, FChoice, Key, Niche, Numeral, SectionHead, Win, faceArt, useKitState } from '../filigree/kit'
 import { className } from '../names'
 import { dispatch, useEnv, useGame, useLegal } from '../store'
-import { townArt, usePlaceKeys, type TownView } from './shared'
+import { usePlaceKeys, type TownView } from './shared'
 
 const EDGE = 14
 const PAD = 20
 const ROWS = 19            // one shelf of the counter: whole rows only, never one cut by the window's foot
-
-const iconOf = (i: Pick<Item, 'kind' | 'weaponClass'>): string => townArt.kit.itemIcon[i.weaponClass ?? i.kind] ?? townArt.kit.itemIcon[i.kind] ?? 'sword'
-function KIcon({ name, style }: { readonly name: string; readonly style?: React.CSSProperties }): React.JSX.Element {
-  return <img className="ficon" src={`/art/ui/kicon_${name}.png`} width={24} height={24} alt="" draggable={false} style={style} />
-}
-
-/** What a good IS, in the trader's words: never the raw `kind` or `weaponClass` id. */
-function kindWords(i: Item): string {
-  if (i.kind === 'food') return `${i.charges ?? 1} rations, a hop each`
-  if (i.kind === 'potion') return i.effect?.kind === 'Heal' ? `a draught, heals ${i.effect.amount}` : `a draught, +${i.effect?.amount ?? 0} AP`
-  if (i.kind === 'quiver') return 'a quiver for the off hand'
-  if (i.kind === 'shield') return 'off-hand shield'
-  return `${i.twoHanded === true ? 'two-handed' : 'one-handed'} ${i.weaponClass ?? i.kind}`
-}
 
 interface Good {
   readonly id: string

@@ -18,7 +18,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { spriteIdFor } from '../../content/index'
 import type { Action } from '../../engine/actions'
 import { overlayOf } from '../../engine/flow/pump'
-import { foodCount, itemDef } from '../../engine/run/bag'
+import { foodCount } from '../../engine/run/bag'
 import { DESCENT_IS_ONE_WAY } from '../../engine/run/dungeon'
 import { rollChanceFor } from '../../engine/run/encounters'
 import { throneWarning } from '../../engine/run/travel'
@@ -27,8 +27,8 @@ import { displayName, livingUnits } from '../../engine/run/party'
 import { questStatus } from '../../engine/run/quests'
 import { scoutedRoads, sightingFor, type Sighting } from '../../engine/run/scout'
 import type { EngineEnv, GameState, OverworldNode, RunState } from '../../engine/types'
-import { FBtn, FCmd, FIcon, Key, Niche, Win, faceArt } from '../filigree/kit'
-import { className, companyName } from '../names'
+import { FBtn, FCmd, FIcon, Key, Niche, Pips, Win, faceArt } from '../filigree/kit'
+import { companyName, potionLine, roleLine } from '../names'
 import { STAGE_H, STAGE_W } from '../stage'
 import { canDispatch, dispatch, shallow, useEnv, useGame, useLegal } from '../store'
 import { HOP_DELAY_MS, motionEnabled } from '../timings'
@@ -162,39 +162,24 @@ interface HudView {
   readonly faces: readonly { readonly id: string; readonly name: string; readonly sprite: string | null; readonly hp: number; readonly max: number; readonly role: string }[]
 }
 
-function Pips({ on }: { readonly on: number }): React.JSX.Element {
-  const total = Math.max(8, Math.ceil(on / 4) * 4)
-  return (
-    <>
-      {Array.from({ length: total }, (_, i) => <i key={i} className={`fpip${i < on ? '' : ' fpip--off'}${i % 4 === 3 && i !== total - 1 ? ' fpip--gap' : ''}`} />)}
-    </>
-  )
-}
-
 function Hud({ regionName, chance, camera, company }: { readonly regionName: string; readonly chance: number; readonly camera: Pt; readonly company: Pt }): React.JSX.Element | null {
   const env = useEnv()
   const select = useCallback((s: GameState): HudView | null => {
     const run = s.run
     if (run === null) return null
     const t = run.pendingTravel
-    const potions = new Map<string, number>()
-    for (const e of run.bag) {
-      const def = itemDef(e.itemId, env)
-      if (def.kind === 'potion') potions.set(def.name, (potions.get(def.name) ?? 0) + 1)
-    }
-    const first = [...potions.entries()][0]
     return {
       day: run.daysElapsed,
       company: companyName(run.companyName),
       gold: run.gold,
       food: foodCount(run.bag, env),
-      potion: first === undefined ? null : `${first[0]} ×${first[1]}`,
+      potion: potionLine(run, env),
       quests: Object.keys(run.questStates).filter((id) => env.content.quests[id] !== undefined && questStatus(run, id) === 'active').length,
       // `path` still holds the leg in flight (travelStep only shifts on LAND), so it IS the count of hops to go.
       road: t !== null && (t.status === 'walking' || t.status === 'suspended') ? t.path.length : null,
       faces: livingUnits(run).map((u) => ({
         id: u.id, name: displayName(u, run), sprite: spriteIdFor(u.id, u.classId), hp: u.hp.current, max: u.hp.max,
-        role: [className(u.classId, env), [u.handLeft, u.handRight].filter((i): i is NonNullable<typeof i> => i !== null).map((i) => itemDef(i, env).name).join(', ')].filter((p) => p !== '').join(' · '),
+        role: roleLine(u, env),
       })),
     }
   }, [env])

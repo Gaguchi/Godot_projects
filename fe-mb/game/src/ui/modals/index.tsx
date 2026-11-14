@@ -15,7 +15,7 @@ import React, { useEffect } from 'react'
 import { overlayOf } from '../../engine/flow/pump'
 import type { GameState, Modal } from '../../engine/types'
 import { dispatch, getState, setPaused, useGame } from '../store'
-import { LoadoutModal } from './Loadout'
+import { CompanyModal } from '../company/Company'
 import { PauseModal } from './Pause'
 import { QuestLogModal } from './QuestLog'
 
@@ -48,7 +48,7 @@ export function Modals(): React.JSX.Element | null {
   }, [])
   if (modal === null) return null
   switch (modal.kind) {
-    case 'loadout': return <LoadoutModal initialUnitId={modal.unitId} />
+    case 'loadout': return <CompanyModal initialUnitId={modal.unitId} />
     case 'pause': return <PauseModal />
     case 'questLog': return <QuestLogModal />
     default: return null

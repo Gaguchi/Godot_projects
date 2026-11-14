@@ -27,7 +27,7 @@ test('title → tutorial → prologue → map → town → road, no console erro
   if (await report.isVisible().catch(() => false)) await report.click()
   await expect(page.getByTestId('dialogue')).toBeVisible()
   for (let i = 0; i < 12; i++) {
-    const choice = page.locator('.talk__choices button').first()
+    const choice = page.getByTestId('dialogue-box').locator('button').first()
     if (!(await choice.isVisible().catch(() => false))) break
     await choice.click()
     if (await page.getByTestId('name-prompt').isVisible().catch(() => false)) {
@@ -231,8 +231,8 @@ test('the name the player chose is the name every roster shows', async ({ page }
   await page.getByTestId('town-company').click()
   const loadout = page.getByTestId('loadout')
   await expect(loadout).toBeVisible()
-  await expect(loadout.locator('.loadout__face-name').first()).toHaveText('Wilhelmina')
-  await expect(loadout.locator('.loadout__title')).toHaveText('Wilhelmina')
+  await expect(loadout.getByTestId('roster-mc')).toHaveAttribute('aria-label', 'Wilhelmina')
+  await expect(loadout.getByTestId('person-name')).toHaveText('Wilhelmina')
 })
 
 test('two drops of the same item render two rows without a duplicate-key error', async ({ page }) => {

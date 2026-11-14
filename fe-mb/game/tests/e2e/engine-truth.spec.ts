@@ -29,14 +29,14 @@ test('camp Rest with nobody wounded is disabled and says why, and one scratch li
   const rest = page.getByTestId('camp-rest')
   await expect(rest).toBeVisible()
   await expect(rest).toBeDisabled()
-  // the reason is rendered, not hidden in a native tooltip
-  await expect(rest.locator('.camp__choice-why')).toHaveText(/nobody is wounded/i)
+  // the reason is rendered beside the verb, not hidden in a native tooltip
+  await expect(page.getByTestId('camp-rest-why')).toHaveText(/nobody is wounded/i)
   // Scout is untouched: it buys information, not health
   await expect(page.getByTestId('camp-scout')).toBeEnabled()
 
   await woundParty(page)
   await expect(rest).toBeEnabled()
-  await expect(rest.locator('.camp__choice-why')).toHaveCount(0)
+  await expect(page.getByTestId('camp-rest-why')).toHaveCount(0)
 
   // and pressing it now actually spends the night on something
   await rest.click()
