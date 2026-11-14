@@ -288,3 +288,34 @@ test('the town is a square of doors, the tavern is its people, and a talk is a s
   await expect(town).toHaveAttribute('data-tab', 'tavern')
   expect(errors).toEqual([])
 })
+
+test('in a tavern talk the lead listens on the left and whoever is talking faces him from the right', async ({ page }) => {
+  // The engine seats "our side" on the left, so a hireling like Kael stood where the lead should and talked to
+  // nobody. The talk screen stages it as a support conversation: the two face each other, and the art is the
+  // character's own left-facing pose, never a mirror (the brief's "never edit").
+  await page.goto('/?screen=overworld&seed=7&motion=0')
+  await expect(page.getByTestId('overworld-screen')).toBeVisible()
+  await page.evaluate(() => {
+    const g = (window as unknown as { __game: SeedHandle }).__game
+    g.dispatch({ type: 'dev/teleport', nodeId: 'pine_crossing' })
+    g.dispatch({ type: 'travel/goTo', nodeId: 'pine_crossing' })
+  })
+  await page.getByTestId('menu-town').click()
+  await page.getByTestId('tab-tavern').click()
+  await page.mouse.move(640, 700)
+  await page.getByTestId('room-sq_blood_ties').click()
+  // he is a figure in the room before he is a talk
+  await expect(page.getByTestId('tavern-card')).toContainText('Kael')
+  await page.getByTestId('talk-sq_blood_ties').click()
+  await expect(page.getByTestId('dialogue')).toBeVisible()
+  await expect(page.getByTestId('bust-left')).toHaveAttribute('data-who', 'mc')
+  const kael = page.getByTestId('bust-right')
+  await expect(kael).toHaveAttribute('data-who', 'kael')
+  await expect(kael).toHaveAttribute('src', /kael_left\.png$/)
+  expect(await kael.evaluate((el) => getComputedStyle(el).transform)).toBe('none')
+  // the plate and the light agree on who is speaking
+  await expect(page.getByTestId('dialogue-speaker')).toHaveText('Kael')
+  await expect(page.getByTestId('dialogue-speaker')).toHaveAttribute('data-side', 'right')
+  await expect(kael).toHaveAttribute('data-lit', 'yes')
+  await expect(page.getByTestId('bust-left')).toHaveAttribute('data-lit', 'no')
+})

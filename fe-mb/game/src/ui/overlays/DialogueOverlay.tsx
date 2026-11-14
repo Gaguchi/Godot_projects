@@ -88,7 +88,9 @@ export function DialogueOverlay(): React.JSX.Element | null {
     if (node === null) return null
     return {
       dialogueId: run.pendingDialogue?.dialogueId ?? null,
-      source: run.pendingDialogue?.source ?? null,
+      // a talk in town is its own screen: one started at a tavern table, or a quest's follow-up that opens while the
+      // company is in town (the brothers' reunion happens back at the tavern, whichever door the player is at)
+      source: run.pendingDialogue?.source === 'quest' && s.screen.kind === 'town' ? 'tavern' : run.pendingDialogue?.source ?? null,
       staged: s.screen.kind === 'prologue',
       speakerId: node.speaker ?? null,
       speaker: speakerName(node.speaker, run, env),
