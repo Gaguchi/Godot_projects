@@ -780,7 +780,9 @@ class Stage:
 TRACK = [(855, 470), (856, 500), (858, 545), (863, 600), (871, 660), (878, 730)]
 
 
-def build(seed=5):
+def build(seed=5, bare=False):
+    """bare=True is the same clearing with nothing on it (no dirt, no track): the ground the GAME lays its own
+    battle on, since it makes each battle's dirt patch itself (tools/pxworld/src/px-combat/export_game.py)."""
     rng = random.Random(seed)
     a = meadow(seed)
     serrate(a, {ix('g4'), ix('g5'), ix('g6')}, seed)
@@ -789,7 +791,10 @@ def build(seed=5):
     td, talong, tside = seg_dist(catmull(TRACK, 10))
     thw = 19 + wobble(seed + 3, 80)(talong) * 1.5 - np.clip((YY - 520) / 200, 0, 1) * 3
     track = (td <= thw) & (YY >= OY + BH - 30)
-    dirt = dirt_mask(seed, track)
+    if bare:
+        track = np.zeros((H, W), bool)
+        td = np.full((H, W), 1e6)
+    dirt = np.zeros((H, W), bool) if bare else dirt_mask(seed, track)
     a[dirt] = ix('d4')
     # the trodden way across the patch: the painted field's worn line from the north-west to the south-east,
     # a broad band a step darker in broken lengths (feet and hooves keep to it), never a groove
@@ -841,7 +846,7 @@ def build(seed=5):
             pebble(a, int(x), int(y), rng, big=r_ < .08, ramp='t' if r_ < .35 else 'd', lift=0 if r_ < .35 else 1)
 
     # ---- the meadow: calm on the board (short, sparse tufts), longer and wilder off it
-    dout = ndimage.distance_transform_edt(~dirt)
+    dout = np.full((H, W), 99.0) if bare else ndimage.distance_transform_edt(~dirt)
     grass = ~dirt
     dens = smooth_noise(W, H, 60, seed + 77)
     wild = ~ndimage.binary_dilation(BOARD, disk(2))
@@ -890,7 +895,7 @@ def seams(a):
     return a
 
 
-def woods(st, info, seed=5):
+def woods(st, info, seed=5, gap=True):
     """The broadleaf wood close round the clearing: a front row with trunks and dappled shade on the west and
     east, a sea of crowns over a dark understory to the south, parted by the track; shrubs at its edge."""
     rng = random.Random(seed + 100)
@@ -913,24 +918,24 @@ def woods(st, info, seed=5):
     while x < W + 40:                                   # the front row: the treeline facing the clearing
         rx = rng.uniform(40, 60)
         cx = x + rx * .8
-        if abs(cx - track_x(574)) > rx + 30:
+        if not gap or abs(cx - track_x(574)) > rx + 30:
             crowns.append((cx, edge_y[int(min(W - 1, max(0, cx)))] + rng.uniform(-4, 6) + (60 - rx) * .25, rx, rng.random()))
         x = cx + rx * rng.uniform(.6, .85)
     for (cx, cy) in poisson(rng, -60, 610, W + 60, 790, 46, 6000):
         rx = rng.uniform(42, 64)
-        if abs(cx - track_x(cy)) > rx * (.95 if cy < 660 else .45) + (26 if cy < 660 else 4):
+        if not gap or abs(cx - track_x(cy)) > rx * (.95 if cy < 660 else .45) + (26 if cy < 660 else 4):
             crowns.append((cx, cy, rx, rng.random()))
     for i, (cx, cy, rx, tone) in enumerate(crowns):
         cr, _ = crown(rx, rx * .86, seed * 31 + i, lift=1 if tone > .82 else 0, deep=tone < .3)
         st.add(cr, cx, cy, z=cy + 2000)
     # where the track goes in under the trees it walks in their shade: a hard-edged, sun-flecked pool
     shade = corridor & (YY > 598 + 5 * wobble(seed + 61, 40)(XX))
-    for (fx_, fy_) in poisson(rng, 820, 600, 910, 720, 11, 400):
+    for (fx_, fy_) in (poisson(rng, 820, 600, 910, 720, 11, 400) if gap else ()):
         r1 = rng.uniform(1.6, 3.2)
         shade &= ~(((XX - fx_) / r1) ** 2 + ((YY - fy_) / (r1 * .5)) ** 2 <= 1)
     st.shadow |= shade
     # the two trees that stand either side of the track where it goes in, trunks showing
-    for (bx, by, rx, sd) in ((796, 668, 48, 901), (930, 676, 50, 902)):
+    for (bx, by, rx, sd) in (((796, 668, 48, 901), (930, 676, 50, 902)) if gap else ()):
         tr = tree(rx, rx * .86, 64, 13, sd)
         st.add(tr, bx, by, z=by + 2000 + 1)
         st.throw(tr, bx, by, dapple=sd, clip=(YY > 560))
@@ -987,12 +992,14 @@ def walls(st, seed=5):
             st.add(sp, tx, ty, z=fy + 10)
 
 
-def render(seed=5):
-    a, info = build(seed)
-    seams(a)
+def render(seed=5, bare=False):
+    a, info = build(seed, bare)
+    if not bare:
+        seams(a)
     st = Stage(a)
-    walls(st, seed)
-    woods(st, info, seed)
+    if not bare:
+        walls(st, seed)
+    woods(st, info, seed, gap=not bare)
     return st.render()
 
 
