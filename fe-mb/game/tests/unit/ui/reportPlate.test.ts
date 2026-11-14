@@ -20,9 +20,9 @@ function placed(w: number, h: number): { x: number; y: number; w: number; h: num
   return { x: o.x + dx, y: o.y + dy, w: w * t * scale, h: h * t * scale }
 }
 
-/** The Field Report's sheet, as the stylesheet lays it out: `justify-items: end` with a 34px right pad. */
-const SHEET_W = 604
-const SHEET_RIGHT_PAD = 34
+/** The Field Report's window (`ui/screens/FieldReport.tsx`): 550 wide, 14 from the stage's right edge. */
+const SHEET_W = 550
+const SHEET_RIGHT_PAD = 14
 
 describe('the report plate', () => {
   for (const [w, h, label] of [[14, 10, 'the 14×10 field'], [5, 5, 'the tutorial board']] as const) {

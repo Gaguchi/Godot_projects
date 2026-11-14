@@ -132,3 +132,16 @@ Calls made while building stage 4 (combat), not yet confirmed by the owner:
 - **A mark is a box, and it lies over the dirt.** Reach is steel, a target is oxblood, a ward's or a heal's tile is moss, the enemy's reach is a hatch. The ground is no longer greyed to make room for them. A first version painted the dirt over the mark, so a foe standing on dirt showed no target box; a browser test now compares the tile's pixels with and without the mark.
 - **Card faces are one piece** (`ui/filigree/cards.tsx`) for the hand and for the deck's page in The Company.
 - **The Field Report still has the old look**, with the new field shown in its plate at about three quarters size. The old combat stylesheet is no longer loaded by anything.
+
+Calls made while building stage 5 (the field report and the dungeon), not yet confirmed by the owner:
+
+- **The field report is one Filigree window beside the field** (board F64Report). The field is shown at the size it was fought on, moved to the left of the report and not shrunk; the clearing moves with it.
+- **The report is as tall as what it holds.** The board draws it at full height; a quiet win then left a hole above its foot, which the game's own empty-space test flagged. A crowded report stops at the stage and closes the people's rows up.
+- **The fallen lie where they fell**: the figure turned on its side and darkened, with a cross. The board draws them so. This turns the art; it does not redraw it.
+- **The line under the verdict is derived, not authored**: who fell, who was taken alive, or who came off worst. The board's line was written for its one battle.
+- **The dungeon is a cave laid from pieces** (board F64Dungeon). Every descent is made from the run's seed, but always on the same lattice (6 rows by 4 columns, a hall at the stair's foot, one boss chamber), so `tools/pxworld/src/px-scenes2/export_game.py` paints every chamber (25) and every passage that can exist (58) alone, in place, with the board's painter, and cuts out what each changed. The game lays the ones this descent has. A passage's piece carries the breach it opens in each chamber's wall.
+- **What the pieces leave out of the board's painting**: the seep pool (it lies where a chamber may be), the rubble and outcrops on the rock, the torches, and the boot-prints of the way walked. Cargo is back as props by room kind (crates in a fight, a chest in a treasure room, a bedroll and a fire in a rest).
+- **A room's detail says only what the engine has decided**: a fight names the pack that keeps this cave and its members by count; a rest and a treasure quote the rules; an event says only that something waits. The board printed levels, hit points and loot odds from a probe of one seed; the game does not print them.
+- **Number keys and Enter enter a room at once**, as the town's numbered choices do. Clicking the room in the cave does too.
+- **The one-way warning sits under the Enter button at the mouth**, the door it is about. Past the first room it is the refusal under Back to daylight.
+- **Two ways on of the same kind are told apart by where they lie** ("row 1 · the west end").

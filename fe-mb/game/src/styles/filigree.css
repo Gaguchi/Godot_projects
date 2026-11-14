@@ -194,3 +194,25 @@
 
 /* a card's face (ui/filigree/cards.tsx): a name or a line too long for the face is cut with an ellipsis, never wrapped */
 .f64 .fcard__clip { overflow: hidden; text-overflow: ellipsis; }
+
+/* the dungeon (ui/dungeon): the cave laid from pieces, its rooms' marks, the ways on */
+.fcave__rock > img { position: absolute; image-rendering: pixelated; pointer-events: none; }
+.fcave__rock > .fcave__dim { filter: brightness(0.7) saturate(0.6); }
+.fcave__bead { position: absolute; width: 9px; height: 9px; background: url('/art/ui/bead_bone.png'); image-rendering: pixelated; pointer-events: none; }
+.fcave__bead--brass { background-image: url('/art/ui/bead_brass.png'); }
+.f64 .fcave__company { position: absolute; pointer-events: none; z-index: 3; }
+.f64 .froom { position: absolute; width: 60px; height: 44px; padding: 0; z-index: 2; }
+.f64 .froom > * { position: absolute; }
+.f64 .froom > img { image-rendering: pixelated; }
+/* a glyph sits on the floor: its contact shadow is the floor a step darker, hard-edged */
+.f64 .froom > .ficon, .f64 .froom__unknown { filter: drop-shadow(1px 0 0 var(--f-k0)) drop-shadow(-1px 0 0 var(--f-k0)) drop-shadow(0 1px 0 var(--f-k0)) drop-shadow(0 -1px 0 var(--f-k0)); }
+.f64 .froom__unknown { text-align: center; }
+.f64 .froom--cleared > .ficon, .f64 .froom--passed > .ficon, .f64 .froom--cleared > .froom__unknown, .f64 .froom--passed > .froom__unknown { opacity: 0.45; }
+.f64 .froom:focus-visible { outline: 1px solid var(--f-o5); outline-offset: 2px; }
+/* a room that can be entered answers the pointer on ITSELF, with motion on or off: its mark lights (never a lift) */
+.f64 .froom--reach:hover, .f64 .froom--reach:focus-visible { filter: brightness(1.35); }
+.f64 .fcave__ahead { position: absolute; margin: 0; padding: 0; list-style: none; }
+.f64 .fcave__ahead > li { display: flex; align-items: center; gap: 10px; height: 26px; }
+.f64 .fcave__ahead > li > :last-child { margin-left: auto; }
+.f64 .fcave__warn, .f64 .fcave__note { white-space: normal; }
+.f64 .fcave__warn { line-height: 15px; }

@@ -44,7 +44,7 @@ test('the one-way door is announced BEFORE it: on the node card, at the mouth, a
   await page.evaluate(() => window.__game!.settled())
   await expect(page.getByTestId('dungeon-warning')).toBeVisible()
   expect(await page.evaluate(() => window.__game!.getState().run?.activeDungeon?.position ?? null)).toBeNull()
-  await page.locator('.room--reach').first().click()
+  await page.locator('.froom--reach').first().click()
   await page.evaluate(() => window.__game!.settled())
   expect(await page.evaluate(() => window.__game!.getState().run?.activeDungeon?.position ?? null)).not.toBeNull()
   await expect(page.getByTestId('dungeon-warning')).toHaveCount(0)
@@ -59,7 +59,7 @@ test('the one-way door is announced BEFORE it: on the node card, at the mouth, a
 test('a reachable room answers the pointer even with motion switched off', async ({ page }) => {
   await page.goto('/?screen=dungeon&seed=21&motion=0')
   await page.evaluate(() => window.__game!.settled())
-  const room = page.locator('.room--reach').first()
+  const room = page.locator('.froom--reach').first()
   await expect(room).toBeVisible()
 
   const read = async (): Promise<Record<string, string>> => room.evaluate((el) => {
@@ -91,16 +91,21 @@ test('the descent has ONE legend, not two', async ({ page }) => {
   await page.evaluate(() => window.__game!.settled())
   await expect(page.getByTestId('dungeon-descent')).toBeVisible()
   // the tally is the legend: glyph + name + count, for what is actually still down there
-  const rail = page.locator('.dungeon__ahead li')
+  const rail = page.locator('[data-testid="still-below"] li')
   expect(await rail.count()).toBeGreaterThan(1)
-  expect(await rail.first().locator('.room__glyph svg').count()).toBe(1)
-  // and nothing else on the screen repeats it
+  expect(await rail.first().locator('img.ficon, .froom__unknown').count()).toBe(1)
+  for (const row of await rail.allTextContents()) expect(row, row).toMatch(/×\d+$/)
+  // and nothing else on the screen is a second key to the same glyphs: one tally, each kind in it once
+  await expect(page.getByTestId('still-below')).toHaveCount(1)
   expect(await page.locator('.dungeon__legend').count()).toBe(0)
-  const names = (await rail.allTextContents()).map((t) => t.replace(/[×\d\s]+$/, '').trim())
-  const stage = (await page.locator('#game-stage').innerText()).toLowerCase()
-  for (const n of names) {
-    const hits = stage.split(n.toLowerCase()).length - 1
-    expect(hits, `"${n}" is printed ${hits} times on the descent`).toBe(1)
-  }
+  const kinds = await rail.evaluateAll((rows) => rows.map((r) => r.getAttribute('data-kind')))
+  expect(new Set(kinds).size).toBe(kinds.length)
+  // a room's name elsewhere on the stage is a LABEL on that room (its plate, its row in the way on), never a tally:
+  // nothing outside the legend pairs a room kind with a count
+  const tallies = await page.evaluate(() => {
+    const legend = document.querySelector('[data-testid="still-below"]')!
+    return [...document.querySelectorAll('#game-stage *')].filter((el) => !legend.contains(el) && el.children.length === 0 && /^(a fight|an elite|treasure|a rest|something|the boss)\s*×\d+$/i.test((el.textContent ?? '').trim())).length
+  })
+  expect(tallies).toBe(0)
   await page.screenshot({ path: '../.playwright-mcp/fix4-B.7-descent.png' })
 })

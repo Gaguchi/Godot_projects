@@ -245,7 +245,7 @@ test('two drops of the same item render two rows without a duplicate-key error',
     const loot = [{ itemId: 'iron_axe', rarity: 'common', placed: true }, { itemId: 'iron_axe', rarity: 'common', placed: true }]
     g.dispatch({ type: 'dev/seedState', state: { ...s, run: { ...s.run, lastBattle: { ...s.run.lastBattle, loot } } } })
   })
-  await expect(page.locator('.report__row--loot')).toHaveCount(2)
+  await expect(page.locator('.freport__row--loot')).toHaveCount(2)
   expect(errors).toEqual([])
 })
 

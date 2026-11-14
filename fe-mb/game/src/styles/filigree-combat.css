@@ -93,7 +93,14 @@
 }
 .fcombat .token__badge--muted { color: var(--f-b2); box-shadow: inset 0 0 0 1px var(--f-w4), 0 0 0 1px var(--f-k0); }
 .fcombat .token__hit { inset: 0; pointer-events: auto; cursor: pointer; }
-.fcombat .token--fallen .token__sprite { filter: grayscale(1) brightness(0.5); opacity: 0.6; }
+.fcombat .token--fallen .token__sprite {
+  transform: rotate(-90deg) translate(-8px, 6px); transform-origin: 50% 82%;
+  filter: grayscale(0.85) brightness(0.58) drop-shadow(1px 0 0 var(--f-k0)) drop-shadow(-1px 0 0 var(--f-k0)) drop-shadow(0 1px 0 var(--f-k0)) drop-shadow(0 -1px 0 var(--f-k0));
+}
+.fcombat .token--fallen::after {
+  content: ''; position: absolute; left: 50%; top: 62%; width: 9px; height: 9px; margin: -4px 0 0 4px;
+  background: url('/art/ui/mark_no.png') no-repeat; image-rendering: pixelated;
+}
 .fcombat .token--fallen .token__hit, .fcombat .token--captured .token__hit { pointer-events: none; }
 .fcombat .token__initials { left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: 700; color: var(--f-b2); opacity: 0.8; }
 .fcombat .token__initials > img { display: block; image-rendering: pixelated; }
@@ -171,5 +178,10 @@
 .f64 .hand__waiting { position: absolute; left: 0; right: 0; top: 96px; text-align: center; }
 .fcombat .drag-ghost { position: absolute; transform: translate(-50%, -140%); z-index: 80; pointer-events: none; }
 
-/* under the Field Report the field is a plate: nothing round it but the table */
-.fcombat--report { background: none; }
+/* ── the field report (ui/screens/FieldReport.tsx): the field as it stood, and the page about it ── */
+.f64.freport { position: absolute; inset: 0; background: none; pointer-events: none; }
+.f64.freport > * { pointer-events: auto; }
+.freport__cap { position: absolute; }
+.f64 .freport__row { position: absolute; }
+.f64 .freport__row > * { position: absolute; }
+.f64 .freport__row--fallen .fniche { filter: grayscale(1) brightness(0.5); }

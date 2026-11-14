@@ -54,23 +54,27 @@ export function tileCentre(w: number, h: number, tile: TileKey): { readonly x: n
   return { x: r.x + r.size / 2, y: r.y + r.size / 2 }
 }
 
-/* ── the read-only field under the Field Report ─────────────────────────────────────────────────────────────
+/* ── the read-only field beside the Field Report ────────────────────────────────────────────────────────────
    CONTRACT §2 (WP-UI-COMBAT) promises that the last hit and the death play on the frozen field under the report.
-   They never did: the report sheet was centred on the same 1280×720 stage as the board and covered it entirely
-   (GATE3-12 measured the card at 320-960 × 100-620 over a board at 346-934 × 130-550), so the whole read-only
-   field — tokens at their last tiles, the corpses where they fell — was behind an opaque page.
+   They never did at first: the report sheet was centred on the same stage as the board and covered it entirely
+   (GATE3-12), so the whole read-only field — tokens at their last tiles, the fallen where they fell — was behind
+   an opaque page.
 
-   The field becomes a PLATE on the left of the table and the page sits beside it. The plate box is stage space and
-   lives here because `geometry.ts` is the one module that measures; the board keeps its own `left`/`top`, and the
-   transform below moves and scales it into the plate. Board art scales cleanly (it is already `image-rendering:
-   pixelated` at an arbitrary pitch), and nothing on the report screen is clickable, so no hit target moves. */
-export const PLATE = { x: 36, y: 156, w: 484, h: 360 } as const
+   The field is a PLATE on the left of the table and the report sits beside it (board F64Report). The plate is the
+   field's own size, so the 14×10 field is shown exactly as it was fought on, moved aside and not shrunk: one art
+   pixel is still one stage pixel. The plate box is stage space and lives here because `geometry.ts` is the one
+   module that measures; the board keeps its own `left`/`top`, and the transform below moves it into the plate. */
+export const PLATE = { x: 28, y: 18, w: FIELD.w, h: FIELD.h } as const
 
-/** The transform that seats a `w × h` board, drawn at `gridOrigin`, inside `PLATE` — centred, aspect kept. */
+/** How far the whole field (its ground too) moves aside for the report. */
+export const PLATE_SHIFT = { x: PLATE.x - FIELD.x, y: PLATE.y - FIELD.y } as const
+
+/** The transform that seats a `w × h` board, drawn at `gridOrigin`, inside `PLATE` — centred, aspect kept, and
+ *  never enlarged (a small board stays the size it was fought at). */
 export function plateTransform(w: number, h: number): string {
   const t = tileSize(w, h)
   const o = gridOrigin(w, h)
-  const scale = Math.min(PLATE.w / (w * t), PLATE.h / (h * t))
+  const scale = Math.min(1, PLATE.w / (w * t), PLATE.h / (h * t))
   const dx = PLATE.x + (PLATE.w - w * t * scale) / 2 - o.x
   const dy = PLATE.y + (PLATE.h - h * t * scale) / 2 - o.y
   return `translate(${Math.round(dx)}px, ${Math.round(dy)}px) scale(${scale.toFixed(4)})`

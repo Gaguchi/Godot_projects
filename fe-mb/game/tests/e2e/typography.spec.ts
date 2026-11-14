@@ -7,8 +7,8 @@
 import { test, expect } from '@playwright/test'
 
 test('the numeric face is embedded, loaded, and its digits are tabular', async ({ page }) => {
-  // asked of a screen that still sets its figures in that face: the battle moved to the Filigree kit's own
-  await page.goto('/?screen=battleEnd&seed=3&motion=0')
+  // asked of a screen that still sets its figures in that face: the battle and its report moved to the Filigree kit's own
+  await page.goto('/?screen=win&seed=3&motion=0')
   await page.evaluate(() => document.fonts.ready)
 
   const family = (await page.evaluate(() => getComputedStyle(document.body).getPropertyValue('--font-numeric'))).trim()

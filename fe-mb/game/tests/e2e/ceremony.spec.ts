@@ -102,7 +102,7 @@ test('a lost battle is read on its own field report before the ledger', async ({
   await expect(page.getByTestId('field-report')).toBeVisible()
   await expect(page.getByTestId('gameover-screen')).toHaveCount(0)
   await expect(page.getByTestId('report-verdict')).toHaveText(/the field was lost/i)
-  await expect(page.locator('.report__row--fallen')).not.toHaveCount(0)
+  await expect(page.locator('[data-testid^="report-fallen-"]')).not.toHaveCount(0)
   await expect(page.getByTestId('report-foot')).toBeVisible()
 
   // turning the page is what ends the run

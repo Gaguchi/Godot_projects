@@ -26,7 +26,7 @@ import { clientToStage } from '../StageView'
 import { dispatch, getState, useEffects, useEnv, useGame } from '../store'
 import { Board, type BoardOverlays, type FloatText } from './Board'
 import { CardHand, cardIntentLines, cardType } from './CardHand'
-import { boardView, tileAtStagePoint } from './geometry'
+import { PLATE_SHIFT, boardView, tileAtStagePoint } from './geometry'
 import { extend, type ChronicleLine } from './chronicle'
 import { fieldNames } from './names'
 import { ActingWindow, Commands, RightColumn, TurnList, type Guide, type PlayPreview, type VictimRow } from './Hud'
@@ -440,8 +440,10 @@ export function CombatScreen(): React.JSX.Element | null {
 
   return (
     <div className={`f64 fcombat${view.source === 'report' ? ' fcombat--report' : ''}`} data-testid="combat-screen">
-      {/* the clearing the battle is laid on; under the Field Report the board is a plate, so the ground stays with it */}
-      {view.source === 'combat' && <img className="fcombat__ground" src="/art/field/ground.png" width={1280} height={720} alt="" draggable={false} />}
+      {/* the clearing the battle is laid on; beside the Field Report the whole clearing moves aside with its board */}
+      <img className="fcombat__ground" src="/art/field/ground.png" width={1280} height={720} alt="" draggable={false} style={view.source === 'report' ? { left: PLATE_SHIFT.x, top: PLATE_SHIFT.y } : undefined} />
+      {/* …and the wood carries on behind the report, so no bare strip shows round the window */}
+      {view.source === 'report' && <img className="fcombat__ground" src="/art/field/ground.png" width={1280} height={720} alt="" draggable={false} style={{ left: PLATE_SHIFT.x + 1280, top: PLATE_SHIFT.y }} />}
       <Board view={view} overlays={overlays} extras={extras} floats={floats} onTile={onTile} onHover={setHover} onCancel={() => dispatch({ type: 'combat/cancel' })} onTilePointerDown={onTilePointerDown} />
       {combat !== null && live && (
         <>
