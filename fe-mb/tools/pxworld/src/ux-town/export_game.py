@@ -126,6 +126,12 @@ def kit():
         png(R, f'{ART}/ui/kicon_{name}.png')
         icons[name] = [R.w, R.h]
     png(KI.arrow_e(9), f'{ART}/ui/row_arrow.png')
+    png(KI.check_mark('m4'), f'{ART}/ui/mark_ok.png')     # a check tag's verdict, drawn: within reach / falls short
+    png(KI.cross_mark('x4'), f'{ART}/ui/mark_no.png')
+    import kit as K                                 # the switch's track: off and on, at rest and pointed at
+    for on in (False, True):
+        for state in ('idle', 'hover'):
+            png(K._track(on, state), f"{ART}/ui/switch_{'on' if on else 'off'}{'_hov' if state == 'hover' else ''}.png")
     note('kit', {'numerals': glyphs, 'icons': icons, 'itemIcon': dict(KI.ITEM_ICON)})
 
 

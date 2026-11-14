@@ -279,7 +279,8 @@ def person(st, key, fx, fy, flip=False, z=None):
     st.add_rgba(PP.inked(a), fx - fxl, fy - fyl, fy if z is None else z)
 
 
-def compose(seed=5):
+def compose(seed=5, company=True):
+    """company=False leaves the three out (and their shadows): the game stands its own people in the clearing."""
     a, info = build_ground(seed)
     st = Stage(a)
     # ---- the tent
@@ -300,16 +301,17 @@ def compose(seed=5):
     lg = WD.log_seat(150, 34, seed=7)
     st.add(lg, *LILINA_LOG)
     st.throw_sprite(lg, *LILINA_LOG)
-    rgba, foot = RS.robe_seated()
-    lx = LILINA_LOG[0] - 10
-    sil = PP.silhouette(rgba)
-    m, x0, y0 = PP.cast_shadow(sil, foot[0], foot[1])
-    st.throw(m, lx + x0, LILINA_LOG[1] + y0)
-    st.throw_ell(lx + 4, LILINA_LOG[1] + 1, 22, 5)
-    st.add_rgba(PP.inked(rgba), lx - foot[0], LILINA_LOG[1] - foot[1], LILINA_LOG[1] + .5)
-    # ---- the other two, standing
-    person(st, 'board_marcus', *OAK_AT, flip=True)
-    person(st, 'board_roy', *ROY_AT)
+    if company:
+        rgba, foot = RS.robe_seated()
+        lx = LILINA_LOG[0] - 10
+        sil = PP.silhouette(rgba)
+        m, x0, y0 = PP.cast_shadow(sil, foot[0], foot[1])
+        st.throw(m, lx + x0, LILINA_LOG[1] + y0)
+        st.throw_ell(lx + 4, LILINA_LOG[1] + 1, 22, 5)
+        st.add_rgba(PP.inked(rgba), lx - foot[0], LILINA_LOG[1] - foot[1], LILINA_LOG[1] + .5)
+        # ---- the other two, standing
+        person(st, 'board_marcus', *OAK_AT, flip=True)
+        person(st, 'board_roy', *ROY_AT)
     # ---- the chopping stump and the firewood by the path
     stp = WD.stump()
     st.add(stp, 168, 520)
